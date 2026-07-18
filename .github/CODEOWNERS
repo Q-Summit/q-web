@@ -1,0 +1,29 @@
+# Review ownership. Currently a single owner; once the org teams exist
+# (Settings > Teams), switch the default to @q-summit/it-team and the gated
+# paths to @q-summit/maintainers.
+#
+# Model: everyday code is team-wide; durable truth (decisions, architecture),
+# governance, and the paths that can break editors or compliance have a
+# stricter gate.
+
+# Default: any maintainer can review.
+*                       @LukasStrickler
+
+# Durable truth: requires a maintainer's review.
+/docs/decisions/        @LukasStrickler
+/docs/architecture/     @LukasStrickler
+
+# Sensitive code paths: CMS schema and access control changes affect every
+# editor; deploy config affects the live site.
+/apps/cms/src/collections/  @LukasStrickler
+/apps/cms/src/access/       @LukasStrickler
+
+# Governance and automation: requires a maintainer's review.
+/.github/               @LukasStrickler
+/scripts/               @LukasStrickler
+/LICENSE.md             @LukasStrickler
+/LEGAL.md               @LukasStrickler
+/SECURITY.md            @LukasStrickler
+/CODE_OF_CONDUCT.md     @LukasStrickler
+/CONTRIBUTING.md        @LukasStrickler
+/README.md              @LukasStrickler

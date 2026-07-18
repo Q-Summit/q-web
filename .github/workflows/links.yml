@@ -1,0 +1,64 @@
+name: Links
+
+# Weekly health check for external links in the markdown. Internal relative
+# links are validated on every PR (`pnpm run check`, scripts/validate-docs.mjs);
+# external links rot on the web's schedule, not ours, so this runs weekly and
+# files an issue instead of blocking PRs. Tuning lives in lychee.toml.
+on:
+  schedule:
+    # Mondays 06:00 UTC.
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+# A manual run supersedes a scheduled one that is still going.
+concurrency:
+  group: links
+  cancel-in-progress: true
+
+jobs:
+  lychee:
+    runs-on: ubuntu-latest
+    steps:
+      # Pinned to full commit SHAs (house rule for workflows).
+      # Update the SHA and the trailing version comment together.
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      # The third-party lychee step deliberately gets NO token. The empty
+      # string is load-bearing: the action's token input DEFAULTS to the job's
+      # GITHUB_TOKEN, which carries issues:write, more than a link checker
+      # needs. Unauthenticated github.com probes may hit rate limits;
+      # lychee.toml accepts 429 as healthy, so that never reads as link rot.
+      - uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        id: lychee
+        with:
+          token: ""
+          args: --config lychee.toml --no-progress './**/*.md'
+          # Failure is reported as an issue below, not as a red workflow run.
+          fail: false
+      # One standing issue, updated in place: a persistently broken link must
+      # not open a duplicate every week. The lookup uses the List API (not
+      # Search, which is eventually consistent and could miss a fresh issue)
+      # and only matches issues authored by the workflow's own bot identity,
+      # so an outsider-opened issue with the same title can never capture the
+      # report. The bug label comes from scripts/setup-labels.sh. The report
+      # body derives from repo markdown, which lands via reviewed PRs.
+      - name: File or update the report issue
+        if: steps.lychee.outputs.exit_code != 0
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          title="Link check: broken external links"
+          existing=$(gh api "repos/$GH_REPO/issues?state=open&labels=bug&creator=github-actions%5Bbot%5D&per_page=100" \
+            --jq "[.[] | select(.title == \"$title\")][0].number // empty")
+          if [ -n "$existing" ]; then
+            gh issue edit "$existing" --body-file ./lychee/out.md
+          else
+            gh issue create --title "$title" --label bug --body-file ./lychee/out.md
+          fi
