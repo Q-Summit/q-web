@@ -1,0 +1,22 @@
+node_modules
+pnpm-lock.yaml
+
+# Build and framework output.
+dist
+.astro
+.next
+.vercel
+.wrangler
+
+# Owned by tooling/other agents: never restyle.
+.agents
+.claude
+AGENTS.md
+CLAUDE.md
+
+# Legal text stays byte-for-byte as drafted: never reformat.
+LICENSE.md
+LEGAL.md
+
+# GitHub issue-form YAML is whitespace-sensitive; leave it to GitHub.
+.github/ISSUE_TEMPLATE
