@@ -10,18 +10,19 @@ repo="${1:-Q-Summit/q-web}"
 
 echo "Configuring $repo ..."
 
-# Merge policy: squash-only keeps main linear and makes every commit a
-# reviewed PR; the squash commit takes the PR title and body. Merged branches
-# are deleted automatically.
+# Merge policy: squash, merge commit, and rebase are all allowed. Prefer
+# squash for small PRs; use a merge commit (or rebase) when the PR's atomic
+# commits should stay on main. Squash still takes the PR title and body.
+# Merged branches are deleted automatically.
 gh api -X PATCH "repos/$repo" \
   -F allow_squash_merge=true \
-  -F allow_merge_commit=false \
-  -F allow_rebase_merge=false \
+  -F allow_merge_commit=true \
+  -F allow_rebase_merge=true \
   -F delete_branch_on_merge=true \
   -F allow_auto_merge=true \
   -f squash_merge_commit_title=PR_TITLE \
   -f squash_merge_commit_message=PR_BODY >/dev/null
-echo "  ok merge policy (squash only, auto-delete branches)"
+echo "  ok merge policy (squash, merge commit, rebase; auto-delete branches)"
 
 # Branch protection on main: the "Checks" workflow is required, one approving
 # review, stale approvals dismissed on new pushes, conversations resolved.
