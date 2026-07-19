@@ -1,0 +1,59 @@
+# Spell check for the repo: prose and docs are part of the product, so typos
+# are defects. Runs as `pnpm run check:spell` (part of `pnpm run check`).
+# Unknown real words go into the project dictionary below, sorted.
+version: "0.2"
+language: en
+files:
+  - "**/*.md"
+  - "**/*.{json,jsonc,yml,yaml,toml}"
+  - "**/*.{ts,tsx,astro,css}"
+  - "scripts/**"
+  - ".githooks/**"
+  - ".github/CODEOWNERS"
+ignorePaths:
+  # Dependency and lock churn.
+  - node_modules
+  - pnpm-lock.yaml
+  # Build output.
+  - dist
+  - .astro
+  - .next
+  - .vercel
+  - .wrangler
+  # Legal text stays byte-for-byte as drafted (see .prettierignore); flagging
+  # words we are not allowed to fix is pure noise.
+  - LICENSE.md
+  - LEGAL.md
+  # Symlink into .agents (checked via its real path).
+  - .claude/skills
+  # VS Code extension IDs are vendor handles, not project vocabulary.
+  - .vscode/extensions.json
+useGitignore: true
+words:
+  - adrs
+  - Astro
+  - autoplaying
+  - blockquotes
+  - cookieless
+  - cooldown
+  - datenschutzerklaerung
+  - esbuild
+  - extensionless
+  - frontmatter
+  - Impressum
+  - lockfile
+  - lukas
+  - Mannheim
+  - payloadcms
+  - PostHog
+  - prebuilding
+  - Strickler
+  - Vercel
+  - vivenu
+  - vulns
+  - zizmor
+overrides:
+  # GitHub label colors are 6-digit hex codes, not words.
+  - filename: scripts/setup-labels.sh
+    ignoreRegExpList:
+      - /\b[0-9a-f]{6}\b/

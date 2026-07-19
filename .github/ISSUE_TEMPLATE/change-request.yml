@@ -1,0 +1,40 @@
+name: "✏️ Website change request"
+description: "Request a change to the website that content editing in Payload can't do: a new page, a new content type, a design or layout change."
+title: "[Change] "
+labels: ["change-request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Quick check first: text, images, partners, speakers, jobs, team, and FAQ entries
+        are edited directly in Payload CMS by your division's editor account, no issue
+        needed (see the editor handbook in docs/editors/). This template is for changes
+        that need code: layout, design, new pages, or new kinds of content.
+  - type: input
+    id: page
+    attributes:
+      label: Which page or area?
+      placeholder: "e.g. homepage hero, /partners, the whole footer"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What should change?
+      description: Describe the change. Rough is fine; screenshots or examples from other sites help.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why?
+      description: What problem does it solve, or who asked for it?
+    validations:
+      required: true
+  - type: input
+    id: timing
+    attributes:
+      label: Any deadline?
+      description: 'Optional, e.g. "before ticket sales open in January", "before event week".'
+    validations:
+      required: false

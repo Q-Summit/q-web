@@ -1,0 +1,24 @@
+node_modules/
+
+# Secrets and per-environment config. Never commit credentials;
+# .env.example files (committed) document the required variables.
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+
+# Build and framework output.
+dist/
+.astro/
+.next/
+.vercel/
+.wrangler/
+
+# Local, per-machine state. Never commit personal tool settings.
+# .vscode/extensions.json (shared recommendations) is the one exception.
+.vscode/*
+!.vscode/extensions.json
+.claude/settings.local.json
+.DS_Store
+Thumbs.db

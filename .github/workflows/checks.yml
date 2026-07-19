@@ -1,0 +1,78 @@
+name: Checks
+
+# Runs the same suite as the local git hooks: `pnpm run check` is the docs
+# validator plus markdownlint plus cspell plus Prettier's format check. No paths filter:
+# the validator also covers root guides, .github/, scripts/, and the configs,
+# and an unfiltered workflow is safe to make a required status check.
+# Every quality gate runs through `pnpm run check`: extend that script
+# (astro check, typecheck, eslint, build) rather than adding parallel
+# workflows. CI always runs the full check; if slow steps join it, the
+# pre-commit hook switches to a fast subset (see .githooks/pre-commit),
+# never the other way around.
+on:
+  pull_request:
+    # "edited" included: when squashing, the PR title and body become the
+    # commit, so a late title edit must re-run the style gate below.
+    types: [opened, edited, reopened, synchronize]
+  push:
+    branches: [main]
+
+# Least privilege: this job only reads the repo. The repo-wide default should
+# be read-only; this block makes the intent explicit and holds even if that
+# default is ever loosened.
+permissions:
+  contents: read
+
+# One in-flight run per ref: a new push to a PR cancels the superseded run.
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Checks
+    runs-on: ubuntu-latest
+    steps:
+      # On squash merges the PR title and body become the commit (see
+      # scripts/setup-repo.sh), so gate them here. Untrusted text reaches the
+      # shell only via env vars, never template interpolation.
+      - name: PR title and body follow house style
+        if: github.event_name == 'pull_request'
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -euo pipefail
+          if printf '%s\n%s\n' "$TITLE" "$BODY" | grep -nE "$(printf '\342\200\223|\342\200\224')"; then
+            echo "::error::The PR title or body contains an em or en dash; on squash merges that text becomes the commit (use a comma, colon, or parentheses)."
+            exit 1
+          fi
+          case "$TITLE" in
+            feat:\ *|fix:\ *|docs:\ *|ci:\ *|chore:\ *) ;;
+            *)
+              echo "::error::PR title must start with feat:, fix:, docs:, ci:, or chore: plus a space (CONTRIBUTING.md)."
+              exit 1
+              ;;
+          esac
+          if [ "${#TITLE}" -gt 72 ]; then
+            echo "::error::PR title is over 72 characters (CONTRIBUTING.md)."
+            exit 1
+          fi
+      # Pinned to full commit SHAs (house rule for workflows).
+      # Update the SHA and the trailing version comment together.
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          # The job only reads the tree; never leave the token on disk.
+          persist-credentials: false
+      # Installs the exact pnpm pinned in package.json's `packageManager` field,
+      # so CI and contributors always run the same version. Must run before
+      # setup-node so the pnpm store cache can be wired up.
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          # Single source of truth for the Node version: .nvmrc (also what
+          # contributors' version managers read). Keep it in step with engines.
+          node-version-file: ".nvmrc"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run check

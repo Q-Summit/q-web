@@ -1,0 +1,36 @@
+{
+  // markdownlint-cli2 config for the q-web docs. Basic and non-annoying.
+  // Rule reference: https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
+  "config": {
+    "default": true,
+
+    // MD013 (line length): prose is never hard-wrapped by width here
+    // (prettier proseWrap:never), so a max line length would fight our style.
+    "MD013": false,
+
+    // MD033 (inline HTML): the only angle brackets in our Markdown are HTML
+    // comments (<!-- ... -->), <placeholder> markers in the ADR template,
+    // and the <app@q-summit.com> autolink in SECURITY.md; none is real
+    // inline HTML we need to guard against.
+    "MD033": false,
+  },
+  "globs": ["**/*.md"],
+  // node_modules: dependencies. LICENSE.md: legal text kept byte-for-byte
+  // (also prettier-ignored); we do not restyle it.
+  // AGENTS.md / CLAUDE.md: agent guides (root and nested); CLAUDE.md starts
+  // with the @AGENTS.md import line, which is not an H1.
+  "ignores": [
+    ".agents",
+    ".claude",
+    "**/AGENTS.md",
+    "**/CLAUDE.md",
+    "**/node_modules",
+    "LICENSE.md",
+    "LEGAL.md",
+    "**/dist",
+    "**/.astro",
+    "**/.next",
+    "**/.vercel",
+    "**/.wrangler",
+  ],
+}
