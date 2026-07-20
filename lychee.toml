@@ -1,5 +1,5 @@
 # External link health for the markdown. Internal relative links are already
-# validated on every PR by scripts/validate-docs.mjs; lychee only checks
+# validated on every PR by scripts/check/docs.mjs; lychee only checks
 # http(s) links, weekly (.github/workflows/links.yml), so external rot never
 # blocks a PR.
 

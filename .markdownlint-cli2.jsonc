@@ -32,5 +32,8 @@
     "**/.next",
     "**/.vercel",
     "**/.wrangler",
+    ".lighthouse/**",
+    "!.lighthouse/README.md",
+    "!.lighthouse/AGENT.example.md",
   ],
 }
