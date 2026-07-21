@@ -1,14 +1,14 @@
 name: Checks
 
-# Runs the same suite as the local git hooks: `pnpm run check` is the docs
-# validator plus markdownlint plus cspell plus Prettier's format check. No paths filter:
-# the validator also covers root guides, .github/, scripts/, and the configs,
-# and an unfiltered workflow is safe to make a required status check.
+# Runs the full quality suite: `pnpm run check` (check:fast + parallel web/cms).
+# No paths filter: the validator also covers root guides, .github/, scripts/,
+# and the configs, and an unfiltered workflow is safe to make a required
+# status check.
 # Every quality gate runs through `pnpm run check`: extend that script
-# (astro check, typecheck, eslint, build) rather than adding parallel
-# workflows. CI always runs the full check; if slow steps join it, the
-# pre-commit hook switches to a fast subset (see .githooks/pre-commit),
-# never the other way around.
+# (astro check, typecheck, build, tests) rather than adding parallel
+# workflows. Local: pre-commit runs `check:fast`; pre-push runs full `check`
+# (see .githooks/). Treat workflow-lint findings as blocking even when
+# path-filtered.
 on:
   pull_request:
     # "edited" included: when squashing, the PR title and body become the
@@ -32,12 +32,16 @@ jobs:
   check:
     name: Checks
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       # On squash merges the PR title and body become the commit (see
-      # scripts/setup-repo.sh), so gate them here. Untrusted text reaches the
-      # shell only via env vars, never template interpolation.
+      # .github/admin/setup-repo.sh), so gate them here. Untrusted text reaches the
+      # shell only via env vars, never template interpolation. Dependabot is
+      # exempt: its bodies quote upstream release notes that routinely carry em
+      # dashes we do not author, so enforcing this here would only block its
+      # auto-merge without improving any text we write.
       - name: PR title and body follow house style
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
         env:
           TITLE: ${{ github.event.pull_request.title }}
           BODY: ${{ github.event.pull_request.body }}

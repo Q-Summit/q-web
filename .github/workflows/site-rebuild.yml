@@ -1,0 +1,53 @@
+name: Rebuild site
+
+# Manual rebuild from current published CMS content.
+# Override when the Payload deploy hook was missed or Builds failed.
+# See docs/architecture/06-runtime.md and docs/dev/go-live.md.
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Why the rebuild is needed (recorded in the run log)"
+        required: true
+        type: string
+
+# Least privilege: this job talks to Cloudflare, not to the repo. It needs no
+# repository contents at all, so it checks nothing out.
+permissions: {}
+
+# Deploys must not overlap: two concurrent builds of the same site race on
+# which one publishes last. Queue instead of cancelling, so a rebuild that was
+# already requested still happens.
+concurrency:
+  group: site-rebuild
+  cancel-in-progress: false
+
+jobs:
+  rebuild:
+    name: Trigger Workers Builds deploy hook
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger the deploy hook
+        env:
+          # Cloudflare deploy hook URL. Store as a repository secret; it is a
+          # capability URL, so anyone holding it can trigger a production
+          # deploy. Set up in docs/dev/go-live.md.
+          DEPLOY_HOOK_URL: ${{ secrets.CLOUDFLARE_DEPLOY_HOOK_URL }}
+          REASON: ${{ inputs.reason }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DEPLOY_HOOK_URL}" ]; then
+            echo "::error::CLOUDFLARE_DEPLOY_HOOK_URL is not set. Add the Workers Builds deploy hook as a repository secret (docs/dev/go-live.md)."
+            exit 1
+          fi
+          # Reason is untrusted input: it reaches the log through an env var,
+          # never through template interpolation into the shell.
+          printf 'Requested rebuild. Reason: %s\n' "$REASON"
+          status="$(curl --silent --show-error --fail-with-body \
+            --retry 3 --retry-delay 5 --retry-connrefused \
+            --max-time 30 \
+            --output /dev/null --write-out '%{http_code}' \
+            -X POST "${DEPLOY_HOOK_URL}")"
+          echo "Deploy hook responded ${status}."
+          echo "Cloudflare builds asynchronously (dedupes if a build is already queued). Watch Workers Builds for the result."

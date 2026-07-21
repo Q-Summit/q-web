@@ -1,0 +1,13 @@
+#!/bin/sh
+# q-web pre-push: full quality gate (same suite as CI).
+# Activated by `pnpm run setup`.
+#
+# Runs full `pnpm run check` so a push cannot leave the machine without the
+# same docs + design + web + cms gates CI will run. Skip only with an
+# explicit `git push --no-verify` (discouraged; CI still blocks).
+
+pnpm run --silent check || {
+  echo "" >&2
+  echo "pre-push: full check failed. Fix findings above before pushing." >&2
+  exit 1
+}

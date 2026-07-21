@@ -8,7 +8,7 @@ Refs: #
 
 - [ ] **Docs are current**: every doc or diagram this change invalidates is updated _in this PR_ (ADR index, arc42 sections, editor handbook). If nothing is affected, say so below.
 - [ ] **Visual changes** include a screenshot or preview URL.
-- [ ] **CMS schema changes** (collections, fields, access rules) are called out below; they affect every editor.
+- [ ] **CMS schema / sync changes** (collections, globals, access, content-sync, endpoints, `payload.config.ts`) are called out below; they affect every editor.
 
 **Docs impact:** <!-- "none", or list the files touched -->
 
