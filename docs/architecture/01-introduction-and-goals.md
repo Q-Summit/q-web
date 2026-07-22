@@ -4,7 +4,7 @@
 
 ## What this is
 
-The public website of [Q-Summit](https://q-summit.com), Germany's largest student-organized startup conference (about 1,500 attendees, annual, Mannheim): 10+ pages of marketing content (partners, speakers, jobs, team, FAQ, tickets) backed by a CMS that the org's divisions edit themselves.
+The public website of [Q-Summit](https://q-summit.com), Germany's largest student-organized startup conference (about 1,500 attendees, annual, Mannheim): about 15 Astro pages of marketing content (partners, speakers, jobs, team, FAQ, tickets) backed by a CMS that the org's divisions edit themselves.
 
 ## Top goals
 
@@ -23,6 +23,6 @@ The public website of [Q-Summit](https://q-summit.com), Germany's largest studen
 | --- | --- |
 | Visitors (prospective attendees, applicants) | Fast, accurate information; ticket and job links that work |
 | Partners and sponsors | Correct logos, profiles, and job listings; their brand handled with care |
-| Division editors | Edit their own content without technical help; changes live in minutes |
+| Division editors | Edit their own content without technical help; approved publishes go live in minutes via the deploy hook |
 | Maintainers (IT) | Small, boring, well-documented codebase; portfolio-grade public work |
 | Q-Summit e.V. (board) | Cost, compliance, continuity across handovers |

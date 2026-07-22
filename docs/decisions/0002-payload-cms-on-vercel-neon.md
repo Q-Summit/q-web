@@ -16,7 +16,7 @@ Hard requirements for content editing:
 ## Considered options
 
 1. **Git-based or SaaS headless CMS free tiers**: git-based CMSs put editors into pull requests, the wrong tool for non-technical editors; SaaS free tiers lack per-team roles and approval workflows or price them far beyond the budget.
-2. **Payload 3** (open source, MIT, TypeScript): per-collection and per-field access control, drafts and scheduled publishing built in, version history, runs anywhere Node and Postgres run.
+2. **Payload 3** (open source, MIT, TypeScript): per-collection and per-field access control, drafts and scheduled publishing built in, version history, runs anywhere Node and Postgres run. Con: we operate it ourselves (runtime, database, upgrades) instead of buying a managed service.
 
 ## Decision
 
@@ -33,6 +33,7 @@ This choice implies the hosting: Payload needs a Node runtime and Postgres.
 ## Consequences
 
 - Unlimited editors with scoped accounts, drafts, and approval, at about EUR 0/month.
-- Publishing fires the deploy hook that rebuilds the static site ([ADR-0001](0001-astro-static-site.md)).
+- Publishing fires a Cloudflare deploy hook that rebuilds the static site ([ADR-0001](0001-astro-static-site.md)); see [architecture/06](../architecture/06-runtime.md) and [go-live](../dev/go-live.md).
 - The stack spans Cloudflare, Vercel, and Neon; every layer is open source or standards-based (static files, Postgres, S3 API), so any single provider can be swapped without touching the others. That is the exit strategy.
 - Each provider needs a DPA; tracked offsite.
+- Revisit if the Neon free-tier cap (500 MB) or Vercel's function limits are approached, or when EmDash reaches 1.0 (see Considered options).
