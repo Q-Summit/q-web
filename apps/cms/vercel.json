@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "cd ../.. && pnpm install",
+  "buildCommand": "pnpm run migrate && pnpm run build",
+  "framework": "nextjs",
+  "functions": {
+    "src/app/**/*": {
+      "maxDuration": 30
+    }
+  }
+}
