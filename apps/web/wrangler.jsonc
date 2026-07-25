@@ -1,0 +1,34 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Cloudflare-native local preview (see docs/dev/local-development.md and
+  // docs/dev/go-live.md). Same config used to deploy in prod: only
+  // `bucket_name` (and, in prod, real R2 credentials for the CMS uploader)
+  // differ between environments.
+  "name": "q-web",
+  "compatibility_date": "2026-07-17",
+  "main": "./worker/index.ts",
+
+  // Astro's static build output. The Worker only intercepts /media/*
+  // (below); everything else is answered directly by the assets binding
+  // without invoking the Worker at all.
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    // src/pages/404.astro builds to dist/404.html; "404-page" serves it for
+    // any unmatched route instead of the plain platform default.
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/media/*"],
+  },
+
+  // Local-only stand-in for R2 in prod: wrangler simulates this binding
+  // with real workerd + the local R2 (SQLite-backed) implementation under
+  // .wrangler/state (gitignored). No S3-compatible endpoint exists for
+  // this local bucket -- see worker/index.ts and docs/dev/local-development.md for why MinIO
+  // still exists alongside it.
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "qweb-media",
+    },
+  ],
+}

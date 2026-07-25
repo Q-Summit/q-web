@@ -1,0 +1,22 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    // Editor-only: makes tsserver typecheck .astro frontmatter (image
+    // imports, ImportMeta.env, etc.). CLI still uses `astro check`.
+    "plugins": [{ "name": "@astrojs/ts-plugin" }]
+  },
+  "include": [".astro/types.d.ts", "**/*"],
+  // worker/ and test/ have their own tsconfigs (worker/tsconfig.json,
+  // test/tsconfig.json): they run under workerd, not the browser/Node DOM
+  // lib this config pulls in by default, and worker-configuration.d.ts
+  // (wrangler-generated runtime types) plus the cloudflare:test/
+  // cloudflare:workers virtual modules would collide with lib.dom's globals
+  // (Response, Request, DOMException, ...) if both were in the same program.
+  "exclude": [
+    "dist",
+    "worker",
+    "worker-configuration.d.ts",
+    "test",
+    "vitest.config.ts"
+  ]
+}
