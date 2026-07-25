@@ -1,0 +1,75 @@
+# robots.txt for https://q-summit.com
+# Policy: allow all crawlers, including AI/LLM crawlers.
+# Discoverability by AI assistants and LLM search is intended.
+# See also /llms.txt, /llms-full.txt, and the sitemap below.
+
+User-agent: *
+Allow: /
+
+# --- AI / LLM crawlers: explicitly allowed (search, answer, and training) ---
+# Named individually so the allow intent is auditable and is not silently
+# reversed by CDN or tooling "block AI by default" changes.
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-AdsBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: meta-externalagent
+Allow: /
+
+User-agent: FacebookBot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+# LLM-oriented indexes (llmstxt.org). Not required by robots.txt, listed so
+# operators see the intended discovery surfaces next to the sitemap.
+# /llms.txt       curated index
+# /llms-full.txt  full-text corpus of main pages
+
+Sitemap: https://q-summit.com/sitemap-index.xml
