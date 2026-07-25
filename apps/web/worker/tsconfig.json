@@ -1,0 +1,19 @@
+{
+  // Isolated on purpose (does NOT extend the root tsconfig / astro's
+  // preset): the worker runs under workerd, not a DOM environment, and
+  // must type-check against the wrangler-generated runtime types in
+  // ../worker-configuration.d.ts, not lib.dom.d.ts. See ../tsconfig.json's
+  // exclude for why these can't share one program.
+  "compilerOptions": {
+    "target": "es2022",
+    "lib": ["es2022"],
+    "module": "es2022",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "types": []
+  },
+  "include": ["./index.ts", "../worker-configuration.d.ts"]
+}
