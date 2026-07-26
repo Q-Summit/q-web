@@ -1,0 +1,114 @@
+---
+// Partner page, ported from the Webflow /partner page: hero, testimonial
+// quotes, logo walls grouped by tier in the live order (Platinum first),
+// and the "Join Us as a Partner" CTA. Partners and testimonials load at
+// build time via src/lib/content.ts. Logo dimensions come from the
+// hand-curated logo-manifest.json for the mirrored site assets (which also
+// remaps their src paths); logos uploaded later through the CMS carry their
+// own dimensions on the partner record and are served at /media/<filename>.
+import Base from "../layouts/Base.astro";
+import JoinCta from "../components/partner/JoinCta.astro";
+import LogoWall from "../components/partner/LogoWall.astro";
+import type { WallLogo } from "../components/partner/LogoWall.astro";
+import TestimonialQuotes from "../components/partner/TestimonialQuotes.astro";
+import logoManifest from "../components/partner/logo-manifest.json";
+import {
+  getPageContent,
+  getPartners,
+  getPartnerTestimonials,
+} from "../lib/content";
+import type { Partner, PartnerTier } from "../lib/content";
+import {
+  resolvePartnerLogoDisplay,
+  type PartnerLogoMeta,
+} from "../lib/partner-logos";
+import Section from "../components/ui/Section.astro";
+import Container from "../components/ui/Container.astro";
+
+const [{ partner: page }, partners, testimonials] = await Promise.all([
+  getPageContent(),
+  getPartners(),
+  getPartnerTestimonials(),
+]);
+
+const logoMeta = logoManifest as Record<string, PartnerLogoMeta>;
+
+// Tier order and headings exactly as on the live page.
+const tiers: { tier: PartnerTier; heading: string }[] = [
+  { tier: "Platinum", heading: "Platinum Partnerships" },
+  { tier: "Gold", heading: "Gold Partnerships" },
+  { tier: "Silver", heading: "Silver Partnerships" },
+  { tier: "Starter", heading: "Starter Partnerships" },
+  { tier: "Knowledge", heading: "Knowledge Partnership" },
+  { tier: "Event", heading: "Event Partnerships" },
+  { tier: "Mobility", heading: "Mobility Partnerships" },
+  {
+    tier: "University and Network",
+    heading: "University and Network Partnerships",
+  },
+  { tier: "Media", heading: "Media Partnerships" },
+];
+
+// Manifest first (mirrored assets, remapped src paths), then CMS dimensions;
+// neither → skip (warn via resolvePartnerLogoDisplay, quiet for fixture).
+function toWallLogo(partner: Partner): WallLogo[] {
+  const logo = resolvePartnerLogoDisplay(partner, logoMeta, "[partner]");
+  return logo ? [logo] : [];
+}
+
+// partners.json preserves the live per-tier order; keep it.
+const walls = tiers
+  .map(({ tier, heading }) => ({
+    tier,
+    heading,
+    logos: partners.filter((p) => p.tier === tier).flatMap(toWallLogo),
+  }))
+  .filter((wall) => wall.logos.length > 0);
+---
+
+<Base
+  title={page.title}
+  description={page.metaDescription}
+  livePreviewGlobal="page-partner"
+>
+  <Section small>
+    <Container>
+      <header class="partner-header">
+        <h1 data-lp="heading">{page.heading}</h1>
+      </header>
+      <TestimonialQuotes testimonials={testimonials} />
+    </Container>
+  </Section>
+
+  <Section small>
+    <Container>
+      {
+        walls.map(({ tier, heading, logos }) => (
+          <LogoWall
+            id={tier.toLowerCase().replaceAll(" ", "-")}
+            heading={heading}
+            logos={logos}
+            featured={tier === "Platinum"}
+          />
+        ))
+      }
+    </Container>
+  </Section>
+
+  <JoinCta
+    heading={page.cta.heading}
+    text={page.cta.text}
+    buttonLabel={page.cta.buttonLabel}
+    buttonHref={page.cta.buttonHref}
+  />
+</Base>
+
+<style>
+  .partner-header h1 {
+    max-width: var(--container-small);
+    margin-inline: auto;
+    text-align: center;
+    /* The live page renders its h1 at h2 scale (heading-style-h2-2). */
+    font-size: var(--heading-h2-size);
+  }
+</style>

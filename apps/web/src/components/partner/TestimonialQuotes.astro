@@ -1,0 +1,172 @@
+---
+// Partner testimonials, ported from the Webflow "partner_logos-list"
+// slider. The old autoplaying slider becomes a static card grid: no
+// client JS, one column on mobile, two from tablet up. Each testimonial
+// carries an optional small round portrait, like the live slider's
+// client image next to the name/company.
+// Rendered inside the partner page's hero .section/.container: this
+// component only adds the grid and its own small top gap, not a section
+// shell (DESIGN.md LAYOUT-1/LAYOUT-3).
+import { Picture } from "../../lib/astro-assets";
+import type { PartnerTestimonial } from "../../lib/content";
+import { resolveContentImage } from "../../lib/images";
+
+interface Props {
+  testimonials: PartnerTestimonial[];
+}
+
+const { testimonials } = Astro.props;
+
+// Attribution comes as "Name, Company"; keep any extra commas in the company.
+const items = await Promise.all(
+  testimonials.map(async ({ quote, attribution, photoFilename }) => {
+    const [name, ...companyParts] = attribution.split(", ");
+    const image = photoFilename
+      ? await resolveContentImage(photoFilename, `testimonial ${attribution}`)
+      : undefined;
+    return {
+      quote,
+      name,
+      company: companyParts.join(", "),
+      photoFilename,
+      image,
+    };
+  }),
+);
+---
+
+<section class="testimonials" aria-label="What partners say about Q-Summit">
+  <ul class="quote-grid">
+    {
+      items.map(({ quote, name, company, photoFilename, image }) => (
+        <li class="quote-card">
+          <blockquote>
+            <p class="quote-text">&ldquo;{quote}&rdquo;</p>
+            <footer class="quote-footer">
+              {image ? (
+                <Picture
+                  class="quote-photo"
+                  src={image}
+                  alt=""
+                  widths={[44, 88]}
+                  sizes="44px"
+                  formats={["avif", "webp"]}
+                  fallbackFormat="jpg"
+                  quality={80}
+                  loading="lazy"
+                  decoding="async"
+                />
+              ) : (
+                photoFilename && (
+                  <img
+                    class="quote-photo"
+                    src={`/media/${photoFilename}`}
+                    alt=""
+                    width="44"
+                    height="44"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                )
+              )}
+              <div class="quote-identity">
+                <span class="quote-name">{name}</span>
+                {company && <span class="quote-company">{company}</span>}
+              </div>
+            </footer>
+          </blockquote>
+        </li>
+      ))
+    }
+  </ul>
+</section>
+
+<style>
+  /* Small local gap below the h1, not a section shell: the surrounding
+     .section on the page already provides the section's vertical rhythm. */
+  .testimonials {
+    margin-top: 2.5rem;
+  }
+
+  .quote-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+    max-width: var(--container-medium);
+    margin: 0 auto;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (min-width: 768px) {
+    .quote-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-md);
+    }
+  }
+
+  .quote-card {
+    display: flex;
+    padding: 1.75rem 1.75rem var(--space-md);
+    background-color: var(--color-background-alternate);
+    border-radius: var(--radius-card);
+  }
+
+  .quote-card blockquote {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    margin: 0;
+  }
+
+  .quote-card blockquote::before {
+    content: "\201C";
+    display: block;
+    /* Orange is reserved for .text-highlight only (DESIGN.md COLOR-1);
+       this decorative mark stays navy. The mark is not a heading, but it is
+       drawn at the h1 step, so it takes that token rather than a raw 3.5rem
+       (DESIGN.md TYPE-2) and shrinks with the scale on small screens. */
+    color: var(--color-heading);
+    font-size: var(--heading-h1-size);
+    font-weight: var(--heading-weight-home);
+    line-height: 0.6;
+    margin-bottom: var(--space-xs);
+  }
+
+  .quote-text {
+    flex-grow: 1;
+    margin-bottom: 1.25rem;
+    color: var(--color-heading);
+    font-size: var(--text-size-large);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--heading-line-height-loose);
+  }
+
+  .quote-footer {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .quote-photo {
+    flex-shrink: 0;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: var(--radius-circle);
+    object-fit: cover;
+  }
+
+  .quote-identity {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .quote-name {
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .quote-company {
+    color: var(--color-neutral-dark);
+    font-size: var(--text-size-small);
+  }
+</style>

@@ -1,0 +1,100 @@
+---
+// Numbers band, ported from the Webflow section_home_numbers. The old site
+// animated the counters with client JS; the values render statically here.
+import type { PageStat } from "../../lib/content";
+import Section from "../ui/Section.astro";
+
+interface Props {
+  heading: string;
+  intro: string;
+  stats: PageStat[];
+}
+
+const { heading, intro, stats } = Astro.props;
+
+// The live site's counters animate via client JS that formats with
+// toLocaleString('de-DE') (adding "1.500"-style separators); this port
+// renders the final value statically with no such JS, so it renders the
+// content layer's plain digits ("1500") as-is, matching the site mirror.
+---
+
+<!-- Left-aligned opener (DESIGN.md LAYOUT-4 exception): the copy sits beside
+     the stats grid in a two-column layout on the live site, not centered
+     above it. -->
+<Section small class="stats" aria-label="Q-Summit in numbers">
+  <div class="container stats-inner">
+    <div class="stats-copy">
+      <h2 data-lp="stats.heading">{heading}</h2>
+      <p data-lp="stats.intro">{intro}</p>
+    </div>
+    <dl class="stats-grid" data-lp-list="stats.items">
+      {
+        stats.map((stat) => (
+          <div class="stat" data-lp-list-item>
+            <dt data-lp-list-label>{stat.label}</dt>
+            <dd data-lp-list-value>{stat.value}</dd>
+          </div>
+        ))
+      }
+    </dl>
+  </div>
+</Section>
+
+<style>
+  .stats-inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-xl) 5rem;
+    align-items: center;
+  }
+
+  .stats-copy h2 {
+    margin-bottom: var(--space-sm);
+  }
+
+  .stats-copy p {
+    margin: 0;
+    font-size: var(--text-size-medium);
+    color: var(--color-neutral-dark);
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem var(--space-lg);
+    margin: 0;
+  }
+
+  /* Vertical divider ahead of each number, matching the live site's stat
+     grid; the value itself stays navy, never orange (DESIGN.md COLOR-1).
+     dt before dd is the valid <dl> source order (label is the term, value
+     the description); column-reverse keeps the big number visually on top. */
+  .stat {
+    display: flex;
+    flex-direction: column-reverse;
+    padding-left: 1.25rem;
+    border-left: 1px solid var(--color-neutral-lighter);
+  }
+
+  .stat dd {
+    margin: 0;
+    font-size: clamp(3rem, 6vw, 4.9rem);
+    font-weight: var(--heading-weight);
+    line-height: 1.1;
+    color: var(--color-heading);
+  }
+
+  .stat dt {
+    margin-top: 0.25rem;
+    font-size: var(--heading-h6-size);
+    font-weight: var(--heading-weight);
+    color: var(--color-heading);
+  }
+
+  @media (max-width: 767px) {
+    .stats-inner {
+      grid-template-columns: 1fr;
+      gap: 2.5rem;
+    }
+  }
+</style>

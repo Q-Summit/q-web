@@ -1,0 +1,687 @@
+{
+  "68aecc97ba5c83d8fa566e37_htgf_logo.webp": {
+    "height": 485,
+    "src": "/media/partner/htgf.png",
+    "width": 800
+  },
+  "69b1d19b7f921b1cc606a732_3469c936f6a1-Logo_black.svg": {
+    "height": 139,
+    "src": "/media/partner/trawa.svg",
+    "width": 525
+  },
+  "69b1d27fa01d20b012c8e6f1_30ca8e968389-seed_speed_logo___Kopie.svg": {
+    "height": 45,
+    "src": "/media/partner/seed-and-speed.svg",
+    "width": 167
+  },
+  "69b1d2b25f91c90d40d92208_e40011d41163-Screenshot_2025_09_03_at_2.38.23_PM.webp": {
+    "height": 297,
+    "src": "/media/partner/uber.webp",
+    "width": 500
+  },
+  "69b1d30dac952edd467423f4_88b3f96baeab-WBM_flaschenpost_4C_pos__4_.webp": {
+    "height": 198,
+    "src": "/media/partner/flaschenpost.png",
+    "width": 800
+  },
+  "69b1d3cb393e6ecef40c87f5_1071477182f9-Langdock_Logo.webp": {
+    "height": 157,
+    "src": "/media/partner/langdock.png",
+    "width": 800
+  },
+  "69b1d4de7a0bfd329aaec323_75b1a77709ea-Mcei_logo.webp": {
+    "height": 506,
+    "src": "/media/partner/mcei.webp",
+    "width": 480
+  },
+  "69b1d53967ab59c8ac4b0fc7_45fd60209982-Vorwerk_Ventures_Logo_2.webp": {
+    "height": 397,
+    "src": "/media/partner/vorwerk-ventures.png",
+    "width": 800
+  },
+  "69b1d5e82be0318cc4534349_27f15569bf52-tacto_logo__4_.webp": {
+    "height": 290,
+    "src": "/media/partner/tacto.png",
+    "width": 800
+  },
+  "69b26012a6c8bdb954bbde91_94151f1129a5-1e870764_6ffb_4a86_8e2a_a8d439f24583.webp": {
+    "height": 236,
+    "src": "/media/partner/emma-sleep.webp",
+    "width": 717
+  },
+  "69b260486672547deb011e47_87c7cbfa9c45-FUCHS_Logo_Claim_Color_sRGB__1_.webp": {
+    "height": 411,
+    "src": "/media/partner/fuchs.webp",
+    "width": 800
+  },
+  "69b2608f0436d60e907e61af_0797a9e06b06-COS_Logo_New_775x775__3_.webp": {
+    "height": 500,
+    "src": "/media/partner/caronsale.webp",
+    "width": 500
+  },
+  "69b2611bedf2068122bb15a7_logo-1024.png": {
+    "height": 1024,
+    "src": "/media/partner/plancraft.png",
+    "width": 1024
+  },
+  "69b2615844d04d9ce4c963a2_3465de84bdb5-Picnic_logo_RGB.webp": {
+    "height": 800,
+    "src": "/media/partner/picnic.webp",
+    "width": 800
+  },
+  "69b2627288a0c1cf4905739d_eaad0150f702-Picus_Logo_Transparent_Black__1_.webp": {
+    "height": 71,
+    "src": "/media/partner/picus-capital.webp",
+    "width": 500
+  },
+  "69b2628b86dc2bc20a03a26f_81c4aa8fda1d-Logo_Typeface_default.svg": {
+    "height": 61,
+    "src": "/media/partner/doinstruct.svg",
+    "width": 309
+  },
+  "69b595be34067226524ad4de_7c6dc2aebd90-PERI_Logo_Square_PNG.webp": {
+    "height": 500,
+    "src": "/media/partner/peri.png",
+    "width": 500
+  },
+  "69b5976cfb857959ddb09c5e_bd9e30723b8d-HV_Logo__11_.webp": {
+    "height": 270,
+    "src": "/media/partner/hv-capital.png",
+    "width": 500
+  },
+  "69b5977812953837c0def87d_e26442401ca2-ow_logo_rgb_midnight.webp": {
+    "height": 153,
+    "src": "/media/partner/oliver-wyman.png",
+    "width": 800
+  },
+  "69b59781b97f1144b39c4816_c8847abcd72d-HGV_Logo_Standard_quer_einzeilig_mit_Deskriptor_pos_RGB.webp": {
+    "height": 240,
+    "src": "/media/partner/haufe-group-ventures.png",
+    "width": 800
+  },
+  "69b5979006e3ffd082aabbcf_a7795a08195a-Upvest_Logo_AW_RGB_Full_Colour.webp": {
+    "height": 126,
+    "src": "/media/partner/upvest.png",
+    "width": 500
+  },
+  "69b5979dba5e05b459dac008_4239ad1866db-Sunhat_Logo_wordmark_Deep_Purple_CMYK.webp": {
+    "height": 178,
+    "src": "/media/partner/sunhat.webp",
+    "width": 800
+  },
+  "69b597a64605b68c33e8956e_3530c2ad97c4-Raisin_Logo_Blue_RGB.webp": {
+    "height": 186,
+    "src": "/media/partner/raisin.png",
+    "width": 800
+  },
+  "69b597b2012709d48a1db55b_4e38bccc6373-Creandum_Logo_Black.webp": {
+    "height": 222,
+    "src": "/media/partner/creandum.webp",
+    "width": 1422
+  },
+  "69b59d0c75f9fa76a055ab37_f12a99c54bc3-OC_Shortform_Logo_Keyline_Landscape_RGB_on_White.webp": {
+    "height": 197,
+    "src": "/media/partner/osborne-clarke.png",
+    "width": 800
+  },
+  "69b59d46f283e3f5a7043031_917f69b52879-McK_Logo_RGB_Black.webp": {
+    "height": 180,
+    "src": "/media/partner/mckinsey-and-company.webp",
+    "width": 567
+  },
+  "69b59d8bca28dbd588840460_b6651304ec20-Schwarz_Gruppenlogo_Standard_RGB_02.webp": {
+    "height": 176,
+    "src": "/media/partner/schwarz-gruppe.webp",
+    "width": 363
+  },
+  "69b59d96d0d5bf3d0605250d_9d76af52036f-Group_633369.webp": {
+    "height": 324,
+    "src": "/media/partner/opus.webp",
+    "width": 1162
+  },
+  "69b5a0ca22fb149d8d4eacb4_36ac5d85064e-Lockup_Black.webp": {
+    "height": 179,
+    "src": "/media/partner/inca.png",
+    "width": 500
+  },
+  "69b5a0f7f31b109e557d5db4_22aec6c21edd-01_LOGO_FINAL_Negativ_Kasten__2_.webp": {
+    "height": 689,
+    "src": "/media/partner/muecke-roth.webp",
+    "width": 800
+  },
+  "69b5a1ca1f6920a2e7bc7483_c6ecae4d0ccc-IV_MM_RGB.webp": {
+    "height": 291,
+    "src": "/media/partner/mannheimer-morgen.webp",
+    "width": 800
+  },
+  "69b5a23ac5f96cc7c12c51a4_ae228fa58fbe-Logo_\u2013_1C.webp": {
+    "height": 274,
+    "src": "/media/partner/smatch.png",
+    "width": 800
+  },
+  "69b5a26186b8db23bc362cd3_369148ef2fd7-Unzer__PrimaryLogo_Raspberry_RGB__6_.webp": {
+    "height": 366,
+    "src": "/media/partner/unzer.png",
+    "width": 800
+  },
+  "69b5a282b4990ed13ab61410_b3f23f195ede-Logo_schwarz_ohne_Hintergrund.webp": {
+    "height": 299,
+    "src": "/media/partner/yttrium.png",
+    "width": 800
+  },
+  "69b5a2f3e9c285e0601fec2c_c315ab334fa7-Color_Black__4_.webp": {
+    "height": 165,
+    "src": "/media/partner/zauber.webp",
+    "width": 740
+  },
+  "69b5a4eb08df55eb149f36da_8331a85e1370-Dronivo_Defence_Logo.pdf__2_.webp": {
+    "height": 371,
+    "src": "/media/partner/dronivo.png",
+    "width": 800
+  },
+  "69b5a5410e154ad5f3a1a470_50a1326f3d2d-Nelly_Logo.webp": {
+    "height": 80,
+    "src": "/media/partner/nelly.webp",
+    "width": 200
+  },
+  "69b5a565b4c1372c1e1b14f8_83eb665bcc7f-Bitpanda_Logo_Combination_darkgreen_RGB.webp": {
+    "height": 201,
+    "src": "/media/partner/bitpanda.png",
+    "width": 800
+  },
+  "69b5a584bb3e79b4d3fdae83_0c521240a562-Acc_Logo_Black_Purple_RGB.webp": {
+    "height": 211,
+    "src": "/media/partner/accenture.png",
+    "width": 800
+  },
+  "69b5a59ec9fa3704e59af51c_1e10a00e30e7-Logo.webp": {
+    "height": 500,
+    "src": "/media/partner/daisytuner.webp",
+    "width": 500
+  },
+  "69b5a5b87468f39f02b7437a_0c8dc75c9f36-NeoTaste_Logo.webp": {
+    "height": 192,
+    "src": "/media/partner/neotaste.webp",
+    "width": 928
+  },
+  "69b5a5e0aebd4121da4cb31c_97cc89e01fbb-statworx_Logo_Black.webp": {
+    "height": 138,
+    "src": "/media/partner/statworx.webp",
+    "width": 926
+  },
+  "69b5a6bf583a0bfd6324d265_90a0de67-b9ce-46d8-9061-fc12f4953383-0.webp": {
+    "height": 35,
+    "src": "/media/partner/arthur-d-little.webp",
+    "width": 283
+  },
+  "69b5a6e7e6e484f6eaac87a0_e95815d8e503-10xFounders_Lock_up_Navy.webp": {
+    "height": 284,
+    "src": "/media/partner/10xfounders.png",
+    "width": 800
+  },
+  "69b5a78024de156f069e1b38_f997aff4f394-Wordmark_Transparent_And_Black.webp": {
+    "height": 389,
+    "src": "/media/partner/klarna.png",
+    "width": 800
+  },
+  "69b704b9843154c20c5536ad_Rothaus Logo (2).webp": {
+    "height": 420,
+    "src": "/media/partner/rothaus.png",
+    "width": 800
+  },
+  "69b704feeb2f45a7f37d925c_VC_PMS_one_blue.webp": {
+    "height": 560,
+    "src": "/media/partner/vita-coco.png",
+    "width": 800
+  },
+  "69b7053ee7e2d40d957634b2_SUPER_POP_Logo_Smiley_Claim_BLAU.webp": {
+    "height": 477,
+    "src": "/media/partner/super-pop.png",
+    "width": 800
+  },
+  "69b7058423c055c14dc350a5_HiNUtS Logo SQ 100x100cm.webp": {
+    "height": 800,
+    "src": "/media/partner/hinuts.webp",
+    "width": 800
+  },
+  "69b705cf61e72ad4023bfe1b_MANA logo(2).svg": {
+    "height": 525,
+    "src": "/media/partner/mana.svg",
+    "width": 1200
+  },
+  "69b706b287bfbb64aef843f9_Kleiner_Klopfer_Fun_Mix_Logo.webp": {
+    "height": 514,
+    "src": "/media/partner/kleiner-klopfer.webp",
+    "width": 800
+  },
+  "69b707df447cb181916d2910_20230629_Vly_Logo_gedreht_RGB.webp": {
+    "height": 800,
+    "src": "/media/partner/vly.webp",
+    "width": 800
+  },
+  "69b708ab3b0c5296916da650_yfood-rebranding-17-1410x793.webp": {
+    "height": 450,
+    "src": "/media/partner/yfood.webp",
+    "width": 800
+  },
+  "69b7094c5d8906644e3eefa1_Fach_Log_rgb.webp": {
+    "height": 403,
+    "src": "/media/partner/fachingen.webp",
+    "width": 800
+  },
+  "69b709f309b40850eaa394d7_Logo_Wholey_266.webp": {
+    "height": 191,
+    "src": "/media/partner/wholey.png",
+    "width": 800
+  },
+  "69b70a43f1fd62f80fb4bfb0_FRANUI LOGO 2024-ROJO (1).webp": {
+    "height": 173,
+    "src": "/media/partner/franui.webp",
+    "width": 550
+  },
+  "69b70b24556ddf3d43b618d1_a Second by Ma\u0308z Logo(1).webp": {
+    "height": 181,
+    "src": "/media/partner/a-second-by-ma-z.png",
+    "width": 800
+  },
+  "69b70b8788851f59ec06538f_cropped-ROBS_LOGO_BLACK.webp": {
+    "height": 250,
+    "src": "/media/partner/rob-s-originals.webp",
+    "width": 560
+  },
+  "69b70cad7a72f6518b14a31e_580_1721301722_1788321853.webp": {
+    "height": 290,
+    "src": "/media/partner/neoh.webp",
+    "width": 704
+  },
+  "69b70cf6e332cbd8e89c25f4_3ef9ceeafeb0-Logo_Bild_Marke_schwarz.webp": {
+    "height": 606,
+    "src": "/media/partner/vindelici.png",
+    "width": 800
+  },
+  "69b70dae058dec629384c63f_c15f2c116b17-MBS_One_Brand_Logo_Main_Farbig(1).webp": {
+    "height": 800,
+    "src": "/media/partner/mannheim-business-school.png",
+    "width": 800
+  },
+  "69b70df288851f59ec0698b9_54e419aceec5-Schuellermann_Logo_Variante_trans_Rechteck_2024_03_21(1).png": {
+    "height": 53,
+    "src": "/media/partner/schuellermann.png",
+    "width": 500
+  },
+  "69b70e36dece13c7d9c1fc30_700d2486fc98-LEGORA_LOK_2025_1000x1000(1).webp": {
+    "height": 204,
+    "src": "/media/partner/legora.webp",
+    "width": 858
+  },
+  "69b71c58340672265265401d_integra.webp": {
+    "height": 280,
+    "src": "/media/partner/integra.webp",
+    "width": 800
+  },
+  "69b71cbd176c2e9245a7fb07_ecc.webp": {
+    "height": 131,
+    "src": "/media/partner/entrepreneurs-club-cologne.png",
+    "width": 500
+  },
+  "69b71cfe323a422e8d4d27cc_logo.webp": {
+    "height": 296,
+    "src": "/media/partner/mannheim-forum.webp",
+    "width": 800
+  },
+  "69b71d5f151f193063feb915_Rhive-Logo-1-300x102.webp": {
+    "height": 102,
+    "src": "/media/partner/rhive.webp",
+    "width": 300
+  },
+  "69b71d8df72eee7ae9c87ecf_gec.webp": {
+    "height": 232,
+    "src": "/media/partner/gec-frankfurt.png",
+    "width": 800
+  },
+  "69b71dde88851f59ec081a8b_founders_club_frankfurt.webp": {
+    "height": 69,
+    "src": "/media/partner/founders-club-frankfurt.webp",
+    "width": 150
+  },
+  "69b71dfecf9bf23e164c6b35_thinc.webp": {
+    "height": 500,
+    "src": "/media/partner/thinc.png",
+    "width": 500
+  },
+  "69b71e23cfab876bda633889_start_munich.webp": {
+    "height": 68,
+    "src": "/media/partner/start-munich.webp",
+    "width": 150
+  },
+  "69b71e40000a9da16fa75c45_start_fglobal.webp": {
+    "height": 137,
+    "src": "/media/partner/start-global.webp",
+    "width": 300
+  },
+  "69b71e7a646bd86ef33edcb3_tumai.webp": {
+    "height": 53,
+    "src": "/media/partner/tum-ai.webp",
+    "width": 150
+  },
+  "69b71e8ed0e8070d1690fea6_ace.webp": {
+    "height": 40,
+    "src": "/media/partner/ace.webp",
+    "width": 140
+  },
+  "69b71eaa2fb367af6d1bf787_enactus.webp": {
+    "height": 175,
+    "src": "/media/partner/enactus.webp",
+    "width": 300
+  },
+  "69b71ec44651e2ddaf1c9fa2_pionier_garage.webp": {
+    "height": 54,
+    "src": "/media/partner/pioniergarage.webp",
+    "width": 300
+  },
+  "69b71ee30d0447b23e9575df_mafinex_next.webp": {
+    "height": 112,
+    "src": "/media/partner/mafinex-next-mannheim.webp",
+    "width": 500
+  },
+  "69b71f2a597624aaf3c088f3_campus_founders.webp": {
+    "height": 200,
+    "src": "/media/partner/campus-founders.webp",
+    "width": 881
+  },
+  "69b71f485e7a002f4a409eb4_cdtm.webp": {
+    "height": 343,
+    "src": "/media/partner/cdtm.webp",
+    "width": 800
+  },
+  "69b71f653e9a5313b91fc04a_sigma_squared.webp": {
+    "height": 259,
+    "src": "/media/partner/sigma-squared.png",
+    "width": 800
+  },
+  "69b71fa05d36d6444f9b3815_legmon.webp": {
+    "height": 171,
+    "src": "/media/partner/legmon.png",
+    "width": 800
+  },
+  "69b71fc7514b4e40a5bd3d34_zukunftswiesen_summit.webp": {
+    "height": 260,
+    "src": "/media/partner/zukunftswiesen-summit.png",
+    "width": 800
+  },
+  "69b71fea5d36d6444f9b3c0b_future_founders_inititative.webp": {
+    "height": 59,
+    "src": "/media/partner/future-founders-initiative.webp",
+    "width": 500
+  },
+  "69b7200a7468f39f02d1142b_yfn.webp": {
+    "height": 368,
+    "src": "/media/partner/young-founders-network.webp",
+    "width": 788
+  },
+  "69b72025803ab42ed75c7dd5_startupcontacts_muenster.webp": {
+    "height": 233,
+    "src": "/media/partner/startup-contacts-muenster.webp",
+    "width": 497
+  },
+  "69b72042c4498959d4706255_cyberlab.webp": {
+    "height": 585,
+    "src": "/media/partner/cyberlab-karlsruhe.png",
+    "width": 800
+  },
+  "69b7206786bba992b514dcb3_sensability.webp": {
+    "height": 112,
+    "src": "/media/partner/sensability.png",
+    "width": 500
+  },
+  "69b7207cddbb8d14951cddd9_baby_vc.webp": {
+    "height": 238,
+    "src": "/media/partner/baby-vc.webp",
+    "width": 800
+  },
+  "69b7209cd8990e25acefa294_ewor.webp": {
+    "height": 197,
+    "src": "/media/partner/ewor.png",
+    "width": 800
+  },
+  "69b7c911c777aa4d8002cf4e_startup_insider.webp": {
+    "height": 254,
+    "src": "/media/partner/startup-insider.png",
+    "width": 800
+  },
+  "69b7c9963a51506fc0e22222_germantechjobs.webp": {
+    "height": 167,
+    "src": "/media/partner/germantechjobs.webp",
+    "width": 300
+  },
+  "69b7ca4e10a688c861d5ff34_nxtgn.webp": {
+    "height": 176,
+    "src": "/media/partner/nxtgn.webp",
+    "width": 500
+  },
+  "69b7ca83fb0b28a3173f8798_brandeins.webp": {
+    "height": 165,
+    "src": "/media/partner/brand-eins.webp",
+    "width": 848
+  },
+  "69b7caad30f44f845550ee70_starbase.webp": {
+    "height": 78,
+    "src": "/media/partner/startbase.webp",
+    "width": 446
+  },
+  "69b7cac0999b4fb03f8eeed9_ivc.webp": {
+    "height": 501,
+    "src": "/media/partner/inside-vc.webp",
+    "width": 500
+  },
+  "69b806fd1ff25147df19f0db_IdeaLab logo.webp": {
+    "height": 204,
+    "src": "/media/partner/idealab.webp",
+    "width": 800
+  },
+  "69b970ca03e7b30c7426e39b_Absolut Vodka Logo RGB Transparent Background.webp": {
+    "height": 333,
+    "src": "/media/partner/absolut-vodka.png",
+    "width": 800
+  },
+  "69b970db463d995a95a8eacc_LILLET-5 STRIPES-LOGOTYPE-RGB.webp": {
+    "height": 112,
+    "src": "/media/partner/lillet.png",
+    "width": 800
+  },
+  "69b9721c66693261d2d97704_Kopie von Logo VitaVate (1)(1).webp": {
+    "height": 435,
+    "src": "/media/partner/vitavate.webp",
+    "width": 800
+  },
+  "69bac31ac2c32aa873ecfac0_comstruct.avif": {
+    "height": 800,
+    "src": "/media/partner/comstruct.avif",
+    "width": 2092
+  },
+  "69bac8a8a9a089f5a629cf35_e2ac5e318afb-Voi_logo_Coral_RGB.webp": {
+    "height": 331,
+    "src": "/media/partner/voi.png",
+    "width": 800
+  },
+  "69bac8d2ffda4cfbaee9ff83_d917b9df4091-Virtualbadge.io_Dark__1_.webp": {
+    "height": 106,
+    "src": "/media/partner/virtualbadge-io.png",
+    "width": 800
+  },
+  "69bac912507b179ba385d995_fd267ba8aed9-lytra_logo.webp": {
+    "height": 164,
+    "src": "/media/partner/lytra.webp",
+    "width": 420
+  },
+  "69bac934e6e855249d96934f_190ea4c8cd9d-Inverse_False__Size_114px.webp": {
+    "height": 228,
+    "src": "/media/partner/blockbrain.webp",
+    "width": 932
+  },
+  "69baca02244eeaaa8a3f20cf_OpenAI-black-wordmark.webp": {
+    "height": 224,
+    "src": "/media/partner/openai.webp",
+    "width": 500
+  },
+  "69bbed14cfefd61290c49ee5_Kiepenkerl-Logo_Claim_4C_4-Ecken-rund.png": {
+    "height": 335,
+    "src": "/media/partner/kiepenkerl.webp",
+    "width": 800
+  },
+  "69bbed9a778b9b6fe95882ab_OH!Cravies Logo Schwarz_page-0001.webp": {
+    "height": 286,
+    "src": "/media/partner/oh-cravies.webp",
+    "width": 800
+  },
+  "69bbedc86a18ea672267f2dc_DextroEnergy ohne Stern.webp": {
+    "height": 354,
+    "src": "/media/partner/dextroenergy.webp",
+    "width": 800
+  },
+  "69bbef59f063a9f866ffcaa8_DEB-23720_Cereola_Logo_210330_PS.webp": {
+    "height": 379,
+    "src": "/media/partner/cereola.png",
+    "width": 800
+  },
+  "69bbef7ebd675a8aa2fefe5a_Bauck_Mu\u0308hle_Logo_RGB.webp": {
+    "height": 558,
+    "src": "/media/partner/bauck-mu-hle.png",
+    "width": 800
+  },
+  "69bd1d61fb7e6d51deb05f22_Stadtmobil_logo.webp": {
+    "height": 201,
+    "src": "/media/partner/stadtmobil.png",
+    "width": 800
+  },
+  "69bd6caff4366b16e9cbf9dd_83d788ec5534-logomark.svg": {
+    "height": 240,
+    "src": "/media/partner/mateo.svg",
+    "width": 240
+  },
+  "69be5309f8ceb4e02c014349_b2v.webp": {
+    "height": 223,
+    "src": "/media/partner/b2venture.png",
+    "width": 800
+  },
+  "69be5433162bbd6167783ae0_lovable.webp": {
+    "height": 136,
+    "src": "/media/partner/lovable.webp",
+    "width": 800
+  },
+  "69be548ba5276a17ce06d146_dd6b4dd11479-SVG_Logo_STYX.webp": {
+    "height": 254,
+    "src": "/media/partner/styx.webp",
+    "width": 706
+  },
+  "69bfbcaa458c3895e50983e3_image.webp": {
+    "height": 103,
+    "src": "/media/partner/startups-magazine.png",
+    "width": 500
+  },
+  "69bfbd078ca16615fa280ddc_logo1(1).webp": {
+    "height": 320,
+    "src": "/media/partner/drive-autovermietung.png",
+    "width": 800
+  },
+  "69c01259a7c25e74f2eadea9_amazon.webp": {
+    "height": 300,
+    "src": "/media/partner/amazon.png",
+    "width": 800
+  },
+  "69c013d66843e2faf10711a8_TK-Logo_RGB.webp": {
+    "height": 800,
+    "src": "/media/partner/techniker-krankenkasse.webp",
+    "width": 800
+  },
+  "69c27caecbf11a85321304b6_Genesis_Logo_schwarz.svg": {
+    "height": 14,
+    "src": "/media/partner/genesis-thws.svg",
+    "width": 69
+  },
+  "69c7cef76a60ee0249b3ae73_image (1).webp": {
+    "height": 151,
+    "src": "/media/partner/fom-cibe.webp",
+    "width": 800
+  },
+  "69ca6bf7e67c98dbcd526dda_Untitled-design-33 (1).webp": {
+    "height": 276,
+    "src": "/media/partner/akb-mannheim.png",
+    "width": 800
+  },
+  "69ca7a82753d646e29e5d9dc_3638d329441e-Logo__1_.webp": {
+    "height": 65,
+    "src": "/media/partner/andercore.webp",
+    "width": 500
+  },
+  "69ca7ac47930d5f9fec5714a_7e75798ac760-horizontal_dark1.webp": {
+    "height": 162,
+    "src": "/media/partner/aurum-impact.webp",
+    "width": 800
+  },
+  "69ca7b2a3ac57d65c4c62821_cd2de2c011c8-Lanch_Logo__1_.webp": {
+    "height": 276,
+    "src": "/media/partner/lanch.png",
+    "width": 800
+  },
+  "69ca7b517930d5f9fec59588_735b5e039a11-enzo_logo_logo__1__removebg_preview.webp": {
+    "height": 101,
+    "src": "/media/partner/enzo.webp",
+    "width": 500
+  },
+  "69ca7d9b69865c1aefe90161_95201b958401-Trade_Republic_Logo_Black.svg": {
+    "height": 43,
+    "src": "/media/partner/trade-republic.svg",
+    "width": 501
+  },
+  "69ca7f1e0faa86ed16343be3_nalu.webp": {
+    "height": 140,
+    "src": "/media/partner/nalu.webp",
+    "width": 359
+  },
+  "69cb9aaca2bb6b14f8926265_c7dd59e606ec-7649280ffc9859d2af8aca4e16056922bc2089c0_758x430.svg": {
+    "height": 430,
+    "src": "/media/partner/cherry-ventures.svg",
+    "width": 758
+  },
+  "69ccfa37609878f4363ee205_fb__logo-green.svg": {
+    "height": 411,
+    "src": "/media/partner/acao.svg",
+    "width": 641
+  },
+  "69cd3174b2d22adca4fd030e_Enpal_Vektor_Logo.webp": {
+    "height": 243,
+    "src": "/media/partner/enpal.png",
+    "width": 800
+  },
+  "69cd31c48b3eb6ba2943545d_content24.webp": {
+    "height": 177,
+    "src": "/media/partner/content24.png",
+    "width": 800
+  },
+  "69cd330183ebf2d318304147_e6fa4f7c7c18-Redstone_Logo.webp": {
+    "height": 123,
+    "src": "/media/partner/redstone.png",
+    "width": 800
+  },
+  "69d2355e16b44cc26b4716ea_Mercanis _ In a line 2.svg": {
+    "height": 160,
+    "src": "/media/partner/mercanis.svg",
+    "width": 924
+  },
+  "69d56f2a9a89bbd27d09724b_KPMG_blue_logo.svg.webp": {
+    "height": 319,
+    "src": "/media/partner/kpmg.webp",
+    "width": 800
+  },
+  "69d572bf65a8e68b25cbc30a_logotyp-entrepreneurship-society-box-678x678-2-removebg-preview (2).webp": {
+    "height": 500,
+    "src": "/media/partner/entrepreneurship-society.webp",
+    "width": 500
+  },
+  "6a1e05db3d865ce65b9cea58_REONIC_NEWLOGO_BLACK.svg": {
+    "height": 102,
+    "src": "/media/partner/reonic.svg",
+    "width": 511
+  }
+}
