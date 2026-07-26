@@ -1,0 +1,54 @@
+---
+// Closing CTA, ported from the Webflow "section_hackathon_cta": heading and
+// tagline on the left, contact button on the right, stacked on mobile. Plain
+// section on the page background (the live page has no card treatment here;
+// DESIGN.md COLOR-2 forbids hand-set navy backgrounds anyway). is-small keeps
+// this closing banner tight against the FAQ section above it, matching the
+// live page's short gap. The button is navy like every other button on
+// the site, never orange (DESIGN.md COLOR-1, COMP-1).
+import Section from "../ui/Section.astro";
+import Button from "../ui/Button.astro";
+import Container from "../ui/Container.astro";
+
+interface Props {
+  heading: string;
+  text?: string;
+  ctaLabel: string;
+  ctaHref: string;
+}
+
+const { heading, text, ctaLabel, ctaHref } = Astro.props;
+---
+
+<Section small aria-labelledby="hack-cta-heading">
+  <Container>
+    <div class="cta-row">
+      <div class="content">
+        <h2 id="hack-cta-heading">{heading}</h2>
+        {text && <p class="cta-text">{text}</p>}
+      </div>
+      <Button href={ctaHref}>{ctaLabel}</Button>
+    </div>
+  </Container>
+</Section>
+
+<style>
+  .cta-row {
+    display: grid;
+    grid-template-columns: 1fr max-content;
+    gap: var(--space-md) var(--space-xl);
+    align-items: center;
+  }
+
+  .cta-text {
+    margin: var(--space-2xs) 0 0;
+    font-size: var(--text-size-medium);
+  }
+
+  @media (max-width: 767px) {
+    .cta-row {
+      grid-template-columns: 1fr;
+      justify-items: start;
+    }
+  }
+</style>

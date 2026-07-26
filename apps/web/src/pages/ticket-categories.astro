@@ -1,0 +1,40 @@
+---
+// /ticket-categories: ticket option cards, pricing comparison table, and
+// per-category detail accordion. All content loads at build time from
+// page-content.json via src/lib/content.ts; buy CTAs are plain external
+// links to the vivenu ticket shop (no embeds, no client JS).
+import Base from "../layouts/Base.astro";
+import TicketTierCards from "../components/tickets/TicketTierCards.astro";
+import PricingComparisonTable from "../components/tickets/PricingComparisonTable.astro";
+import CategoryAccordion from "../components/tickets/CategoryAccordion.astro";
+import { getPageContent } from "../lib/content";
+
+const { ticketCategories: page } = await getPageContent();
+---
+
+<Base
+  title={page.title}
+  description={page.metaDescription}
+  livePreviewGlobal="page-tickets"
+>
+  <TicketTierCards
+    heading={page.tiers.heading}
+    intro={page.tiers.intro}
+    tiers={page.tiers.items}
+  />
+
+  <PricingComparisonTable
+    heading={page.comparison.heading}
+    intro={page.comparison.intro}
+    comparison={{
+      tiers: page.comparison.tiers,
+      groups: page.comparison.groups,
+    }}
+    academicNote={page.comparison.academicNote}
+  />
+
+  <CategoryAccordion
+    heading={page.categories.heading}
+    details={page.categories.items}
+  />
+</Base>

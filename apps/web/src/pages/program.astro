@@ -1,0 +1,91 @@
+---
+// /program: conference agenda timeline, program FAQs, closing CTA.
+// All content loads at build time from page-content.json via
+// src/lib/content.ts. Photos are `/media/...` keys on R2 (local:
+// gitignored public/media), not committed binaries.
+import Base from "../layouts/Base.astro";
+import AgendaTimeline from "../components/program/AgendaTimeline.astro";
+import PageFaqAccordion from "../components/ui/PageFaqAccordion.astro";
+import ClosingCta from "../components/program/ClosingCta.astro";
+import {
+  afterpartyImg,
+  ctaImg,
+  innovillageImg,
+  pitchbattleImg,
+  qubeImg,
+  speechesImg,
+  speedDatingsImg,
+  workshopsImg,
+} from "../assets/media/program";
+import { getFaqs, getPageContent } from "../lib/content";
+
+const { program } = await getPageContent();
+
+const faqs = (await getFaqs()).filter((faq) => faq.page === "program");
+
+// Keyed by agenda title; unknown titles render without an image.
+const agendaImages: Record<string, { src: string; alt: string }> = {
+  Speeches: { src: speechesImg, alt: "Speaker on the Q-Summit main stage" },
+  Workshops: {
+    src: workshopsImg,
+    alt: "Attendees collaborating in a workshop",
+  },
+  "Speed-Datings": {
+    src: speedDatingsImg,
+    alt: "Students talking with founders at a speed-dating table",
+  },
+  Innovillage: {
+    src: innovillageImg,
+    alt: "Crowd between company booths in the Innovillage",
+  },
+  Pitchbattle: {
+    src: pitchbattleImg,
+    alt: "Startup founder pitching on stage",
+  },
+  Qube: { src: qubeImg, alt: "Private pitch session with investors" },
+  "Afterparty!": {
+    src: afterpartyImg,
+    alt: "Afterparty crowd at the Schneckenhof in Mannheim",
+  },
+};
+
+const agendaItems = program.agenda.items;
+const images = agendaItems.map((item) => agendaImages[item.title]);
+---
+
+<Base
+  title={program.title}
+  description={program.metaDescription}
+  livePreviewGlobal="page-program"
+>
+  {
+    /* The design has no visible page title above "Conference Agenda"
+       (DESIGN.md LAYOUT-4's centered .section-header opener starts one level down
+       at h2); a visually-hidden h1 from the real page title still gives
+       the page a single top-level heading (WCAG 1.3.1/2.4.6). */
+  }
+  <h1 class="u-visually-hidden">{program.title}</h1>
+  <AgendaTimeline
+    heading={program.agenda.heading}
+    intro={program.agenda.intro}
+    items={agendaItems}
+    images={images}
+  />
+
+  {
+    faqs.length > 0 && (
+      <PageFaqAccordion
+        heading={program.faqSection.heading}
+        intro={program.faqSection.intro}
+        faqs={faqs}
+        headerAlign="left"
+      />
+    )
+  }
+
+  <ClosingCta
+    heading={program.closingCta.heading}
+    text={program.closingCta.text}
+    image={{ src: ctaImg, alt: "Attendees networking at Q-Summit" }}
+  />
+</Base>

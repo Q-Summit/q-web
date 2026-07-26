@@ -1,0 +1,111 @@
+---
+// "Explore Our Ticket Categories" ported from the Webflow
+// "section_tickets_feature" section. The live layout scatters labels and
+// bullet lists across a broken grid; here each category is a native
+// details/summary accordion item (no client JS), first item open.
+import type { TicketCategoryDetail } from "../../lib/content";
+import Section from "../ui/Section.astro";
+import Container from "../ui/Container.astro";
+import IconChevron from "../icons/IconChevron.astro";
+
+interface Props {
+  heading: string;
+  details: TicketCategoryDetail[];
+}
+
+const { heading, details } = Astro.props;
+---
+
+<Section aria-labelledby="categories-heading">
+  <Container>
+    {
+      /* Left-aligned opener (exception to .section-header): the live page
+         keeps this heading left-aligned, like the ticket cards above it,
+         not the centered opener (DESIGN.md LAYOUT-4 exception). */
+    }
+    <div class="categories-header">
+      <h2 id="categories-heading">{heading}</h2>
+    </div>
+
+    <div class="category-list">
+      {
+        details.map((detail, index) => (
+          <details class="category" open={index === 0}>
+            <summary class="u-accordion-summary">
+              <span class="label">{detail.label}</span>
+              <span class="chevron" aria-hidden="true">
+                <IconChevron />
+              </span>
+            </summary>
+            <ul class="bullets">
+              {detail.bullets.map((bullet) => (
+                <li>{bullet}</li>
+              ))}
+            </ul>
+          </details>
+        ))
+      }
+    </div>
+  </Container>
+</Section>
+
+<style>
+  .categories-header {
+    max-width: var(--container-small);
+    margin-bottom: var(--section-gap);
+  }
+
+  .category-list {
+    border-bottom: 1px solid var(--color-neutral-lighter);
+  }
+
+  /* Box, marker reset and padding come from .u-accordion-summary
+     (global.css, DESIGN.md COMP-3); only this accordion's hairline is local. */
+  .category summary {
+    border-top: 1px solid var(--color-neutral-lighter);
+  }
+
+  .label {
+    font-size: var(--text-size-large);
+    font-weight: var(--heading-weight);
+    color: var(--color-heading);
+  }
+
+  .chevron {
+    display: flex;
+    flex-shrink: 0;
+    align-self: flex-start;
+    width: 2rem;
+    color: var(--color-heading);
+    transition: transform var(--duration-icon) var(--ease-snappy);
+  }
+
+  /* :global, because the svg is rendered by IconChevron and so carries that
+     component's scope, not this one's. */
+  .chevron :global(svg) {
+    width: 100%;
+    height: auto;
+  }
+
+  .category[open] .chevron {
+    transform: rotate(180deg);
+  }
+
+  .bullets {
+    display: grid;
+    gap: var(--space-xs);
+    max-width: var(--container-medium);
+    margin: 0;
+    padding: 0 0 1.75rem 1.25rem;
+  }
+
+  @media (max-width: 767px) {
+    .label {
+      font-size: var(--text-size-medium);
+    }
+
+    .chevron {
+      width: 1.75rem;
+    }
+  }
+</style>

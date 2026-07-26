@@ -1,0 +1,168 @@
+---
+// Ticket option cards ported from the Webflow "section_tickets_pricing"
+// section: five plans with the plain base price, a feature checklist, and
+// an external buy link to the ticket shop. Discount/on-conference pricing
+// (LATEBIRD) was deliberately dropped from the port in the content
+// transform (scripts/build-page-content.mjs): cards show the base price
+// only, and the LATEBIRD intro paragraph never reaches this component.
+import type { TicketTier } from "../../lib/content";
+import Section from "../ui/Section.astro";
+import Container from "../ui/Container.astro";
+import IconCheck from "../icons/IconCheck.astro";
+
+interface Props {
+  heading: string;
+  intro: string;
+  tiers: TicketTier[];
+}
+
+const { heading, intro, tiers } = Astro.props;
+---
+
+<Section aria-labelledby="tickets-heading">
+  <Container>
+    <div class="section-header tickets-header">
+      <h1 id="tickets-heading">{heading}</h1>
+      <p class="tickets-intro">{intro}</p>
+    </div>
+
+    <div class="plans">
+      {
+        tiers.map((tier) => {
+          return (
+            <article class="plan">
+              <h2 class="plan-name">{tier.name}</h2>
+              <p class="plan-prices">
+                <strong class="price">{tier.price}</strong>
+              </p>
+              <ul class="features" role="list">
+                {tier.features.map((feature) => (
+                  <li>
+                    <span class="check" aria-hidden="true">
+                      <IconCheck />
+                    </span>
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              {tier.note && <p class="plan-note">{tier.note}</p>}
+              <a
+                class="button plan-buy"
+                href={tier.buyHref}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {tier.buyLabel}
+              </a>
+            </article>
+          );
+        })
+      }
+    </div>
+  </Container>
+</Section>
+
+<style>
+  /* The live page renders its h1 at h2 scale, so the size is restated here
+     per DESIGN.md TYPE-1 as a documented live-site deviation. */
+  .tickets-header h1 {
+    font-size: var(--heading-h2-size);
+  }
+
+  .tickets-intro {
+    margin: 0;
+    font-size: var(--text-size-medium);
+  }
+
+  .plans {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: var(--space-md);
+    align-items: stretch;
+  }
+
+  @media (min-width: 1150px) {
+    .plans {
+      grid-template-columns: repeat(5, 1fr);
+    }
+  }
+
+  .plan {
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-lg) var(--space-md);
+    background-color: var(--color-background);
+    border: 1px solid var(--color-neutral-lighter);
+    border-radius: var(--radius-card);
+  }
+
+  /* Card title, not a section opener: sized down from the default h2 scale
+     to fit the tight card column (DESIGN.md TYPE-1 as a documented live-site deviation
+     clause). */
+  .plan-name {
+    margin-bottom: 1.25rem;
+    font-size: var(--heading-h6-size);
+    line-height: var(--heading-line-height-normal);
+    text-align: center;
+  }
+
+  /* The price is a <strong>, not a heading, but the live card sets it at the
+     h5 step, so it takes that token instead of a raw 1.5rem
+     (DESIGN.md TYPE-2, TYPE-4). */
+  /* The price holds 1.5rem on phones (DESIGN.md TYPE-2). --heading-h5-size
+     alone would drop it to 1.25rem below 767px, but the grid collapses to one
+     column there so the card is WIDER, and shrinking the number is backwards.
+     --heading-h4-size is exactly 1.5rem at that breakpoint. */
+  @media (max-width: 767px) {
+    .price {
+      font-size: var(--heading-h4-size);
+    }
+  }
+
+  .price {
+    font-size: var(--heading-h5-size);
+    font-weight: var(--heading-weight);
+    color: var(--color-heading);
+  }
+
+  .plan-prices {
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-2xs);
+  }
+
+  .features {
+    display: grid;
+    gap: var(--space-sm);
+    margin: 0 0 var(--space-sm);
+    padding: var(--space-xs) 0;
+    list-style: none;
+  }
+
+  .features li {
+    display: flex;
+    gap: var(--space-xs);
+    font-size: var(--text-size-small);
+  }
+
+  .check {
+    display: flex;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+    color: var(--color-primary);
+  }
+
+  .plan-note {
+    margin: 0.25rem 0 var(--space-sm);
+    font-size: var(--text-size-tiny);
+    font-style: italic;
+    text-align: center;
+  }
+
+  .plan-buy {
+    margin-top: auto;
+    align-self: stretch;
+  }
+</style>

@@ -1,0 +1,51 @@
+---
+// Hackathon schedule section (8th and 9th April): the shared ui/Timeline
+// pattern (COMP-3, PRIM-3) inside this page's section shell. Same timeline
+// as /program, ported from the Webflow "section_program_timeline-1-2" the
+// two pages share, but without the scroll-driven reveal: no `reveal` prop
+// here means pure CSS and no client JS, exactly as before.
+import type { AgendaItem } from "../../lib/content";
+import Section from "../ui/Section.astro";
+import Container from "../ui/Container.astro";
+import SectionHeader from "../ui/SectionHeader.astro";
+import Timeline, { type TimelineImage } from "../ui/Timeline.astro";
+
+interface Props {
+  heading: string;
+  intro?: string;
+  items: AgendaItem[];
+  /** `/media/...` image per schedule item, matched by index. */
+  images: (TimelineImage | undefined)[];
+}
+
+const { heading, intro, items, images } = Astro.props;
+---
+
+<Section aria-labelledby="schedule-heading">
+  <Container>
+    <SectionHeader>
+      {
+        /* Small uppercase kicker above the heading, matching the live
+          section's "Agenda" tagline (not present in the extracted copy,
+          so kept as a static label rather than invented CMS content). */
+      }
+      <p class="u-eyebrow is-quiet schedule-eyebrow">Agenda</p>
+      <h2 id="schedule-heading">{heading}</h2>
+      {
+        /* .timeline-intro is Timeline's own class (DESIGN.md COMP-3); the
+          rule lives there, next to the pattern both timeline pages share. */
+      }
+      {intro && <p class="timeline-intro">{intro}</p>}
+    </SectionHeader>
+
+    <Timeline items={items} images={images} />
+  </Container>
+</Section>
+
+<style>
+  /* Only the gap to the heading stays local; the voice itself is the
+     declared .u-eyebrow.is-quiet variant (DESIGN.md COMP-3). */
+  .schedule-eyebrow {
+    margin-bottom: 0.25rem;
+  }
+</style>
