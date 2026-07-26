@@ -1,0 +1,59 @@
+---
+/**
+ * Boots Payload Live Preview when this page is iframed by the CMS admin
+ * (or opened with ?live-preview=1). Pass the Payload global slug so editors
+ * editing that global see this route in the Live Preview panel.
+ *
+ * Public visitors: only this tiny gatekeeper runs (framed? / query?). The
+ * @payloadcms/live-preview bundle is dynamic-imported only when needed, so
+ * static CDN delivery stays unchanged and normal page loads stay lean.
+ *
+ * serverURL must match the CMS origin exactly (event.origin check).
+ */
+interface Props {
+  /** Payload global slug, e.g. page-home */
+  global: string;
+  /**
+   * CMS origin for postMessage + populate, e.g. http://localhost:3000 or
+   * https://cms.q-summit.de. Defaults to PUBLIC_CMS_URL / localhost:3000.
+   */
+  serverURL?: string;
+}
+
+const {
+  global: globalSlug,
+  serverURL = import.meta.env.PUBLIC_CMS_URL || "http://localhost:3000",
+} = Astro.props;
+---
+
+<div
+  id="q-live-preview-boot"
+  hidden
+  data-server-url={serverURL}
+  data-global={globalSlug}
+>
+</div>
+
+<script>
+  const boot = document.getElementById("q-live-preview-boot");
+  if (boot) {
+    const params = new URLSearchParams(window.location.search);
+    let framed = false;
+    try {
+      framed = window.self !== window.top;
+    } catch {
+      framed = true;
+    }
+    if (params.has("live-preview") || framed) {
+      const serverURL = boot.dataset.serverUrl || "http://localhost:3000";
+      const globalSlug = boot.dataset.global || "";
+      // Dynamic import: keeps @payloadcms/live-preview out of the public
+      // page's critical JS. Editors pay the download only inside the CMS iframe.
+      import("../../lib/live-preview/client.ts").then(({ bootLivePreview }) => {
+        bootLivePreview({ serverURL });
+        if (globalSlug)
+          document.documentElement.dataset.livePreview = globalSlug;
+      });
+    }
+  }
+</script>

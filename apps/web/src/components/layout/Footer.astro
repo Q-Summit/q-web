@@ -1,0 +1,235 @@
+---
+// Shared footer, used on every page via Base.astro. Content comes from
+// getSiteSettings() (identical on every page of the live site), so it
+// follows the content source at cutover. Layout keeps everything the live
+// footer has (Main Navigation column, Stay Updated social column with
+// labels) in a modernized three-column arrangement: brand block left,
+// the two link columns right, hairline, copyright bar.
+import { logoSrc } from "../../assets/media/brand";
+import { getSiteSettings } from "../../lib/content";
+import IconTikTok from "../icons/IconTikTok.astro";
+import IconInstagram from "../icons/IconInstagram.astro";
+import IconLinkedIn from "../icons/IconLinkedIn.astro";
+import IconYouTube from "../icons/IconYouTube.astro";
+
+const { footer } = await getSiteSettings();
+const { tagline, links, socialLinks, copyrightHolder } = footer;
+const year = new Date().getFullYear();
+
+function iconFor(platform: string) {
+  if (platform === "tiktok") return IconTikTok;
+  if (platform.startsWith("instagram")) return IconInstagram;
+  if (platform === "linkedin") return IconLinkedIn;
+  if (platform === "youtube") return IconYouTube;
+  return null;
+}
+---
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <a class="brand" href="/">
+          {
+            /* Decorative: the adjacent "Q-Summit" wordmark below already
+              names this link, so a repeated alt would make screen readers
+              announce "Q-Summit Q-Summit" (axe image-redundant-alt). */
+          }
+          <img src={logoSrc} alt="" width={72} height={72} decoding="async" />
+          <span class="brand-name">Q-Summit</span>
+        </a>
+        <p class="tagline">{tagline}</p>
+      </div>
+      <div class="footer-columns">
+        <nav aria-label="Main navigation" class="footer-col">
+          <p class="footer-heading">Main Navigation</p>
+          <ul>
+            {
+              links.map((link) => (
+                <li>
+                  <a href={link.href}>{link.label}</a>
+                </li>
+              ))
+            }
+          </ul>
+        </nav>
+        <nav aria-label="Social media" class="footer-col">
+          <p class="footer-heading">Stay Updated</p>
+          <ul>
+            {
+              socialLinks.map((link) => {
+                const Icon = iconFor(link.platform);
+                return (
+                  <li>
+                    <a
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="social-link"
+                    >
+                      {Icon && (
+                        <span class="social-icon" aria-hidden="true">
+                          <Icon />
+                        </span>
+                      )}
+                      <span>{link.label}</span>
+                    </a>
+                  </li>
+                );
+              })
+            }
+          </ul>
+        </nav>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="copyright">
+        &copy; {year}
+        {copyrightHolder}. All rights reserved.
+      </p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  /* Live site: white footer with logo and link columns. Chrome shared by
+     every page, so it hand-rolls its own vertical spacing instead of the
+     .section rhythm (DESIGN.md LAYOUT-3 applies to page sections only). */
+  .site-footer {
+    background-color: var(--color-background);
+    color: var(--color-text);
+    border-top: 1px solid var(--color-neutral-lighter);
+  }
+
+  .footer-inner {
+    padding-block: 4rem 1.75rem;
+  }
+
+  .footer-top {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--space-xl);
+    padding-bottom: var(--space-xl);
+    border-bottom: 1px solid var(--color-neutral-lighter);
+  }
+
+  .footer-brand {
+    display: grid;
+    gap: 1.25rem;
+    max-width: 24rem;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    text-decoration: none;
+  }
+
+  .brand img {
+    width: 4.5rem;
+    height: 4.5rem;
+  }
+
+  /* Wordmark next to the logo: brand lockup, not a document heading
+     (DESIGN.md TYPE-1), so it carries its own size and weight. The size
+     borrows the h5 step rather than a raw 1.5rem (DESIGN.md TYPE-2), which
+     also lets the lockup track the responsive heading scale. The 800 weight
+     sits between --heading-weight and --heading-weight-home and has no token
+     of its own, so it stays numeric (DESIGN.md TYPE-4). */
+  .brand-name {
+    font-size: var(--heading-h5-size);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.01em;
+    color: var(--color-primary);
+  }
+
+  .footer-brand .tagline {
+    margin: 0;
+    color: var(--color-neutral-dark);
+    font-size: var(--text-size-small);
+    line-height: 1.7;
+  }
+
+  .footer-columns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xl) 4.5rem;
+  }
+
+  .footer-col {
+    min-width: 11rem;
+  }
+
+  /* Column label, not a document heading (DESIGN.md TYPE-1), and
+     deliberately not the shared .u-eyebrow (DESIGN.md COMP-3): it labels a
+     navigation list rather than introducing a heading, so it keeps the
+     smaller, tighter footer treatment. */
+  .footer-heading {
+    margin: 0 0 1.1rem;
+    font-size: var(--text-size-tiny);
+    font-weight: var(--heading-weight);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+  }
+
+  .footer-col ul {
+    display: grid;
+    gap: 0.7rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .footer-col a {
+    color: var(--color-neutral-dark);
+    text-decoration: none;
+    font-size: var(--text-size-small);
+  }
+
+  .footer-col a:hover,
+  .footer-col a:focus-visible {
+    color: var(--color-primary);
+    text-decoration: underline;
+  }
+
+  .social-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    /* Icon inherits currentColor, so it shifts with the label on hover.
+       Tokenized per DESIGN.md MOTION-1: --duration-close is exactly the
+       200ms this always ran at, and --ease-snappy is the house ease-out. */
+    transition: color var(--duration-close) var(--ease-snappy);
+  }
+
+  /* DESIGN.md MOTION-2: reduced motion means no transition at all. The
+     hover color still changes, it just arrives instantly. */
+  @media (prefers-reduced-motion: reduce) {
+    .social-link {
+      transition: none;
+    }
+  }
+
+  .social-icon {
+    display: flex;
+  }
+
+  .social-icon :global(svg) {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .footer-bottom {
+    padding-top: var(--space-md);
+  }
+
+  .copyright {
+    margin: 0;
+    font-size: var(--text-size-tiny);
+    color: var(--color-neutral);
+  }
+</style>

@@ -1,0 +1,15 @@
+---
+// Serializes a plain object into a JSON-LD script block, escaping every "<"
+// as its < JSON escape so a value containing "</script>" (or "<!--")
+// can never break out of the element; the sequence stays valid JSON and
+// parses back to the identical string. type="application/ld+json" is a data
+// block, so Astro leaves it inline (it only bundles module/plain scripts).
+interface Props {
+  data: Record<string, unknown>;
+}
+
+const { data } = Astro.props;
+const json = JSON.stringify(data).replace(/</g, "\\u003c");
+---
+
+<script is:inline type="application/ld+json" set:html={json} />

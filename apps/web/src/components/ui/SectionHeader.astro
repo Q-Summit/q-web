@@ -1,0 +1,16 @@
+---
+// Layout primitive (AGENTS.md PRIM-1): the canonical centered section opener (.section-header:
+// centered h2 + optional intro; DESIGN.md LAYOUT-4). Styling lives in
+// global.css. Slot-based so callers keep their own <h2>/<p>, matching the
+// hand-written markup exactly. No scoped <style>, so output is byte-identical.
+//
+// Left-aligned or otherwise bespoke openers (the documented rule-4
+// exceptions) stay raw markup with their own scoped styles.
+interface Props {
+  /** Extra classes appended after "section-header". */
+  class?: string;
+}
+const { class: className } = Astro.props;
+---
+
+<div class:list={["section-header", className]}><slot /></div>

@@ -1,0 +1,447 @@
+/*
+ * Global base styles. Tokens live in tokens.css; this file applies them
+ * to elements and provides the few shared utility/button classes the
+ * live site uses everywhere. Page-specific styles belong in components.
+ */
+
+@import "./tokens.css";
+
+/* Montserrat's @font-face rules (primary + Astro's auto-generated
+   metric-matched fallback) are injected by the <Font> component in
+   Base.astro, not declared here (see astro.config.mjs's `fonts` and
+   tokens.css's --font-primary). */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-primary);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-line-height);
+  color: var(--color-text);
+  background-color: var(--color-background);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  font-weight: var(--heading-weight);
+  line-height: var(--heading-line-height-tight);
+  color: var(--color-heading);
+}
+
+h1 {
+  font-size: var(--heading-h1-size);
+}
+
+h2 {
+  font-size: var(--heading-h2-size);
+}
+
+h3 {
+  font-size: var(--heading-h3-size);
+}
+
+h4 {
+  font-size: var(--heading-h4-size);
+  line-height: var(--heading-line-height-normal);
+}
+
+h5 {
+  font-size: var(--heading-h5-size);
+  line-height: var(--heading-line-height-loose);
+}
+
+h6 {
+  font-size: var(--heading-h6-size);
+  line-height: var(--heading-line-height-loose);
+}
+
+p {
+  margin: 0 0 var(--space-sm);
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* astro:assets <Picture> wraps its <img> in a <picture> element; without
+   this it defaults to inline display and does not size to its content the
+   way a plain <img> does, breaking every width:100%/aspect-ratio rule below
+   that targets "img" as a descendant selector (the <picture> wrapper itself
+   still needs to participate in that same block-sizing flow). */
+picture {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+}
+
+/* Two-tone focus ring: the blue outline alone is >=3:1 against white
+   (~7.3:1) but only ~1.9:1 against the navy .is-dark sections (WCAG
+   1.4.11). The white box-shadow is wider than the outline's own extent
+   (offset 2px + width 2px = 4px), so it shows as a ring on BOTH sides of
+   the blue outline: sandwiched, the blue's adjacent color is always white
+   (~7.3:1, passes), and the outer white ring's adjacent color is the page
+   background, white or navy (1:1 blends in / ~21:1, passes). Either way
+   the composite indicator stays visible and >=3:1. */
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 6px var(--color-white);
+}
+
+/* Visually hidden until focused; first focusable element on every page
+   (Base.astro), jumps keyboard/screen-reader users past the nav straight
+   to <main> (WCAG 2.4.1). Pure CSS, no JS required. Position is fixed (not
+   in normal flow) so it never shifts layout; only transform/opacity
+   animate per the motion rules, and prefers-reduced-motion below turns
+   the transition off. */
+.skip-link {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 1000;
+  padding: var(--space-xs) 1.25rem;
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-weight: var(--font-weight-semibold);
+  text-decoration: none;
+  border-radius: var(--radius-button-small);
+  transform: translateY(-150%);
+  transition: transform var(--duration-close) var(--ease-snappy);
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skip-link {
+    transition: none;
+  }
+}
+
+/* Screen-reader-only text (DESIGN.md COMP-3). One implementation of the
+   standard clip-rect block, previously copied four times under two names
+   (.visually-hidden on program + contact, .sr-only on the job detail page
+   and the ticket comparison table). It lives here beside .skip-link because
+   both belong to the same accessibility family: content that is present for
+   assistive technology but not painted for sighted users.
+
+   Kept as clip + 1px box rather than display:none or visibility:hidden,
+   which remove the element from the accessibility tree entirely. */
+.u-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Uppercase eyebrow / kicker (DESIGN.md COMP-3): the small label above a
+   heading. One implementation for what used to be five class names with
+   four different letter-spacings (speaker page twice, BoardContacts,
+   ReachOut, HackSchedule). Margin is zero here so each site sets only the
+   gap it needs, and color is the one property a site may override, since
+   it depends on the ground the eyebrow sits on (COLOR-2 dark sections).
+
+   Footer's column label is deliberately NOT this class: it labels a
+   navigation list rather than introducing a heading, so it keeps its own
+   rule (see components/layout/Footer.astro). */
+.u-eyebrow {
+  margin: 0;
+  font-size: var(--text-size-small);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--color-primary);
+}
+
+/* The live site ships two eyebrow voices, not one: a light, widely tracked
+   kicker over the speaker page hero, and this small bold label. Flattening
+   them would be a redesign, so the shared rule above is the label and the
+   variance below is declared, not guessed away. Reconciling the two is a
+   design decision, not a refactor (DESIGN.md Typography). */
+.u-eyebrow.is-kicker {
+  font-size: var(--text-size-regular);
+  font-weight: var(--font-weight-light);
+}
+
+/* The hackathon schedule kicker: neutral, heavier and tightly tracked. The
+   third voice, declared rather than left as three ad hoc overrides. */
+.u-eyebrow.is-quiet {
+  font-weight: var(--heading-weight);
+  letter-spacing: 0.04em;
+  color: var(--color-neutral-dark);
+}
+
+/* Two contact-page labels read as sentence case on the live site. */
+.u-eyebrow.is-sentence {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* Centered call to action closing a section (DESIGN.md COMP-3): the button
+   row under a card grid, previously three names (.why-cta, .speakers-cta,
+   .partners-cta). The default gap is --section-gap, the same rhythm token
+   .section-header uses; a site whose live spacing differs overrides only
+   margin-top. */
+.u-section-cta {
+  margin-top: var(--section-gap);
+  text-align: center;
+}
+
+/* Cross-document view transitions (DESIGN.md MOTION-5).
+   Pure CSS, no JS: this at-rule opts the whole static multi-page site into
+   the browser's native page transition, so a click from /program to /speaker
+   cross-fades instead of flashing white. It is NOT Astro's <ClientRouter />,
+   which ships a client-side router; nothing here adds a byte of JS, and a
+   browser without support simply navigates as before (MOTION-4).
+
+   Only opacity animates, per MOTION-3, and only when the user has not asked
+   for reduced motion, per MOTION-2. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: var(--duration-page);
+    animation-timing-function: var(--ease-snappy);
+  }
+
+  /* The site header is stable across pages, so hold it still while the
+     document body cross-fades underneath it. */
+  .nav-inner {
+    view-transition-name: site-nav;
+  }
+}
+
+/* Layout utilities (client-first style, simplified).
+   See ../../DESIGN.md for the authoritative usage rules (LAYOUT-1 to LAYOUT-4). */
+
+.container {
+  width: 100%;
+  max-width: var(--container-large);
+  margin-inline: auto;
+  padding-inline: var(--padding-global);
+}
+
+/* Every page section: full-bleed element with .section, content in .container.
+   Never hand-roll section padding in components. */
+.section {
+  /* Exposes this section's actual background as a custom property so a
+     component can match it (e.g. the partner marquee's label scrim needs
+     to fade to "whatever this section's background is", not a hardcoded
+     white, so it still reads correctly if ever placed on .is-alternate). */
+  --section-surface: var(--color-background);
+  padding-block: var(--section-padding);
+}
+
+.section.is-small {
+  padding-block: var(--section-padding-small);
+}
+
+.section.is-alternate {
+  --section-surface: var(--color-background-alternate);
+  background-color: var(--color-background-alternate);
+}
+
+.section.is-dark {
+  --section-surface: var(--color-background-dark);
+  background-color: var(--color-background-dark);
+  color: var(--color-text-inverse);
+}
+
+.section.is-dark :where(h1, h2, h3, h4, h5, h6) {
+  color: var(--color-text-inverse);
+}
+
+/* Canonical section opener: centered heading + optional intro. */
+.section-header {
+  max-width: var(--container-small);
+  margin-inline: auto;
+  margin-bottom: var(--section-gap);
+  text-align: center;
+  display: grid;
+  gap: var(--section-header-gap);
+}
+
+.section-header h2 {
+  text-wrap: balance;
+}
+
+.section-header p {
+  margin: 0;
+  color: var(--color-neutral-dark);
+}
+
+.section.is-dark .section-header p {
+  color: var(--color-neutral-lighter);
+}
+
+/* The ONLY sanctioned use of the orange accent (DESIGN.md COLOR-1): an
+   inline highlight span
+   (live site: discounted ticket prices, single highlighted words).
+   Everything else (headings, numbers, dates, icons, buttons) stays
+   navy/neutral, matching the live site. */
+.text-highlight {
+  color: var(--color-accent);
+}
+
+/* Buttons (variants from the live site) */
+
+.button {
+  display: inline-block;
+  padding: var(--space-xs) var(--space-md) 0.65rem;
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-button);
+  font-family: inherit;
+  font-size: var(--text-size-regular);
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button:hover {
+  background-color: var(--color-background);
+  color: var(--color-primary);
+}
+
+.button.is-alternate {
+  border-radius: var(--radius-button-small);
+}
+
+.button.is-secondary {
+  background-color: transparent;
+  color: var(--color-text);
+  border: 1px solid currentcolor;
+  border-radius: var(--radius-button-small);
+}
+
+.button.is-small {
+  padding: var(--space-2xs) 1.25rem;
+  border-radius: var(--radius-button-small);
+}
+
+/* There is deliberately NO orange button variant (DESIGN.md COLOR-1): the live site has no
+   orange buttons on any page. Orange in text is .text-highlight only. */
+
+/* The clickable row of a native <details> accordion (DESIGN.md COMP-3,
+   COMP-4): label on the left, chevron on the right, native marker removed.
+   One implementation for what used to be four identical copies (home and
+   program FAQ, hackathon FAQ, ticket categories).
+
+   What each accordion still declares for itself: the hairline (three draw
+   a border-top on the summary, the home FAQ a border-bottom on the
+   <details>), the label's own type, the home FAQ's tighter gap, the mobile
+   padding, and the chevron rotation, which targets that accordion's own
+   chevron box (see the note in the animation block below). Anything past
+   that is a sign the pattern is not actually shared. */
+.u-accordion-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding-block: 1.25rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.u-accordion-summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Native <details>/<summary> accordions (DESIGN.md COMP-4): the FAQ
+   sections on home, program, and hackathon, plus the tickets category
+   list. Every
+   <details> on the site uses this one shared animation, not four copies
+   of it (DESIGN.md COMP-3). No JS widget replaces the native element; the
+   summary's chevron rotation lives per-component (it targets each
+   component's own chevron box, which is sized and colored differently)
+   but uses these same duration/easing tokens. The row itself is shared,
+   see .u-accordion-summary above, and the glyph is
+   components/icons/IconChevron.astro.
+   The modern stack (interpolate-size + ::details-content, both still
+   Chrome-only at time of writing) animates the native open/close height
+   plus a subtle fade/slide of the content; browsers without it fall back
+   to the plain instant native toggle, per progressive enhancement. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (interpolate-size: allow-keywords) {
+    html {
+      interpolate-size: allow-keywords;
+    }
+
+    details::details-content {
+      height: 0;
+      overflow-y: clip;
+      opacity: 0;
+      transform: translateY(-0.4rem);
+      transition:
+        content-visibility var(--duration-close) var(--ease-snappy)
+          allow-discrete,
+        height var(--duration-close) var(--ease-snappy),
+        opacity var(--duration-close) var(--ease-snappy),
+        transform var(--duration-close) var(--ease-snappy);
+    }
+
+    details[open]::details-content {
+      height: auto;
+      opacity: 1;
+      transform: translateY(0);
+      transition:
+        content-visibility var(--duration-open) var(--ease-snappy)
+          allow-discrete,
+        height var(--duration-open) var(--ease-snappy),
+        opacity var(--duration-open) var(--ease-snappy),
+        transform var(--duration-open) var(--ease-snappy);
+    }
+  }
+}
+
+/* Reduced motion: instant toggle, no animated properties at all (belt and
+   suspenders alongside the no-preference guard above, in case a browser
+   ships ::details-content support before this file is revisited). */
+@media (prefers-reduced-motion: reduce) {
+  details::details-content {
+    transition: none;
+  }
+
+  /* Each accordion's chevron rotation is declared per-component (it
+     targets that component's own icon markup), so silence it centrally
+     here rather than in four separate places. */
+  summary,
+  summary * {
+    transition: none !important;
+  }
+}

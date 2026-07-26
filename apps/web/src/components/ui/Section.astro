@@ -1,0 +1,57 @@
+---
+// Layout primitive (PRIM-1, PRIM-2): a full-bleed page section (.section) with
+// the sanctioned surface and size variants from global.css (DESIGN.md
+// LAYOUT-1, LAYOUT-3, COLOR-2). Content goes in a <Container> child, kept
+// explicit so each section maps 1:1 to the markup it replaces. No scoped
+// <style>: the element is styled entirely by global.css, so wrapping a plain
+// hand-written section changes nothing in the output. Emits classes in the
+// site's order: section, surface, size, extra.
+//
+// A section that carries a bespoke, component-scoped class (e.g.
+// `section is-dark hero`, where `.hero` is styled in the owning component)
+// must stay raw markup (PRIM-2): that scoped CSS only applies to elements the
+// component itself renders, so moving the element here would silently detach
+// it. Use this primitive for the standard, unstyled section shell.
+//
+// `as` picks the element. `.section` is a layout shell, so a shell that is
+// semantically an <article> (a job listing page body) or a <header> still gets
+// the same classes; only the tag name changes. The default `<section>` is
+// written out literally rather than through the dynamic tag: a dynamic tag
+// emits the caller's scope attribute before `class`, and keeping the literal
+// keeps every existing call site's HTML byte-identical.
+import type { HTMLAttributes } from "astro/types";
+
+interface Props extends HTMLAttributes<"section"> {
+  /** Background treatment: alternate (light grey) or dark (navy). */
+  variant?: "alternate" | "dark";
+  /** Tighter vertical padding (.is-small). */
+  small?: boolean;
+  /** Element to render; `.section` is a layout shell, not always a <section>. */
+  as?: "section" | "article" | "header" | "div";
+}
+const {
+  as: Tag = "section",
+  variant,
+  small,
+  class: className,
+  ...rest
+} = Astro.props;
+const classes = [
+  "section",
+  variant && `is-${variant}`,
+  small && "is-small",
+  className,
+];
+---
+
+{
+  Tag === "section" ? (
+    <section class:list={classes} {...rest}>
+      <slot />
+    </section>
+  ) : (
+    <Tag class:list={classes} {...rest}>
+      <slot />
+    </Tag>
+  )
+}

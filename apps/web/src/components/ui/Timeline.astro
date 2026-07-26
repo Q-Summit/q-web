@@ -1,0 +1,377 @@
+---
+// Shared pattern component (COMP-3, PRIM-3): the alternating image/text
+// timeline that /program (program/AgendaTimeline) and /hackathon
+// (hackathon/HackSchedule) both render, ported from the one Webflow
+// "program_timeline" section the two live pages share. Rows sit around a
+// central line that moves to a left rail on mobile.
+//
+// Unlike the style-less shells next to it (Section, Container,
+// SectionHeader, Button), this primitive OWNS its CSS. That does not cross
+// PRIM-2's boundary: PRIM-2 exists because scoped CSS only reaches elements
+// the component itself renders, and every element the rules below select is
+// rendered right here, not slotted in by the caller. The caller keeps its own
+// section shell, header and intro copy, which is where the two pages actually
+// differ.
+//
+// `reveal` opts into the scroll-tied effects that only /program has, so the
+// hackathon schedule does not gain an animation it never had. It emits
+// [data-reveal] on the list, and every reveal rule below is gated on that
+// attribute:
+//  - a progress line that fills downward as the timeline scrolls through
+//    the viewport;
+//  - each row fading/sliding in, and its date marker turning navy, as the
+//    row enters the viewport.
+// The progress line scales `transform` (compositor-only, MOTION-3) rather
+// than animating `clip-path`, which forced a main-thread repaint on every
+// scroll tick on an element this tall and was the cause of the reported
+// scroll flicker. Rows default to fully visible so the page reads correctly
+// with JS off or with neither CSS nor JS support for scroll-driven reveals.
+// The IntersectionObserver fallback that drives [data-timeline-js] lives in
+// AgendaTimeline, the only caller that asks for the reveal.
+import type { AgendaItem } from "../../lib/content";
+
+export interface TimelineImage {
+  /** Site-origin `/media/...` path served from R2 (or local public/media). */
+  src: string;
+  alt: string;
+}
+
+interface Props {
+  items: AgendaItem[];
+  /** Image per item, matched by index. */
+  images: (TimelineImage | undefined)[];
+  /** Opt in to the scroll-driven progress line and per-row reveal. */
+  reveal?: boolean;
+  /** Load the first row's image eagerly and at high priority (above the fold). */
+  priorityFirstImage?: boolean;
+}
+
+const {
+  items,
+  images,
+  reveal = false,
+  priorityFirstImage = false,
+} = Astro.props;
+---
+
+<ol class="timeline" data-reveal={reveal ? "true" : undefined}>
+  {
+    items.map((item, index) => {
+      const image = images[index];
+      const priority = priorityFirstImage && index === 0;
+      return (
+        <li class="row">
+          {image && (
+            <div class="media">
+              <img
+                src={image.src}
+                alt={image.alt}
+                width={800}
+                height={600}
+                loading={priority ? "eager" : "lazy"}
+                fetchpriority={priority ? "high" : undefined}
+                decoding="async"
+              />
+            </div>
+          )}
+          <div class="marker" aria-hidden="true">
+            <span class="dot" />
+          </div>
+          <div class="item">
+            <p class="date">{item.date}</p>
+            <h3>{item.title}</h3>
+            <p class="description">{item.description}</p>
+          </div>
+        </li>
+      );
+    })
+  }
+</ol>
+
+<style>
+  /* The intro paragraph above a timeline (DESIGN.md COMP-3): /program and
+     /hackathon shipped the identical two declarations under two names
+     (.agenda-intro, .schedule-intro), so it is one pattern and belongs with
+     the pattern that owns it.
+
+     It is `:global` rather than a prop or a slot because the paragraph is
+     the last child of the caller's <SectionHeader>, above this list, and a
+     prop would move it out of that centered opener and change the page.
+     Scoped CSS cannot reach an element this component does not render
+     (PRIM-2), so the rule ships globally, but only on the pages that render
+     a Timeline. Callers write <p class="timeline-intro"> and add nothing of
+     their own; margin and color already come from `.section-header p`.
+
+     If a third page ever wants this treatment without a timeline, promote it
+     to a `u-` utility in global.css and the DESIGN.md utilities table. */
+  :global(.timeline-intro) {
+    margin: 0;
+    font-size: var(--text-size-medium);
+    font-weight: var(--font-weight-medium);
+  }
+
+  .timeline {
+    position: relative;
+    display: grid;
+    gap: 5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Static center line with faded ends. */
+  .timeline::before {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    left: 50%;
+    width: 3px;
+    transform: translateX(-50%);
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      var(--color-neutral-lighter) 4rem,
+      var(--color-neutral-lighter) calc(100% - 4rem),
+      transparent
+    );
+  }
+
+  /* Scroll progress line: fills in navy as the timeline scrolls through
+     the viewport. Pure CSS; ignored by browsers without support. Scales
+     `transform` (compositor-only) rather than animating `clip-path`
+     (which forces a main-thread repaint on every scroll tick on an
+     element this tall, and was the cause of the reported scroll
+     flicker), anchored at the top via transform-origin so it still reads
+     as a downward fill. */
+  /* MOTION-2: the rail is scroll-driven, so it needs the same reduced-motion
+     gate as the row and dot reveals below, not just the @supports gate. */
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      .timeline[data-reveal]::after {
+        content: "";
+        position: absolute;
+        inset-block: 0;
+        left: 50%;
+        width: 3px;
+        transform-origin: top center;
+        transform: translateX(-50%) scaleY(0);
+        background: linear-gradient(
+          to bottom,
+          transparent,
+          var(--color-primary) 4rem,
+          var(--color-primary) calc(100% - 4rem),
+          transparent
+        );
+        animation: timeline-progress linear forwards;
+        animation-timeline: view();
+        animation-range: entry 25% exit 75%;
+      }
+    }
+  }
+
+  @keyframes timeline-progress {
+    to {
+      transform: translateX(-50%) scaleY(1);
+    }
+  }
+
+  /* Per-row reveal: fade/slide in and the marker dot turning navy as each
+     row enters the viewport, CSS-driven exactly like the progress line
+     above. Both this block and the [data-timeline-js] JS fallback below
+     default every row to fully visible first, so a browser with neither
+     scroll-timeline support nor JS (or prefers-reduced-motion) still
+     renders a complete, readable page: `.is-revealed` below only ever
+     narrows visibility further, on top of that visible default. */
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      .timeline[data-reveal] .row {
+        animation: timeline-row-reveal linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 55%;
+      }
+
+      .timeline[data-reveal] .dot {
+        animation: timeline-dot-reveal linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 45%;
+      }
+    }
+  }
+
+  @keyframes timeline-row-reveal {
+    from {
+      opacity: 0;
+      transform: translateY(1.5rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes timeline-dot-reveal {
+    from {
+      background-color: var(--color-neutral-lighter);
+    }
+    to {
+      background-color: var(--color-primary);
+    }
+  }
+
+  /* JS fallback for browsers without `animation-timeline: view()`
+     (Firefox/Safari at the time of writing): the caller's inline script adds
+     [data-timeline-js] to the list only once it has verified CSS
+     scroll-timelines are unsupported and prefers-reduced-motion is off,
+     then toggles .is-revealed per row via IntersectionObserver. Rows stay
+     at their fully-visible default otherwise (JS off, or JS on in a
+     browser that already animates them with CSS above). */
+  .timeline[data-timeline-js] .row {
+    opacity: 0;
+    transform: translateY(1.5rem);
+    transition:
+      opacity var(--duration-reveal) var(--ease-emphasized),
+      transform var(--duration-reveal) var(--ease-emphasized);
+  }
+
+  .timeline[data-timeline-js] .row.is-revealed {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .timeline[data-timeline-js] .dot {
+    background-color: var(--color-neutral-lighter);
+    /* Was a raw 0.4s; there is no 400ms token, so this takes the reveal step
+       it belongs to (DESIGN.md MOTION-1). The dot and its row are one reveal
+       triggered by the same observer entry, so they now land together. */
+    transition: background-color var(--duration-reveal) var(--ease-emphasized);
+  }
+
+  .timeline[data-timeline-js] .row.is-revealed .dot {
+    background-color: var(--color-primary);
+  }
+
+  .row {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 4rem 1fr;
+    column-gap: var(--space-xl);
+    align-items: start;
+  }
+
+  .media {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .media img,
+  .media picture {
+    aspect-ratio: 1;
+    width: 100%;
+  }
+
+  .media img {
+    object-fit: cover;
+    border-radius: var(--radius-card);
+  }
+
+  .marker {
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    justify-content: center;
+  }
+
+  .dot {
+    z-index: 1;
+    width: 0.9375rem;
+    height: 0.9375rem;
+    margin-top: 2.2rem;
+    border-radius: var(--radius-circle);
+    background-color: var(--color-primary);
+    box-shadow: 0 0 0 8px var(--color-background);
+  }
+
+  .item {
+    grid-column: 3;
+    grid-row: 1;
+    margin-top: var(--space-sm);
+  }
+
+  /* Alternate sides on desktop. */
+  .row:nth-child(even) .media {
+    grid-column: 3;
+  }
+
+  .row:nth-child(even) .item {
+    grid-column: 1;
+    text-align: right;
+  }
+
+  .date {
+    margin: 0 0 var(--space-xs);
+    font-size: var(--heading-h3-size);
+    font-weight: var(--heading-weight);
+    line-height: var(--heading-line-height-tight);
+    color: var(--color-heading);
+  }
+
+  /* The live timeline renders the item title at h5 scale, smaller than the
+     default h3 size, so it is restated here (DESIGN.md TYPE-1). */
+  .item h3 {
+    margin-bottom: var(--space-xs);
+    font-size: var(--heading-h5-size);
+    line-height: var(--heading-line-height-loose);
+  }
+
+  .description {
+    margin: 0;
+  }
+
+  @media (max-width: 991px) {
+    .row {
+      column-gap: var(--space-lg);
+    }
+  }
+
+  @media (max-width: 767px) {
+    .timeline {
+      gap: var(--space-xl);
+    }
+
+    /* Line and dots move to the left rail; image stacks above text. */
+    .timeline::before,
+    .timeline[data-reveal]::after {
+      left: 1.5rem;
+    }
+
+    .row {
+      grid-template-columns: 3rem 1fr;
+      column-gap: var(--space-sm);
+      row-gap: var(--space-md);
+    }
+
+    .marker,
+    .row:nth-child(even) .marker {
+      grid-column: 1;
+      grid-row: 1 / span 2;
+    }
+
+    .media,
+    .row:nth-child(even) .media {
+      grid-column: 2;
+      grid-row: 1;
+    }
+
+    .item,
+    .row:nth-child(even) .item {
+      grid-column: 2;
+      grid-row: 2;
+      margin-top: 0;
+      text-align: left;
+    }
+
+    .dot {
+      margin-top: var(--space-2xs);
+    }
+  }
+</style>
