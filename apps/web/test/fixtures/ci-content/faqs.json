@@ -1,0 +1,97 @@
+[
+  {
+    "question": "What is Q-Summit?",
+    "answerHtml": "<p class=\"paragraph is-left\">Q-Summit is one of Germany's premier startup conferences, bringing together innovators and entrepreneurs. Attendees can network, share ideas, and gain insights from industry leaders. It's a platform for collaboration and inspiration.</p>",
+    "page": "index"
+  },
+  {
+    "question": "When does it take place?",
+    "answerHtml": "<p class=\"paragraph is-left\">The Q-Summit is scheduled for April 1-2, 2027, the Q-Summit-Hackathon is scheduled for March 31-April 1, 2027. It will take place at the University of Mannheim, Germany. Mark your calendars for an unforgettable experience!</p>",
+    "page": "index"
+  },
+  {
+    "question": "Who should attend?",
+    "answerHtml": "<p class=\"paragraph is-left\">Q-Summit is ideal for startups, founders, investors, and anyone interested in the startup ecosystem. Whether you're a student, a seasoned professional or just starting out, there's something for everyone. Join us to expand your network and knowledge.</p>",
+    "page": "index"
+  },
+  {
+    "question": "How can I participate?",
+    "answerHtml": "<p class=\"paragraph is-left\">Simply click on the \"Grab your ticket now!\" button once the ticketing starts in January 2027 and fill out the form. The event (including evening events) is open to conference attendees with valid tickets only. No external people without tickets are allowed!</p>",
+    "page": "index"
+  },
+  {
+    "question": "Which languages do I need to speak?",
+    "answerHtml": "<p class=\"paragraph is-left\">As the speeches, panels and workshops are held in English and German, understanding both languages would be best. However, if you only understand English you can still get most out of the conference.</p>",
+    "page": "index"
+  },
+  {
+    "question": "Are there more events than mentioned on the page?",
+    "answerHtml": "<div class=\"max-width-large\"><p>Yes, the above list only provides an insight into the formats. More program items will be added later, so feel free to drop by from time to time! You will also find the full agenda on our event app, which you will receive access to shortly before the start of the event if you have purchased a ticket.</p></div>",
+    "page": "program"
+  },
+  {
+    "question": "Who are the speakers?",
+    "answerHtml": "<div class=\"max-width-large\"><p>Our lineup features industry leaders and experts who will share their insights and experiences. Each speaker is carefully selected based on their expertise and ability to inspire. You'll have the chance to learn from the best in the field. The exact speaker line-up will be announced soon!</p></div>",
+    "page": "program"
+  },
+  {
+    "question": "How do I register?",
+    "answerHtml": "<div class=\"max-width-large\"><p>Registration is easy! Simply visit our registration page, fill out the required information, and submit your payment. Once registered, you will receive a confirmation email with all the details.</p></div>",
+    "page": "program"
+  },
+  {
+    "question": "Is there a fee?",
+    "answerHtml": "<div class=\"max-width-large\"><p>Yes, there is a registration fee to attend the event. The fee covers access to all sessions, materials, food, drinks and networking opportunities. Early bird pricing is available for those who register in advance.</p></div>",
+    "page": "program"
+  },
+  {
+    "question": "What is the location?",
+    "answerHtml": "<div class=\"max-width-large\"><p>The event will take place at the University of Mannheim, easily accessible by public transport. Detailed directions and accommodation options will be provided upon registration. We look forward to welcoming you to a vibrant and engaging environment.</p></div>",
+    "page": "program"
+  },
+  {
+    "question": "What is a hackathon?",
+    "answerHtml": "<p>A hackathon is a time-limited event where individuals or teams collaborate intensively to solve problems or create innovative projects, often in the realm of technology. These events encourage creativity, teamwork, and quick problem-solving, and typically involve coding, designing, and presenting solutions within a set timeframe, which can range from a few hours to several days.<br/></p>",
+    "page": "hackathon"
+  },
+  {
+    "question": "How do I participate?",
+    "answerHtml": "<p>To participate in the Q-Summit hackathon, you need to register through our website. Once registered, you will receive updates about the event and team formation. You will even get a free ticket for the Q-Summit conference which is worth 74€.<br/></p>",
+    "page": "hackathon"
+  },
+  {
+    "question": "Who can join?",
+    "answerHtml": "<p>The hackathon is open to anyone with a passion for technology and problem-solving. Whether you're a student, a professional, or an enthusiast, you are welcome to join. Teams can be formed prior to the event or on-site.</p>",
+    "page": "hackathon"
+  },
+  {
+    "question": "What is the required team size, and what happens if we don’t have enough team members?",
+    "answerHtml": "<p>Each team should consist of 5 participants. If you're applying with a smaller group or as an individual, don’t worry, we will match you with other participants to form a complete team.<br/></p>",
+    "page": "hackathon"
+  },
+  {
+    "question": "What are the prizes?",
+    "answerHtml": "<p>Prizes for the top teams include cash rewards, mentorship opportunities, and tech gadgets. Additionally, winners may receive recognition from our partner companies, enhancing their professional profiles. It's a fantastic opportunity to gain exposure and rewards for your hard work. Each challenge has its own prizes for their challenge. Additonally there will be an overall prize pool for the best teams, which will get the chance to present their result infront of the Q-Summit Mainstage.</p>",
+    "page": "hackathon"
+  },
+  {
+    "question": "When will I find out whether I can take part or not?",
+    "answerHtml": "<p>You’ll receive updates on your application status every so often, typically two weeks after submitting it. Just a heads-up, once accepted, you’ll be asked to confirm your attendance closer to the event as we send out notifications for that.<br/></p>",
+    "page": "hackathon"
+  },
+  {
+    "question": "Do I need to know how to code?",
+    "answerHtml": "<p>Not necessarily; however, spots for participants without prior coding experience can be limited.<br/></p>",
+    "page": "hackathon"
+  },
+  {
+    "question": "I don't live in Mannheim, where can I stay during the hackathon?",
+    "answerHtml": "<p>You can indicate within the application form that you will need accommodation during the Hackathon and we will organise a place to stay for you.<br/></p>",
+    "page": "hackathon"
+  },
+  {
+    "question": "What is the Code of Conduct?",
+    "answerHtml": "<p>To ensure a safe, inclusive, and welcoming environment for everyone, all attendees must abide by the <a class=\"link-2\" href=\"https://github.com/MLH/mlh-policies/blob/main/code-of-conduct.md\" target=\"_blank\">MLH Code of Conduct.</a><br/></p>",
+    "page": "hackathon"
+  }
+]

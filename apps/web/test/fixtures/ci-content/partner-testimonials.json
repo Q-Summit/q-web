@@ -1,0 +1,12 @@
+[
+  {
+    "quote": "Placeholder testimonial quote for CI fixture builds.",
+    "attribution": "Alex Example, Example Co",
+    "photoFilename": "fixture-missing-photo.webp"
+  },
+  {
+    "quote": "A second placeholder quote so multi-item layouts render.",
+    "attribution": "Sam Sample, Sample GmbH",
+    "photoFilename": "fixture-missing-photo.webp"
+  }
+]

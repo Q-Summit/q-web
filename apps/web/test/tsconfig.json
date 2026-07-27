@@ -1,0 +1,28 @@
+{
+  // Isolated like worker/tsconfig.json (does NOT extend astro's DOM preset):
+  // the tests import worker/index.ts and run under workerd, so they type
+  // against the wrangler-generated runtime types in
+  // ../worker-configuration.d.ts, not lib.dom -- the two collide (Response,
+  // Request, ...). "@cloudflare/vitest-pool-workers/types" adds the
+  // "cloudflare:test" module (env, SELF, createExecutionContext, ...).
+  "compilerOptions": {
+    "target": "es2022",
+    "lib": ["es2022"],
+    "module": "es2022",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "types": ["@cloudflare/vitest-pool-workers/types"]
+  },
+  // content.test.ts / media-filename.test.ts are Node-typed instead (see
+  // tsconfig.node.json): they import src/lib modules that use node:fs /
+  // process, and run in the "node" vitest project, not the Workers pool.
+  "include": [
+    "./**/*.ts",
+    "../worker/index.ts",
+    "../worker-configuration.d.ts"
+  ],
+  "exclude": ["./content.test.ts", "./media-filename.test.ts"]
+}
