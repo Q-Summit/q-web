@@ -1,0 +1,198 @@
+---
+// Shared portrait grid: a centered, wrapping row of member cards
+// (rounded portrait, name, role), matching the live Webflow collection
+// lists. Used per division on /our-team; past-teams reuses the hero and
+// toggle but shows one group photo per year instead.
+import { Picture } from "../../lib/astro-assets";
+import type { TeamMember } from "../../lib/content";
+import { photoSrc } from "../../lib/media-filename";
+import { resolveContentImage } from "../../lib/images";
+import IconLinkedIn from "../icons/IconLinkedIn.astro";
+
+interface Props {
+  members: TeamMember[];
+  /** Eager-load portraits in the first grid so it paints fast. */
+  eager?: boolean;
+}
+
+const { members, eager = false } = Astro.props;
+
+const memberImages = await Promise.all(
+  members.map((member) =>
+    resolveContentImage(
+      member.photoFilename,
+      `team member ${member.name ?? member.photoFilename}`,
+    ),
+  ),
+);
+---
+
+<ul class="team-grid" role="list">
+  {
+    members.map((member, i) => (
+      <li class="team-grid__item">
+        <article class="member-card">
+          <div class="member-card__portrait">
+            {memberImages[i] ? (
+              <Picture
+                src={memberImages[i]!}
+                alt={member.name ?? "Q-Summit team member"}
+                widths={[300, 400]}
+                sizes="(max-width: 479px) 45vw, (max-width: 767px) 30vw, 20vw"
+                formats={["avif", "webp"]}
+                fallbackFormat="jpg"
+                quality={80}
+                loading={eager && i < 6 ? "eager" : "lazy"}
+                decoding="async"
+              />
+            ) : (
+              <img
+                src={photoSrc(member.photoFilename)}
+                alt={member.name ?? "Q-Summit team member"}
+                width="800"
+                height="1000"
+                loading={eager && i < 6 ? "eager" : "lazy"}
+                decoding="async"
+              />
+            )}
+          </div>
+          <p class="member-card__name">
+            {member.name}
+            {member.linkedin && (
+              <a
+                class="member-card__linkedin"
+                href={member.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${member.name} on LinkedIn`}
+              >
+                <IconLinkedIn />
+              </a>
+            )}
+          </p>
+          <p class="member-card__role">{member.role}</p>
+        </article>
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  /* Live site: fixed 4-up rows on desktop, left-aligned leftovers
+     (not centered), 2-up on mobile. */
+  .team-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-md);
+    /* measure limit inside .container, keeps cards near the live width */
+    max-width: var(--container-medium);
+    margin: 0 auto;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (min-width: 480px) {
+    .team-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  @media (min-width: 768px) {
+    .team-grid {
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-lg);
+    }
+  }
+
+  .member-card {
+    text-align: left;
+  }
+
+  /* DEPTH-1: the portrait rests at the lift step, which is what the ported
+     literal already was; the card floats above the page even unhovered. */
+  .member-card__portrait {
+    overflow: hidden;
+    border-radius: var(--radius-card-large);
+    box-shadow: var(--shadow-lifted);
+  }
+
+  .member-card__portrait img,
+  .member-card__portrait picture {
+    width: 100%;
+  }
+
+  .member-card__portrait img {
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    transition: transform var(--duration-hover) var(--ease-snappy);
+  }
+
+  .member-card:hover .member-card__portrait img {
+    transform: scale(1.04);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .member-card__portrait img,
+    .member-card:hover .member-card__portrait img {
+      transform: none;
+      transition: none;
+    }
+  }
+
+  /* TYPE-4: a <p> carrying heading color and heading weight (the live site
+     styles the member name that way without making it a heading element). */
+  .member-card__name {
+    margin: var(--space-xs) 0 0;
+    font-size: var(--text-size-regular);
+    font-weight: var(--heading-weight);
+    color: var(--color-heading);
+  }
+
+  /* Sits inline after the last word of the name rather than in a flex row of
+     its own: a two-line name then keeps the icon beside its final line
+     instead of centering it against the whole block. The nudge values are
+     optical sub-rem alignment, which SPACE-1 leaves raw on purpose. */
+  .member-card__linkedin {
+    display: inline-flex;
+    margin-left: 0.375rem;
+    vertical-align: -0.125em;
+    /* Navy is the brand color for icons (DESIGN.md COLOR-1 / COLOR-3 note
+       that icons are navy or neutral); --color-primary is its role token. */
+    color: var(--color-primary);
+    transition: opacity var(--duration-hover) var(--ease-snappy);
+  }
+
+  /* Paint-only hover feedback, which MOTION-3 allows; no second color token
+     is needed and the mark keeps its brand color throughout. */
+  .member-card__linkedin:hover,
+  .member-card__linkedin:focus-visible {
+    opacity: 0.7;
+  }
+
+  /* :global because the svg comes from IconLinkedIn.astro, so it carries that
+     component's scope id, not this one. Same idiom as the footer social
+     icons (Footer.astro). Without it the rule never matches and the icon
+     renders with no intrinsic size. `em` ties the mark to the name's size so
+     the two scale together at the 767px type breakpoint. */
+  .member-card__linkedin :global(svg) {
+    width: 1em;
+    height: 1em;
+    display: block;
+  }
+
+  /* MOTION-2 escape for the hover fade. It has to come after the rule above,
+     not in the reduced-motion block further up: the two selectors have equal
+     specificity, so a media block placed earlier in the file loses on source
+     order and the transition would survive. */
+  @media (prefers-reduced-motion: reduce) {
+    .member-card__linkedin {
+      transition: none;
+    }
+  }
+
+  .member-card__role {
+    margin: 0.125rem 0 0;
+    font-size: var(--text-size-small);
+    color: var(--color-neutral-dark);
+  }
+</style>

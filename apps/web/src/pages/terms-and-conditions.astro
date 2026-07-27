@@ -1,0 +1,16 @@
+---
+// /terms-and-conditions: German terms, rendered verbatim from getLegal().
+import Base from "../layouts/Base.astro";
+import LegalBody from "../components/contact-legal/LegalBody.astro";
+import { getLegal } from "../lib/content";
+
+const legal = await getLegal();
+---
+
+<Base
+  title="Terms and Conditions"
+  description="Terms and conditions for Q-Summit tickets and participation."
+>
+  <h1 class="u-visually-hidden">Terms and Conditions</h1>
+  <LegalBody html={legal["terms-and-conditions"]} />
+</Base>

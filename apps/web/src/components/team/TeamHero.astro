@@ -1,0 +1,147 @@
+---
+// Full-height hero shared by /our-team and /past-teams: the current-team
+// group photo behind a dark overlay with a centered white H1, matching the
+// live header7/header65 section.
+import { Picture } from "../../lib/astro-assets";
+import { TEAM_HERO_PHOTO, widePhotoSrc } from "../../lib/team-media";
+import { resolveContentImage } from "../../lib/images";
+
+interface Props {
+  title: string;
+  /** Payload Live Preview path for the title, e.g. "heading". */
+  lpTitle?: string;
+}
+
+const { title, lpTitle } = Astro.props;
+
+// Group photo used as the hero background on both live team pages: this is
+// the LCP element on both routes, so it stays loading="eager"/fetchpriority
+// "high" through the pipeline.
+const backgroundImage = await resolveContentImage(
+  TEAM_HERO_PHOTO,
+  "team hero background",
+);
+const background = widePhotoSrc(TEAM_HERO_PHOTO);
+---
+
+<header class="team-hero">
+  {
+    backgroundImage ? (
+      <Picture
+        class="team-hero__image"
+        src={backgroundImage}
+        alt=""
+        widths={[800, 1200, 1600]}
+        sizes="100vw"
+        formats={["avif", "webp"]}
+        fallbackFormat="jpg"
+        quality={80}
+        loading="eager"
+        fetchpriority="high"
+        decoding="async"
+      />
+    ) : (
+      <img
+        class="team-hero__image"
+        src={background.src}
+        srcset={background.srcset}
+        sizes="100vw"
+        alt=""
+        width="1600"
+        height="1066"
+        loading="eager"
+        fetchpriority="high"
+        decoding="async"
+      />
+    )
+  }
+  <div class="team-hero__overlay" aria-hidden="true"></div>
+  <div class="container team-hero__content">
+    <h1 class="team-hero__title" data-lp={lpTitle}>{title}</h1>
+  </div>
+</header>
+
+<style>
+  .team-hero {
+    /* Fraction of the source photo trimmed off each end, consumed by
+       .team-hero__image below. The top is mostly empty building facade and
+       the bottom is pavement, so both are spent before the group is. */
+    --hero-crop-top: 0.28;
+    --hero-crop-bottom: 0.12;
+    position: relative;
+    min-height: min(100svh, 52rem);
+    overflow: hidden;
+  }
+
+  /* Phones crop harder and sit in a shorter band. The trimmed photo is wider
+     than 2:1, so a tall viewport spends its height budget throwing away width
+     instead: shortening the band is what keeps the ends of the group in frame
+     while the deeper trim removes the dead facade and pavement. */
+  @media (max-width: 767px) {
+    .team-hero {
+      --hero-crop-top: 0.325;
+      --hero-crop-bottom: 0.075;
+      min-height: min(50svh, 25rem);
+    }
+  }
+
+  /* Show only the middle band of the photo, trimming facade off the top and
+     pavement off the bottom, so the hero reads as a portrait of the team
+     rather than of the building it stands in front of.
+
+     Done in CSS rather than by re-cutting the file: the same asset is in the
+     CMS media library and R2, and the two page sizes want different trims.
+
+     The element is scaled to 1/shown of the band and pulled up by the top
+     trim, so both offcuts overflow into .team-hero's overflow:hidden. At
+     these ratios `cover` scales by height, so the element holds the whole
+     photo and the clipped regions are exactly the fractions above. On a band
+     wider than about 2.4:1 `cover` turns width-driven and the trim deepens;
+     anchoring the bottom keeps that extra bite on the facade end. */
+  .team-hero__image {
+    --hero-shown: calc(1 - var(--hero-crop-top) - var(--hero-crop-bottom));
+    position: absolute;
+    inset-inline: 0;
+    top: calc(-100% * var(--hero-crop-top) / var(--hero-shown));
+    width: 100%;
+    height: calc(100% / var(--hero-shown));
+    object-fit: cover;
+    object-position: center bottom;
+  }
+
+  .team-hero__overlay {
+    position: absolute;
+    inset: 0;
+    /* The shared scrim token, same value the home hero uses (DESIGN.md COLOR-3). */
+    background-color: var(--color-overlay);
+  }
+
+  /* Centered, with the crop above doing the work of keeping it off the faces:
+     the top trim is set so the face row ends around 43% of the band, which
+     leaves the middle sitting on the sweatshirts. Nudging the title off center
+     instead was the earlier approach and read as misaligned.
+
+     Positioned rather than laid out with flex because percentage padding
+     resolves against width, not height, and the phone band below needs a
+     different anchor than dead center. */
+  .team-hero__content {
+    position: absolute;
+    inset-inline: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    text-align: center;
+  }
+
+  /* The deeper phone trim lifts the group in the frame, so the title follows
+     it up to stay on the trousers rather than drifting onto the pavement. */
+  @media (max-width: 767px) {
+    .team-hero__content {
+      top: 57%;
+    }
+  }
+
+  .team-hero__title {
+    color: var(--color-text-inverse);
+    text-wrap: balance;
+  }
+</style>

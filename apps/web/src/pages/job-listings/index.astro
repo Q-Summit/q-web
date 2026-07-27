@@ -1,0 +1,32 @@
+---
+// /job-listings: job board index ported from the live Webflow page.
+// Header copy and meta description match the live site; all listings
+// load at build time from the extracted JSON via src/lib/content.ts.
+import Base from "../../layouts/Base.astro";
+import JobBoard from "../../components/jobs/JobBoard.astro";
+import { getJobs, getPageContent } from "../../lib/content";
+import SectionHeader from "../../components/ui/SectionHeader.astro";
+
+const [{ jobs: page }, jobs] = await Promise.all([getPageContent(), getJobs()]);
+---
+
+<Base
+  title={page.title}
+  description={page.metaDescription}
+  livePreviewGlobal="page-jobs"
+>
+  <JobBoard jobs={jobs}>
+    <SectionHeader>
+      <!-- h1 here (not h2) is the page title; sized like an h2 to match
+           the live page's header, which uses the smaller heading style. -->
+      <h1 class="jobs-title" data-lp="heading">{page.heading}</h1>
+      <p>{page.intro}</p>
+    </SectionHeader>
+  </JobBoard>
+</Base>
+
+<style>
+  .jobs-title {
+    font-size: var(--heading-h2-size);
+  }
+</style>

@@ -1,0 +1,28 @@
+---
+// /404: static not-found page. wrangler.jsonc's assets.not_found_handling
+// ("404-page") serves dist/404.html for any unmatched route, both locally
+// and on the Cloudflare Worker.
+import Base from "../layouts/Base.astro";
+import Section from "../components/ui/Section.astro";
+import Container from "../components/ui/Container.astro";
+import SectionHeader from "../components/ui/SectionHeader.astro";
+import Button from "../components/ui/Button.astro";
+---
+
+<Base
+  title="Page not found"
+  description="This page does not exist. Head back to the Q-Summit homepage."
+  noindex
+>
+  <Section>
+    <Container>
+      <SectionHeader>
+        <h1>Page not found</h1>
+        <p>The page you are looking for does not exist or may have moved.</p>
+      </SectionHeader>
+      <div class="u-section-cta">
+        <Button href="/">Back to homepage</Button>
+      </div>
+    </Container>
+  </Section>
+</Base>

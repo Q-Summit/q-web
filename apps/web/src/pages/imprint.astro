@@ -1,0 +1,16 @@
+---
+// /imprint: German legal notice, rendered verbatim from getLegal().
+import Base from "../layouts/Base.astro";
+import LegalBody from "../components/contact-legal/LegalBody.astro";
+import { getLegal } from "../lib/content";
+
+const legal = await getLegal();
+---
+
+<Base
+  title="Imprint"
+  description="Legal notice (Impressum) for Q-Summit, Germany's largest student-led startup conference."
+>
+  <h1 class="u-visually-hidden">Imprint</h1>
+  <LegalBody html={legal.imprint} />
+</Base>

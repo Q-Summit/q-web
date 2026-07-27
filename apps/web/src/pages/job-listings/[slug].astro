@@ -1,0 +1,347 @@
+---
+// /job-listings/[slug]: static job detail pages, one per entry in the
+// extracted jobs.json. Slugs come verbatim from the data so every legacy
+// Webflow URL keeps working. Layout ports the live ".job" card: company
+// logo, "Company | Role" header, sectioned rich text, and the apply CTA.
+import Base from "../../layouts/Base.astro";
+import JsonLd from "../../components/seo/JsonLd.astro";
+import { getJobs, getPageContent, type Job } from "../../lib/content";
+import { logoSrc } from "../../components/jobs/logo";
+import IconMapPin from "../../components/icons/IconMapPin.astro";
+import Container from "../../components/ui/Container.astro";
+import Section from "../../components/ui/Section.astro";
+
+export async function getStaticPaths() {
+  const [jobs, { jobs: jobsPage }] = await Promise.all([
+    getJobs(),
+    getPageContent(),
+  ]);
+  // "<title> at <company>" is not unique across slugs: three partner listings
+  // repost the same role (e.g. two Oliver Wyman "Consultant (m/f/d)" postings).
+  // Count the base tags so we can disambiguate only the colliders and leave
+  // every unique listing's title/description clean.
+  const baseTagCounts = new Map<string, number>();
+  for (const job of jobs) {
+    const base = `${job.title} at ${job.company}`;
+    baseTagCounts.set(base, (baseTagCounts.get(base) ?? 0) + 1);
+  }
+  return jobs.map((job) => {
+    const baseTag = `${job.title} at ${job.company}`;
+    // Prefer real location data; fall back to the (globally unique, self-
+    // canonical) slug rather than inventing any facts, and only when the base
+    // tag actually collides.
+    const disambiguator =
+      (baseTagCounts.get(baseTag) ?? 0) > 1 ? (job.location ?? job.slug) : null;
+    return {
+      params: { slug: job.slug },
+      props: {
+        job,
+        howToContactHeading: jobsPage.detailHowToContactHeading,
+        disambiguator,
+      },
+    };
+  });
+}
+
+export interface Props {
+  job: Job;
+  howToContactHeading: string;
+  disambiguator: string | null;
+}
+
+const { job, howToContactHeading, disambiguator } = Astro.props;
+
+const baseTag = `${job.title} at ${job.company}`;
+const metaTitle = disambiguator ? `${baseTag} (${disambiguator})` : baseTag;
+const metaDescription = `${metaTitle}: a job listing from the Q-Summit partner network.`;
+
+const isMailto = job.applyUrl.startsWith("mailto:");
+const applyLabel = isMailto ? "Apply via Email" : "Apply Now";
+const applyDisplay = isMailto
+  ? job.applyUrl.slice("mailto:".length)
+  : job.applyUrl;
+
+// BreadcrumbList mirroring the visible breadcrumb. Item URLs are absolute and
+// trailing-slashed to match canonicals/sitemap. All data is real (title,
+// company, slug). No JobPosting: jobs.json has no datePosted and location is
+// free-text/missing on most, so it would fail Google's required fields.
+const breadcrumbLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "Home",
+      item: new URL("/", Astro.site).href,
+    },
+    {
+      "@type": "ListItem",
+      position: 2,
+      name: "Job Listings",
+      item: new URL("/job-listings/", Astro.site).href,
+    },
+    {
+      "@type": "ListItem",
+      position: 3,
+      name: `${job.title} at ${job.company}`,
+      item: new URL(`/job-listings/${job.slug}/`, Astro.site).href,
+    },
+  ],
+};
+---
+
+{
+  /* Base composes "<siteTitle> | <title>" centrally; this only supplies the
+     page-specific half so job pages don't end up double-prefixed. */
+}
+<Base
+  title={metaTitle}
+  description={metaDescription}
+  livePreviewGlobal="page-jobs"
+>
+  <Fragment slot="jsonld">
+    <JsonLd data={breadcrumbLd} />
+  </Fragment>
+  <Section as="article" variant="alternate" small>
+    <Container>
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/job-listings/">
+          <svg
+            aria-hidden="true"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M15 19l-7-7 7-7"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"></path>
+          </svg>
+          All job listings
+        </a>
+      </nav>
+
+      <div class="job-card">
+        <div class="logo-box">
+          <img
+            src={logoSrc(job.logoFilename)}
+            alt={`${job.company} logo`}
+            width="480"
+            height="240"
+            loading="eager"
+          />
+        </div>
+
+        <header class="job-header">
+          <p class="job-company">{job.company}</p>
+          <h1 class="job-title">{job.title}</h1>
+          {
+            (job.location || job.workload) && (
+              <ul class="job-facts" role="list">
+                {job.location && (
+                  <li class="fact">
+                    <IconMapPin size={15} />
+                    {job.location}
+                  </li>
+                )}
+                {job.workload && <li class="fact is-badge">{job.workload}</li>}
+              </ul>
+            )
+          }
+        </header>
+
+        {
+          /* The rich text (job.richTextHtml) opens with its own h3s
+             ("What we do:", "About the role:", ...); without a heading
+             between the h1 above and those h3s the outline skips a level
+             (WCAG 1.3.1/2.4.6). This label is structural, not invented
+             copy, and stays visually hidden so the page keeps its
+             current look. */
+        }
+        <h2 class="u-visually-hidden">About this role</h2>
+        <div class="job-body" set:html={job.richTextHtml} />
+
+        <footer class="job-apply">
+          <h2>{howToContactHeading}</h2>
+          <a
+            class="button apply-cta"
+            href={job.applyUrl}
+            target={isMailto ? undefined : "_blank"}
+            rel={isMailto ? undefined : "noopener noreferrer"}
+            aria-label={isMailto
+              ? undefined
+              : `${applyLabel} (opens in a new tab)`}
+          >
+            {applyLabel}
+          </a>
+          <p class="apply-target">{applyDisplay}</p>
+        </footer>
+      </div>
+    </Container>
+  </Section>
+</Base>
+
+<style>
+  .breadcrumb {
+    margin-bottom: var(--space-md);
+  }
+
+  .breadcrumb a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: var(--text-size-small);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    text-decoration: underline;
+  }
+
+  .job-card {
+    padding: 2.5rem;
+    background-color: var(--color-white);
+    border-radius: var(--radius-card);
+    /* Resting card on the alternate band: nearest step of the four-step
+       scale to the old 0 0 5px / 0.2 (DESIGN.md DEPTH-1). */
+    box-shadow: var(--shadow-card);
+  }
+
+  .logo-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 20rem;
+    height: 8rem;
+    margin-inline: auto;
+    margin-bottom: var(--space-md);
+    padding: var(--space-xs) 1.25rem;
+    border: 1px solid var(--color-neutral-lighter);
+    border-radius: var(--radius-button);
+  }
+
+  .logo-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .job-header {
+    margin-bottom: var(--space-lg);
+    text-align: center;
+  }
+
+  .job-company {
+    margin-bottom: 0.25rem;
+    font-size: var(--text-size-medium);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-neutral-dark);
+  }
+
+  /* Live page renders the job title at h4 scale, not the default h1 size. */
+  .job-title {
+    font-size: var(--heading-h4-size);
+    line-height: var(--heading-line-height-normal);
+  }
+
+  .job-facts {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-xs);
+    margin: var(--space-sm) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .fact {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: var(--text-size-small);
+    color: var(--color-neutral-dark);
+  }
+
+  /* :global, because the svg is rendered by IconMapPin and so carries that
+     component's scope, not this page's (DESIGN.md COMP-3). */
+  .fact :global(svg) {
+    color: var(--color-neutral-dark);
+  }
+
+  .fact.is-badge {
+    padding: 0.25rem 0.9rem;
+    background-color: var(--color-primary);
+    color: var(--color-text-inverse);
+    border-radius: var(--radius-pill);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  /* Rich text from jobs.json: h3 section headings plus body markup.
+     Recreate the live page's navy dividers between sections. */
+  .job-body :global(h3) {
+    margin-block: 0 var(--space-xs);
+    padding-top: var(--space-md);
+    border-top: 2px solid var(--color-primary);
+    font-size: var(--heading-h6-size);
+    line-height: var(--heading-line-height-normal);
+  }
+
+  .job-body :global(p) {
+    margin-bottom: 0.875rem;
+  }
+
+  .job-body :global(ul),
+  .job-body :global(ol) {
+    margin: 0 0 0.875rem;
+    padding-left: var(--space-md);
+  }
+
+  .job-body :global(a) {
+    color: var(--color-primary);
+  }
+
+  .job-apply {
+    margin-top: var(--space-2xs);
+    padding-top: var(--space-md);
+    border-top: 2px solid var(--color-primary);
+    text-align: center;
+  }
+
+  /* "How to get in touch" is a minor sub-heading on the live page, sized
+     down from the default h2 to h6 scale. */
+  .job-apply h2 {
+    margin-bottom: var(--space-sm);
+    font-size: var(--heading-h6-size);
+    line-height: var(--heading-line-height-normal);
+  }
+
+  .apply-cta {
+    min-width: 12rem;
+  }
+
+  .apply-target {
+    margin: 0.875rem 0 0;
+    font-size: var(--text-size-tiny);
+    color: var(--color-neutral);
+    word-break: break-all;
+  }
+
+  @media (max-width: 767px) {
+    .job-card {
+      padding: 1.75rem 1.25rem;
+    }
+
+    .logo-box {
+      max-width: 14rem;
+      height: 6rem;
+    }
+  }
+</style>

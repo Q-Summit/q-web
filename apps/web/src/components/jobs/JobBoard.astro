@@ -1,0 +1,340 @@
+---
+// Job board: a live search field plus workload filter tabs (All /
+// Internship / Working Student / Full Time) over the list of job cards.
+// The live Webflow page only has pagination, not search/filtering; this is
+// a requested enhancement over the live design.
+//
+// Progressive enhancement: the workload tabs are visually hidden radio
+// inputs with sibling-selector CSS, so they keep working with zero
+// JavaScript. The search field and the result count / empty-state message
+// are wired up by the small inline script below; without JavaScript the
+// search input is inert (all cards stay visible) and the count/empty-state
+// elements never leave their default `hidden` state.
+//
+// Jobs without a workload (the extraction only has workload for jobs
+// that appeared on page 1 of the old tabs) show under "All" only.
+import type { Job, JobWorkload } from "../../lib/content";
+import JobCard from "./JobCard.astro";
+import { workloadSlug } from "./logo";
+import Container from "../ui/Container.astro";
+import Section from "../ui/Section.astro";
+
+interface Props {
+  jobs: Job[];
+}
+
+const { jobs } = Astro.props;
+
+// Zero jobs is a normal editorial state (between hiring rounds), and it is
+// NOT the same thing as "your search matched nothing". Showing a search box
+// and workload filters over an empty list invites the reader to hunt for
+// postings that do not exist; the #job-empty message below is worded for a
+// failed search and would be actively misleading here.
+// Filter-group markup note: the radios are emitted before their labels (the
+// CSS below keys the label highlight off `:checked ~ label`), but both sit
+// inside the role=group div, so the named group really contains the controls
+// it labels (WCAG 1.3.1). The job-list filtering reads the group's checked
+// state via `:has()` on `.filters` rather than the old
+// radio-is-a-sibling-of-job-list trick, so it keeps working with JS disabled.
+// (Kept here rather than in the markup: an HTML comment inside the JSX
+// conditional below fails prettier's astro parser, and a {/* */} comment fails
+// astro check.)
+const hasJobs = jobs.length > 0;
+
+const workloads: JobWorkload[] = ["Internship", "Working Student", "Full Time"];
+
+const filters = [
+  { id: "wl-all", label: "All", slug: "all" },
+  ...workloads.map((workload) => ({
+    id: `wl-${workloadSlug(workload)}`,
+    label: workload,
+    slug: workloadSlug(workload),
+  })),
+];
+
+// Combined haystack the client script matches the search query against.
+function searchText(job: Job): string {
+  return [job.company, job.title, job.location ?? ""].join(" ").toLowerCase();
+}
+---
+
+<Section small class="board" aria-label="Job listings">
+  <Container>
+    <slot />
+
+    {
+      !hasJobs && (
+        <p class="job-empty is-static">
+          No open positions right now. Check back later, or follow us for new
+          openings.
+        </p>
+      )
+    }
+
+    {
+      hasJobs && (
+        <Fragment>
+          <div class="search-field">
+            <svg
+              class="search-icon"
+              aria-hidden="true"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle
+                cx="11"
+                cy="11"
+                r="7"
+                stroke="currentColor"
+                stroke-width="2"
+              />
+              <path
+                d="m20.5 20.5-3.6-3.6"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+            <input
+              type="search"
+              id="job-search"
+              class="search-input"
+              placeholder="Search by company, title, or location"
+              aria-label="Search jobs by company, title, or location"
+              autocomplete="off"
+            />
+          </div>
+
+          <div
+            class="filters"
+            role="group"
+            aria-label="Filter jobs by workload"
+          >
+            {filters.map((filter, index) => (
+              <input
+                type="radio"
+                name="workload-filter"
+                id={filter.id}
+                class="filter-radio"
+                data-slug={filter.slug}
+                checked={index === 0}
+              />
+            ))}
+            {filters.map((filter) => (
+              <label for={filter.id}>{filter.label}</label>
+            ))}
+          </div>
+
+          <p id="job-count" class="job-count" aria-live="polite" hidden />
+
+          <ul class="job-list" role="list">
+            {jobs.map((job) => (
+              <li
+                data-workload={
+                  job.workload ? workloadSlug(job.workload) : "none"
+                }
+                data-search={searchText(job)}
+              >
+                <JobCard job={job} />
+              </li>
+            ))}
+          </ul>
+
+          <p id="job-empty" class="job-empty" aria-live="polite" hidden>
+            No jobs match your search. Try a different keyword or filter.
+          </p>
+        </Fragment>
+      )
+    }
+  </Container>
+</Section>
+
+<script>
+  const searchInput = document.querySelector<HTMLInputElement>("#job-search");
+  const radios = document.querySelectorAll<HTMLInputElement>(".filter-radio");
+  const items = document.querySelectorAll<HTMLLIElement>(".job-list > li");
+  const countEl = document.querySelector<HTMLElement>("#job-count");
+  const emptyEl = document.querySelector<HTMLElement>("#job-empty");
+
+  function selectedWorkload(): string {
+    const checked = document.querySelector<HTMLInputElement>(
+      ".filter-radio:checked",
+    );
+    return checked?.dataset.slug ?? "all";
+  }
+
+  function applyFilters(): void {
+    const query = (searchInput?.value ?? "").trim().toLowerCase();
+    const workload = selectedWorkload();
+    let visible = 0;
+
+    items.forEach((item) => {
+      const matchesWorkload =
+        workload === "all" || item.dataset.workload === workload;
+      const matchesQuery =
+        query === "" || (item.dataset.search ?? "").includes(query);
+      const show = matchesWorkload && matchesQuery;
+      item.hidden = !show;
+      if (show) visible += 1;
+    });
+
+    if (countEl) {
+      countEl.hidden = false;
+      countEl.textContent = `Showing ${visible} of ${items.length} ${
+        items.length === 1 ? "job" : "jobs"
+      }`;
+    }
+
+    if (emptyEl) {
+      emptyEl.hidden = visible !== 0;
+    }
+  }
+
+  searchInput?.addEventListener("input", applyFilters);
+  radios.forEach((radio) => radio.addEventListener("change", applyFilters));
+
+  applyFilters();
+</script>
+
+<style>
+  .search-field {
+    position: relative;
+    width: 100%;
+    max-width: 26rem;
+    margin: 0 auto var(--space-md);
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-neutral-dark);
+    pointer-events: none;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 0.65rem var(--space-sm) 0.65rem 2.75rem;
+    background-color: var(--color-white);
+    border: 1px solid var(--color-neutral-lighter);
+    border-radius: var(--radius-button);
+    font-family: inherit;
+    font-size: var(--text-size-small);
+    color: var(--color-text);
+  }
+
+  /* --color-neutral-light (#aaaaaa) is ~2.3:1 on the white input
+     background, below the 4.5:1 text minimum (WCAG 1.4.3);
+     --color-neutral (#666666) clears it at ~5.7:1. The field already has
+     an aria-label, so the placeholder stays decorative/redundant hint
+     text either way. */
+  .search-input::placeholder {
+    color: var(--color-neutral);
+  }
+
+  /* Visually hidden but still focusable for keyboard users. */
+  .filter-radio {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-xs);
+    margin-block: 0 var(--space-lg);
+  }
+
+  .filters label {
+    padding: 0.55rem 1.4rem;
+    background-color: var(--color-white);
+    border: 1px solid var(--color-neutral-lighter);
+    border-radius: var(--radius-button);
+    font-weight: var(--heading-weight);
+    font-size: var(--text-size-small);
+    color: var(--color-primary);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .filters label:hover {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-text-inverse);
+  }
+
+  /* Radio and label are now siblings inside the same .filters group
+     (see markup above), so the highlight selector no longer needs to
+     reach out to a sibling .filters wrapper. */
+  #wl-all:checked ~ label[for="wl-all"],
+  #wl-internship:checked ~ label[for="wl-internship"],
+  #wl-working-student:checked ~ label[for="wl-working-student"],
+  #wl-full-time:checked ~ label[for="wl-full-time"] {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-text-inverse);
+  }
+
+  #wl-all:focus-visible ~ label[for="wl-all"],
+  #wl-internship:focus-visible ~ label[for="wl-internship"],
+  #wl-working-student:focus-visible ~ label[for="wl-working-student"],
+  #wl-full-time:focus-visible ~ label[for="wl-full-time"] {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  .job-count {
+    margin: 0 0 1.25rem;
+    text-align: center;
+    font-size: var(--text-size-small);
+    color: var(--color-neutral-dark);
+  }
+
+  .job-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* The radios now live inside .filters instead of being direct siblings
+     of .job-list (see the a11y grouping fix above), so filtering reads
+     the group's checked state via :has() on .filters itself; .job-list
+     is still a later sibling of .filters so `~` still reaches it. Kept
+     CSS-only so this still works with JavaScript disabled. */
+  .filters:has(#wl-internship:checked)
+    ~ .job-list
+    li:not([data-workload="internship"]),
+  .filters:has(#wl-working-student:checked)
+    ~ .job-list
+    li:not([data-workload="working-student"]),
+  .filters:has(#wl-full-time:checked)
+    ~ .job-list
+    li:not([data-workload="full-time"]) {
+    display: none;
+  }
+
+  /* The zero-jobs message is always visible, unlike #job-empty which the
+     search script toggles. */
+  .job-empty.is-static {
+    display: block;
+  }
+
+  .job-empty {
+    margin: 0;
+    padding: var(--space-lg) var(--space-sm) 0;
+    text-align: center;
+    color: var(--color-neutral-dark);
+  }
+</style>

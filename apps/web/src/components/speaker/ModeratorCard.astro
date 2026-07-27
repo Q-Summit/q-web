@@ -1,0 +1,119 @@
+---
+// One card in the "Moderation" grid: framed photo with a badge in the
+// top right corner, name and role below.
+import { Picture } from "../../lib/astro-assets";
+import type { Speaker } from "../../lib/content";
+import { photoSrc } from "../../lib/media-filename";
+import { resolveContentImage } from "../../lib/images";
+
+interface Props {
+  speaker: Speaker;
+}
+
+const { speaker } = Astro.props;
+const image = await resolveContentImage(
+  speaker.photoFilename,
+  `moderator ${speaker.name}`,
+);
+---
+
+<article class="moderator-card">
+  <div class="moderator-card__media">
+    {
+      image ? (
+        <Picture
+          src={image}
+          alt={speaker.name}
+          widths={[320, 480, 640]}
+          sizes="(max-width: 767px) 90vw, (max-width: 991px) 40vw, 24rem"
+          formats={["avif", "webp"]}
+          fallbackFormat="jpg"
+          quality={80}
+          loading="lazy"
+          decoding="async"
+        />
+      ) : (
+        <img
+          src={photoSrc(speaker.photoFilename)}
+          alt={speaker.name}
+          width="640"
+          height="800"
+          loading="lazy"
+          decoding="async"
+        />
+      )
+    }
+    <span class="moderator-card__badge">Moderator</span>
+  </div>
+  <h3 class="moderator-card__name">{speaker.name}</h3>
+  <p class="moderator-card__role">{speaker.roleLine}</p>
+</article>
+
+<style>
+  .moderator-card {
+    height: 100%;
+    padding: var(--space-sm);
+    text-align: left;
+    background-color: var(--color-background-alternate);
+    border-radius: var(--radius-card-large);
+  }
+
+  .moderator-card__media {
+    position: relative;
+  }
+
+  .moderator-card__media img,
+  .moderator-card__media picture {
+    width: 100%;
+  }
+
+  .moderator-card__media img {
+    aspect-ratio: 4 / 5;
+    border-radius: var(--radius-card);
+    object-fit: cover;
+  }
+
+  .moderator-card__badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    padding: 0.25rem var(--space-sm);
+    font-size: var(--text-size-tiny);
+    /* TYPE-4: the badge is bold display text with no body-weight token at
+       700, so it borrows the heading weight rather than a bare number. */
+    font-weight: var(--heading-weight);
+    color: var(--color-text-inverse);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background-color: var(--color-primary);
+    border-radius: var(--radius-pill);
+  }
+
+  /* Size, weight and top margin; color inherits the global heading navy
+     (TYPE-1). The size is the card-name step the three /speaker cards
+     share (TYPE-2, see the note on .speaker-card__name for why the three
+     stay separate).
+
+     The WEIGHT is this card's own and does not match the other two: 600
+     here, against the global h3's 700 that SpeakerCard and HighlightCard
+     inherit. It is kept because it is what this grid ships and dropping
+     the line would restyle the moderator names, not because a live-site
+     record justifies the difference; none is on file. Treat it as an open
+     question for a designer (one voice or two), not as settled intent,
+     and do not "align" it silently. */
+  .moderator-card__name {
+    margin-top: var(--space-sm);
+    font-size: var(--text-size-large);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--heading-line-height-normal);
+  }
+
+  /* Byte-identical to .speaker-card__role and .highlight-card__role, on
+     purpose: see .speaker-card__name for why the three cards keep their own
+     copies instead of one shared rule. */
+  .moderator-card__role {
+    margin: 0.25rem 0 0;
+    font-size: var(--text-size-small);
+    color: var(--color-neutral-dark);
+  }
+</style>

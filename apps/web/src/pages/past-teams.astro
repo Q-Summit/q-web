@@ -1,0 +1,76 @@
+---
+// /past-teams: the team history page ported from the live Webflow site.
+// Same hero as /our-team, then the Current Team / History toggle and both
+// team panels (see components/team/TeamPanels.astro): rendering both
+// datasets on both team routes is what lets the toggle switch instantly,
+// client-side, instead of a full page navigation.
+import { getImage } from "../lib/astro-assets";
+import Base from "../layouts/Base.astro";
+import {
+  getPageContent,
+  getPastTeamPhotos,
+  getSiteSettings,
+  getTeam,
+} from "../lib/content";
+import { groupDivisions, groupPastYears } from "../lib/team";
+import { resolveContentImage } from "../lib/images";
+import TeamHero from "../components/team/TeamHero.astro";
+import { TEAM_HERO_PHOTO } from "../lib/team-media";
+import TeamPanels from "../components/team/TeamPanels.astro";
+import Section from "../components/ui/Section.astro";
+import Container from "../components/ui/Container.astro";
+
+const [{ ourTeam, pastTeams }, { siteTitle }, team, pastTeamPhotos] =
+  await Promise.all([
+    getPageContent(),
+    getSiteSettings(),
+    getTeam(),
+    getPastTeamPhotos(),
+  ]);
+
+const divisions = groupDivisions(team);
+const pastYears = await groupPastYears(pastTeamPhotos);
+
+// Preload the team hero (TeamHero's <Picture>): it is the LCP element on this
+// route too, and it is the same full-viewport group photo /our-team preloads.
+// Resolve the exact avif candidates the browser will paint by calling
+// getImage() with the SAME filename and widths/format/quality TeamHero.astro
+// renders (keep the two in sync); avif is the first <source>, so preloading it
+// targets the format every current browser will pick.
+const heroImage = await resolveContentImage(
+  TEAM_HERO_PHOTO,
+  "team hero background",
+);
+const heroPreload = heroImage
+  ? await getImage({
+      src: heroImage,
+      widths: [800, 1200, 1600],
+      format: "avif",
+      quality: 80,
+    })
+  : undefined;
+---
+
+<Base
+  title={pastTeams.title}
+  description={pastTeams.metaDescription}
+  preloadImageSrcset={heroPreload?.srcSet.attribute}
+  preloadImageSizes="100vw"
+  preloadImageType="image/avif"
+  livePreviewGlobal="page-past-teams"
+>
+  <TeamHero title={pastTeams.heading} lpTitle="heading" />
+
+  <Section small>
+    <Container>
+      <TeamPanels
+        active="past"
+        divisions={divisions}
+        pastYears={pastYears}
+        pastIntro={pastTeams.intro}
+        currentTitle={`${siteTitle} | ${ourTeam.title}`}
+        pastTitle={`${siteTitle} | ${pastTeams.title}`}
+      />
+    </Container>
+  </Section>
+</Base>

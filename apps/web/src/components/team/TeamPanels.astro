@@ -1,0 +1,305 @@
+---
+// Shared body for /our-team and /past-teams: both pages render BOTH the
+// current-team divisions grid and the year-by-year history panel, with
+// only the requested one visible, so the toggle can switch between them
+// client-side (no navigation, no scroll jump) instead of a full page
+// load. Direct visits to either route still get the correct panel visible
+// and the correct <title> (Base.astro / the page component's own Base
+// title="..." already handles that server-side; this only needs to keep
+// document.title in sync when the JS toggle swaps panels afterwards).
+//
+// Without JS, TeamToggle's links are real hrefs, so clicking "History"
+// from /our-team just navigates to /past-teams as before; there both
+// panels exist too, with "past" the one left visible. The <script> below
+// is what turns that click into an instant local swap instead.
+//
+// TeamToggle renders role="tablist"/role="tab" on those two links (WAI-ARIA
+// APG tabs pattern), so this script also owns the keyboard behavior that
+// role requires: a single tab stop with roving tabindex (only the active
+// tab is tabbable) plus Left/Right/Home/End moving focus AND activating,
+// since with only two cheap-to-swap panels there is no reason to make the
+// user press Enter separately (APG's "automatic activation" variant).
+import { Picture } from "../../lib/astro-assets";
+import TeamToggle from "./TeamToggle.astro";
+import TeamGrid from "./TeamGrid.astro";
+import type { DivisionGroup, PastYearEntry } from "../../lib/team";
+
+interface Props {
+  active: "current" | "past";
+  divisions: DivisionGroup[];
+  pastYears: PastYearEntry[];
+  pastIntro: string;
+  /** Fully composed <title> text (siteTitle | page title) for each panel. */
+  currentTitle: string;
+  pastTitle: string;
+}
+
+const { active, divisions, pastYears, pastIntro, currentTitle, pastTitle } =
+  Astro.props;
+---
+
+<TeamToggle active={active} />
+
+<div
+  id="team-panel-current"
+  class="team-panel"
+  data-team-panel="current"
+  data-title={currentTitle}
+  role="tabpanel"
+  aria-labelledby="team-tab-current"
+  tabindex="0"
+  hidden={active !== "current"}
+>
+  {
+    divisions.map((group, i) => (
+      <section class="division">
+        <h2 class="division__title">{group.division} Division</h2>
+        <TeamGrid
+          members={group.members}
+          eager={active === "current" && i === 0}
+        />
+      </section>
+    ))
+  }
+</div>
+
+<div
+  id="team-panel-past"
+  class="team-panel history"
+  data-team-panel="past"
+  data-title={pastTitle}
+  role="tabpanel"
+  aria-labelledby="team-tab-past"
+  tabindex="0"
+  hidden={active !== "past"}
+>
+  <p class="history__intro">{pastIntro}</p>
+  {
+    pastYears.map((entry, i) => (
+      <section class="history__year">
+        <h2 class="history__year-title">Year {entry.year}</h2>
+        {entry.image ? (
+          <Picture
+            class="history__photo"
+            src={entry.image}
+            alt={`The Q-Summit team of ${entry.year}`}
+            widths={[500, 850, 1200]}
+            sizes="(max-width: 950px) 90vw, 850px"
+            formats={["avif", "webp"]}
+            fallbackFormat="jpg"
+            quality={80}
+            loading={active === "past" && i === 0 ? "eager" : "lazy"}
+            decoding="async"
+          />
+        ) : (
+          <img
+            class="history__photo"
+            src={entry.photo.src}
+            srcset={entry.photo.srcset}
+            sizes="(max-width: 950px) 90vw, 850px"
+            alt={`The Q-Summit team of ${entry.year}`}
+            width={entry.size.width}
+            height={entry.size.height}
+            loading={active === "past" && i === 0 ? "eager" : "lazy"}
+            decoding="async"
+          />
+        )}
+      </section>
+    ))
+  }
+</div>
+
+<style>
+  .division {
+    margin-top: 4rem;
+  }
+
+  .division:first-child {
+    margin-top: 0;
+  }
+
+  .division__title {
+    margin-bottom: var(--space-lg);
+  }
+
+  @media (min-width: 768px) {
+    .division {
+      margin-top: 5rem;
+    }
+  }
+
+  .history {
+    text-align: center;
+  }
+
+  /* --container-small is a text-measure limit here, not a section width. */
+  .history__intro {
+    max-width: var(--container-small);
+    margin: 0 auto;
+    color: var(--color-neutral-darker);
+  }
+
+  .history__year {
+    margin-top: 4.5rem;
+  }
+
+  .history__year-title {
+    margin-bottom: var(--space-md);
+  }
+
+  /* Structural selector (not just .history__photo) so this also reaches
+     the <picture> wrapper astro:assets' <Picture> renders around the img
+     (Picture only forwards the author class to the inner <img>, so
+     picture itself needs a selector that doesn't depend on that class). */
+  .history__year picture,
+  .history__photo {
+    width: min(100%, 850px);
+    margin-inline: auto;
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-lifted);
+  }
+</style>
+
+<script>
+  // Progressive enhancement: TeamToggle's links are real hrefs and work
+  // without this (full navigation to the other, already-correct page).
+  // Here, clicking one instead hides/shows the two already-rendered
+  // panels in place and syncs history, so the switch never reloads the
+  // document or resets scroll position.
+  // Canonical, trailing-slashed targets (astro.config.mjs trailingSlash:
+  // "always"), so the pushed URL matches the emitted canonical/sitemap and a
+  // reload never triggers a Cloudflare 308.
+  const CURRENT_HREF = "/our-team/";
+  const PAST_HREF = "/past-teams/";
+
+  // Compare the live pathname to a canonical target, tolerating a missing
+  // trailing slash so it matches whether or not the URL is already canonical.
+  function isPath(canonical: string): boolean {
+    return (
+      window.location.pathname.replace(/\/$/, "") ===
+      canonical.replace(/\/$/, "")
+    );
+  }
+
+  function setUpTeamToggle(toggle: HTMLElement) {
+    const tabs = Array.from(
+      toggle.querySelectorAll<HTMLAnchorElement>("[data-team-tab]"),
+    );
+    const thumb = toggle.querySelector<HTMLElement>(".team-toggle__thumb");
+    const panels: Record<"current" | "past", HTMLElement | null> = {
+      current: document.querySelector<HTMLElement>(
+        '[data-team-panel="current"]',
+      ),
+      past: document.querySelector<HTMLElement>('[data-team-panel="past"]'),
+    };
+    if (!panels.current || !panels.past || tabs.length === 0) return;
+
+    // Roving tabindex (APG tabs): only the active tab is a Tab stop; the
+    // other is reachable by arrow key, not by Tab. Set here rather than in
+    // TeamToggle's markup so the no-JS document keeps both links as normal,
+    // independently tabbable anchors.
+    function setRovingTabindex(key: "current" | "past") {
+      tabs.forEach((tab) => {
+        tab.tabIndex = tab.dataset.teamTab === key ? 0 : -1;
+      });
+    }
+
+    function activate(
+      key: "current" | "past",
+      options: { pushState?: boolean } = {},
+    ) {
+      const { pushState = true } = options;
+      tabs.forEach((tab) => {
+        const isActive = tab.dataset.teamTab === key;
+        tab.classList.toggle("is-active", isActive);
+        tab.setAttribute("aria-selected", isActive ? "true" : "false");
+      });
+      setRovingTabindex(key);
+      thumb?.setAttribute("data-position", key);
+      if (panels.current) panels.current.hidden = key !== "current";
+      if (panels.past) panels.past.hidden = key !== "past";
+
+      const title = panels[key]?.dataset.title;
+      if (title) document.title = title;
+
+      if (pushState) {
+        const href = key === "current" ? CURRENT_HREF : PAST_HREF;
+        if (!isPath(href)) {
+          history.pushState({ teamTab: key }, "", href);
+        }
+      }
+    }
+
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", (event) => {
+        const key = tab.dataset.teamTab;
+        if (key !== "current" && key !== "past") return;
+        // Same-page swap only: real navigation modifiers (new tab, etc.)
+        // still work as plain links.
+        if (event.defaultPrevented || event.button !== 0) return;
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+          return;
+        event.preventDefault();
+        if (!tab.classList.contains("is-active")) activate(key);
+      });
+    });
+
+    // APG tabs keyboard: Left/Right (and Up/Down) move focus between tabs,
+    // wrapping at the ends; Home/End jump to the first/last tab. Only two
+    // tabs exist and swapping panels is instant and free, so this uses
+    // automatic activation -- moving focus also activates, matching the
+    // click behavior above -- rather than requiring a separate Enter/Space.
+    toggle.addEventListener("keydown", (event) => {
+      const currentIndex = tabs.indexOf(
+        document.activeElement as HTMLAnchorElement,
+      );
+      if (currentIndex === -1) return;
+      let nextIndex: number;
+      switch (event.key) {
+        case "ArrowRight":
+        case "ArrowDown":
+          nextIndex = (currentIndex + 1) % tabs.length;
+          break;
+        case "ArrowLeft":
+        case "ArrowUp":
+          nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+          break;
+        case "Home":
+          nextIndex = 0;
+          break;
+        case "End":
+          nextIndex = tabs.length - 1;
+          break;
+        default:
+          return;
+      }
+      event.preventDefault();
+      const nextTab = tabs[nextIndex];
+      nextTab.focus();
+      const key = nextTab.dataset.teamTab;
+      if (
+        (key === "current" || key === "past") &&
+        !nextTab.classList.contains("is-active")
+      ) {
+        activate(key);
+      }
+    });
+
+    // Init: match roving tabindex to whichever tab the server already
+    // marked active (is-active class from TeamToggle's aria-selected).
+    const initiallyActive = tabs.find((tab) =>
+      tab.classList.contains("is-active"),
+    );
+    setRovingTabindex(
+      initiallyActive?.dataset.teamTab === "past" ? "past" : "current",
+    );
+
+    window.addEventListener("popstate", () => {
+      activate(isPath(PAST_HREF) ? "past" : "current", { pushState: false });
+    });
+  }
+
+  document
+    .querySelectorAll<HTMLElement>(".team-toggle")
+    .forEach(setUpTeamToggle);
+</script>

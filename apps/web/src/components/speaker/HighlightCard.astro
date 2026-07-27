@@ -1,0 +1,102 @@
+---
+// One slide in the "Previous Highlights" scroller: round grayscale photo
+// that regains color on hover, name and role below.
+import { Picture } from "../../lib/astro-assets";
+import type { Speaker } from "../../lib/content";
+import { photoSrc } from "../../lib/media-filename";
+import { resolveContentImage } from "../../lib/images";
+
+interface Props {
+  speaker: Speaker;
+}
+
+const { speaker } = Astro.props;
+const image = await resolveContentImage(
+  speaker.photoFilename,
+  `highlight speaker ${speaker.name}`,
+);
+---
+
+<article class="highlight-card">
+  {
+    image ? (
+      <Picture
+        src={image}
+        alt={speaker.name}
+        widths={[200, 400]}
+        sizes="200px"
+        formats={["avif", "webp"]}
+        fallbackFormat="jpg"
+        quality={80}
+        loading="lazy"
+        decoding="async"
+      />
+    ) : (
+      <img
+        src={photoSrc(speaker.photoFilename)}
+        alt={speaker.name}
+        width="400"
+        height="400"
+        loading="lazy"
+        decoding="async"
+      />
+    )
+  }
+  <h3 class="highlight-card__name">{speaker.name}</h3>
+  <p class="highlight-card__role">{speaker.roleLine}</p>
+</article>
+
+<style>
+  .highlight-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .highlight-card img,
+  .highlight-card picture {
+    width: 200px;
+  }
+
+  .highlight-card img {
+    height: 200px;
+    object-fit: cover;
+    border-radius: var(--radius-circle);
+    filter: grayscale(80%);
+    transition: filter var(--duration-hover) var(--ease-snappy);
+  }
+
+  .highlight-card:hover img {
+    filter: grayscale(0%);
+  }
+
+  /* MOTION-2: reduced motion means no transition at all. The color still
+     arrives on hover, it just arrives instantly. */
+  @media (prefers-reduced-motion: reduce) {
+    .highlight-card img {
+      transition: none;
+    }
+  }
+
+  /* Size and top margin only: weight and color come from the global h3
+     (TYPE-1). The size is the card-name step the three /speaker cards share
+     (TYPE-2); the full reasoning for why the three keep their own copies
+     lives on .speaker-card__name. This card matches SpeakerCard's weight
+     (the inherited 700); ModeratorCard does not (semibold, an open question
+     flagged in that file), so no "same as all three" claim belongs here. */
+  .highlight-card__name {
+    margin-top: var(--space-sm);
+    font-size: var(--text-size-large);
+    line-height: var(--heading-line-height-normal);
+  }
+
+  /* Byte-identical to .speaker-card__role and .moderator-card__role, on
+     purpose: see .speaker-card__name for why the three cards keep their own
+     copies instead of one shared rule. */
+  .highlight-card__role {
+    margin: 0.25rem 0 0;
+    font-size: var(--text-size-small);
+    color: var(--color-neutral-dark);
+  }
+</style>

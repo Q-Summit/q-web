@@ -1,0 +1,113 @@
+---
+// Segmented "Current Team | History" switch between /our-team and
+// /past-teams. Real, always-present <a href> tabs (so the page works with
+// JS off, or in a browser predating this markup) enhanced by
+// TeamPanels.astro's script into an instant, no-navigation toggle: a
+// sliding navy thumb behind the active label, matching the segmented
+// controls used elsewhere on the live site. role="tablist"/"tab" gives it
+// tab-like semantics for assistive tech without removing either link from
+// the normal tab order (both stay real, reachable links either way).
+interface Props {
+  active: "current" | "past";
+}
+
+const { active } = Astro.props;
+
+const tabs = [
+  { key: "current", label: "Current Team", href: "/our-team/" },
+  { key: "past", label: "History", href: "/past-teams/" },
+] as const;
+---
+
+<div class="team-toggle-wrap">
+  <div class="team-toggle" role="tablist" aria-label="Team pages">
+    <span class="team-toggle__thumb" data-position={active} aria-hidden="true"
+    ></span>
+    {
+      tabs.map((tab) => (
+        <a
+          role="tab"
+          id={`team-tab-${tab.key}`}
+          aria-selected={tab.key === active ? "true" : "false"}
+          aria-controls={`team-panel-${tab.key}`}
+          class:list={[
+            "team-toggle__link",
+            { "is-active": tab.key === active },
+          ]}
+          href={tab.href}
+          data-team-tab={tab.key}
+        >
+          {tab.label}
+        </a>
+      ))
+    }
+  </div>
+</div>
+
+<style>
+  .team-toggle-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: var(--space-xl);
+  }
+
+  .team-toggle {
+    position: relative;
+    display: inline-flex;
+    padding: 0.3rem;
+    background-color: var(--color-background-alternate);
+    border: 1px solid var(--color-neutral-lighter);
+    border-radius: var(--radius-pill);
+  }
+
+  /* Sliding active indicator: transform-only so the switch is a single
+     cheap, snappy animation (DESIGN.md COLOR-1 keeps it navy, not orange). */
+  .team-toggle__thumb {
+    position: absolute;
+    inset: 0.3rem auto 0.3rem 0.3rem;
+    width: calc(50% - 0.3rem);
+    background-color: var(--color-primary);
+    border-radius: var(--radius-pill);
+    transition: transform var(--duration-open) var(--ease-snappy);
+  }
+
+  .team-toggle__thumb[data-position="past"] {
+    transform: translateX(100%);
+  }
+
+  .team-toggle__link {
+    position: relative;
+    z-index: 1;
+    min-width: 9.5rem;
+    padding: 0.7rem var(--space-md);
+    border-radius: var(--radius-pill);
+    font-size: var(--text-size-small);
+    font-weight: var(--font-weight-semibold);
+    text-align: center;
+    text-decoration: none;
+    color: var(--color-primary);
+    transition: color var(--duration-open) var(--ease-snappy);
+  }
+
+  .team-toggle__link.is-active {
+    color: var(--color-text-inverse);
+  }
+
+  .team-toggle__link:not(.is-active):hover {
+    color: var(--color-primary);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .team-toggle__thumb,
+    .team-toggle__link {
+      transition: none;
+    }
+  }
+
+  @media (max-width: 479px) {
+    .team-toggle__link {
+      min-width: 7rem;
+      padding: 0.6rem var(--space-sm);
+    }
+  }
+</style>
