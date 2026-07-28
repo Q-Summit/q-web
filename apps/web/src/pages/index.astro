@@ -99,10 +99,7 @@ const faqs = allFaqs.filter((f) => f.page === "index");
 const orgId = new URL("#organization", Astro.site).href;
 const websiteId = new URL("#website", Astro.site).href;
 const siteHref = new URL("/", Astro.site).href;
-const logoUrl = new URL(
-  "/media/675ed0ac85498309510d86d2_Logo-Blau.png",
-  Astro.site,
-).href;
+const logoUrl = new URL("/media/q-summit-logo-lockup.webp", Astro.site).href;
 const heroPosterUrl = new URL("/media/hero-poster.jpg", Astro.site).href;
 
 // contact.reachOut.items: the registered-association entry (the one with no

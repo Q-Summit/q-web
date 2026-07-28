@@ -332,9 +332,16 @@ function repeatsFor(logos: PartnerLogo[]): number {
       infinite;
   }
 
-  .partner-band:hover .partner-band-track,
   .partner-band:focus-within .partner-band-track {
     animation-play-state: paused;
+  }
+
+  /* Pause on hover only when the device actually has hover; touch must
+     keep the marquee spinning (interactivity gated, not the animation). */
+  @media (hover: hover) {
+    .partner-band:hover .partner-band-track {
+      animation-play-state: paused;
+    }
   }
 
   /* One group = one full translation distance of the loop; the JS below

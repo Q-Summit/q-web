@@ -213,6 +213,12 @@ const total = speakers.length;
     scrollbar-width: none;
   }
 
+  @media (pointer: coarse) {
+    .speakers-list {
+      scroll-behavior: auto;
+    }
+  }
+
   .speakers-list::-webkit-scrollbar {
     display: none;
   }
@@ -325,8 +331,10 @@ const total = speakers.length;
     display: flex;
   }
 
-  .speakers-nav:hover {
-    background-color: var(--color-background-alternate);
+  @media (hover: hover) {
+    .speakers-nav:hover {
+      background-color: var(--color-background-alternate);
+    }
   }
 
   .speakers-nav.is-prev {

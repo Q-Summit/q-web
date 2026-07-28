@@ -63,12 +63,19 @@ const image = await resolveContentImage(
     height: 200px;
     object-fit: cover;
     border-radius: var(--radius-circle);
-    filter: grayscale(80%);
     transition: filter var(--duration-hover) var(--ease-snappy);
   }
 
-  .highlight-card:hover img {
-    filter: grayscale(0%);
+  /* Fine pointers: grayscale until hover. Coarse: full color by default
+     (no sticky hover grayscale state after a tap). */
+  @media (hover: hover) and (pointer: fine) {
+    .highlight-card img {
+      filter: grayscale(80%);
+    }
+
+    .highlight-card:hover img {
+      filter: grayscale(0%);
+    }
   }
 
   /* MOTION-2: reduced motion means no transition at all. The color still

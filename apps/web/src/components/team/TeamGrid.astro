@@ -127,15 +127,22 @@ const memberImages = await Promise.all(
     transition: transform var(--duration-hover) var(--ease-snappy);
   }
 
-  .member-card:hover .member-card__portrait img {
-    transform: scale(1.04);
+  @media (hover: hover) {
+    .member-card:hover .member-card__portrait img {
+      transform: scale(1.04);
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .member-card__portrait img,
-    .member-card:hover .member-card__portrait img {
+    .member-card__portrait img {
       transform: none;
       transition: none;
+    }
+
+    @media (hover: hover) {
+      .member-card:hover .member-card__portrait img {
+        transform: none;
+      }
     }
   }
 
@@ -164,9 +171,14 @@ const memberImages = await Promise.all(
 
   /* Paint-only hover feedback, which MOTION-3 allows; no second color token
      is needed and the mark keeps its brand color throughout. */
-  .member-card__linkedin:hover,
   .member-card__linkedin:focus-visible {
     opacity: 0.7;
+  }
+
+  @media (hover: hover) {
+    .member-card__linkedin:hover {
+      opacity: 0.7;
+    }
   }
 
   /* :global because the svg comes from IconLinkedIn.astro, so it carries that

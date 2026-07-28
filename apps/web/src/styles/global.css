@@ -18,7 +18,9 @@
 }
 
 html {
+  height: 100%;
   scroll-behavior: smooth;
+  overscroll-behavior-y: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -29,6 +31,13 @@ html {
 
 body {
   margin: 0;
+  /* 100% (via html height) / svh — not dvh. Dynamic viewport height
+     changes as mobile browser chrome shows/hides and makes a sticky
+     header vibrate on scroll. */
+  min-height: 100%;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
   font-family: var(--font-primary);
   font-size: var(--text-body-size);
   line-height: var(--text-body-line-height);
@@ -238,11 +247,9 @@ a {
     animation-timing-function: var(--ease-snappy);
   }
 
-  /* The site header is stable across pages, so hold it still while the
-     document body cross-fades underneath it. */
-  .nav-inner {
-    view-transition-name: site-nav;
-  }
+  /* Intentionally no named transition on the sticky header / .nav-inner:
+     Chromium jitters sticky + view-transition-name during scroll. The
+     root cross-fade above is enough for page changes. */
 }
 
 /* Layout utilities (client-first style, simplified).
@@ -333,9 +340,11 @@ a {
   cursor: pointer;
 }
 
-.button:hover {
-  background-color: var(--color-background);
-  color: var(--color-primary);
+@media (hover: hover) {
+  .button:hover {
+    background-color: var(--color-background);
+    color: var(--color-primary);
+  }
 }
 
 .button.is-alternate {

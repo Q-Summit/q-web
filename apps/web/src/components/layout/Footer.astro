@@ -5,7 +5,11 @@
 // footer has (Main Navigation column, Stay Updated social column with
 // labels) in a modernized three-column arrangement: brand block left,
 // the two link columns right, hairline, copyright bar.
-import { logoSrc } from "../../assets/media/brand";
+import {
+  logoHeight,
+  logoSrc,
+  logoWidth,
+} from "../../assets/media/brand";
 import { getSiteSettings } from "../../lib/content";
 import IconTikTok from "../icons/IconTikTok.astro";
 import IconInstagram from "../icons/IconInstagram.astro";
@@ -15,6 +19,11 @@ import IconYouTube from "../icons/IconYouTube.astro";
 const { footer } = await getSiteSettings();
 const { tagline, links, socialLinks, copyrightHolder } = footer;
 const year = new Date().getFullYear();
+
+const logoDisplayHeight = 52;
+const logoDisplayWidth = Math.round(
+  (logoWidth / logoHeight) * logoDisplayHeight,
+);
 
 function iconFor(platform: string) {
   if (platform === "tiktok") return IconTikTok;
@@ -30,13 +39,13 @@ function iconFor(platform: string) {
     <div class="footer-top">
       <div class="footer-brand">
         <a class="brand" href="/">
-          {
-            /* Decorative: the adjacent "Q-Summit" wordmark below already
-              names this link, so a repeated alt would make screen readers
-              announce "Q-Summit Q-Summit" (axe image-redundant-alt). */
-          }
-          <img src={logoSrc} alt="" width={72} height={72} decoding="async" />
-          <span class="brand-name">Q-Summit</span>
+          <img
+            src={logoSrc}
+            alt="Q-Summit"
+            width={logoDisplayWidth}
+            height={logoDisplayHeight}
+            decoding="async"
+          />
         </a>
         <p class="tagline">{tagline}</p>
       </div>
@@ -84,8 +93,7 @@ function iconFor(platform: string) {
     </div>
     <div class="footer-bottom">
       <p class="copyright">
-        &copy; {year}
-        {copyrightHolder}. All rights reserved.
+        &copy; {year}{" "}{copyrightHolder}. All rights reserved.
       </p>
     </div>
   </div>
@@ -118,32 +126,22 @@ function iconFor(platform: string) {
   .footer-brand {
     display: grid;
     gap: 1.25rem;
-    max-width: 24rem;
+    max-width: 18rem;
   }
 
   .brand {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
+    display: block;
+    line-height: 0;
     text-decoration: none;
+    max-width: 100%;
   }
 
   .brand img {
-    width: 4.5rem;
-    height: 4.5rem;
-  }
-
-  /* Wordmark next to the logo: brand lockup, not a document heading
-     (DESIGN.md TYPE-1), so it carries its own size and weight. The size
-     borrows the h5 step rather than a raw 1.5rem (DESIGN.md TYPE-2), which
-     also lets the lockup track the responsive heading scale. The 800 weight
-     sits between --heading-weight and --heading-weight-home and has no token
-     of its own, so it stays numeric (DESIGN.md TYPE-4). */
-  .brand-name {
-    font-size: var(--heading-h5-size);
-    font-weight: var(--font-weight-extrabold);
-    letter-spacing: -0.01em;
-    color: var(--color-primary);
+    display: block;
+    /* ~3.25rem tall lockup - readable, not a hero. Width follows aspect. */
+    width: min(100%, 15.5rem);
+    height: auto;
+    aspect-ratio: 1794 / 376;
   }
 
   .footer-brand .tagline {
@@ -190,10 +188,16 @@ function iconFor(platform: string) {
     font-size: var(--text-size-small);
   }
 
-  .footer-col a:hover,
   .footer-col a:focus-visible {
     color: var(--color-primary);
     text-decoration: underline;
+  }
+
+  @media (hover: hover) {
+    .footer-col a:hover {
+      color: var(--color-primary);
+      text-decoration: underline;
+    }
   }
 
   .social-link {

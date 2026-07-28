@@ -86,7 +86,7 @@ const resolvedOgImageAlt = ogImageAlt || ogTitle;
 const ogLocale = lang === "de" ? "de_DE" : "en_US";
 ---
 
-<html lang={lang}>
+<html lang={lang} translate="no">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -170,6 +170,6 @@ const ogLocale = lang === "de" ? "de_DE" : "en_US";
 
 <style>
   main {
-    min-height: 60vh;
+    flex: 1 0 auto;
   }
 </style>
