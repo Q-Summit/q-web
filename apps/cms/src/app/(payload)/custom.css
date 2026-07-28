@@ -468,14 +468,51 @@
 
 /* --- Login ---------------------------------------------------------------- */
 
+.qs-brand-logo {
+  display: block;
+  width: auto;
+  max-width: 140px;
+  height: auto;
+  margin-inline: auto;
+}
+
+.qs-brand-icon {
+  display: block;
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.qs-login-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--qs-space-2);
+  margin-bottom: var(--qs-space-4);
+  text-align: center;
+}
+
+.qs-login-title {
+  margin: 0;
+  font-size: var(--qs-text-card);
+  line-height: var(--qs-line);
+  font-weight: var(--qs-weight-heading);
+}
+
+.qs-login-lede {
+  margin: 0;
+  color: var(--qs-fg-muted);
+}
+
 .qs-google-btn {
   display: block;
   width: 100%;
+  margin-top: var(--qs-space-2);
   text-align: center;
 }
 
 .qs-login-note {
-  margin: var(--qs-space-2) 0 0;
+  margin: 0;
   text-align: center;
   color: var(--qs-fg-meta);
 }
@@ -564,7 +601,7 @@
      an immediate sibling before LoginForm, which is what `~` relies on.
      No !important: Payload emits no .login__form rule at all in 3.86, so
      there was never anything to outrank. */
-  .qs-google-btn ~ .login__form {
+  .qs-login-intro--google ~ .login__form {
     display: none;
   }
 

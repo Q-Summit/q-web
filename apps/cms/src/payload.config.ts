@@ -103,7 +103,19 @@ export default buildConfig({
   },
   admin: {
     user: Users.slug,
+    meta: {
+      title: "Q-Summit CMS",
+      description: "Q-Summit content admin",
+      icons: [
+        { rel: "icon", type: "image/png", url: "/favicon.png" },
+        { rel: "apple-touch-icon", url: "/apple-touch-icon.png" },
+      ],
+    },
     components: {
+      graphics: {
+        Logo: "/components/brand-logo#BrandLogo",
+        Icon: "/components/brand-icon#BrandIcon",
+      },
       // "Continue with Google" above the login form. Always registered so the
       // dev-generated import map covers production; the component renders
       // nothing while Google login is disabled (src/components/login-with-google.tsx).

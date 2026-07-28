@@ -25,6 +25,8 @@ import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0
 import { MediaReferences as MediaReferences_f6bc39267201db7280f7e67c3afcce8a } from '../../components/media-references'
 import { TitleRowLabel as TitleRowLabel_0512470cfabf095a96173982ff27c9cc } from '../../components/array-row-label'
 import { Nav as Nav_11c845718bb2bf52c0d76c925dae4c7d } from '../../components/nav'
+import { BrandIcon as BrandIcon_c77bdc76224df1332d12bd0d703a4a8e } from '../../components/brand-icon'
+import { BrandLogo as BrandLogo_cf1ebe64174572437977e3694dc076f4 } from '../../components/brand-logo'
 import { PagesWidget as PagesWidget_561ffa51a369d3db305dc9a863fbe08c } from '../../components/pages-widget'
 import { ReviewQueueBanner as ReviewQueueBanner_3233219a98074f5842ca4d2808cdfa9c } from '../../components/review-queue-banner'
 import { EditorGuide as EditorGuide_b3008200575247ed528cb63c4247f8e9 } from '../../components/editor-guide'
@@ -65,6 +67,8 @@ export const importMap = {
   "/components/media-references#MediaReferences": MediaReferences_f6bc39267201db7280f7e67c3afcce8a,
   "/components/array-row-label#TitleRowLabel": TitleRowLabel_0512470cfabf095a96173982ff27c9cc,
   "/components/nav#Nav": Nav_11c845718bb2bf52c0d76c925dae4c7d,
+  "/components/brand-icon#BrandIcon": BrandIcon_c77bdc76224df1332d12bd0d703a4a8e,
+  "/components/brand-logo#BrandLogo": BrandLogo_cf1ebe64174572437977e3694dc076f4,
   "/components/pages-widget#PagesWidget": PagesWidget_561ffa51a369d3db305dc9a863fbe08c,
   "/components/review-queue-banner#ReviewQueueBanner": ReviewQueueBanner_3233219a98074f5842ca4d2808cdfa9c,
   "/components/editor-guide#EditorGuide": EditorGuide_b3008200575247ed528cb63c4247f8e9,
