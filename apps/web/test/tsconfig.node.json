@@ -16,5 +16,9 @@
     "isolatedModules": true,
     "types": ["node"]
   },
-  "include": ["./content.test.ts", "./media-filename.test.ts"]
+  "include": [
+    "./content.test.ts",
+    "./media-filename.test.ts",
+    "./media-match.test.ts"
+  ]
 }

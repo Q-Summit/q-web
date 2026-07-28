@@ -174,7 +174,7 @@ describe("maybeSchedulePublishDeploy", () => {
       text: async () => "",
     });
     vi.stubGlobal("fetch", fetchMock);
-    const req = (prior: string, next: string) => ({
+    const req = (prior: string, _next: string) => ({
       user: approver,
       payloadAPI: "REST" as const,
       context: { [DEPLOY_PRIOR_LIVE_STATUS]: prior },

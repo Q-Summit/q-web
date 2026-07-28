@@ -23,10 +23,7 @@ import { seedLocalR2 } from "../preview/seed-local-r2.mjs";
 import { startAstroPreview, startWranglerDev } from "../preview/serve.mjs";
 import { syncPictureAssets } from "../preview/sync-picture-assets.mjs";
 import { extractFindings, formatAgentMarkdown } from "./lighthouse-report.mjs";
-import {
-  DEFAULT_LIGHTHOUSE_URLS,
-  parseLighthouseUrls,
-} from "./lighthouse-urls.mjs";
+import { parseLighthouseUrls } from "./lighthouse-urls.mjs";
 
 const OUT_DIR = path.join(REPO_ROOT, ".lighthouse");
 const DEFAULT_MIN_PERFORMANCE = 90;

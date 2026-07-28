@@ -24,5 +24,9 @@
     "../worker/index.ts",
     "../worker-configuration.d.ts"
   ],
-  "exclude": ["./content.test.ts", "./media-filename.test.ts"]
+  "exclude": [
+    "./content.test.ts",
+    "./media-filename.test.ts",
+    "./media-match.test.ts"
+  ]
 }

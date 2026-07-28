@@ -61,6 +61,8 @@ export default tseslint.config(
       // Transfer artifacts and DB dumps, never source.
       "scripts/content-packages/",
       "scripts/backups/",
+      // Chrome-for-Testing install (ensure-chrome); not our source.
+      ".browsers/",
     ],
   },
 
@@ -123,6 +125,13 @@ export default tseslint.config(
   // hundreds of findings against code that is correct.
   {
     files: TYPED,
+    // Node-vitest files live in test/tsconfig.node.json (not tsconfig.json),
+    // so projectService cannot type-check them via the nearest tsconfig.json.
+    ignores: [
+      "apps/web/test/content.test.ts",
+      "apps/web/test/media-filename.test.ts",
+      "apps/web/test/media-match.test.ts",
+    ],
     languageOptions: {
       parserOptions: {
         projectService: true,
