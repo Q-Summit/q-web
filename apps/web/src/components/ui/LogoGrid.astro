@@ -180,10 +180,12 @@ const loading = eager ? "eager" : "lazy";
       box-shadow var(--duration-hover) var(--ease-snappy);
   }
 
-  .logo-card:hover,
-  .flip-card:hover {
-    transform: translateY(var(--wall-card-lift));
-    box-shadow: var(--wall-card-shadow-hover);
+  @media (hover: hover) {
+    .logo-card:hover,
+    .flip-card:hover {
+      transform: translateY(var(--wall-card-lift));
+      box-shadow: var(--wall-card-shadow-hover);
+    }
   }
 
   .logo-card img,
@@ -196,8 +198,8 @@ const loading = eager ? "eager" : "lazy";
   }
 
   /* Flip card: front logo, back a short note. Pure CSS 3D flip on
-     hover/focus, matching the live page's "flip_interaction_stage".
-     Rendered only when the caller passes `flip`. */
+     hover/focus (fine pointers); coarse pointers use .is-flipped via
+     the script below. Rendered only when the caller passes `flip`. */
   .flip-card {
     position: relative;
     padding: 0;
@@ -217,8 +219,14 @@ const loading = eager ? "eager" : "lazy";
     transform-style: preserve-3d;
   }
 
-  .flip-card:hover .flip-inner,
-  .flip-card:focus-visible .flip-inner {
+  @media (hover: hover) and (pointer: fine) {
+    .flip-card:hover .flip-inner,
+    .flip-card:focus-visible .flip-inner {
+      transform: rotateY(180deg);
+    }
+  }
+
+  .flip-card.is-flipped .flip-inner {
     transform: rotateY(180deg);
   }
 
@@ -254,9 +262,11 @@ const loading = eager ? "eager" : "lazy";
       transition: none;
     }
 
-    .logo-card:hover,
-    .flip-card:hover {
-      transform: none;
+    @media (hover: hover) {
+      .logo-card:hover,
+      .flip-card:hover {
+        transform: none;
+      }
     }
   }
 
@@ -277,3 +287,27 @@ const loading = eager ? "eager" : "lazy";
     }
   }
 </style>
+
+{
+  flip && (
+    <script>
+      // Coarse pointers: first tap flips to the note; second tap follows the
+      // partner link. Fine+hover devices keep pure CSS hover/focus flip.
+      const coarse = window.matchMedia("(pointer: coarse)").matches;
+      if (coarse) {
+        document.querySelectorAll<HTMLAnchorElement>(".flip-card").forEach((card) => {
+          card.addEventListener("click", (event) => {
+            if (card.classList.contains("is-flipped")) return;
+            event.preventDefault();
+            document
+              .querySelectorAll<HTMLElement>(".flip-card.is-flipped")
+              .forEach((other) => {
+                if (other !== card) other.classList.remove("is-flipped");
+              });
+            card.classList.add("is-flipped");
+          });
+        });
+      }
+    </script>
+  )
+}

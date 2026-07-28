@@ -2,9 +2,14 @@
 // Site navigation. Link targets keep the live site's URL paths so existing
 // inbound links keep working at cutover. Matches the live nav exactly: 7
 // items, home reachable via the logo only (no Home/Tickets/Contact entries).
+//
+// Sticky on all viewports. Below 768px: hamburger + slide-down panel
+// (progressive enhancement via nav-menu.client.ts). Desktop: horizontal list.
 import { logoSrc } from "../../assets/media/brand";
 import { getSiteSettings } from "../../lib/content";
 import { normalizeInternalHref } from "../../lib/href";
+import IconClose from "../icons/IconClose.astro";
+import IconMenu from "../icons/IconMenu.astro";
 
 const { nav } = await getSiteSettings();
 
@@ -34,7 +39,21 @@ const isCurrent = (href: string): boolean =>
         decoding="async"
       />
     </a>
-    <nav aria-label="Main">
+    <button
+      type="button"
+      class="nav-toggle"
+      aria-expanded="false"
+      aria-controls="site-nav"
+      aria-label="Menu"
+    >
+      <span class="nav-toggle__icon nav-toggle__icon--menu">
+        <IconMenu />
+      </span>
+      <span class="nav-toggle__icon nav-toggle__icon--close">
+        <IconClose />
+      </span>
+    </button>
+    <nav id="site-nav" aria-label="Main">
       <ul>
         {
           nav.map((link) => (
@@ -54,10 +73,33 @@ const isCurrent = (href: string): boolean =>
   </div>
 </header>
 
+<script>
+  import { initNavMenu } from "./nav-menu.client";
+
+  document
+    .querySelectorAll<HTMLElement>(".site-header:not([data-js])")
+    .forEach((header) => {
+      header.setAttribute("data-js", "true");
+      initNavMenu(header);
+    });
+</script>
+
+<style is:global>
+  /* Scroll lock while the mobile drawer is open (class toggled in
+     nav-menu.client.ts). Global so it can reach <html>. */
+  html.is-nav-open {
+    overflow: hidden;
+  }
+</style>
+
 <style>
   .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
     background-color: var(--color-background);
     border-bottom: 1px solid var(--color-neutral-lighter);
+    view-transition-name: site-header;
   }
 
   .nav-inner {
@@ -65,13 +107,55 @@ const isCurrent = (href: string): boolean =>
     align-items: center;
     justify-content: space-between;
     gap: var(--space-md);
-    flex-wrap: wrap;
     padding-block: var(--space-md);
   }
 
   .brand {
     display: inline-block;
     line-height: 0;
+  }
+
+  .nav-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--color-text);
+    cursor: pointer;
+    border-radius: var(--radius-button-small);
+  }
+
+  .nav-toggle:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  .nav-toggle__icon {
+    display: flex;
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .nav-toggle__icon :global(svg) {
+    width: 100%;
+    height: 100%;
+  }
+
+  .nav-toggle__icon--close {
+    display: none;
+  }
+
+  .site-header[data-open] .nav-toggle__icon--menu {
+    display: none;
+  }
+
+  .site-header[data-open] .nav-toggle__icon--close {
+    display: flex;
   }
 
   nav ul {
@@ -90,20 +174,63 @@ const isCurrent = (href: string): boolean =>
     font-weight: var(--font-weight-medium);
   }
 
-  nav a:hover,
   nav a[aria-current="page"] {
     color: var(--color-primary);
   }
 
-  /* Mobile: the plain-text links above are only ~19px tall (WCAG 2.5.8
-     target size), below the 24px minimum. Vertical padding brings the tap
-     target close to the recommended 44px; scoped to this breakpoint so
-     the tighter desktop nav (DESIGN.md Layout) is unchanged. */
+  @media (hover: hover) {
+    nav a:hover {
+      color: var(--color-primary);
+    }
+  }
+
+  /* Mobile: hamburger + full-width panel under the bar. */
   @media (max-width: 767px) {
-    nav a {
+    .nav-toggle {
       display: inline-flex;
+      margin-left: auto;
+    }
+
+    nav {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      z-index: 1;
+      background-color: var(--color-background);
+      border-bottom: 1px solid var(--color-neutral-lighter);
+      /* Match .container horizontal inset; panel itself is full-bleed. */
+      padding: var(--space-sm) var(--padding-global) var(--space-md);
+      max-height: min(70vh, calc(100dvh - 4.5rem));
+      overflow-y: auto;
+    }
+
+    .site-header[data-open] nav {
+      display: block;
+    }
+
+    nav ul {
+      flex-direction: column;
+      flex-wrap: nowrap;
+      gap: 0;
+    }
+
+    nav a {
+      display: flex;
       align-items: center;
+      min-height: 2.75rem;
       padding-block: 0.625rem;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .nav-toggle {
+      display: none;
+    }
+
+    nav {
+      display: block;
     }
   }
 </style>

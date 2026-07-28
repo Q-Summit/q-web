@@ -304,6 +304,7 @@ const panels = page.panels.map(({ title, description, iconKey }) => {
     width: min(100%, var(--container-marquee));
     margin-inline: auto;
     overflow-x: auto;
+    overscroll-behavior-x: contain;
     scroll-snap-type: x mandatory;
     scroll-padding-inline: var(--padding-global);
     -webkit-overflow-scrolling: touch;

@@ -93,8 +93,10 @@ const tabs = [
     color: var(--color-text-inverse);
   }
 
-  .team-toggle__link:not(.is-active):hover {
-    color: var(--color-primary);
+  @media (hover: hover) {
+    .team-toggle__link:not(.is-active):hover {
+      color: var(--color-primary);
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {

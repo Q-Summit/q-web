@@ -70,16 +70,23 @@ const image = await resolveContentImage(
   /* DEPTH-1: the ported literal (0 12px 24px / 0.12) sits on --shadow-floating, so the hover
      keeps the deep step rather than dropping to --shadow-card-hover; the
      card lifts off the page instead of only nudging. */
-  .speaker-card:hover {
-    box-shadow: var(--shadow-floating);
-    transform: translateY(-4px);
+  @media (hover: hover) {
+    .speaker-card:hover {
+      box-shadow: var(--shadow-floating);
+      transform: translateY(-4px);
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .speaker-card,
-    .speaker-card:hover {
+    .speaker-card {
       transform: none;
       transition: none;
+    }
+
+    @media (hover: hover) {
+      .speaker-card:hover {
+        transform: none;
+      }
     }
   }
 

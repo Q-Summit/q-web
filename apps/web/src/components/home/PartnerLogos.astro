@@ -332,9 +332,21 @@ function repeatsFor(logos: PartnerLogo[]): number {
       infinite;
   }
 
-  .partner-band:hover .partner-band-track,
   .partner-band:focus-within .partner-band-track {
     animation-play-state: paused;
+  }
+
+  @media (hover: hover) {
+    .partner-band:hover .partner-band-track {
+      animation-play-state: paused;
+    }
+  }
+
+  /* Touch devices: pause the continuous scroll so logos stay readable. */
+  @media (pointer: coarse) {
+    .partner-band-track {
+      animation-play-state: paused;
+    }
   }
 
   /* One group = one full translation distance of the loop; the JS below

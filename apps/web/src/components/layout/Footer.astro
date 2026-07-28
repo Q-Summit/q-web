@@ -84,8 +84,7 @@ function iconFor(platform: string) {
     </div>
     <div class="footer-bottom">
       <p class="copyright">
-        &copy; {year}
-        {copyrightHolder}. All rights reserved.
+        &copy; {year}{" "}{copyrightHolder}. All rights reserved.
       </p>
     </div>
   </div>
@@ -190,10 +189,16 @@ function iconFor(platform: string) {
     font-size: var(--text-size-small);
   }
 
-  .footer-col a:hover,
   .footer-col a:focus-visible {
     color: var(--color-primary);
     text-decoration: underline;
+  }
+
+  @media (hover: hover) {
+    .footer-col a:hover {
+      color: var(--color-primary);
+      text-decoration: underline;
+    }
   }
 
   .social-link {
