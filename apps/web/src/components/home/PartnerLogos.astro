@@ -336,15 +336,10 @@ function repeatsFor(logos: PartnerLogo[]): number {
     animation-play-state: paused;
   }
 
+  /* Pause on hover only when the device actually has hover; touch must
+     keep the marquee spinning (interactivity gated, not the animation). */
   @media (hover: hover) {
     .partner-band:hover .partner-band-track {
-      animation-play-state: paused;
-    }
-  }
-
-  /* Touch devices: pause the continuous scroll so logos stay readable. */
-  @media (pointer: coarse) {
-    .partner-band-track {
       animation-play-state: paused;
     }
   }
