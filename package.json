@@ -6,7 +6,7 @@
   "type": "module",
   "description": "Q-Summit website: Astro static site + Payload CMS.",
   "engines": {
-    "node": ">=22.18",
+    "node": ">=22.19",
     "pnpm": ">=10"
   },
   "scripts": {

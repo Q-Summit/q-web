@@ -37,7 +37,7 @@ Never: Neon / ops:mirror-db / ops:cms-remote / _status published / sync users|le
 
 ## Commands
 
-Node `>=22.18`, pnpm `>=10` (pinned in `package.json` `packageManager`). Make is a zero-arg front door; pass flags with `ARGS='…'` or `pnpm content:* -- …`.
+Node `>=22.19`, pnpm `>=10` (pinned in `package.json` `packageManager`). Make is a zero-arg front door; pass flags with `ARGS='…'` or `pnpm content:* -- …`.
 
 ```sh
 make setup

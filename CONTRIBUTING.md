@@ -7,7 +7,7 @@ This repository holds the code and docs for q-summit.com. Two audiences, two pat
 
 ## Setup
 
-Requires Node `>=22.18`, pnpm `>=10` (pinned in `package.json`), and Docker Compose.
+Requires Node `>=22.19`, pnpm `>=10` (pinned in `package.json`), and Docker Compose.
 
 ```sh
 make setup

@@ -5,7 +5,7 @@
 // SCOPE NOTE: .astro files are deliberately NOT linted here. The entire Astro
 // ESLint toolchain (eslint-plugin-astro and astro-eslint-parser, every current
 // version) declares `engines.node: ^22.22.3 || ^24.16.0 || >=26.3.0`, and this
-// repo pins Node 22.18 in .nvmrc, which CI reads. Installing it would break the
+// repo pins Node 22.19 in .nvmrc, which CI reads. Installing it would break the
 // pinned runtime rather than lint anything. Astro files are still typechecked
 // by `astro check` in check:web (92 files, 0 errors). To close the gap, bump
 // .nvmrc + engines.node to a Node 22 LTS >= 22.22.3, then add

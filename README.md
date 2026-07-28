@@ -34,7 +34,7 @@ The full decision trail is in [`docs/decisions/`](docs/decisions/), starting wit
 
 ## Getting started
 
-Requires Node `>=22.18`, pnpm `>=10` (exact version pinned in `package.json`), and Docker for the CMS database.
+Requires Node `>=22.19`, pnpm `>=10` (exact version pinned in `package.json`), and Docker for the CMS database.
 
 ```sh
 make setup    # install, git hooks, skills symlink, Chrome-for-Testing, docs validation

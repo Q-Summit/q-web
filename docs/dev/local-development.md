@@ -6,7 +6,7 @@ Agent MAY/NEVER and the quick card live in root [`AGENTS.md`](../../AGENTS.md). 
 
 ## Prerequisites
 
-- Node `>=22.18` and pnpm `>=10` (exact pnpm in root `package.json` `packageManager`)
+- Node `>=22.19` and pnpm `>=10` (exact pnpm in root `package.json` `packageManager`)
 - Docker Compose (Postgres + MinIO)
 - Optional media: gitignored `apps/web/public/media/` (seed CMS / `r2:sync`) or `pnpm ops:mirror-media` (humans only). Never commit binaries; prod serves R2.
 
