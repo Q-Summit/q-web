@@ -1,0 +1,82 @@
+---
+// Renders one legal page's HTML from getLegal() VERBATIM via set:html.
+// Never rewrite or reformat the legal wording; the markup keeps its
+// original Webflow class names, which are styled below so the page reads
+// like the live site. Content is German, hence lang="de" on the wrapper.
+//
+// This markup already brings its own full-bleed Webflow section
+// (padding-global > container-large > padding-section-large), so it is
+// remapped onto our tokens in place rather than wrapped in a second
+// .section/.container, which would double the gutters and vertical
+// padding (DESIGN.md LAYOUT-1/LAYOUT-3).
+
+interface Props {
+  html: string;
+}
+
+const { html } = Astro.props;
+---
+
+<div class="legal" lang="de" set:html={html} />
+
+<style is:global>
+  .legal .padding-global {
+    padding-inline: var(--padding-global);
+  }
+
+  /* The one page width for this route (DESIGN.md LAYOUT-1). */
+  .legal .container-large {
+    width: 100%;
+    max-width: var(--container-large);
+    margin-inline: auto;
+  }
+
+  .legal .padding-section-large {
+    padding-block: var(--section-padding);
+  }
+
+  /* Text-measure limit for the legal prose itself, nested inside the
+     container above, not a section width (DESIGN.md LAYOUT-2). */
+  .legal .privacy-policy_how-it-works_component {
+    max-width: var(--container-small);
+    margin-inline: auto;
+  }
+
+  /* Heading text arrives as a styled <div>, not a semantic heading, so it
+     is not reached by the global h1-h6 rules and needs its size/weight/
+     color set here (DESIGN.md TYPE-1 exception: not a real heading element).
+     The sibling empty <h2 class="heading-style-h2"> some legal pages
+     include carries no text and is left unstyled. */
+  .legal .heading-style-h4 {
+    margin-bottom: var(--space-sm);
+    font-size: var(--heading-h4-size);
+    font-weight: var(--heading-weight);
+    line-height: var(--heading-line-height-normal);
+    color: var(--color-heading);
+  }
+
+  .legal .margin-bottom.margin-small {
+    margin-bottom: var(--space-md);
+  }
+
+  .legal .margin-bottom.margin-xxlarge {
+    margin-bottom: var(--space-lg);
+  }
+
+  .legal p {
+    margin-bottom: var(--space-sm);
+    overflow-wrap: break-word;
+  }
+
+  .legal strong {
+    color: var(--color-heading);
+  }
+
+  /* Navy, not orange: body-copy links are not the one sanctioned
+     accent uses (DESIGN.md COLOR-1); underline keeps them recognizable as links. */
+  .legal a {
+    color: var(--color-primary);
+    text-decoration: underline;
+    overflow-wrap: anywhere;
+  }
+</style>

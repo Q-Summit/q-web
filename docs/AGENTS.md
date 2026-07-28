@@ -1,6 +1,6 @@
 # Docs
 
-Work under `docs/`. Process and homes: [`README.md`](README.md). arc42 chapter rules: [`architecture/AGENTS.md`](architecture/AGENTS.md).
+Work under `docs/`. Process and homes: [`README.md`](README.md). Nested leaves: [`architecture/AGENTS.md`](architecture/AGENTS.md), [`dev/AGENTS.md`](dev/AGENTS.md), [`editors/AGENTS.md`](editors/AGENTS.md).
 
 ## ALWAYS
 
@@ -9,18 +9,22 @@ Work under `docs/`. Process and homes: [`README.md`](README.md). arc42 chapter r
 - Same PR: ADR index in `architecture/09-architecture-decisions.md`.
 - Mark architecture claims as current, or as direction / TBD / owed ADR.
 - Mermaid via **docs-diagrams**; caption states the takeaway.
-- Place new pages by audience: readers who should not need to know what a repository is go in `editors/`; developer docs go in `decisions/` or `architecture/`; rare-ops pages land flat under `docs/` when their work first happens.
-- Editor-facing docs (`editors/`) are written for non-developers: plain language, no repo jargon (no PR, CI, repo, markdown).
+- Anything about styling, tokens, or the `ui/` primitives belongs in [`../apps/web/DESIGN.md`](../apps/web/DESIGN.md), not here; load the **design-system** skill before citing a rule ID.
+- Place new pages by audience: non-developers -> `editors/`; maintainer how-tos -> `dev/`; current system truth -> `architecture/`; architecture choices -> `decisions/`.
+- Root tooling catalog (purpose folders `local/` `content/` `check/` `preview/` `ops/`): [`dev/scripts.md`](dev/scripts.md).
 - `pnpm run check` runs from the repo root, not from `docs/`.
 
 ## PREFER
 
 - Glossary row only when a term is first used.
 - When a change introduces a new quality, add a one-line stimulus/response scenario to `architecture/10-quality-requirements.md`; keep the list short.
+- Keep arc42 chapters free of runbook steps; link to `dev/` instead.
+- Thin nested AGENTS in `dev/` and `editors/` for local scars; do not restate this file there.
 
 ## NEVER
 
-- New directories under `docs/` (`editors/`, `decisions/`, `architecture/` are the complete set).
+- New directories under `docs/` beyond `editors/`, `dev/`, `decisions/`, and `architecture/`.
+- Put step-by-step setup or deploy checklists into arc42 chapters (those belong in `dev/`).
 - Edit accepted ADRs (supersede instead).
 - Freestyle ADR sections.
 - Fill empty arc42 sections for completeness.

@@ -1,0 +1,650 @@
+/* Custom admin surfaces for the Q-Summit CMS.
+ *
+ * Imported once, from src/app/(payload)/layout.tsx, on the line after
+ * `import "@payloadcms/next/css";`. Payload 3.86 has no admin.css config key,
+ * so the layout import is the only supported vehicle.
+ *
+ * Plain CSS on purpose. `sass` is not a dependency of apps/cms and adding one
+ * is not allowed, so there is no .scss option here.
+ *
+ * SIZING RULE, the reason this file looks the way it does:
+ * `1rem` in this admin is 13px, and 12px below 1024px. Payload's own heading
+ * sizes are compiled absolute px from its Sass base() function, so they hold
+ * 32/26/20/16/13/12px at BOTH roots. Anything we write in rem drifts away from
+ * the chrome next to it at that breakpoint. `calc(var(--base) * n)` is not an
+ * escape hatch for type either: --base is itself rem derived and computes to
+ * 18.46px at the 12px root.
+ *   font-size and line-height -> literal px on Payload's own steps.
+ *   spacing and rhythm        -> calc(var(--base) * n), which is what Payload
+ *                                itself uses for component spacing.
+ *   max-width                 -> literal px, so a reading column cannot shrink
+ *                                out from under the text silently.
+ * Body copy declares no font-size at all. Inheriting 13px/20px is the one case
+ * where tracking the root is correct, because Payload's body does the same.
+ *
+ * DARK MODE: there is no [data-theme="dark"] block below and there should
+ * never need to be. Every color here aliases a Payload token that Payload
+ * itself re-points inside html[data-theme="dark"].
+ * The one trap: the dark block SKIPS the -500 rung on every ramp, jumping 450
+ * to 550. So --theme-elevation-500, --theme-error-500, --theme-success-500 and
+ * --theme-warning-500 are the only status/elevation tokens that do not invert.
+ * Nothing below resolves to a -500. Do not add one.
+ */
+
+/* ==========================================================================
+   Tokens
+   ========================================================================== */
+
+:root {
+  /* Type. Each value is a real step in Payload's scale, written as literal px
+     so it stays lockstep with Payload chrome at both roots.
+     Page titles and section titles get no token on purpose: a bare <h1> or
+     <h2> inherits %h1 (32/36px) and %h2 (26/32px) plus Payload's small-break
+     treatment, which an inline font-size currently defeats. */
+  --qs-text-card: 16px; /* Payload %h4 */
+  --qs-text-sub: 13px; /* Payload %h5, and byte for byte its .card__title */
+  --qs-text-meta: 12px; /* Payload %small. The floor. Nothing is smaller. */
+  --qs-line: 20px; /* the baseline every line box lands on */
+  --qs-line-tight: 16px; /* for the 13px bold sub heading only */
+
+  /* Weight. Payload uses 500 on headings, 600 on active nav and card titles,
+     normal on buttons. 700 appears nowhere in its admin, so not here either. */
+  --qs-weight-heading: 500;
+  --qs-weight-strong: 600;
+
+  /* Space, on Payload's 20px grid. Expressed through --base so custom surfaces
+     compress at 1024px in step with Payload's own component spacing. */
+  --qs-space-1: calc(var(--base) * 0.25); /* 5px  */
+  --qs-space-2: calc(var(--base) * 0.5); /* 10px */
+  --qs-space-3: calc(var(--base) * 0.8); /* 16px */
+  --qs-space-4: var(--base); /* 20px */
+  --qs-space-5: calc(var(--base) * 1.5); /* 30px */
+
+  /* Measure. One reading column, replacing the five that had drifted apart
+     (820 / 880 / 920 / 960 and a 42rem). Literal px so it does not rescale. */
+  --qs-measure: 880px;
+  --qs-measure-wide: 1180px; /* data tables, see .qs-page--wide */
+  --qs-measure-prose: 66ch;
+
+  /* Text roles. These exist to replace `opacity`, which composites the whole
+     subtree, multiplies when nested, and lands differently per theme.
+     Contrast against the page background, light / dark:
+       elevation-650  7.23:1 / 10.45:1
+       elevation-600  5.83:1 /  8.98:1
+       elevation-450  3.32:1 /  6.55:1  inert affordances only, never prose
+       error-600      5.88:1 /  6.41:1 */
+  --qs-fg: var(--theme-text);
+  --qs-fg-muted: var(--theme-elevation-650);
+  --qs-fg-meta: var(--theme-elevation-600);
+  --qs-fg-disabled: var(--theme-elevation-450);
+  --qs-fg-danger: var(--theme-error-600);
+
+  /* Surfaces. --theme-elevation-25 is undefined in Payload, which is why every
+     card on /docs, /reviews and /audit renders transparent today. -50 is the
+     fill Payload's own .card and .table zebra rows use. */
+  --qs-surface: var(--theme-elevation-50);
+  --qs-surface-hover: var(--theme-elevation-100);
+  --qs-border: var(--theme-border-color);
+  --qs-divider: var(--theme-elevation-100);
+
+  /* Shape. Payload ships exactly three radii. 12px and 10px were inventions. */
+  --qs-radius-card: var(--style-radius-l);
+  --qs-radius-badge: var(--style-radius-s);
+}
+
+/* ==========================================================================
+   Components
+
+   CASCADE: everything below is UNLAYERED except the one @layer payload block
+   at the end. Payload declares `@layer payload-default, payload;` and puts all
+   701 of its own rules in payload-default. Unlayered CSS outranks every layer
+   before specificity is even consulted, so these rules win no matter what
+   order the imports resolve in, and no !important is ever needed. That is
+   what lets the focus rules below beat Payload's `a:focus { outline: none }`,
+   which today silently kills the focus ring on every custom link.
+   Rules that target Payload's OWN selectors go in @layer payload instead, so
+   a future name collision cannot silently outrank Payload.
+   ========================================================================== */
+
+/* --- Page frame: /docs, /reviews, /audit --------------------------------- */
+
+.qs-page {
+  max-width: var(--qs-measure);
+  padding-block: var(--qs-space-5) var(--spacing-view-bottom);
+}
+
+/* Data views (/reviews, /audit) rather than prose views (/docs). A five column
+   table does not fit the reading measure: at 880px the email column falls to
+   Payload's 150px floor and addresses break mid word. The lede keeps the
+   reading measure regardless, so only the table gets the extra room. */
+.qs-page--wide {
+  max-width: var(--qs-measure-wide);
+}
+
+/* No font-size. The bare <h1> inherits %h1 at 32px/36px and picks up Payload's
+   small-break shrink to 25px with -0.5px tracking for free. */
+.qs-page__title {
+  margin: 0 0 var(--qs-space-1);
+}
+
+.qs-page__lede {
+  margin: 0 0 var(--qs-space-5);
+  max-width: var(--qs-measure-prose);
+  color: var(--qs-fg-muted);
+}
+
+.qs-page > :last-child {
+  margin-bottom: 0;
+}
+
+/* --- Card ---------------------------------------------------------------- */
+
+.qs-card {
+  margin: 0 0 var(--qs-space-4);
+  padding: var(--qs-space-3) var(--qs-space-4);
+  background: var(--qs-surface);
+  border: 1px solid var(--qs-border);
+  border-radius: var(--qs-radius-card);
+}
+
+.qs-card > :first-child {
+  margin-top: 0;
+}
+
+.qs-card > :last-child {
+  margin-bottom: 0;
+}
+
+/* Banded variant: full width sections divided by hairlines, each supplying its
+   own padding. One surface throughout, so removing the old gradient cannot
+   leave a lone tinted strip behind. */
+.qs-card--flush {
+  padding: 0;
+  overflow: hidden;
+}
+
+.qs-card--flush > * {
+  padding: var(--qs-space-3) var(--qs-space-4);
+}
+
+.qs-card--flush > * + * {
+  border-top: 1px solid var(--qs-divider);
+}
+
+.qs-card__title {
+  margin: 0 0 var(--qs-space-2);
+  font-size: var(--qs-text-card);
+  line-height: var(--qs-line);
+  font-weight: var(--qs-weight-heading);
+}
+
+/* Matches Payload's .card__title exactly, so a sub heading sitting above the
+   collection cards reads as their peer instead of shrinking below them. */
+.qs-card__sub {
+  margin: 0 0 var(--qs-space-1);
+  font-size: var(--qs-text-sub);
+  line-height: var(--qs-line-tight);
+  font-weight: var(--qs-weight-strong);
+}
+
+.qs-card__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--qs-space-2) var(--qs-space-4);
+  margin-top: var(--qs-space-3);
+  padding-top: var(--qs-space-2);
+  border-top: 1px solid var(--qs-divider);
+}
+
+/* Payload's reset is `p { margin: 0 }`, so a card holding more than one block
+   has no rhythm of its own and its paragraphs collide with the list, dl or
+   paragraph below. Direct children only, so nested layouts (.qs-steps, the
+   banded sections of .qs-card--flush) keep owning their spacing. The
+   :last-child rule above still wins on the final block: same origin, and
+   `.qs-card > :last-child` carries the higher specificity. */
+.qs-card > p {
+  margin: 0 0 var(--qs-space-2);
+}
+
+.qs-card ul,
+.qs-card ol {
+  margin: 0 0 var(--qs-space-2);
+  padding-inline-start: var(--qs-space-4);
+}
+
+.qs-card li + li {
+  margin-top: var(--qs-space-1);
+}
+
+/* --- Text roles ---------------------------------------------------------- */
+
+.qs-meta {
+  font-size: var(--qs-text-meta);
+  line-height: var(--qs-line);
+  color: var(--qs-fg-meta);
+}
+
+.qs-muted {
+  color: var(--qs-fg-muted);
+}
+
+.qs-danger {
+  color: var(--qs-fg-danger);
+}
+
+.qs-disabled {
+  color: var(--qs-fg-disabled);
+}
+
+.qs-empty {
+  margin: 0;
+  padding-block: var(--qs-space-2);
+  color: var(--qs-fg-muted);
+}
+
+/* Breaks an address only when it genuinely cannot fit, unlike break-all which
+   takes a break opportunity at every character on every line. */
+.qs-break {
+  overflow-wrap: anywhere;
+}
+
+/* Cancels the 20px bottom margin Payload's Banner carries, for the narrow
+   document sidebar where that margin is dead space. */
+.qs-flush {
+  margin-bottom: 0;
+}
+
+/* --- Links --------------------------------------------------------------- */
+/* Payload sets `a { color: currentColor }` with no underline, so an unstyled
+   link is pixel identical to the prose around it, and then `a:focus { outline:
+   none }` removes the keyboard indicator. Both are undone here. Buttons and
+   pills opt out so Payload's own control chrome is untouched. */
+
+.qs-page a:not(.btn):not(.pill),
+.qs-card a:not(.btn):not(.pill),
+.qs-hint a,
+.qs-history a,
+.qs-link {
+  color: var(--qs-fg);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.qs-page a:not(.btn):not(.pill):hover,
+.qs-card a:not(.btn):not(.pill):hover,
+.qs-hint a:hover,
+.qs-history a:hover,
+.qs-link:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* Payload already dims anchors on :active via `a:active { opacity: .7 }`, so
+   this only thickens the rule rather than fighting that with a second color. */
+.qs-page a:not(.btn):not(.pill):active,
+.qs-card a:not(.btn):not(.pill):active,
+.qs-hint a:active,
+.qs-history a:active,
+.qs-link:active {
+  text-decoration-thickness: 2px;
+}
+
+.qs-page a:focus-visible,
+.qs-card a:focus-visible,
+.qs-shortcuts a:focus-visible,
+.qs-hint a:focus-visible,
+.qs-history a:focus-visible,
+.qs-link:focus-visible {
+  outline: var(--accessibility-outline);
+  outline-offset: var(--accessibility-outline-offset);
+}
+
+/* Weight only. Where two links share a table cell, give this to the primary
+   one and leave the other plain, so they stop differing by an invisible
+   600 versus 700 step. */
+.qs-link--strong {
+  font-weight: var(--qs-weight-strong);
+}
+
+/* --- Media "Used on" panel ----------------------------------------------- */
+/* Sits inside a media document's field column, listing every entry that points
+   at the file. .field-type on the wrapper borrows Payload's own field spacing
+   so it lines up with the alt input above it. */
+
+.qs-usage__title {
+  margin: 0 0 var(--qs-space-1);
+  font-weight: var(--qs-weight-strong);
+}
+
+.qs-usage__list {
+  margin: 0 0 var(--qs-space-2);
+  padding-left: var(--qs-space-3);
+  display: grid;
+  gap: var(--qs-space-1);
+}
+
+/* --- Definition list ----------------------------------------------------- */
+/* The two reference tables on /docs are term and definition pairs, not tabular
+   data. As a <dl> they need no header semantics, and they sidestep Payload's
+   150px per cell floor which would force a pointless scrollbar on two narrow
+   columns of prose. */
+
+.qs-defs {
+  display: grid;
+  grid-template-columns: minmax(120px, 30%) 1fr;
+  gap: var(--qs-space-1) var(--qs-space-3);
+  margin: 0;
+}
+
+.qs-defs > dt {
+  margin: 0;
+  font-weight: var(--qs-weight-strong);
+}
+
+.qs-defs > dd {
+  margin: 0;
+}
+
+/* --- Table columns ------------------------------------------------------- */
+/* Applied to cells inside Payload's own `.table` wrapper, which supplies the
+   scroll container, zebra striping, header color, grid aligned padding and
+   in-cell focus rings. Only the per column behavior is ours. */
+
+.qs-col--nowrap {
+  white-space: nowrap;
+}
+
+/* break-word, NOT anywhere. `anywhere` also feeds the intrinsic min-content
+   size, so a table column of email addresses collapses to one character wide
+   and every address then wraps. `break-word` leaves intrinsic sizing alone and
+   only breaks a word that genuinely cannot fit. */
+.qs-col--wrap {
+  overflow-wrap: break-word;
+}
+
+/* Payload sets `min-width: 150px` on every th and td, which the condensed
+   variant does not override. Narrow columns opt out so a five column table is
+   not forced to 750px; wide columns keep the floor so the table scrolls
+   instead of crushing. Unlayered, so it beats that rule without a specificity
+   contest. */
+.qs-col--tight {
+  min-width: 0;
+}
+
+/* --- Inline row ---------------------------------------------------------- */
+
+.qs-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--qs-space-2) var(--qs-space-4);
+}
+
+/* --- Sidebar shortcuts --------------------------------------------------- */
+/* The links reuse Payload's .nav__link and .nav__link.active, so padding, the
+   hover and focus underline, and the touch sizing below 768px all come from
+   Payload. Only the block rhythm is ours. Payload's own .nav-group draws no
+   divider between groups, so neither does this. */
+
+.qs-shortcuts {
+  margin-bottom: var(--qs-space-2);
+}
+
+/* --- Document controls hint ---------------------------------------------- */
+/* Renders as the first child of the flex row that also holds Preview and
+   Publish. It must yield space rather than push the primary action away. */
+
+.qs-hint {
+  display: flex;
+  align-items: center;
+  gap: var(--qs-space-2);
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: 320px;
+  margin: 0;
+  font-size: var(--qs-text-meta);
+  line-height: var(--qs-line);
+  color: var(--qs-fg-meta);
+}
+
+.qs-hint__text {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- Sidebar publish history --------------------------------------------- */
+
+.qs-history__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--qs-space-2);
+  margin-bottom: var(--qs-space-1);
+}
+
+.qs-history__summary {
+  margin: 0 0 var(--qs-space-2);
+}
+
+/* Capped and scrolled. Thirty rows otherwise produce well over 1000px of list
+   inside a column roughly 225px wide, burying every field above it. */
+.qs-history__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.qs-history__item {
+  padding-block: var(--qs-space-2);
+  border-top: 1px solid var(--qs-divider);
+}
+
+.qs-history__row {
+  display: flex;
+  align-items: center;
+  gap: var(--qs-space-1);
+  margin-bottom: var(--qs-space-1);
+}
+
+/* --- Dashboard step grid -------------------------------------------------- */
+/* Explicit three up, then straight to one. The previous auto-fit floor dropped
+   to a two plus one orphan row across a wide band of widths, which is the
+   worst of the three layouts. */
+
+.qs-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--qs-space-4);
+}
+
+.qs-steps > * > :last-child {
+  margin-bottom: 0;
+}
+
+/* --- Login ---------------------------------------------------------------- */
+
+.qs-google-btn {
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+
+.qs-login-note {
+  margin: var(--qs-space-2) 0 0;
+  text-align: center;
+  color: var(--qs-fg-meta);
+}
+
+/* ==========================================================================
+   Breakpoints. Payload's own: 1024px is mid-break, where the admin root drops
+   to 12px and the nav becomes a drawer; 768px is small-break, where the gutter
+   narrows and the nav goes full width for touch. Nothing in the custom UI
+   reacted to either one before this file existed.
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+  .qs-page {
+    padding-block: var(--qs-space-4) var(--spacing-view-bottom);
+  }
+
+  .qs-steps {
+    grid-template-columns: 1fr;
+  }
+
+  /* The document controls row becomes a horizontal scroller here, so any width
+     spent on prose scrolls the Publish button behind its gradient fade. Keep
+     the link, drop the sentence. */
+  .qs-hint__text {
+    display: none;
+  }
+
+  .qs-hint {
+    max-width: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .qs-card {
+    padding: var(--qs-space-2) var(--qs-space-3);
+  }
+
+  .qs-card--flush > * {
+    padding: var(--qs-space-2) var(--qs-space-3);
+  }
+
+  .qs-defs {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .qs-defs > dd {
+    margin-bottom: var(--qs-space-2);
+  }
+
+  /* The button row belongs to the buttons on a phone. */
+  .qs-hint {
+    display: none;
+  }
+
+  .qs-history__list {
+    max-height: none;
+  }
+}
+
+/* ==========================================================================
+   Deliberate overrides of Payload's own selectors. These, and only these, are
+   layered. `payload` is declared after `payload-default` by Payload itself, so
+   they win without !important, and they stay overridable by anything unlayered
+   above.
+   ========================================================================== */
+
+@layer payload {
+  /* Payload's .nav__label supplies the color and inherits the 13px body size,
+     which is all it should do. Only the gap under it is missing, matched to
+     the 5px .nav-group__toggle uses. */
+  .qs-shortcuts .nav__label {
+    margin: 0 0 5px;
+  }
+
+  /* Drives the active shortcut off aria-current, which the component already
+     sets, so the visual state and the accessibility tree cannot drift apart. */
+  .qs-shortcuts .nav__link[aria-current="page"] {
+    font-weight: var(--qs-weight-strong);
+  }
+
+  /* Hides the stock email and password form on the Google only login page.
+     Scoped to a marker class that is rendered ONLY when GOOGLE_CLIENT_ID and
+     GOOGLE_CLIENT_SECRET are both set, so a local developer without Google
+     env keeps a working form instead of a dead page. beforeLogin renders as
+     an immediate sibling before LoginForm, which is what `~` relies on.
+     No !important: Payload emits no .login__form rule at all in 3.86, so
+     there was never anything to outrank. */
+  .qs-google-btn ~ .login__form {
+    display: none;
+  }
+
+  /* Nav group headings. Payload sets --theme-elevation-400, which is 2.81:1
+     on the light background: below the 3.32:1 floor this file reserves for
+     inert affordances, for text that names the whole section. The :hover and
+     :focus-visible restatement is mandatory, not defensive -- a cascade layer
+     beats an earlier layer before specificity is consulted, so without it the
+     rule above would also cancel Payload's own hover response. */
+  .nav__label,
+  .nav-group__toggle {
+    color: var(--qs-fg-meta);
+    font-weight: var(--qs-weight-strong);
+  }
+
+  .nav-group__toggle:hover,
+  .nav-group__toggle:focus-visible {
+    color: var(--theme-elevation-1000);
+  }
+
+  /* Logo and portrait previews.
+
+     Payload renders an upload field at 40px square
+     (.upload-field-card--size-medium .thumbnail) with object-fit: cover on the
+     image, so a wide partner wordmark is cropped to about two letters. That is
+     the "preview is tiny and hard to see" complaint, and it needs three
+     things fixed together: the box, the fit, and the backdrop.
+
+     align-self is required because .thumbnail:not(.thumbnail--size-none) sets
+     min-height: 100% and align-self: stretch inside the flex card; height
+     alone is overridden by the stretch. The width on .file__thumbnail is
+     required because the list cell has its own max-width of 2 * --base. */
+  .qs-logo-field .thumbnail {
+    width: 168px;
+    height: 84px;
+    max-height: none;
+    align-self: center;
+  }
+
+  .qs-portrait-field .thumbnail {
+    width: 84px;
+    height: 84px;
+    max-height: none;
+    align-self: center;
+  }
+
+  /* contain, not cover: a logo must not be cropped. */
+  .qs-logo-field .thumbnail img,
+  .qs-logo-field .thumbnail svg {
+    object-fit: contain;
+  }
+
+  /* Checkerboard behind logo previews. Most partner marks are transparent
+     PNG or SVG, and a dark mark on the default light panel (or a white mark
+     in dark theme) was invisible. This makes transparency legible in both
+     themes without assuming either. */
+  .qs-logo-field .thumbnail {
+    background-color: var(--theme-elevation-0);
+    background-image: repeating-conic-gradient(
+      var(--theme-elevation-100) 0% 25%,
+      var(--theme-elevation-0) 0% 50%
+    );
+    background-size: 16px 16px;
+  }
+
+  /* Media library list. This is the one list where Payload really does render
+     a thumbnail: it swaps in its File cell for the `filename` column of an
+     upload collection (an upload FIELD on another collection falls back to a
+     relationship cell, which is why no other list has an image column). The
+     stock cap is 2 * --base, about 40px, which is too small to tell two logos
+     apart while scanning. `.cell-filename` scopes this to that column so
+     thumbnails inside relationship cells elsewhere keep their size. */
+  .cell-filename .file__thumbnail {
+    width: 96px;
+    max-width: 96px;
+    height: 48px;
+  }
+
+  .cell-filename .file__thumbnail img,
+  .cell-filename .file__thumbnail svg {
+    object-fit: contain;
+  }
+}

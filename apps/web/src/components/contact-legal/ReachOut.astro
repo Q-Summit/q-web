@@ -1,0 +1,193 @@
+---
+// Contact page: general inquiry emails and postal address, next to the
+// contact group photo. Mirrors the live site's "section_contact_contact"
+// two-column layout (icon list left, photo right).
+import type { ContactItem } from "../../lib/content";
+import Section from "../ui/Section.astro";
+import Container from "../ui/Container.astro";
+
+interface Props {
+  heading: string;
+  paragraphs: string[];
+  items: ContactItem[];
+}
+
+const { heading, paragraphs, items } = Astro.props;
+---
+
+<!-- Left-aligned opener (DESIGN.md LAYOUT-4 exception): the live page left-aligns
+     this closing strip to match the board section above it, not a centered
+     .section-header. -->
+<Section variant="alternate" small>
+  <Container>
+    <div class="reach-header">
+      {
+        /* The mirror's raw/contact.html has a literal "Connect" tagline
+           div (class="text-style-tagline") above this heading too; the
+           scrape only extracts real <h*>/<p> tags so it never made it
+           into pages.json, but it is real page content, not invented
+           copy (see raw/contact.html's "section_contact_contact"). */
+      }
+      <p class="u-eyebrow is-sentence reach-eyebrow">Connect</p>
+      <h2>{heading}</h2>
+      {paragraphs.map((text) => <p class="intro">{text}</p>)}
+    </div>
+    <div class="reach-grid">
+      <div class="item-list">
+        {
+          items.map((item) => (
+            <div class="item">
+              <span class="item-icon" aria-hidden="true">
+                {item.email ? (
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M20 4H4C2.897 4 2 4.897 2 6V18C2 19.103 2.897 20 4 20H20C21.103 20 22 19.103 22 18V6C22 4.897 21.103 4 20 4ZM20 6V6.511L12 12.734L4 6.512V6H20ZM4 18V9.044L11.386 14.789C11.5611 14.9265 11.7773 15.0013 12 15.0013C12.2227 15.0013 12.4389 14.9265 12.614 14.789L20 9.044L20.002 18H4Z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M12 14C14.206 14 16 12.206 16 10C16 7.794 14.206 6 12 6C9.794 6 8 7.794 8 10C8 12.206 9.794 14 12 14ZM12 8C13.103 8 14 8.897 14 10C14 11.103 13.103 12 12 12C10.897 12 10 11.103 10 10C10 8.897 10.897 8 12 8Z"
+                      fill="currentColor"
+                    />
+                    <path
+                      d="M11.42 21.814C11.5892 21.9349 11.792 21.9998 12 21.9998C12.208 21.9998 12.4107 21.9349 12.58 21.814C12.884 21.599 20.029 16.44 20 10C20 5.589 16.411 2 12 2C7.589 2 4 5.589 4 9.995C3.971 16.44 11.116 21.599 11.42 21.814ZM12 4C15.309 4 18 6.691 18 10.005C18.021 14.443 13.612 18.428 12 19.735C10.389 18.427 5.979 14.441 6 10C6 6.691 8.691 4 12 4Z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                )}
+              </span>
+              <div class="item-body">
+                <h3 class="item-label">{item.label}</h3>
+                {item.details.map((detail) => (
+                  <p class="item-detail">{detail}</p>
+                ))}
+                {item.email && (
+                  <a class="item-mail" href={`mailto:${item.email}`}>
+                    {item.email}
+                  </a>
+                )}
+              </div>
+            </div>
+          ))
+        }
+      </div>
+      <img
+        class="reach-photo"
+        src="/media/6a3aa1fe255b386868d8b214_Q2027-CT-p-1080.jpg"
+        srcset="/media/6a3aa1fe255b386868d8b214_Q2027-CT-p-500.jpg 500w, /media/6a3aa1fe255b386868d8b214_Q2027-CT-p-800.jpg 800w, /media/6a3aa1fe255b386868d8b214_Q2027-CT-p-1080.jpg 1080w"
+        sizes="(max-width: 991px) 90vw, 45vw"
+        width="1080"
+        height="720"
+        alt="The Q-Summit team"
+        loading="lazy"
+      />
+    </div>
+  </Container>
+</Section>
+
+<style>
+  .reach-header {
+    max-width: var(--container-small);
+    margin-bottom: var(--space-xl);
+  }
+
+  /* Shared .u-eyebrow (DESIGN.md COMP-3); only the gap to the heading
+     is local. */
+  .reach-eyebrow {
+    margin-bottom: var(--space-2xs);
+  }
+
+  h2 {
+    margin-bottom: var(--space-sm);
+  }
+
+  .intro {
+    font-size: var(--text-size-medium);
+  }
+
+  .reach-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-xl);
+    align-items: start;
+  }
+
+  @media (min-width: 992px) {
+    .reach-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 5rem;
+    }
+  }
+
+  .item-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+  }
+
+  .item {
+    display: flex;
+    gap: var(--space-sm);
+  }
+
+  .item-icon {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    color: var(--color-primary);
+  }
+
+  .item-body {
+    min-width: 0;
+  }
+
+  /* Card sub-heading, deliberately smaller than the global h3 scale
+     (DESIGN.md TYPE-1 exception): the live page styles these as heading-style-h6,
+     not a full h3. Color still inherits navy from the global heading rule. */
+  .item-label {
+    margin-bottom: var(--space-2xs);
+    font-size: var(--heading-h6-size);
+    line-height: var(--heading-line-height-normal);
+  }
+
+  .item-detail {
+    margin-bottom: 0.25rem;
+    color: var(--color-neutral-dark);
+  }
+
+  /* Navy, not orange: mailto links are not the one sanctioned
+     accent uses (DESIGN.md COLOR-1). */
+  .item-mail {
+    font-weight: var(--heading-weight);
+    color: var(--color-primary);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+  }
+
+  .item-mail:hover {
+    text-decoration: underline;
+  }
+
+  .reach-photo {
+    width: 100%;
+    border-radius: var(--radius-card-large);
+    object-fit: cover;
+  }
+</style>

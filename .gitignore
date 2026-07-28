@@ -1,19 +1,51 @@
 node_modules/
 
-# Secrets and per-environment config. Never commit credentials;
-# .env.example files (committed) document the required variables.
+# Secrets and per-environment config. Never commit credentials.
+# Committed examples document required variables; filled sheets stay local.
 .env
 .env.*
 !.env.example
+!.env.remote.example
+!.env.vercel.example
+!.env.workers.example
 .dev.vars
 .dev.vars.*
 
 # Build and framework output.
 dist/
 .astro/
+
+# Media binaries never live in git. Local copies seed CMS / CF preview;
+# production serves the same keys from R2 via the Worker `/media/*` route.
+# Content packages carry filenames only; agents propose drafts against CMS.
+apps/web/public/media/
+apps/web/src/assets/media/*
+!apps/web/src/assets/media/*.ts
+
+# Local CMS uploads (development only; production media lives in R2).
+apps/cms/media/
 .next/
 .vercel/
 .wrangler/
+
+# Local database dumps written by scripts/ops/mirror-db.mjs (Neon mirror,
+# humans only): real production content (speaker/team/contact PII). Never
+# commit these.
+scripts/backups/
+
+# Chrome-for-Testing (ensure-chrome / lighthouse). Report *outputs* are
+# local-only; the folder keeps a committed README + AGENT.example.md so
+# agents know the contract without a prior lighthouse run.
+.browsers/
+.lighthouse/*
+!.lighthouse/README.md
+!.lighthouse/AGENT.example.md
+
+# Content package transfer artifacts (make package / make pull). Keep the
+# committed examples/ tree; never commit live exports with prod media/PII.
+scripts/content-packages/*
+!scripts/content-packages/examples/
+!scripts/content-packages/examples/**
 
 # Local, per-machine state. Never commit personal tool settings.
 # .vscode/extensions.json (shared recommendations) is the one exception.
@@ -22,3 +54,6 @@ dist/
 .claude/settings.local.json
 .DS_Store
 Thumbs.db
+
+# Emergency-restored content snapshot (go-live.md); real content never ships in git.
+apps/web/content/

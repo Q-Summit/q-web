@@ -1,0 +1,772 @@
+{
+  "home": {
+    "title": "Home",
+    "metaDescription": "Find out everything you want to know about Q-Summit! From our partners and this year's agenda to the faces behind Q-Summit.",
+    "hero": {
+      "headline": "Where visionaries shape tomorrow",
+      "tagline": "Experience innovation at Germany's largest student-led startup conference",
+      "announcementLines": [
+        "Thank you for an incredible Q-Summit 2026",
+        "See you next year for our 10 year anniversary!",
+        "April 1-2, 2027"
+      ],
+      "cta": {
+        "label": "Learn more",
+        "href": "#why-attend"
+      }
+    },
+    "event": {
+      "startDate": "2027-04-01",
+      "endDate": "2027-04-02"
+    },
+    "stats": {
+      "heading": "JOIN US TO BE WITH",
+      "intro": "Last year, Q-Summit attracted a vibrant community of innovators and leaders. Join us to connect with like-minded individuals and industry pioneers.",
+      "items": [
+        {
+          "value": "1500",
+          "label": "Participants"
+        },
+        {
+          "value": "30",
+          "label": "Speakers"
+        },
+        {
+          "value": "60",
+          "label": "Startups"
+        },
+        {
+          "value": "80",
+          "label": "Partners"
+        }
+      ]
+    },
+    "partnerBand": {
+      "items": [
+        {
+          "value": "50+",
+          "label": "Startup and Corporate Partners",
+          "logos": [
+            "Fixture Platinum Partner 1",
+            "Fixture Gold Partner 2",
+            "Fixture Silver Partner 3",
+            "Fixture Starter Partner 4",
+            "Fixture Knowledge Partner 5",
+            "Fixture Event Partner 6",
+            "Fixture Mobility Partner 7",
+            "Fixture University and Network Partner 8",
+            "Fixture Media Partner 9",
+            "Fixture Platinum Partner 1",
+            "Fixture Gold Partner 2",
+            "Fixture Silver Partner 3",
+            "Fixture Starter Partner 4",
+            "Fixture Knowledge Partner 5",
+            "Fixture Event Partner 6",
+            "Fixture Mobility Partner 7",
+            "Fixture University and Network Partner 8"
+          ]
+        },
+        {
+          "value": "20+",
+          "label": "Network Partners",
+          "logos": [
+            "Fixture Media Partner 9",
+            "Fixture Platinum Partner 1",
+            "Fixture Gold Partner 2",
+            "Fixture Silver Partner 3",
+            "Fixture Starter Partner 4",
+            "Fixture Knowledge Partner 5",
+            "Fixture Event Partner 6"
+          ]
+        }
+      ],
+      "cta": {
+        "label": "View all our Partners",
+        "href": "/partner"
+      }
+    },
+    "previousSpeakers": {
+      "heading": "Previous Speakers",
+      "intro": "Get to know some of our previous speakers!",
+      "cta": {
+        "label": "View more Speakers",
+        "href": "/speaker"
+      }
+    },
+    "whyAttend": {
+      "heading": "Why Everyone's at Q‑Summit",
+      "intro": "Whether participants, companies, startups or investors, Q-Summit brings together people from a wide variety of regions and professions.",
+      "cards": [
+        {
+          "title": "Inspiring Speakers!",
+          "description": "At Q-Summit, inspiring speakers ignite passion and spark bold ideas. Hear from visionaries who empower you to think bigger and make an impact!"
+        },
+        {
+          "title": "Insightful Formats!",
+          "description": "Q-Summit’s engaging formats turn ideas into action. From hands-on workshops to thought-provoking panels, every moment is designed for meaningful growth and real-world impact!"
+        },
+        {
+          "title": "Innovative Partners!",
+          "description": "Q-Summit connects you with innovative partners shaping the future. Discover cutting-edge ideas, build lasting connections, and unlock opportunities with industry leaders!"
+        }
+      ],
+      "cta": {
+        "label": "Why Q-Summit?",
+        "href": "/whyq"
+      }
+    },
+    "faqSection": {
+      "heading": "FAQs",
+      "intro": "Get answers to your pressing questions about the Q-Summit conference and its offerings.",
+      "cta": {
+        "label": "Contact",
+        "href": "/contact"
+      }
+    }
+  },
+  "whyq": {
+    "title": "Why You Should Attend Q-Summit",
+    "metaDescription": "On this page you can find out why you should come and join us at this year's Q-Summit.",
+    "heading": "Why attend Q-Summit?",
+    "intro": "Join us at Q-Summit to unlock unparalleled opportunities for networking and innovation. Experience insights from industry leaders and connect with like-minded professionals eager to shape the future.",
+    "audiences": [
+      {
+        "id": "attendees",
+        "heading": "Why Attendees Love the Q-Summit Experience",
+        "intro": "Dive into the entrepreneurial spirit at Q-Summit 2027! Enjoy keynotes, panel discussions, and interactive formats like speed dating, workshops, and campfire sessions. Network with students, alumni, startups, VCs, and industry leaders. With over 100 partners, gain valuable resources and expand your network. Don’t miss the evening events and after-party, where connections and ideas thrive. Q-Summit is where innovation meets opportunity – join us!",
+        "items": [],
+        "imageFile": "whyq-attendees",
+        "imageAlt": "Attendees networking in the crowd at Q-Summit",
+        "imageLeft": false
+      },
+      {
+        "id": "startups",
+        "heading": "Why Startups love the Q-Summit",
+        "intro": "Be part of Q-Summit 2027 and drive innovation! Meet your future employees and motivated students and showcase your brand. Don't miss the opportunity to network with industry leaders and investors. Apply for our Pitchbattle or showcase your innovation in the Qube and impress investors and potential collaborators - don't miss your chance to innovate, inspire and grow!",
+        "items": [
+          {
+            "title": "Talent",
+            "description": "Discover the next generation of industry leaders."
+          },
+          {
+            "title": "Trends",
+            "description": "Stay informed about the latest market developments."
+          }
+        ],
+        "imageFile": "whyq-startups",
+        "imageAlt": "Startup booth conversations at Q-Summit",
+        "imageLeft": true
+      },
+      {
+        "id": "investors",
+        "heading": "Unlock Investment Opportunities at Q-Summit: Your Gateway to Innovation",
+        "intro": "At Q-Summit, investors can discover groundbreaking startups poised to disrupt the market. Engage with industry leaders and fellow investors to stay informed on emerging trends. Seize the opportunity to identify the next big innovation and foster valuable partnerships.",
+        "items": [
+          {
+            "title": "Discover Startups",
+            "description": "Meet innovative startups that are shaping the future of their industries."
+          },
+          {
+            "title": "Network Effect",
+            "description": "Connect with like-minded investors and expand your professional network."
+          }
+        ],
+        "imageFile": "whyq-investors",
+        "imageAlt": "Investors in conversation at Q-Summit",
+        "imageLeft": false
+      },
+      {
+        "id": "partners",
+        "heading": "Unlock Opportunities: Why Partners choose Q-Summit",
+        "intro": "As a partner, you'll gain the opportunity to showcase your brand, share expertise, and build impactful connections. Enjoy exclusive benefits like hosting a booth in Innovillage to present your innovations to 1,500+ participants, networking with 80+ partners and leaders, and leading workshops. You’ll also have access to partner-only check-ins, personalized support, and private workspaces. The Q-Summit is the perfect platform to position your company as an innovation leader, recruit top talent, and collaborate with forward-thinking professionals.",
+        "items": [
+          {
+            "title": "Talent",
+            "description": "Discover the next generation of industry leaders."
+          },
+          {
+            "title": "Trends",
+            "description": "Stay informed about the latest market developments."
+          }
+        ],
+        "imageFile": "whyq-partners",
+        "imageAlt": "Partner booths in the Innovillage at Q-Summit",
+        "imageLeft": true
+      },
+      {
+        "id": "founders",
+        "heading": "More than just another Summit - why Founders visit the Q-Summit",
+        "intro": "For founders, this is a unique opportunity to present ideas, expand networks, and gain exposure in an inspiring environment. At the heart of the event is the Qube, where founders can showcase their ventures and pitch to a diverse audience. The Pitch Battle allows participants to compete for exclusive prizes while receiving feedback from investors and partners. Founders can also connect with potential investors, collaborators, and motivated students eager to join innovative teams.",
+        "items": [
+          {
+            "title": "Discover Startups",
+            "description": "Meet innovative startups that are shaping the future of their industries."
+          },
+          {
+            "title": "Network Effect",
+            "description": "Connect with like-minded investors and expand your professional network."
+          }
+        ],
+        "imageFile": "whyq-founders",
+        "imageAlt": "A founder speaking on stage at Q-Summit",
+        "imageLeft": false
+      }
+    ]
+  },
+  "program": {
+    "title": "Program",
+    "metaDescription": "Get a better idea of what Q-Summit has to offer you day and night.",
+    "agenda": {
+      "heading": "Conference Agenda",
+      "intro": "Join us for two engaging days filled with insightful sessions. Explore topics that matter to you and connect with industry leaders. Check out our App for a more detailed agenda!",
+      "items": [
+        {
+          "date": "9th-10th April",
+          "title": "Speeches",
+          "description": "Both days will feature a variety of sessions starting at 10:00 AM, designed to provide valuable insights and foster engaging discussions. The Main Stage opening will take place from 10:00 AM to 10:15 AM."
+        },
+        {
+          "date": "9th-10th April",
+          "title": "Workshops",
+          "description": "Join interactive workshops hosted by our partners and work on real challenges with practical, hands-on solutions. It’s a great opportunity to meet new people, strengthen your collaboration and problem-solving skills, and gain valuable insights from industry professionals. Applications for these formats have already closed. However, a waitlist will be available through our event app in case spots become available."
+        },
+        {
+          "date": "9th-10th April",
+          "title": "Speed-Datings",
+          "description": "s a student, this is your chance to meet successful startups and VCs in a more personal setting. Connect directly with founders, CEOs, and managers, ask your questions, and gain valuable insights into entrepreneurship, investing, and building a business. If you feel inspired by the entrepreneurial spirit, you may even discover internship opportunities with the startup or VC of your choice. Applications for this format have already closed. However, a waitlist will be available through our event app in case spots become available."
+        },
+        {
+          "date": "9th-10th April",
+          "title": "Innovillage",
+          "description": "Networking is at the heart of Q-Summit, and the Innovillage is the perfect place to connect. Visit company booths, build valuable relationships, expand your network, or simply enjoy the activities and experiences on offer. Whether you are looking for career opportunities, meaningful conversations, or just want to meet new people, the Innovillage is designed to help you make connections throughout the day."
+        },
+        {
+          "date": "10th April",
+          "title": "Pitchbattle",
+          "description": "The Pitch Battle at Q-Summit is where bold ideas meet expert feedback. Selected startups present their innovative concepts to a panel of judges and a live audience of Q-Summit attendees. The winner receives recognition, valuable prizes, and the opportunity to connect with industry leaders and investors. Applications for the Pitch Battle have already closed, but attendees can watch the event live on Friday from 6:00 PM to 7:30 PM on the Main Stage."
+        },
+        {
+          "date": "9th-10th April",
+          "title": "Qube",
+          "description": "The Qube is Q-Summit’s exclusive pitching format, where selected startups have the opportunity to present directly to top-tier investors in a focused and private setting. Without the distractions of a large audience, startups can showcase their ideas to the people who matter most, making the Qube a valuable opportunity for funding, feedback, and strategic partnerships. Applications for the Qube have already closed."
+        },
+        {
+          "date": "Evening 9th/10th April",
+          "title": "Afterparty!",
+          "description": "Join us for two unforgettable evenings at Mannheim’s iconic Schneckenhof. On Thursday, we will host our exclusive Theme Evening, while Friday night will feature the legendary Q-Summit Afterparty. Drinks will of course be provided, with support from our partners Rothaus, Absolut, Lillet, and Kleiner Klopfer."
+        }
+      ]
+    },
+    "faqSection": {
+      "heading": "FAQs",
+      "intro": "Find answers to common questions about our event program and agenda."
+    },
+    "closingCta": {
+      "heading": "Join Us for Two Days",
+      "text": "Don't miss out on this opportunity to enhance your skills and network with industry leaders."
+    }
+  },
+  "ticketCategories": {
+    "title": "Ticket Categories",
+    "metaDescription": "Get an overview of the different types of tickets and the benefits and services they offer.",
+    "tiers": {
+      "heading": "Ticket Options",
+      "intro": "For the best possible overview, we recommend viewing this page on a desktop",
+      "items": [
+        {
+          "name": "Student",
+          "price": "74€",
+          "features": [
+            "Event Access",
+            "Networking",
+            "Application for Workshops, Speed Dating & Campfire Sessions"
+          ],
+          "note": "Student ID required",
+          "buyLabel": "Buy Tickets",
+          "buyHref": "https://vivenu.com/event/q-summit-2026-ilm9r9"
+        },
+        {
+          "name": "Young Pro.",
+          "price": "94€",
+          "features": [
+            "Event Access",
+            "Networking",
+            "Application for Workshops, Speed Dating & Campfire Sessions"
+          ],
+          "buyLabel": "Buy Tickets",
+          "buyHref": "https://vivenu.com/event/q-summit-2026-ilm9r9"
+        },
+        {
+          "name": "Start-Up",
+          "price": "199€",
+          "features": [
+            "Event Access",
+            "Networking",
+            "Apply for the Pitchbattle",
+            "Apply for the Qube"
+          ],
+          "buyLabel": "Buy Tickets",
+          "buyHref": "https://vivenu.com/event/q-summit-2026-ilm9r9"
+        },
+        {
+          "name": "Investor",
+          "price": "299€",
+          "features": ["Event Access", "Networking", "Qube"],
+          "buyLabel": "Buy Tickets",
+          "buyHref": "https://vivenu.com/event/q-summit-2026-ilm9r9"
+        },
+        {
+          "name": "Corporate",
+          "price": "349€",
+          "features": [
+            "Event Access",
+            "Networking",
+            "Dedicated Chill & Working Area"
+          ],
+          "buyLabel": "Buy Tickets",
+          "buyHref": "https://vivenu.com/event/q-summit-2026-ilm9r9"
+        }
+      ]
+    },
+    "comparison": {
+      "heading": "Pricing Overview",
+      "intro": "Explore our ticket options and their unique benefits.",
+      "tiers": [
+        {
+          "name": "Student",
+          "price": "€74",
+          "audience": "Student-ID required"
+        },
+        {
+          "name": "Young Professional",
+          "price": "€94",
+          "audience": "For Young Professionals"
+        },
+        {
+          "name": "Start-Up",
+          "price": "€199",
+          "audience": "For founders or employees of a Start-Up"
+        },
+        {
+          "name": "Investor",
+          "price": "€299",
+          "audience": "For Investors"
+        },
+        {
+          "name": "Corporate",
+          "price": "€349",
+          "audience": "For members of Corporates"
+        }
+      ],
+      "groups": [
+        {
+          "group": "Core Access & Event Experience",
+          "rows": [
+            {
+              "feature": "Full Event Access",
+              "included": [true, true, true, true, true]
+            },
+            {
+              "feature": "Exclusive Evening Events & After-Party",
+              "included": [true, true, true, true, true]
+            },
+            {
+              "feature": "Complimentary Food & Drinks",
+              "included": [true, true, true, true, true]
+            },
+            {
+              "feature": "Watch Pitchbattle",
+              "included": [true, true, true, true, true]
+            },
+            {
+              "feature": "Event App",
+              "included": [true, true, true, true, true]
+            }
+          ]
+        },
+        {
+          "group": "Networking & Professional Opportunities",
+          "rows": [
+            {
+              "feature": "Application for Speed Dating, Workshops, Campfire Sessions",
+              "included": [true, true, true, true, true]
+            },
+            {
+              "feature": "Networking with Students, Alumni, Startups, VCs, Industry Professionals",
+              "included": [true, true, true, true, true]
+            },
+            {
+              "feature": "Access to Internships, Full-time Roles & Networking",
+              "included": [true, true, true, true, true]
+            }
+          ]
+        },
+        {
+          "group": "Ticket-Specific Privileges",
+          "rows": [
+            {
+              "feature": "Apply for Qube",
+              "included": [false, false, true, false, false]
+            },
+            {
+              "feature": "Apply for the Pitchbattle",
+              "included": [false, false, true, false, false]
+            },
+            {
+              "feature": "Investment Opportunities",
+              "included": [false, false, false, true, false]
+            },
+            {
+              "feature": "Dedicated Chill & Working Area with Exclusive Drinks & Snacks",
+              "included": [false, false, false, false, true]
+            }
+          ]
+        }
+      ],
+      "academicNote": "Looking for an academic focus? Cheaper 'On-Conference' variations are available for Students and Young Professionals."
+    },
+    "categories": {
+      "heading": "Explore Our Ticket Categories",
+      "items": [
+        {
+          "label": "Student Ticket: 74€",
+          "bullets": [
+            "This ticket grants full access to Q-Summit 2026, including all keynotes, panel discussions, and the Innovillage, and provides the opportunity to apply for participation in formats such as speed dating, workshops, and campfire sessions",
+            "Offers opportunities to connect with students, alumni, startups, venture capitalists, and industry professionals, as well as access to resources for internships, full-time roles, and networking",
+            "The ticket includes exclusive evening events, a concluding after-party, complimentary food and drinks throughout the event, and a free goodie bag",
+            "Proof of student ID is required to purchase this ticket!"
+          ]
+        },
+        {
+          "label": "Young Professionals: 94€",
+          "bullets": [
+            "This ticket grants full access to Q-Summit 2026, including all keynotes, panel discussions, and the Innovillage, and provides the opportunity to apply for participation in formats such as speed dating, workshops, and campfire sessions",
+            "Offers opportunities to connect with students, alumni, startups, venture capitalists, and industry professionals, as well as access to resources for internships, full-time roles, and networking",
+            "The ticket includes exclusive evening events, a concluding after-party, complimentary food and drinks throughout the event, and a free goodie bag"
+          ]
+        },
+        {
+          "label": "Start-Up: 199€",
+          "bullets": [
+            "As a founder or an employee of a Start-up, this ticket provides full access to Q-Summit 2026, offering opportunities to connect with students, industry leaders, and investors. Apply to present your innovation in the Qube or to take part in the Pitchbattle to showcase your ideas to potential collaborators and key stakeholders",
+            "The ticket includes access to keynotes, panel discussions, and the Innovillage as well as exclusive evening events, a concluding after-party, complimentary food and drinks throughout the event, and a free goodie bag"
+          ]
+        },
+        {
+          "label": "Investor: 299€",
+          "bullets": [
+            "As an Investor, you have access to Q-Summit 2026, offering valuable opportunities to connect with startups, industry leaders, and ambitious students. Explore innovative ideas in the Qube or discover high-potential ventures in the Pitchbattle, where promising startups showcase their concepts to key stakeholders",
+            "This ticket includes access to keynotes, panel discussions, and the Innovillage, as well as exclusive evening events, a concluding after-party, complimentary food and drinks throughout the event, and a free goodie bag"
+          ]
+        },
+        {
+          "label": "Corporate: 349€",
+          "bullets": [
+            "The Corporate Ticket provides an exclusive experience at Q-Summit 2026, designed for professionals and companies seeking to connect with top talent, industry leaders, and innovative startups. Corporate attendees benefit from early check-in, allowing access one day prior to the event for a smooth and efficient start. Additionally, a dedicated chill and working area is available, providing a comfortable space to relax or focus during the conference, along with exclusive drinks and snacks",
+            "The ticket includes access to keynotes, panel discussions, and the Innovillage as well as exclusive evening events, a concluding after-party, complimentary food and drinks throughout the event, and a free goodie bag."
+          ]
+        }
+      ]
+    }
+  },
+  "contact": {
+    "title": "Contact",
+    "metaDescription": "Reach out to the Q-Summit board and organizing team for inquiries, hackathon requests, and general questions.",
+    "board": {
+      "heading": "Get in Touch with Our Board Members",
+      "paragraphs": [
+        "We’re here to assist you. Reach out to any of our board members directly for inquiries or support (from left to right)."
+      ],
+      "members": [
+        {
+          "name": "Konstantin Wadé",
+          "role": "Chairman of the Board",
+          "email": "chairperson@q-summit.com",
+          "linkLabel": "Send E-Mail"
+        },
+        {
+          "name": "Moritz Wenz",
+          "role": "Board Member Partner Relations",
+          "email": "vorstandpartnerrelations@q-summit.com",
+          "linkLabel": "Send E-Mail"
+        },
+        {
+          "name": "Jonas Schuster",
+          "role": "Board Member Operations",
+          "email": "vorstandconcept@q-summit.com",
+          "linkLabel": "Send E-Mail"
+        },
+        {
+          "name": "Dominika Kowalik",
+          "role": "Board Member Public Relations",
+          "email": "vorstandpr@q-summit.com",
+          "linkLabel": "Send E-Mail"
+        },
+        {
+          "name": "Lia Mortazavi",
+          "role": "Board Member Finance/Legal/IT",
+          "email": "vorstandfinancelegal@q-summit.com",
+          "linkLabel": "Send E-Mail"
+        }
+      ]
+    },
+    "reachOut": {
+      "heading": "Reach Out",
+      "paragraphs": ["We're here to assist you with any inquiries."],
+      "items": [
+        {
+          "label": "Email Hackathon",
+          "email": "hackathon@q-summit.com",
+          "details": ["Requests for the hackathon:"]
+        },
+        {
+          "label": "Email",
+          "email": "contact-us@q-summit.com",
+          "details": ["Contact us:"]
+        },
+        {
+          "label": "Q-Summit an der Universität Mannheim e. V.",
+          "details": ["L1, 1; 68161; Mannheim; Germany"]
+        }
+      ]
+    }
+  },
+  "hackathon": {
+    "title": "Hackathon",
+    "metaDescription": "Our own Q-Summit Hackathon! Join us for an exciting 2-day event where innovation meets collaboration to tackle real-world challenges.",
+    "hero": {
+      "headline": "Shape the Future at Q‑Hackathon 2026",
+      "tagline": "Join us for an exciting 2-day event, from April 8th - 9th, where innovation meets collaboration to tackle real-world challenges.",
+      "cta": {
+        "label": "Learn more",
+        "href": "#join-hack"
+      }
+    },
+    "partners": {
+      "heading": "Join the Q-Summit Hackathon: Innovate, Collaborate, and Compete for Prizes!",
+      "groups": [
+        {
+          "group": "Challenge Partners",
+          "partners": [
+            {
+              "name": "Spherecast",
+              "href": "https://www.spherecast.ai/",
+              "logoFile": "69bfc230ceecbebceff708fc_new-logo.webp",
+              "note": null
+            },
+            {
+              "name": "Picnic",
+              "href": "https://picnic.app/",
+              "logoFile": "69b17a0e089f34c65a5e14a2_Picnic_logo.svg",
+              "note": null
+            },
+            {
+              "name": "Exxeta",
+              "href": "https://exxeta.com/",
+              "logoFile": "69bfc037724d038aa2ba26bc_image.png",
+              "note": null
+            },
+            {
+              "name": "Cloover",
+              "href": "https://www.cloover.energy/",
+              "logoFile": "69c25665fc7b9cf5fb7a2889_f6961aac836f-Logo__2_.webp",
+              "note": null
+            },
+            {
+              "name": "Istari",
+              "href": "https://www.istari.ai/",
+              "logoFile": "69d00444ac69243eaf2b4f4f_istari-logo.svg",
+              "note": null
+            }
+          ]
+        },
+        {
+          "group": "Infrastructure Partners",
+          "partners": [
+            {
+              "name": "Openai",
+              "href": "https://openai.com/",
+              "logoFile": "69c255cf7613b98e497cf289_OpenAI-black-wordmark(1).webp",
+              "note": null
+            },
+            {
+              "name": "Lovable",
+              "href": "https://lovable.dev/",
+              "logoFile": "69b2e8289e0d3b7dd0ae9529_lovable_logo.svg",
+              "note": null
+            },
+            {
+              "name": "Anthropic",
+              "href": "https://www.anthropic.com/",
+              "logoFile": "69c99a0acf960a512107bc95_Anthropic_logo.svg",
+              "note": null
+            },
+            {
+              "name": "Elevenlabs",
+              "href": "https://elevenlabs.io/",
+              "logoFile": "69c256c8d3ff156cf6877066_elevenlabs-logo-black.webp",
+              "note": null
+            },
+            {
+              "name": "N8n",
+              "href": "https://n8n.io/brandguidelines/",
+              "logoFile": "69ccf786df18a395b3fee7fd_n8n_pink%2Bblack_logo.svg",
+              "note": null
+            },
+            {
+              "name": "Featherless",
+              "href": "https://featherless.ai/",
+              "logoFile": "69d40a60aa0c813fdc6344eb_featherlessai-transparent.webp",
+              "note": null
+            },
+            {
+              "name": "Heygen",
+              "href": "https://www.heygen.com/",
+              "logoFile": "69d675fef0b853cb5df97e4e_liveavatar_logo_vertical_dark.webp",
+              "note": null
+            }
+          ]
+        },
+        {
+          "group": "Ecosystem Partners",
+          "partners": [
+            {
+              "name": "Itmx",
+              "href": "https://itmx.de/",
+              "logoFile": "69b458c74be9d2023714bcbf_itmx_logo.webp",
+              "note": null
+            },
+            {
+              "name": "Mlh",
+              "href": "https://mlh.io/",
+              "logoFile": "69d00453416ddd4a45dad964_mlh-logo-color-dark.svg",
+              "note": null
+            }
+          ]
+        }
+      ]
+    },
+    "benefits": {
+      "heading": "Why Q-Hackathon isn't just another Hackathon",
+      "cards": [
+        {
+          "title": "Prizes",
+          "description": "Cash prizes, non-cash prizes, exclusive merchandise, and more."
+        },
+        {
+          "title": "Networking",
+          "description": "Connect with ambitious students, potential founders and industry leaders."
+        },
+        {
+          "title": "Innovation",
+          "description": "Solve challenges from top partners and develop new ideas."
+        },
+        {
+          "title": "Pitch Battle",
+          "description": "Present your solution to 500+ people and compete for the grand prize."
+        },
+        {
+          "title": "Expert Feedback",
+          "description": "Gain insights from a jury of top industry professionals."
+        },
+        {
+          "title": "Exclusive Perks",
+          "description": "Enjoy a free Q-Summit ticket, afterparty access, free catering & accommodation!"
+        }
+      ]
+    },
+    "schedule": {
+      "heading": "Hackathon Schedule and Key Events",
+      "intro": "Familiarize yourself with upcoming program items and the general course of the Q-Summit Hackathon.",
+      "items": [
+        {
+          "date": "8th April",
+          "title": "Opening",
+          "description": "The event kicks off with an introduction to the Q-Summit Hackathon, setting the stage for two days of challenges and creativity. Participants will receive an overview of the schedule and expectations."
+        },
+        {
+          "date": "8th April",
+          "title": "Hacking Start",
+          "description": "Teams dive into the challenges, with a detailed explanation provided in advance. Participants begin brainstorming and working on their solutions."
+        },
+        {
+          "date": "9th April",
+          "title": "Challenge Submission",
+          "description": "Teams finalize their projects and submit their solutions for evaluation based on creativity, impact, and execution."
+        },
+        {
+          "date": "9th April",
+          "title": "First Pitching Round",
+          "description": "Teams present their progress and ideas to the judges, receiving feedback and guidance for further refinement."
+        },
+        {
+          "date": "9th April",
+          "title": "Finalist Pitchbattle",
+          "description": "The top teams present their final solutions in a high-energy pitch on the main stage, competing for exclusive prizes ."
+        }
+      ]
+    },
+    "faqSection": {
+      "heading": "FAQs",
+      "intro": "Get answers to your questions about the Q-Summit hackathon and how to participate."
+    },
+    "closingCta": {
+      "heading": "Join the Exciting Hackathon!",
+      "text": "Collaborate, innovate, and win amazing prizes!",
+      "mailtoLabel": "Contact the team",
+      "mailtoEmail": "hackathon@q-summit.com"
+    }
+  },
+  "ourTeam": {
+    "title": "Our Team",
+    "metaDescription": "Get to know the current Q-Summit organizing team: the students behind Germany's largest student-organized startup conference.",
+    "heading": "Get to know our Team!"
+  },
+  "pastTeams": {
+    "title": "Past Teams",
+    "metaDescription": "A thank you to the former Q-Summit teams whose dedication since 2016 laid the foundation for Germany's largest student-organized startup conference.",
+    "heading": "Get to know our Team!",
+    "intro": "Our former teams have been an integral part of Q-Summit’s journey. We are deeply grateful for their commitment, passion, and shared belief in our vision. Since 2016, their dedication laid the foundation for what Q-Summit is today, and their collective efforts continue to inspire our growth and future success."
+  },
+  "partner": {
+    "title": "Partner",
+    "metaDescription": "Get to know the numerous supporters and partners of Q-Summit.",
+    "heading": "Get to know our Partners of Q-Summit 2026!",
+    "cta": {
+      "heading": "Join Us as a Partner",
+      "text": "Unlock new possibilities for collaboration.",
+      "buttonLabel": "Inquire",
+      "buttonHref": "mailto:lennart.fielhauer@q-summit.com"
+    }
+  },
+  "speaker": {
+    "title": "Speakers of Q-Summit",
+    "metaDescription": "Get to know the speakers, moderation and Main Stage Panels of Q-Summit 2026 and former speakers of Q-Summit!",
+    "heading": "The Voices of Q-Summit 2026",
+    "intro": "Join us as we explore innovative ideas and impactful solutions from our esteemed speakers.",
+    "panels": [
+      {
+        "title": "Europe's Edge - Founders Without Borders",
+        "description": "Europe’s true strength lies in its diversity. When founders collaborate across countries, cultures, and markets, ideas scale faster and become globally competitive. By breaking down borders, Europe can build companies that are resilient, innovative, and truly international from day one.",
+        "iconKey": "globe"
+      },
+      {
+        "title": "Capital Meets Innovation",
+        "description": "Great ideas need the right partners to grow. A strong funding ecosystem brings founders and investors closer than ever before. When capital meets bold innovation, sustainable companies emerge - creating real impact across industries and society.",
+        "iconKey": "refund"
+      },
+      {
+        "title": "Shaping Tomorrow With AI",
+        "description": "Artificial intelligence is not a passing trend, it is fundamentally redefining how we build, operate and innovate. From startups to global enterprises, AI is shaping the next generation of products and business models. Europe has the talent, responsibility and opportunity to lead this transformation.",
+        "iconKey": "ai"
+      }
+    ]
+  },
+  "jobs": {
+    "title": "Job Listings",
+    "metaDescription": "Get to know the numerous job requisitions of our supporters and partners.",
+    "heading": "Scroll through the Best Opportunities from our Partner Network",
+    "intro": "Get to know the numerous job requisitions of our supporters and partners.",
+    "detailHowToContactHeading": "How to get in touch:"
+  }
+}

@@ -17,7 +17,7 @@ q-summit.com is a content site of 10+ pages for an annual conference. Requiremen
 ## Considered options
 
 1. **Server-rendered framework (Next.js or similar) on managed hosting**: maximum flexibility; but it puts a running server under pages that are in fact static, adds an operational and cost surface, and the site can go down with its backend.
-2. **Astro with static output on Cloudflare**: every page prebuilt to plain HTML, no JavaScript shipped by default, about EUR 0/month on Cloudflare's edge (about 300 locations), media and video in R2.
+2. **Astro with static output on Cloudflare**: every page prebuilt to plain HTML, no JavaScript shipped by default, about EUR 0/month on Cloudflare's edge (about 300 locations), media and video in R2. Con: no request-time rendering, so every content change needs a rebuild to reach production.
 
 ## Decision
 
@@ -26,7 +26,7 @@ Option 2. A marketing site is static content; prebuilding it makes performance a
 ## Consequences
 
 - Design and layout changes are code and go through PRs; content changes stay point-and-click in the CMS ([ADR-0002](0002-payload-cms-on-vercel-neon.md)).
-- Publishing means rebuilding: changes go live in about 2 to 4 minutes, atomically; a failed build never touches the live site.
+- Publishing means rebuilding the static site (target about 2 to 4 minutes, atomic). Payload → Cloudflare deploy hook is shipped (`apps/cms/src/lib/trigger-deploy.ts`); rebuilds also ride on merges to `main`, deployed atomically by Workers Builds ([ADR-0004](0004-cloudflare-workers-builds-deploy.md)).
 - The site cannot overload and cannot go down with its CMS; only editing pauses when the CMS is down.
 - Content must be fetched at build time, which requires a headless CMS: decided in [ADR-0002](0002-payload-cms-on-vercel-neon.md).
 - Revisit if the site ever needs real server-side behavior (forms are the owed decision in [section 9](../architecture/09-architecture-decisions.md)).

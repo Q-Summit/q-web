@@ -1,0 +1,279 @@
+---
+// Shared pattern component (COMP-3, PRIM-3): the centered flex-wrap wall of
+// logo cards that the partner tier walls (partner/LogoWall) and the hackathon
+// partner tiers (hackathon/HackPartners) both render, capped at
+// --container-medium with fixed-size cards, a hover lift and contained logos.
+//
+// Like Timeline, and unlike the style-less shells next to it, this primitive
+// owns its CSS. PRIM-2's boundary is about scoped CSS reaching elements the
+// caller renders; every element styled below is rendered here, so the caller
+// keeps only its own section shell and headings.
+//
+// The two walls differ in card skin and card size, not in structure, so the
+// layout is written once and the `hack` variant re-points a handful of local
+// custom properties. `flip` is opt-in and only HackPartners uses it: a logo
+// that carries a note turns into a flip card, matching the live page's
+// "flip_interaction_stage".
+export interface LogoGridItem {
+  name: string;
+  href: string;
+  src: string;
+  alt: string;
+  width: number;
+  height: number;
+  /** Short line shown on the card back; only rendered when `flip` is set. */
+  note?: string;
+}
+
+interface Props {
+  logos: LogoGridItem[];
+  /** Card skin: the partner tier wall (default) or the hackathon grid. */
+  variant?: "tier" | "hack";
+  /** Larger cards for a featured tier (Platinum). */
+  featured?: boolean;
+  /** Load the logos eagerly instead of lazily (above-the-fold walls). */
+  eager?: boolean;
+  /** Let a logo that carries a note flip to it on hover and focus. */
+  flip?: boolean;
+}
+
+const {
+  logos,
+  variant = "tier",
+  featured = false,
+  eager = false,
+  flip = false,
+} = Astro.props;
+const loading = eager ? "eager" : "lazy";
+---
+
+<ul
+  class:list={[
+    "logo-grid",
+    { "is-hack": variant === "hack", "is-featured": featured },
+  ]}
+>
+  {
+    logos.map((logo) =>
+      flip && logo.note ? (
+        <li>
+          <a
+            class="flip-card"
+            href={logo.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`${logo.name}: ${logo.note} (opens in a new tab)`}
+          >
+            <span class="flip-inner">
+              <span class="flip-face flip-front" aria-hidden="true">
+                <img
+                  src={logo.src}
+                  alt={logo.alt}
+                  width={logo.width}
+                  height={logo.height}
+                  loading={loading}
+                  decoding="async"
+                />
+              </span>
+              <span class="flip-face flip-back" aria-hidden="true">
+                {logo.note}
+              </span>
+            </span>
+          </a>
+        </li>
+      ) : (
+        <li>
+          <a
+            class="logo-card"
+            href={logo.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`${logo.name} (opens in a new tab)`}
+          >
+            <img
+              src={logo.src}
+              alt={logo.alt}
+              width={logo.width}
+              height={logo.height}
+              loading={loading}
+              decoding="async"
+            />
+          </a>
+        </li>
+      ),
+    )
+  }
+</ul>
+
+<style>
+  /* One structure, two skins. Everything the hackathon grid changes about a
+     card is a value, not a rule, so the variants only re-point these local
+     custom properties. Values stay tokens (DESIGN.md COLOR-3, SHAPE-1,
+     DEPTH-1); the bare lengths are card geometry, which has no token scale. */
+  .logo-grid {
+    --wall-gap-row: 1rem;
+    --wall-gap-column: 1.25rem;
+    --wall-margin-top: 1.75rem;
+    --wall-card-width: 9.5rem;
+    --wall-card-height: 4.75rem;
+    --wall-card-padding: 0.65rem;
+    --wall-card-surface: var(--color-white);
+    --wall-card-radius: var(--radius-button);
+    --wall-card-shadow: var(--shadow-card);
+    --wall-card-shadow-hover: var(--shadow-card-hover);
+    --wall-card-lift: -2px;
+
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: stretch;
+    gap: var(--wall-gap-row) var(--wall-gap-column);
+    max-width: var(--container-medium);
+    margin: var(--wall-margin-top) auto 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .logo-grid.is-featured {
+    --wall-card-width: 17.5rem;
+    --wall-card-height: 8.75rem;
+    --wall-card-padding: 1.25rem;
+    /* No shadow override: the featured wall's ported resting shadow and the
+       normal card's both land on --shadow-card (DESIGN.md DEPTH-1), so the
+       base rule already supplies it. */
+  }
+
+  .logo-grid.is-hack {
+    --wall-gap-row: 1.25rem;
+    --wall-margin-top: 0;
+    --wall-card-height: 5.5rem;
+    --wall-card-padding: var(--space-sm);
+    --wall-card-surface: var(--color-background);
+    --wall-card-radius: var(--radius-card);
+    /* Resting step: the ported shadow was a wide soft float
+       (0 10px 25px / 0.08). Alpha alone would suggest --shadow-subtle, but
+       that is a 4px whisper and would flatten these cards, so it maps UP to
+       --shadow-lifted by geometry (DESIGN.md DEPTH-1 and its Elevation
+       table, which calls out this card as the one deliberate exception). */
+    --wall-card-shadow: var(--shadow-lifted);
+    --wall-card-shadow-hover: var(--shadow-floating);
+    --wall-card-lift: -3px;
+  }
+
+  .logo-grid li {
+    display: flex;
+  }
+
+  .logo-card,
+  .flip-card {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: var(--wall-card-width);
+    height: var(--wall-card-height);
+    padding: var(--wall-card-padding);
+    background-color: var(--wall-card-surface);
+    border-radius: var(--wall-card-radius);
+    box-shadow: var(--wall-card-shadow);
+    transition:
+      transform var(--duration-hover) var(--ease-snappy),
+      box-shadow var(--duration-hover) var(--ease-snappy);
+  }
+
+  .logo-card:hover,
+  .flip-card:hover {
+    transform: translateY(var(--wall-card-lift));
+    box-shadow: var(--wall-card-shadow-hover);
+  }
+
+  .logo-card img,
+  .flip-front img {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  /* Flip card: front logo, back a short note. Pure CSS 3D flip on
+     hover/focus, matching the live page's "flip_interaction_stage".
+     Rendered only when the caller passes `flip`. */
+  .flip-card {
+    position: relative;
+    padding: 0;
+    perspective: 60rem;
+    overflow: visible;
+  }
+
+  .flip-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    /* Deviation from DESIGN.md MOTION-1's hover row (150ms): the flip is a
+       half-turn of the whole card, i.e. an element moving on screen, so it
+       takes that row's curve and the 500ms ceiling. At --duration-hover the
+       rotation reads as a glitch and the back face is unreadable. */
+    transition: transform var(--duration-reveal) var(--ease-emphasized);
+    transform-style: preserve-3d;
+  }
+
+  .flip-card:hover .flip-inner,
+  .flip-card:focus-visible .flip-inner {
+    transform: rotateY(180deg);
+  }
+
+  .flip-face {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-sm);
+    background-color: var(--color-background);
+    border-radius: var(--radius-card);
+    backface-visibility: hidden;
+  }
+
+  .flip-back {
+    transform: rotateY(180deg);
+    background-color: var(--color-primary);
+    color: var(--color-text-inverse);
+    text-align: center;
+    font-size: var(--text-size-small);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--heading-line-height-normal);
+  }
+
+  /* DESIGN.md MOTION-2: reduced motion means no transition at all, and the
+     hover lift drops its transform (the shadow change alone still reads as
+     feedback). The flip loses its transition on the same terms. */
+  @media (prefers-reduced-motion: reduce) {
+    .logo-card,
+    .flip-card,
+    .flip-inner {
+      transition: none;
+    }
+
+    .logo-card:hover,
+    .flip-card:hover {
+      transform: none;
+    }
+  }
+
+  @media (max-width: 479px) {
+    .logo-grid {
+      --wall-card-width: 8.5rem;
+      --wall-card-height: 4.25rem;
+    }
+
+    .logo-grid.is-featured {
+      --wall-card-width: 15rem;
+      --wall-card-height: 7.5rem;
+    }
+
+    .logo-grid.is-hack {
+      --wall-card-width: 8rem;
+      --wall-card-height: 4.75rem;
+    }
+  }
+</style>

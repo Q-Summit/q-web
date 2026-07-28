@@ -1,0 +1,74 @@
+[
+  {
+    "name": "Fixture Speaker 1",
+    "role": "Example Role",
+    "roleLine": "Example Role at Example Co",
+    "company": "Example Co",
+    "group": "current",
+    "year": 2026,
+    "photoFilename": "fixture-missing-photo.webp"
+  },
+  {
+    "name": "Fixture Speaker 2",
+    "role": "Example Role",
+    "roleLine": "Example Role at Example Co",
+    "company": "Example Co",
+    "group": "current",
+    "year": 2026,
+    "photoFilename": "fixture-missing-photo.webp"
+  },
+  {
+    "name": "Fixture Speaker 3",
+    "role": "Example Role",
+    "roleLine": "Example Role at Example Co",
+    "company": "Example Co",
+    "group": "moderation",
+    "year": 2026,
+    "photoFilename": "fixture-missing-photo.webp"
+  },
+  {
+    "name": "Fixture Speaker 4",
+    "role": "Example Role",
+    "roleLine": "Example Role at Example Co",
+    "company": "Example Co",
+    "group": "moderation",
+    "year": 2026,
+    "photoFilename": "fixture-missing-photo.webp"
+  },
+  {
+    "name": "Fixture Speaker 5",
+    "role": "Example Role",
+    "roleLine": "Example Role at Example Co",
+    "company": "Example Co",
+    "group": "previous",
+    "year": null,
+    "photoFilename": "fixture-missing-photo.webp"
+  },
+  {
+    "name": "Fixture Speaker 6",
+    "role": "Example Role",
+    "roleLine": "Example Role at Example Co",
+    "company": "Example Co",
+    "group": "previous",
+    "year": null,
+    "photoFilename": "fixture-missing-photo.webp"
+  },
+  {
+    "name": "Fixture Speaker 7",
+    "role": "Example Role",
+    "roleLine": "Example Role at Example Co",
+    "company": "Example Co",
+    "group": "panel",
+    "year": null,
+    "photoFilename": "fixture-missing-photo.webp"
+  },
+  {
+    "name": "Fixture Speaker 8",
+    "role": "Example Role",
+    "roleLine": "Example Role at Example Co",
+    "company": "Example Co",
+    "group": "panel",
+    "year": null,
+    "photoFilename": "fixture-missing-photo.webp"
+  }
+]

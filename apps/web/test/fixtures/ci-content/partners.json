@@ -1,0 +1,56 @@
+[
+  {
+    "name": "Fixture Platinum Partner 1",
+    "tier": "Platinum",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp"
+  },
+  {
+    "name": "Fixture Gold Partner 2",
+    "tier": "Gold",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp"
+  },
+  {
+    "name": "Fixture Silver Partner 3",
+    "tier": "Silver",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp"
+  },
+  {
+    "name": "Fixture Starter Partner 4",
+    "tier": "Starter",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp"
+  },
+  {
+    "name": "Fixture Knowledge Partner 5",
+    "tier": "Knowledge",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp"
+  },
+  {
+    "name": "Fixture Event Partner 6",
+    "tier": "Event",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp"
+  },
+  {
+    "name": "Fixture Mobility Partner 7",
+    "tier": "Mobility",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp"
+  },
+  {
+    "name": "Fixture University and Network Partner 8",
+    "tier": "University and Network",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp"
+  },
+  {
+    "name": "Fixture Media Partner 9",
+    "tier": "Media",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp"
+  }
+]

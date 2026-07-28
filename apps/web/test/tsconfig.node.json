@@ -1,0 +1,24 @@
+{
+  // Node-typed counterpart to tsconfig.json (which is Workers-typed). Only
+  // content.test.ts lives here: it imports src/lib/content.ts, which uses
+  // node:fs / node:path and process.cwd() at module load, so it runs in the
+  // "node" vitest project (see ../vitest.config.ts) and must typecheck against
+  // @types/node -- not the Workers runtime + cloudflare:test types the sibling
+  // worker tests use, whose Request/Response globals would collide.
+  "compilerOptions": {
+    "target": "es2022",
+    "lib": ["es2022"],
+    "module": "es2022",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "types": ["node"]
+  },
+  "include": [
+    "./content.test.ts",
+    "./media-filename.test.ts",
+    "./media-match.test.ts"
+  ]
+}

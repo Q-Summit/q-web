@@ -1,9 +1,11 @@
 name: Links
 
 # Weekly health check for external links in the markdown. Internal relative
-# links are validated on every PR (`pnpm run check`, scripts/validate-docs.mjs);
+# links are validated on every PR (`pnpm run check`, scripts/check/docs.mjs);
 # external links rot on the web's schedule, not ours, so this runs weekly and
-# files an issue instead of blocking PRs. Tuning lives in lychee.toml.
+# files an issue instead of blocking PRs. The single tracking issue is the
+# whole lifecycle: filed or updated in place while links are broken, closed
+# automatically on the first passing run. Tuning lives in lychee.toml.
 on:
   schedule:
     # Mondays 06:00 UTC.
@@ -22,6 +24,7 @@ concurrency:
 jobs:
   lychee:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       # Pinned to full commit SHAs (house rule for workflows).
       # Update the SHA and the trailing version comment together.
@@ -45,10 +48,42 @@ jobs:
       # Search, which is eventually consistent and could miss a fresh issue)
       # and only matches issues authored by the workflow's own bot identity,
       # so an outsider-opened issue with the same title can never capture the
-      # report. The bug label comes from scripts/setup-labels.sh. The report
+      # report. The bug label comes from .github/admin/setup-labels.sh. The report
       # body derives from repo markdown, which lands via reviewed PRs.
       - name: File or update the report issue
         if: steps.lychee.outputs.exit_code != 0
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # Wrap lychee's report so the issue stands alone: what failed, which
+          # run found it, and what to do about it.
+          {
+            echo "The weekly external link check found broken links in the repo markdown."
+            echo
+            echo "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo
+            cat ./lychee/out.md
+            echo
+            echo "Triage: fix or remove each link. For a host that is alive but"
+            echo "unfriendly to checkers (rate limits, bot walls), tune lychee.toml"
+            echo "instead of ignoring the report. This issue updates in place on"
+            echo "every failing weekly run and closes itself on the first clean one."
+          } > ./issue-body.md
+          title="Link check: broken external links"
+          existing=$(gh api "repos/$GH_REPO/issues?state=open&labels=bug&creator=github-actions%5Bbot%5D&per_page=100" \
+            --jq "[.[] | select(.title == \"$title\")][0].number // empty")
+          if [ -n "$existing" ]; then
+            gh issue edit "$existing" --body-file ./issue-body.md
+          else
+            gh issue create --title "$title" --label bug --body-file ./issue-body.md
+          fi
+      # Self-healing: the first clean run closes the tracking issue, so the
+      # open-issue list always reflects the current state instead of the last
+      # failure. Same bot-identity lookup as above.
+      - name: Close the report issue when links recover
+        if: steps.lychee.outputs.exit_code == 0
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -58,7 +93,6 @@ jobs:
           existing=$(gh api "repos/$GH_REPO/issues?state=open&labels=bug&creator=github-actions%5Bbot%5D&per_page=100" \
             --jq "[.[] | select(.title == \"$title\")][0].number // empty")
           if [ -n "$existing" ]; then
-            gh issue edit "$existing" --body-file ./lychee/out.md
-          else
-            gh issue create --title "$title" --label bug --body-file ./lychee/out.md
+            gh issue close "$existing" \
+              --comment "Link check passed: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           fi

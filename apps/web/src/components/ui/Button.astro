@@ -1,0 +1,51 @@
+---
+// UI primitive (PRIM-1, PRIM-3): the site's button, in the variants global.css
+// defines (DESIGN.md COLOR-1, COMP-1: navy/neutral only, never orange).
+// Renders an <a> when `href` is set (the common case, a link styled as a
+// button) and a <button> otherwise. No scoped <style>: styling comes from
+// global.css's .button, so output is byte-identical to the hand-written
+// element. Class order matches the site convention: button, variant, size,
+// extra.
+//
+// A button that a component scope-styles (e.g. `.cta .button`, or a
+// `.buttons` wrapper that positions its children) must stay raw markup
+// (PRIM-2) so that scoped CSS keeps matching. Use this primitive for
+// standard buttons.
+import type { HTMLAttributes } from "astro/types";
+
+// Anchor attributes are the superset here (href/target/rel/download); when no
+// href is given we render a <button> and forward the same rest, which Astro's
+// element typing accepts. Kept as one interface (not an a|button union) so the
+// `...rest` spread type-checks against both branches.
+interface Props extends Omit<HTMLAttributes<"a">, "href"> {
+  /** Link target; when set renders an <a>, otherwise a <button>. */
+  href?: string;
+  /** secondary (transparent, hairline border) per global.css. */
+  variant?: "secondary" | "alternate";
+  /** Compact padding (.is-small). */
+  small?: boolean;
+}
+
+const { variant, small, class: className, href, ...rest } = Astro.props;
+const classes = [
+  "button",
+  variant && `is-${variant}`,
+  small && "is-small",
+  className,
+];
+---
+
+{
+  href ? (
+    <a class:list={classes} href={href} {...rest}>
+      <slot />
+    </a>
+  ) : (
+    // Link-first primitive: `rest` is typed as anchor attributes, so narrow it
+    // for the <button> fallback (the one incompatible attribute is <a>'s
+    // free-form `type` vs <button>'s "button"|"submit"|"reset").
+    <button class:list={classes} {...(rest as HTMLAttributes<"button">)}>
+      <slot />
+    </button>
+  )
+}

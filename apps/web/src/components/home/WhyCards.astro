@@ -1,0 +1,166 @@
+---
+// "Why Everyone's at Q-Summit" cards, ported from the Webflow
+// section_why_attend (layout249). Prefer Astro <Picture> when the
+// gitignored src/assets/media/ copy exists (local: `pnpm picture:sync`);
+// otherwise fall back to the R2 /media/ -800 webp (CI/prod).
+import type { PageLink } from "../../lib/content";
+import { Picture } from "../../lib/astro-assets";
+import { resolveContentImage } from "../../lib/images";
+import Button from "../ui/Button.astro";
+import Container from "../ui/Container.astro";
+import Section from "../ui/Section.astro";
+import SectionHeader from "../ui/SectionHeader.astro";
+
+export interface WhyCard {
+  title: string;
+  description: string;
+}
+
+interface Props {
+  heading: string;
+  intro: string;
+  cards: WhyCard[];
+  cta: PageLink | undefined;
+}
+
+const { heading, intro, cards, cta } = Astro.props;
+
+// Same order as the live page: speakers, formats, partners.
+const imageFiles = [
+  {
+    filename: "home-why-speakers-800.webp",
+    width: 800,
+    height: 800,
+  },
+  {
+    filename: "home-why-formats-800.webp",
+    width: 800,
+    height: 533,
+  },
+  {
+    filename: "home-why-partners-800.webp",
+    width: 800,
+    height: 1200,
+  },
+] as const;
+
+const images = await Promise.all(
+  imageFiles.map(async (image) => ({
+    ...image,
+    asset: await resolveContentImage(image.filename, "why-attend card", {
+      quiet: true,
+    }),
+  })),
+);
+---
+
+<Section id="why-attend" small class="why">
+  <Container>
+    <SectionHeader>
+      <h2 data-lp="whyAttend.heading">{heading}</h2>
+      <p data-lp="whyAttend.intro">{intro}</p>
+    </SectionHeader>
+    <div class="why-grid" data-lp-list="whyAttend.cards">
+      {
+        cards.map((card, index) => {
+          const image = images[index % images.length];
+          return (
+            <article class="why-card" data-lp-list-item>
+              {image.asset ? (
+                <Picture
+                  src={image.asset}
+                  alt=""
+                  widths={[400, 600, 800]}
+                  sizes="(max-width: 991px) 90vw, 30vw"
+                  formats={["avif", "webp"]}
+                  fallbackFormat="webp"
+                  quality={80}
+                  loading="lazy"
+                  decoding="async"
+                />
+              ) : (
+                <img
+                  src={`/media/${image.filename}`}
+                  alt=""
+                  width={image.width}
+                  height={image.height}
+                  loading="lazy"
+                  decoding="async"
+                />
+              )}
+              <h3 data-lp-list-title>{card.title}</h3>
+              <p data-lp-list-description>{card.description}</p>
+            </article>
+          );
+        })
+      }
+    </div>
+    {
+      cta && (
+        <div class="u-section-cta why-cta">
+          <Button
+            href={cta.href}
+            data-lp="whyAttend.cta"
+            data-lp-href="whyAttend.cta.href"
+          >
+            {cta.label}
+          </Button>
+        </div>
+      )
+    }
+  </Container>
+</Section>
+
+<style>
+  .why-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4rem var(--space-xl);
+  }
+
+  .why-card img,
+  .why-card picture {
+    width: 100%;
+  }
+
+  .why-card img {
+    aspect-ratio: 16 / 9;
+    height: auto;
+    object-fit: cover;
+    border-radius: var(--radius-card);
+    margin-bottom: var(--space-md);
+    background-color: var(--color-neutral-lightest);
+  }
+
+  /* Card titles run well below the global h3 scale on the live site (a
+     small card caption, not a section-level heading); size kept local per
+     DESIGN.md TYPE-1. It stays a raw value (DESIGN.md TYPE-2) because 1.7rem
+     falls between the h5 (1.5rem) and h4 (2rem) steps and both read wrong
+     against the live card: h5 shrinks the caption, h4 competes with the
+     section opener. */
+  .why-card h3 {
+    margin-bottom: var(--space-xs);
+    font-size: 1.7rem;
+    line-height: var(--heading-line-height-normal);
+    text-align: center;
+  }
+
+  .why-card p {
+    margin: 0;
+    color: var(--color-neutral-dark);
+  }
+
+  /* Shared .u-section-cta (DESIGN.md COMP-3); the live section runs a
+     wider gap than the --section-gap default, so only margin is local. */
+  .why-cta {
+    margin-top: 4rem;
+  }
+
+  @media (max-width: 991px) {
+    .why-grid {
+      grid-template-columns: 1fr;
+      max-width: 32rem;
+      margin-inline: auto;
+    }
+  }
+</style>

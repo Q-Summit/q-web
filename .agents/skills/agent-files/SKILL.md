@@ -72,7 +72,14 @@ Create `path/AGENTS.md` + `path/CLAUDE.md` when **any** of:
 3. Agents keep applying **wrong training-data assumptions** unique to that subtree.
 4. An **accepted ADR** adds a package and says where it lives.
 
-**Do not nest** for `.github/` or `scripts/` until they own a distinct loop or threat model; root pointers are enough. Do not nest folders with fewer than 3 source files and no build config.
+**Do not nest** for `.github/` or `scripts/` until they own a distinct loop or threat model; root pointers are enough. In this repo:
+
+- Day-to-day tooling → purpose folders under `scripts/` (`local/`, `content/`, `check/`, `preview/`; catalog: [`docs/dev/scripts.md`](../../../docs/dev/scripts.md))
+- Human TTY Neon/R2 break-glass → `scripts/ops/` (pnpm only; not Make)
+- One-shot GitHub admin → `.github/admin/` (not under `scripts/`)
+- File names match pnpm suffixes (`check:docs` → `check/docs.mjs`). Extend `lib/`; do not nest `AGENTS.md` under `scripts/` or `.github/`
+
+Do not nest folders with fewer than 3 source files and no build config.
 
 **Precedence:** files merge rather than replace in the big runtimes (Codex concatenates every `AGENTS.md` from Git root to cwd; Claude Code loads all `CLAUDE.md` files root to leaf); the closest file wins on conflict ([agents.md](https://agents.md/) FAQ). Write leaves as local overrides that never assume they hide the root; keep **safety Nevers on the root** so nearest-only loaders still see them.
 
@@ -93,7 +100,7 @@ Use imperative bullets. Name paths and commands. No em/en dashes (repo house sty
 
 **~25-60 lines.** Only local mechanics and local Nevers. Point up to root. Do not restate the whole workflow.
 
-For `docs/` in this repo: the ADR template and index, arc42 chapter rules (nested in `architecture/AGENTS.md`), editor-facing docs conventions (`editors/`), privacy-in-examples.
+For `docs/` in this repo: the ADR template and index, arc42 chapter rules (nested in `architecture/AGENTS.md`), maintainer how-tos (`dev/AGENTS.md`), editor-facing voice (`editors/AGENTS.md`).
 
 For a future package: that package's setup/test/lint commands; stack quirks; "expand root `pnpm run check` in the same PR."
 
@@ -102,6 +109,7 @@ For a future package: that package's setup/test/lint commands; stack quirks; "ex
 | Trigger | Action |
 | --- | --- |
 | New or changed check/lint/test command | Update Commands |
+| Root script add / move / rename / new Make target | Update [`docs/dev/scripts.md`](../../../docs/dev/scripts.md) + `docs/dev/AGENTS.md` scars; extend `scripts/lib/` |
 | Same agent mistake twice | Add Never / Prefer scar |
 | New package after ADR | Add nested AGENTS + CLAUDE; wire checks |
 | Security / parked-capability / trust change | Update root Never |

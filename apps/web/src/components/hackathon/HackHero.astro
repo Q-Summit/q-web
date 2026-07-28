@@ -1,0 +1,245 @@
+---
+// Q-Hackathon hero, ported from the Webflow "section_header7" header.
+// The live site runs a background video; this now does too (the untranscoded
+// 1080p60 Webflow original re-encoded to a 480/1080 ladder). Same poster-first
+// / pick-once-by-viewport pattern as the home hero. This clip is a short,
+// non-adaptive 20.7s loop, so it does not need HLS: poster shows instantly
+// via the `poster` attribute (zero CLS, no JS dependency), JS then picks one
+// rendition once by viewport width, and never swaps mid-playback.
+//
+// The live page also pins an MLH "OFFICIAL 2026 SEASON" trust badge at the
+// top of the viewport (position: fixed, loaded from mlh.io's own CDN via
+// the navbar embed). That asset isn't in the site mirror (external, non
+// Webflow-CDN host) and this repo never adds third-party requests, so the
+// badge is recreated locally with the tokens below and scoped to this
+// section (not the shared Nav) rather than fixed page-wide.
+import type { PageLink } from "../../lib/content";
+
+interface Props {
+  headline: string;
+  tagline?: string;
+  cta: PageLink | undefined;
+}
+
+const { headline, tagline, cta } = Astro.props;
+
+const mlhHref =
+  "https://mlh.io/na?utm_source=na-hackathon&utm_medium=TrustBadge&utm_campaign=2026-season&utm_content=blue";
+---
+
+<header class="section is-dark hero">
+  <div class="hero-media" aria-hidden="true">
+    <video
+      id="hack-hero-video"
+      autoplay
+      loop
+      muted
+      playsinline
+      preload="metadata"
+      poster="/media/hack-poster.jpg"
+      width="1920"
+      height="1080"
+    >
+      <noscript>
+        <source src="/media/hack-480.mp4" type="video/mp4" />
+      </noscript>
+    </video>
+    <div class="hero-overlay"></div>
+  </div>
+  <a
+    class="mlh-badge"
+    href={mlhHref}
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label="Major League Hacking, official 2026 season (opens in a new tab)"
+  >
+    <span class="mlh-badge-mark">MLH</span>
+    <span class="mlh-badge-caption">Official<br />2026 Season</span>
+  </a>
+  <div class="container hero-content">
+    <h1 data-lp="hero.headline">{headline}</h1>
+    {
+      cta && (
+        <a
+          class="button is-alternate hero-cta"
+          href={cta.href}
+          data-lp="hero.cta"
+          data-lp-href="hero.cta.href"
+        >
+          {cta.label}
+        </a>
+      )
+    }
+    {
+      tagline && (
+        <p class="hero-tagline" data-lp="hero.tagline">
+          {tagline}
+        </p>
+      )
+    }
+  </div>
+</header>
+
+<style>
+  /* .section.is-dark supplies the navy background, the inverse text color,
+     and the standard section padding; this adds only what a video masthead
+     needs on top (centering, min-height, layered video/overlay). */
+  .hero {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: min(85svh, 48rem);
+    overflow: hidden;
+  }
+
+  .hero-media,
+  .hero-media video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .hero-media video {
+    object-fit: cover;
+    object-position: center 30%;
+  }
+
+  .hero-overlay {
+    position: absolute;
+    inset: 0;
+    /* Navy-to-black scrim over the video, in tokens (DESIGN.md COLOR-3):
+       the top stop is the brand navy at 55% and the bottom is black, one
+       notch darker than --color-overlay's 50%. Both stops stay on brand
+       tokens rather than role tokens: the scrim tints the brand colors
+       themselves, it is not a heading or an interactive fill. */
+    background: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--color-navy) 55%, transparent),
+      color-mix(in srgb, var(--color-black) 60%, transparent)
+    );
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Color is inherited from .section.is-dark, not restated here
+     (DESIGN.md TYPE-1). */
+  .hero h1 {
+    max-width: 42rem;
+    text-wrap: balance;
+  }
+
+  .hero-tagline {
+    max-width: 36rem;
+    margin: var(--space-md) 0 0;
+    font-size: var(--text-size-medium);
+    font-weight: var(--font-weight-medium);
+  }
+
+  /* Solid navy button (the live page's "Learn more" is filled, not
+     outlined): the base .button is already navy-on-white, and the smaller
+     radius the live button uses over the photo is the documented
+     .is-alternate variant (DESIGN.md COMP-1), so this only adds spacing. */
+  .hero-cta {
+    margin-top: var(--space-lg);
+  }
+
+  /* MLH trust badge: pinned to the hero's top-right corner (see the
+     component comment on why it isn't a viewport-fixed, shared-Nav badge). */
+  .mlh-badge {
+    position: absolute;
+    top: 0;
+    right: var(--padding-global);
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: clamp(3.75rem, 7vw, 4.75rem);
+    aspect-ratio: 5 / 6;
+    padding: var(--space-2xs) 0.4rem var(--space-xs);
+    background-color: var(--color-primary);
+    color: var(--color-text-inverse);
+    text-align: center;
+    text-decoration: none;
+    clip-path: polygon(0 0, 100% 0, 100% 78%, 50% 100%, 0 78%);
+    /* The badge hangs over the video, so it keeps a shadow: nearest step of
+       the five-step scale to the old 0 4px 12px / 0.25 (DESIGN.md DEPTH-1). */
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  .mlh-badge-mark {
+    /* Was 1.05rem; the nearest scale step is the regular body size
+       (DESIGN.md TYPE-2), 0.05rem smaller. */
+    font-size: var(--text-size-regular);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.03em;
+  }
+
+  .mlh-badge-caption {
+    margin-top: 0.25rem;
+    /* Deliberate deviation from DESIGN.md TYPE-2: the caption is engraved
+       into a 4.75rem clipped badge, and the smallest scale step
+       (--text-size-tiny, 0.75rem) is 50% larger and overflows the shape.
+       The live MLH badge sets this optically, not from the body scale. */
+    font-size: 0.5rem;
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.3;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  @media (max-width: 767px) {
+    .hero {
+      min-height: min(75svh, 40rem);
+    }
+  }
+</style>
+
+<script is:inline>
+  // Poster-first, pick-one-rendition-and-run background video.
+  // Short fully-known-at-build-time 20.7s loop: no adaptive bitrate.
+  // No video source is server-rendered, so no video bytes are fetched at
+  // all for prefers-reduced-motion/Save-Data users or with JS off (only
+  // the noscript 480p fallback loads then). Worker serves /media/* from R2.
+  (function () {
+    var video = document.getElementById("hack-hero-video");
+    if (!video) return;
+
+    var reducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    var conn = navigator.connection || navigator.webkitConnection;
+    // Only restrict when a signal explicitly says so; an unsupported API
+    // (Safari/Firefox today) must not be treated as "data saver on".
+    var saveData = !!(conn && conn.saveData);
+    var slowConn = !!(
+      conn && /^(slow-2g|2g|3g)$/.test(conn.effectiveType || "")
+    );
+    var reducedData = window.matchMedia(
+      "(prefers-reduced-data: reduce)",
+    ).matches;
+
+    if (reducedMotion || saveData || slowConn || reducedData) {
+      // Poster-only: remove the element so it can never start fetching or
+      // autoplaying.
+      video.remove();
+      return;
+    }
+
+    var wantsHiRes = window.innerWidth >= 810; // matches HackHero's own breakpoint
+    var src = wantsHiRes ? "/media/hack-1080.mp4" : "/media/hack-480.mp4";
+
+    var source = document.createElement("source");
+    source.src = src;
+    source.type = "video/mp4";
+    video.appendChild(source);
+    video.load();
+    video.play().catch(function () {
+      /* autoplay can still be blocked by the browser; poster remains visible, not an error state */
+    });
+  })();
+</script>

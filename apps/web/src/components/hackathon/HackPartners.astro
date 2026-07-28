@@ -1,0 +1,175 @@
+---
+// Hackathon partners, ported from the Webflow "section_hackathon_partners"
+// section that sits between the hero and the benefit cards on the live
+// page. Three tiers (Challenge / Infrastructure / Ecosystem); Challenge
+// Partners use the live page's flip-card interaction (Webflow's
+// "flip_interaction_stage": hover/focus flips the logo to a short note),
+// done in pure CSS (3D transform on hover/focus, no client JS).
+// The wall of logo cards is the shared ui/LogoGrid pattern (COMP-3,
+// PRIM-3) that the partner page's tier walls render too, in its `hack`
+// skin and with the flip opted in; only the tier heading rules are local.
+import type { PartnerGroup } from "../../lib/content";
+import Section from "../ui/Section.astro";
+import Container from "../ui/Container.astro";
+import SectionHeader from "../ui/SectionHeader.astro";
+import LogoGrid from "../ui/LogoGrid.astro";
+import type { LogoGridItem } from "../ui/LogoGrid.astro";
+
+interface Props {
+  heading: string;
+  groups: PartnerGroup[];
+}
+
+const { heading, groups } = Astro.props;
+
+// Build-time lookup from the extracted Webflow filename to the local media
+// copy + intrinsic dimensions (avoids layout shift). Assets copied from the
+// site mirror into public/media/hackathon/partners.
+const logoAssets: Record<
+  string,
+  { src: string; width: number; height: number }
+> = {
+  "69bfc230ceecbebceff708fc_new-logo.webp": {
+    src: "/media/hackathon/partners/spherecast.webp",
+    width: 1436,
+    height: 1436,
+  },
+  "69b17a0e089f34c65a5e14a2_Picnic_logo.svg": {
+    src: "/media/hackathon/partners/picnic.svg",
+    width: 240,
+    height: 240,
+  },
+  "69bfc037724d038aa2ba26bc_image.png": {
+    src: "/media/hackathon/partners/exxeta.png",
+    width: 719,
+    height: 146,
+  },
+  "69c25665fc7b9cf5fb7a2889_f6961aac836f-Logo__2_.webp": {
+    src: "/media/hackathon/partners/cloover.webp",
+    width: 1500,
+    height: 310,
+  },
+  "69d00444ac69243eaf2b4f4f_istari-logo.svg": {
+    src: "/media/hackathon/partners/istari.svg",
+    width: 131,
+    height: 22,
+  },
+  "69c255cf7613b98e497cf289_OpenAI-black-wordmark(1).webp": {
+    src: "/media/hackathon/partners/openai.webp",
+    width: 2306,
+    height: 688,
+  },
+  "69b2e8289e0d3b7dd0ae9529_lovable_logo.svg": {
+    src: "/media/hackathon/partners/lovable.svg",
+    width: 911,
+    height: 155,
+  },
+  "69c99a0acf960a512107bc95_Anthropic_logo.svg": {
+    src: "/media/hackathon/partners/anthropic.svg",
+    width: 1024,
+    height: 115,
+  },
+  "69c256c8d3ff156cf6877066_elevenlabs-logo-black.webp": {
+    src: "/media/hackathon/partners/elevenlabs.webp",
+    width: 2082,
+    height: 270,
+  },
+  "69ccf786df18a395b3fee7fd_n8n_pink%2Bblack_logo.svg": {
+    src: "/media/hackathon/partners/n8n.svg",
+    width: 576,
+    height: 160,
+  },
+  "69d40a60aa0c813fdc6344eb_featherlessai-transparent.webp": {
+    src: "/media/hackathon/partners/featherless.webp",
+    width: 912,
+    height: 191,
+  },
+  "69d675fef0b853cb5df97e4e_liveavatar_logo_vertical_dark.webp": {
+    src: "/media/hackathon/partners/liveavatar.webp",
+    width: 1799,
+    height: 685,
+  },
+  "69b458c74be9d2023714bcbf_itmx_logo.webp": {
+    src: "/media/hackathon/partners/itmx.webp",
+    width: 2128,
+    height: 829,
+  },
+  "69d00453416ddd4a45dad964_mlh-logo-color-dark.svg": {
+    src: "/media/hackathon/partners/mlh.svg",
+    width: 311,
+    height: 131,
+  },
+};
+
+// A partner without a local asset is skipped. The logo is decorative here:
+// the accessible name comes from the link's aria-label, which LogoGrid
+// builds from the partner name and note.
+const tiers = groups.map((group) => ({
+  heading: group.group,
+  logos: group.partners.flatMap((partner): LogoGridItem[] => {
+    const asset = logoAssets[partner.logoFile];
+    if (!asset) return [];
+    return [
+      {
+        name: partner.name,
+        href: partner.href,
+        alt: "",
+        note: partner.note ?? undefined,
+        ...asset,
+      },
+    ];
+  }),
+}));
+---
+
+{
+  groups.length > 0 && (
+    <Section aria-labelledby="partners-heading">
+      <Container>
+        <SectionHeader>
+          <h2 id="partners-heading">{heading}</h2>
+        </SectionHeader>
+        {tiers.map((tier) => (
+          <div class="partner-tier">
+            <div class="partner-tier-heading">
+              <span class="dash" aria-hidden="true" />
+              <h3>{tier.heading}</h3>
+              <span class="dash" aria-hidden="true" />
+            </div>
+            <LogoGrid logos={tier.logos} variant="hack" flip />
+          </div>
+        ))}
+      </Container>
+    </Section>
+  )
+}
+
+<style>
+  /* Sibling-relative, not :first-of-type: the .section-header div is the
+     first div among these siblings, so :first-of-type never matched a tier
+     and the first tier kept a full --section-gap it was not meant to have. */
+  .partner-tier + .partner-tier {
+    margin-top: var(--section-gap);
+  }
+
+  .partner-tier-heading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    margin-bottom: 1.75rem;
+  }
+
+  .partner-tier-heading h3 {
+    margin: 0;
+    font-size: var(--heading-h5-size);
+    white-space: nowrap;
+  }
+
+  .dash {
+    flex: 1;
+    max-width: 6rem;
+    height: 1px;
+    background-color: var(--color-neutral-lighter);
+  }
+</style>

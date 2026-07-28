@@ -1,0 +1,57 @@
+---
+// One partner tier as a wall of logo cards, ported from the Webflow
+// partner page (white boxes with a soft shadow, flex-wrapped and centered).
+// The wall itself is the shared ui/LogoGrid pattern (COMP-3, PRIM-3), which
+// the hackathon partner tiers render too; only the tier heading and the
+// sub-section spacing are local.
+// Platinum renders as the featured wall: larger heading, larger cards,
+// eagerly loaded logos; every other tier lazy-loads.
+// Rendered inside the partner page's "Partnerships" .section/.container:
+// each wall is a repeated sub-item, not its own page section, so it keeps
+// a small local padding-block rather than the .section scale (DESIGN.md LAYOUT-1/LAYOUT-3).
+import LogoGrid from "../ui/LogoGrid.astro";
+
+export interface WallLogo {
+  name: string;
+  href: string;
+  src: string;
+  width: number;
+  height: number;
+}
+
+interface Props {
+  id: string;
+  heading: string;
+  logos: WallLogo[];
+  featured?: boolean;
+}
+
+const { id, heading, logos, featured = false } = Astro.props;
+const items = logos.map((logo) => ({ ...logo, alt: `${logo.name} logo` }));
+---
+
+<section class="wall" aria-labelledby={`${id}-heading`}>
+  <h2
+    id={`${id}-heading`}
+    class:list={["wall-heading", { "is-featured": featured }]}
+  >
+    {heading}
+  </h2>
+  <LogoGrid logos={items} featured={featured} eager={featured} />
+</section>
+
+<style>
+  .wall {
+    padding-block: var(--space-md);
+  }
+
+  /* Tier headings on the live page: Platinum at h3 scale, others smaller. */
+  .wall-heading {
+    text-align: center;
+    font-size: var(--heading-h5-size);
+  }
+
+  .wall-heading.is-featured {
+    font-size: var(--heading-h3-size);
+  }
+</style>

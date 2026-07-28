@@ -1,0 +1,32 @@
+[
+  {
+    "slug": "fixture-job-1",
+    "title": "Fixture Job 1",
+    "company": "Example Partner",
+    "location": "Mannheim",
+    "workload": "Internship",
+    "applyUrl": "mailto:apply@example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "richTextHtml": "<p>Placeholder job description for CI fixture builds.</p>"
+  },
+  {
+    "slug": "fixture-job-2",
+    "title": "Fixture Job 2",
+    "company": "Example Partner",
+    "location": "Mannheim",
+    "workload": "Full Time",
+    "applyUrl": "mailto:apply@example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "richTextHtml": "<p>Placeholder job description for CI fixture builds.</p>"
+  },
+  {
+    "slug": "fixture-job-3",
+    "title": "Fixture Job 3",
+    "company": "Example Partner",
+    "location": "Mannheim",
+    "workload": "Working Student",
+    "applyUrl": "mailto:apply@example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "richTextHtml": "<p>Placeholder job description for CI fixture builds.</p>"
+  }
+]

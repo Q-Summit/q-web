@@ -5,6 +5,14 @@
 # Model: everyday code is team-wide; durable truth (decisions, architecture),
 # governance, and the paths that can break editors or compliance have a
 # stricter gate.
+#
+# Bootstrapping gap (documented 2026-07-23): with a solo owner, branch
+# protection sets enforce_admins: false (.github/admin/setup-repo.sh), since a
+# sole owner cannot approve their own pull request. That means an admin merge
+# on the paths gated below skips independent review by design, not by
+# accident. This must flip to org teams (@q-summit/...) before the maintainer
+# set grows past one person. Until then, call out any admin-bypass merge that
+# touches the gated paths in that pull request.
 
 # Default: any maintainer can review.
 *                       @LukasStrickler
@@ -14,9 +22,21 @@
 /docs/architecture/     @LukasStrickler
 
 # Sensitive code paths: CMS schema and access control changes affect every
-# editor; deploy config affects the live site.
+# editor; deploy config affects the live site. Content-sync is the only
+# automated remote write path (drafts only).
 /apps/cms/src/collections/  @LukasStrickler
 /apps/cms/src/access/       @LukasStrickler
+/apps/cms/src/content-sync/ @LukasStrickler
+/apps/cms/src/endpoints/    @LukasStrickler
+/apps/cms/src/globals/      @LukasStrickler
+/apps/cms/src/payload.config.ts @LukasStrickler
+
+# Deploy config: the comment above says deploy config is gated, but these were
+# not listed. wrangler.jsonc holds the R2 binding and run_worker_first routing
+# that serve every /media/* request; astro.config.mjs sets the site URL that
+# canonicals and the sitemap are built from.
+/apps/web/wrangler.jsonc    @LukasStrickler
+/apps/web/astro.config.mjs  @LukasStrickler
 
 # Governance and automation: requires a maintainer's review.
 /.github/               @LukasStrickler

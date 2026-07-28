@@ -1,0 +1,70 @@
+---
+// One card in the "Main Stage Panels" grid: icon in a colored circle,
+// panel title and description on a light card inside the navy section.
+interface Props {
+  icon: string;
+  title: string;
+  description: string;
+}
+
+const { icon, title, description } = Astro.props;
+---
+
+<article class="panel-card">
+  <span class="panel-card__icon">
+    <img
+      src={icon}
+      alt=""
+      width="24"
+      height="24"
+      loading="lazy"
+      decoding="async"
+    />
+  </span>
+  <h3 class="panel-card__title">{title}</h3>
+  <p class="panel-card__text">{description}</p>
+</article>
+
+<style>
+  .panel-card {
+    height: 100%;
+    padding: var(--space-lg);
+    text-align: left;
+    background-color: var(--color-background);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+  }
+
+  .panel-card__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background-color: var(--color-focus);
+    border-radius: var(--radius-circle);
+  }
+
+  .panel-card__icon img {
+    width: 24px;
+    height: 24px;
+  }
+
+  /* This card sits on a light background inside a `.section.is-dark`
+     wrapper, so the dark-section heading override (global.css) would
+     otherwise turn this h3 white-on-white; restate the navy heading
+     color explicitly. */
+  .panel-card__title {
+    margin-top: var(--space-sm);
+    font-size: var(--heading-h6-size);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--heading-line-height-loose);
+    color: var(--color-heading);
+  }
+
+  .panel-card__text {
+    margin: var(--space-2xs) 0 0;
+    font-size: var(--text-size-small);
+    color: var(--color-neutral-dark);
+  }
+</style>

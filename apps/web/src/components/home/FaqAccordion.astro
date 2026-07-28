@@ -1,0 +1,132 @@
+---
+// FAQ accordion, ported from the Webflow section_home_faq. The Webflow
+// build animated the answers with interaction JS; native details/summary
+// elements need none.
+import type { Faq, PageLink } from "../../lib/content";
+import { buildFaqPageJsonLd } from "../../lib/faq-json-ld";
+import JsonLd from "../seo/JsonLd.astro";
+import Button from "../ui/Button.astro";
+import Section from "../ui/Section.astro";
+import IconChevron from "../icons/IconChevron.astro";
+
+interface Props {
+  heading: string;
+  intro: string;
+  faqs: Faq[];
+  cta: PageLink | undefined;
+}
+
+const { heading, intro, faqs, cta } = Astro.props;
+
+// FAQPage structured data mirroring exactly the visible Q&A content (Google
+// requires marked-up FAQ text to be visible on the page; it is, right below).
+const faqLd = buildFaqPageJsonLd(faqs);
+---
+
+<!-- Left-aligned opener (DESIGN.md LAYOUT-4 exception): the FAQ intro and CTA
+     sit beside the accordion in a two-column layout on the live site. -->{
+  faqs.length > 0 && <JsonLd data={faqLd} />
+}
+<Section variant="alternate" small class="faq">
+  <div class="container faq-inner">
+    <div class="faq-copy">
+      <h2 data-lp="faqSection.heading">{heading}</h2>
+      <p data-lp="faqSection.intro">{intro}</p>
+      {
+        cta && (
+          <Button
+            small
+            href={cta.href}
+            data-lp="faqSection.cta"
+            data-lp-href="faqSection.cta.href"
+          >
+            {cta.label}
+          </Button>
+        )
+      }
+    </div>
+    <div class="faq-list">
+      {
+        faqs.map((faq) => (
+          <details>
+            <summary class="u-accordion-summary">
+              <span>{faq.question}</span>
+              <IconChevron size={24} />
+            </summary>
+            <div class="faq-answer" set:html={faq.answerHtml} />
+          </details>
+        ))
+      }
+    </div>
+  </div>
+</Section>
+
+<style>
+  .faq-inner {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: var(--space-xl) 5rem;
+    align-items: start;
+  }
+
+  .faq-copy h2 {
+    margin-bottom: var(--space-sm);
+  }
+
+  .faq-copy p {
+    margin-bottom: var(--space-md);
+    font-size: var(--text-size-medium);
+    color: var(--color-neutral-dark);
+  }
+
+  .faq-list {
+    border-top: 1px solid var(--color-neutral-lighter);
+  }
+
+  details {
+    border-bottom: 1px solid var(--color-neutral-lighter);
+  }
+
+  /* Box, marker reset and padding come from .u-accordion-summary
+     (global.css, DESIGN.md COMP-3). Local: the label type (this accordion
+     styles the summary itself, the other three a nested label span) and the
+     tighter gap the two-column live layout uses. */
+  summary {
+    gap: var(--space-sm);
+    font-size: var(--text-size-medium);
+    font-weight: var(--heading-weight);
+    color: var(--color-heading);
+  }
+
+  /* :global, because the svg is rendered by IconChevron and so carries that
+     component's scope, not this one's. This accordion rotates the glyph
+     itself; the other three rotate the box they wrap it in. */
+  summary :global(svg) {
+    flex-shrink: 0;
+    transition: transform var(--duration-icon) var(--ease-snappy);
+  }
+
+  details[open] summary :global(svg) {
+    transform: rotate(180deg);
+  }
+
+  .faq-answer {
+    padding-bottom: 1.25rem;
+    color: var(--color-neutral-dark);
+  }
+
+  .faq-answer :global(p) {
+    margin: 0 0 var(--space-xs);
+  }
+
+  .faq-answer :global(p:last-child) {
+    margin-bottom: 0;
+  }
+
+  @media (max-width: 767px) {
+    .faq-inner {
+      grid-template-columns: 1fr;
+      gap: var(--space-lg);
+    }
+  }
+</style>

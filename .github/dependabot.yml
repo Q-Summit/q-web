@@ -1,9 +1,12 @@
 # Keeps our pinned versions fresh. GitHub Actions are pinned to full commit
 # SHAs (house rule, see the workflows); Dependabot reads the trailing "# vX.Y.Z"
 # comment and opens a PR that bumps the SHA plus the comment together. The
-# "npm" ecosystem reads pnpm-lock.yaml and covers the devDependencies; when
-# apps/web and apps/cms land, add their directories here and group the
-# Astro/Payload dependency surface so update PRs stay reviewable.
+# "npm" ecosystem at "/" reads the root pnpm-lock.yaml (workspace packages
+# apps/web and apps/cms share that lockfile). Prefer grouped update PRs so
+# Astro vs Payload bumps stay reviewable. The "docker" ecosystem at "/" reads
+# docker-compose.yml at the repo root (there is no Dockerfile; this is the
+# local dev stack only, see docker-compose.yml), so the pinned postgres and
+# minio/minio and minio/mc image tags get the same freshness treatment.
 version: 2
 updates:
   - package-ecosystem: "github-actions"
@@ -12,9 +15,7 @@ updates:
       interval: "weekly"
     # Wait before opening version-update PRs so freshly published malware or
     # broken releases have time to surface. Security updates still open
-    # immediately, but pnpm's 3-day release quarantine (pnpm-workspace.yaml,
-    # minimumReleaseAge) can block regenerating the lockfile for a fix younger
-    # than 3 days; lower that value temporarily if a fix cannot wait.
+    # immediately.
     cooldown:
       default-days: 7
     commit-message:
@@ -23,6 +24,33 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    # Same wait as above. Security updates still open immediately, but pnpm's
+    # 3-day release quarantine (pnpm-workspace.yaml, minimumReleaseAge) can
+    # block regenerating the lockfile for a fix younger than 3 days; lower
+    # that value temporarily if a fix cannot wait.
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: "chore"
+    # payload and every @payloadcms/* package are pinned to the identical
+    # exact version (peer-locked lockstep); a single-package bump cannot
+    # resolve, so those must move together in one PR. Astro grouped for the
+    # same reviewability reason.
+    groups:
+      payload:
+        patterns:
+          - "payload"
+          - "@payloadcms/*"
+      astro:
+        patterns:
+          - "astro"
+          - "@astrojs/*"
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    # Same wait as above. This is the local dev stack (docker-compose.yml)
+    # only; no production Dockerfile exists.
     cooldown:
       default-days: 7
     commit-message:

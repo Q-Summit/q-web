@@ -6,11 +6,25 @@ One home per question:
 
 | Question | Home |
 | --- | --- |
+| How do I run or deploy this? | [`dev/`](dev/): maintainer how-tos (local loop, Cloudflare, Vercel) |
+| Which root script / Make target? | [`dev/scripts.md`](dev/scripts.md): `local/` `content/` `check/` `preview/` `ops/` |
+| How do I pull or propose content packages? | [`dev/content-sync.md`](dev/content-sync.md) (drafts only; never publish/deploy) |
 | How do divisions edit content? | [`editors/`](editors/): the editor handbook, written for non-developers |
+| How do titles and WhatsApp previews work? | [`editors/seo.md`](editors/seo.md) |
+| How does `/llms.txt` identity get edited? | [`editors/llms.md`](editors/llms.md) |
 | Why is the system built this way? | [`decisions/`](decisions/): ADRs, architecture decisions, append-only |
 | How does the system work **right now**? | [`architecture/`](architecture/): arc42; always current truth |
 
-The placement rule: **if the reader should not need to know what a repository is, the page belongs in `editors/`**; everything else may assume a developer. These three homes are the complete set. New pages join one of them, with one exception: rare operational tasks (edition rollover, database backup and restore, editor account handover) get a flat page next to this file when their work first happens, in `editors/` if a non-developer performs them.
+The placement rule: **if the reader should not need to know what a repository is, the page belongs in `editors/`**; everything else may assume a developer.
+
+| Home | Doc type | Put here |
+| --- | --- | --- |
+| `editors/` | How-to for non-developers | Payload editing, SEO cards, `/llms.txt` identity |
+| `dev/` | How-to for maintainers | Local setup, deploy procedures, later rollover/backup |
+| `architecture/` | Explanation / current truth (arc42) | Topology, runtime, concepts; not step-by-step runbooks |
+| `decisions/` | ADRs | Architecture-level choices with alternatives |
+
+Do not put command-level setup into arc42 chapters: [`architecture/07-deployment.md`](architecture/07-deployment.md) describes _what_ is deployed where; [`dev/go-live.md`](dev/go-live.md) is _how_ to set it up. New pages join one of the four homes above.
 
 How work lands is defined below, once, and summarized for contributors in [`CONTRIBUTING.md`](../CONTRIBUTING.md). It is short on purpose: most changes to the website are content edits in Payload and never touch this repository.
 
@@ -20,9 +34,11 @@ The first question for any change: where does this truth live?
 
 | Truth | Owner | Changed via |
 | --- | --- | --- |
-| Content: text, images, partners, speakers, jobs, team, FAQ | Payload CMS | Division editor accounts, drafts, approval; see [`editors/`](editors/) |
+| Content: text, images, partners, speakers, jobs, team, FAQ | Payload CMS | Division editors in admin ([`editors/`](editors/)); agents/maintainers may propose **drafts** only via [`dev/content-sync.md`](dev/content-sync.md); only approvers Publish |
+| CI content fixture (fake) | `apps/web/test/fixtures/ci-content/` | Regenerated via `pnpm content:fixture -- --from <snapshot dir>` |
 | Media files | R2 (uploaded through Payload) | Payload uploads |
-| Code: site, CMS schema, styling, pages | This repo | PRs, reviewed |
+| Code: site, CMS schema, pages | This repo | PRs, reviewed |
+| Visual identity: tokens, color, layout, components | [`apps/web/DESIGN.md`](../apps/web/DESIGN.md) | PRs, gated by `pnpm run check:design` |
 | Architecture decisions | [`decisions/`](decisions/) | ADR PRs, append-only |
 | Secrets, credentials | Provider dashboards, GitHub secrets | Never in git |
 

@@ -1,0 +1,88 @@
+---
+// /hackathon: Q-Hackathon landing. Hero, partner tiers, six benefit cards,
+// two-day schedule timeline, hackathon FAQs, closing contact CTA. All
+// content loads at build time from page-content.json via
+// src/lib/content.ts. Photos are `/media/...` keys on R2 (local:
+// gitignored public/media), not committed binaries.
+import Base from "../layouts/Base.astro";
+import HackHero from "../components/hackathon/HackHero.astro";
+import HackPartners from "../components/hackathon/HackPartners.astro";
+import BenefitCards from "../components/hackathon/BenefitCards.astro";
+import HackSchedule from "../components/hackathon/HackSchedule.astro";
+import PageFaqAccordion from "../components/ui/PageFaqAccordion.astro";
+import HackCta from "../components/hackathon/HackCta.astro";
+import { hackathonScheduleImages } from "../assets/media/hackathon";
+import { getFaqs, getPageContent } from "../lib/content";
+
+const { hackathon } = await getPageContent();
+
+const faqs = (await getFaqs()).filter((faq) => faq.page === "hackathon");
+
+// The hero CTA anchors to the benefit cards, like the live page.
+const benefitsAnchor = "join-hack";
+
+// Matched to schedule items by index, same order as the live page.
+const scheduleAlts = [
+  "Participants at the Q-Hackathon opening session",
+  "Teams starting to hack in the university aula",
+  "A team refining their solution before submission",
+  "A team pitching their prototype to the judges",
+  "Finalists on the Q-Summit main stage pitch battle",
+] as const;
+const scheduleImages = hackathonScheduleImages.map((src, i) => ({
+  src,
+  alt: scheduleAlts[i] ?? "",
+}));
+---
+
+<Base
+  title={hackathon.title}
+  description={hackathon.metaDescription}
+  ogImage="/media/hack-poster.jpg"
+  ogImageAlt="Q-Summit Hackathon"
+  preloadImage="/media/hack-poster.jpg"
+  livePreviewGlobal="page-hackathon"
+>
+  <HackHero
+    headline={hackathon.hero.headline}
+    tagline={hackathon.hero.tagline}
+    cta={hackathon.hero.cta}
+  />
+
+  <HackPartners
+    heading={hackathon.partners.heading}
+    groups={hackathon.partners.groups}
+  />
+
+  <BenefitCards
+    id={benefitsAnchor}
+    heading={hackathon.benefits.heading}
+    cards={hackathon.benefits.cards}
+  />
+
+  <HackSchedule
+    heading={hackathon.schedule.heading}
+    intro={hackathon.schedule.intro}
+    items={hackathon.schedule.items}
+    images={scheduleImages}
+  />
+
+  {
+    faqs.length > 0 && (
+      <PageFaqAccordion
+        heading={hackathon.faqSection.heading}
+        intro={hackathon.faqSection.intro}
+        faqs={faqs}
+        headerAlign="center"
+        headingId="hack-faq-heading"
+      />
+    )
+  }
+
+  <HackCta
+    heading={hackathon.closingCta.heading}
+    text={hackathon.closingCta.text}
+    ctaLabel={hackathon.closingCta.mailtoLabel}
+    ctaHref={`mailto:${hackathon.closingCta.mailtoEmail}`}
+  />
+</Base>

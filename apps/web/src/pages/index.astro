@@ -1,0 +1,231 @@
+---
+// Homepage, ported from the Webflow index page. All content loads at build
+// time from the content layer (src/lib/content.ts): semantic page copy from
+// page-content.json, speakers from speakers.json, FAQs from faqs.json.
+// Client JS is minimal: the old counter animation renders as static numbers
+// and the FAQ uses details/summary (both JS-free); Hero streams its
+// background video via a bundled hls.js import (no CDN), and the speaker
+// carousel is native scroll-snap with a small progressive-enhancement script.
+import Base from "../layouts/Base.astro";
+import Hero from "../components/home/Hero.astro";
+import StatsBand from "../components/home/StatsBand.astro";
+import PartnerLogos from "../components/home/PartnerLogos.astro";
+import SpeakerGrid from "../components/home/SpeakerGrid.astro";
+import WhyCards from "../components/home/WhyCards.astro";
+import FaqAccordion from "../components/home/FaqAccordion.astro";
+import JsonLd from "../components/seo/JsonLd.astro";
+import logoManifest from "../components/partner/logo-manifest.json";
+import {
+  getFaqs,
+  getPageContent,
+  getPartners,
+  getSiteSettings,
+  getSpeakers,
+} from "../lib/content";
+import type { PageStat, Partner } from "../lib/content";
+import {
+  resolvePartnerLogoDisplay,
+  type PartnerLogoMeta,
+} from "../lib/partner-logos";
+
+const partnerLogoManifest = logoManifest as Record<string, PartnerLogoMeta>;
+
+const [pageContent, allSpeakers, allFaqs, allPartners, { siteTitle, footer }] =
+  await Promise.all([
+    getPageContent(),
+    getSpeakers(),
+    getFaqs(),
+    getPartners(),
+    getSiteSettings(),
+  ]);
+const { home, contact } = pageContent;
+
+// The partner band stores each logo as the partner name shown on the live
+// site's slider; match those (case/punctuation-insensitive) against the real
+// partner records so the strip can reuse the same logo files and links as
+// the /partner page. Exact normalized equality only: a substring fallback
+// used to also accept e.g. "Uber" matching "Zauber" ('zauber'.includes('uber')
+// is true), silently substituting one partner's logo/link for the other's
+// depending on array order. If partner names ever need genuine fuzzy
+// matching, reference the partner by a stable id/slug instead.
+function normalizePartnerName(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function findPartner(name: string): Partner | undefined {
+  const target = normalizePartnerName(name);
+  return allPartners.find(
+    (partner) => normalizePartnerName(partner.name) === target,
+  );
+}
+
+function resolvePartnerLogoGroups(stats: PageStat[]) {
+  return stats
+    .map((stat) => ({
+      value: stat.value,
+      label: stat.label,
+      logos: (stat.logos ?? []).flatMap((name) => {
+        const partner = findPartner(name);
+        if (!partner) {
+          console.warn(
+            `[index] partner band: no partner named "${name}" found; skipped`,
+          );
+          return [];
+        }
+        const logo = resolvePartnerLogoDisplay(
+          partner,
+          partnerLogoManifest,
+          "[index] partner band",
+        );
+        return logo ? [logo] : [];
+      }),
+    }))
+    .filter((group) => group.logos.length > 0);
+}
+
+const partnerLogoGroups = resolvePartnerLogoGroups(home.partnerBand.items);
+
+// The old site inlined these speakers in a client-side carousel script;
+// its slides are the "panel" (main stage highlight) group (verified against
+// raw/index.html), rendered here as a static grid.
+const speakers = allSpeakers.filter((s) => s.group === "panel");
+
+const faqs = allFaqs.filter((f) => f.page === "index");
+
+/* Structured data (homepage only; see SEO spec s4). Every value traces to a
+ * content field: no invented facts. URLs are absolute, built from Astro.site
+ * (already trailing-slashed to match canonicals/sitemap). @id anchors let the
+ * WebSite and Event reference the Organization across the separate blocks. */
+const orgId = new URL("#organization", Astro.site).href;
+const websiteId = new URL("#website", Astro.site).href;
+const siteHref = new URL("/", Astro.site).href;
+const logoUrl = new URL(
+  "/media/675ed0ac85498309510d86d2_Logo-Blau.png",
+  Astro.site,
+).href;
+const heroPosterUrl = new URL("/media/hero-poster.jpg", Astro.site).href;
+
+// contact.reachOut.items: the registered-association entry (the one with no
+// email) carries the legal name; the "Email" entry carries the public address.
+const legalEntity = contact.reachOut.items.find((item) => !item.email);
+const contactEmail = contact.reachOut.items.find(
+  (item) => item.label === "Email",
+)?.email;
+
+const organizationLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": orgId,
+  name: siteTitle,
+  ...(legalEntity ? { legalName: legalEntity.label } : {}),
+  url: siteHref,
+  logo: logoUrl,
+  description: footer.tagline,
+  ...(contactEmail ? { email: contactEmail } : {}),
+  // Hardcoded from the contact address "L1, 1; 68161; Mannheim; Germany"
+  // (and the imprint) rather than split at build; addressCountry is ISO 3166.
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: "L1, 1",
+    postalCode: "68161",
+    addressLocality: "Mannheim",
+    addressCountry: "DE",
+  },
+  sameAs: footer.socialLinks.map((link) => link.href),
+};
+
+const websiteLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "@id": websiteId,
+  name: siteTitle,
+  url: siteHref,
+  publisher: { "@id": orgId },
+};
+
+// Event dates come from the dedicated home.event fields in the CMS, not from
+// parsing hero.announcementLines. That parsing was the bug: announcementLines
+// is display copy an editor rewrites freely, and the regex only accepted one
+// same-month shape ("April 1-2, 2027"). A cross-month span, an en dash, a
+// German format, or simply deleting the line threw here at build time, which
+// failed `astro build` and so blocked every subsequent deploy of the entire
+// site until someone changed code. Editors now set real dates in a date
+// picker, and the banner copy is free text again.
+//
+// Date-only (no time/timezone in content). No offers (only past-2026 ticket
+// URLs exist) and no venue name/street (absent from all content), so both
+// are omitted per spec. The city-level location IS sourced: the footer
+// tagline (site-settings) states the conference is "organized in Mannheim
+// since 2017" as a standing claim, and the organization's registered address
+// is Mannheim.
+const eventDates = {
+  name: `Q-Summit ${home.event.startDate.slice(0, 4)}`,
+  startDate: home.event.startDate,
+  endDate: home.event.endDate,
+};
+
+const eventLd = {
+  "@context": "https://schema.org",
+  "@type": "Event",
+  name: eventDates.name,
+  startDate: eventDates.startDate,
+  endDate: eventDates.endDate,
+  eventStatus: "https://schema.org/EventScheduled",
+  eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+  location: {
+    "@type": "Place",
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: "Mannheim",
+      addressCountry: "DE",
+    },
+  },
+  image: heroPosterUrl,
+  description: home.metaDescription,
+  url: siteHref,
+  organizer: { "@id": orgId },
+};
+---
+
+<Base
+  title={home.title}
+  description={home.metaDescription}
+  preloadImage="/media/hero-poster.jpg"
+  livePreviewGlobal="page-home"
+>
+  <Fragment slot="jsonld">
+    <JsonLd data={organizationLd} />
+    <JsonLd data={websiteLd} />
+    <JsonLd data={eventLd} />
+  </Fragment>
+  <Hero
+    headline={home.hero.headline}
+    tagline={home.hero.tagline}
+    announcement={home.hero.announcementLines}
+    cta={home.hero.cta}
+  />
+  <StatsBand
+    heading={home.stats.heading}
+    intro={home.stats.intro}
+    stats={home.stats.items}
+  />
+  <PartnerLogos groups={partnerLogoGroups} cta={home.partnerBand.cta} />
+  <SpeakerGrid
+    heading={home.previousSpeakers.heading}
+    intro={home.previousSpeakers.intro}
+    speakers={speakers}
+    cta={home.previousSpeakers.cta}
+  />
+  <WhyCards
+    heading={home.whyAttend.heading}
+    intro={home.whyAttend.intro}
+    cards={home.whyAttend.cards}
+    cta={home.whyAttend.cta}
+  />
+  <FaqAccordion
+    heading={home.faqSection.heading}
+    intro={home.faqSection.intro}
+    faqs={faqs}
+    cta={home.faqSection.cta}
+  />
+</Base>

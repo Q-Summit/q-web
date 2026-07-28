@@ -1,0 +1,7 @@
+# .gitignore-syntax list of paths Wrangler must NOT upload as static assets
+# (copied to dist/.assetsignore by Astro; read from the root of the assets
+# directory). dist/media/** is the interim scrape copy of the media library
+# (~80MB); the Worker serves every /media/* request from the R2 binding
+# (run_worker_first in wrangler.jsonc), so uploading it as static assets
+# would double-store it for no benefit. See docs/dev/local-development.md (Media) / docs/dev/go-live.md.
+media

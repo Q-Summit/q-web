@@ -9,5 +9,5 @@
 | Annual cycle: ticket sales open in January, event week early April | Risky changes happen off-season (roughly May to October); freeze before and during the sales and event window |
 | German e.V. operating a public website, EU visitors | GDPR: Impressum and Datenschutzerklaerung pages required; cookieless analytics ([ADR-0003](../decisions/0003-posthog-cookieless-analytics.md)); self-hosted fonts and assets; EU data regions where possible; DPAs with all sub-processors (tracked offsite) |
 | Divisions own their content | Per-division CMS accounts with scoped access and an approval gate; no shared logins |
-| Content must survive the yearly changeover | Editions model: next year's content is created alongside the current year's, past years archive themselves |
+| Content must survive the yearly changeover | Editions model required; year fields exist today, full rollover mechanism still owed ([section 9](09-architecture-decisions.md)) |
 | English only in the repo | Code, docs, issues, commits (site content itself may be German or English) |

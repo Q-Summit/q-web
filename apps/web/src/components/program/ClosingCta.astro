@@ -1,0 +1,130 @@
+---
+// Closing CTA card ported from the Webflow "program_cta" section:
+// bordered card, copy on the left, photo on the right (stacked on mobile).
+// Live (raw/program.html) renders an empty button-group here, so both
+// buttons are optional; program.astro deliberately passes neither.
+import Section from "../ui/Section.astro";
+import Container from "../ui/Container.astro";
+import Button from "../ui/Button.astro";
+
+interface CtaImage {
+  /** Site-origin `/media/...` path served from R2 (or local public/media). */
+  src: string;
+  alt: string;
+}
+
+interface Props {
+  heading: string;
+  text?: string;
+  primaryLabel?: string;
+  primaryHref?: string;
+  secondaryLabel?: string;
+  secondaryHref?: string;
+  image: CtaImage;
+}
+
+const {
+  heading,
+  text,
+  primaryLabel,
+  primaryHref,
+  secondaryLabel,
+  secondaryHref,
+  image,
+} = Astro.props;
+---
+
+<Section aria-labelledby="cta-heading">
+  <Container>
+    <div class="card">
+      <div class="content">
+        <h2 id="cta-heading">{heading}</h2>
+        {text && <p class="cta-text">{text}</p>}
+        <div class="buttons">
+          {
+            primaryLabel && primaryHref && (
+              <Button href={primaryHref}>{primaryLabel}</Button>
+            )
+          }
+          {
+            secondaryLabel && secondaryHref && (
+              <Button href={secondaryHref} variant="secondary">
+                {secondaryLabel}
+              </Button>
+            )
+          }
+        </div>
+      </div>
+      <div class="image-wrapper">
+        <img
+          src={image.src}
+          alt={image.alt}
+          width={1080}
+          height={720}
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+    </div>
+  </Container>
+</Section>
+
+<style>
+  .card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: stretch;
+    overflow: hidden;
+    border: 1px solid var(--color-neutral-lighter);
+    border-radius: var(--radius-card-large);
+    background-color: var(--color-background);
+  }
+
+  .content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: var(--space-xl);
+  }
+
+  .content h2 {
+    margin-bottom: var(--space-sm);
+  }
+
+  .cta-text {
+    margin: 0;
+    font-size: var(--text-size-medium);
+  }
+
+  .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-top: var(--space-lg);
+  }
+
+  .image-wrapper {
+    display: flex;
+    aspect-ratio: 3 / 2;
+  }
+
+  .image-wrapper img,
+  .image-wrapper picture {
+    width: 100%;
+    height: 100%;
+  }
+
+  .image-wrapper img {
+    object-fit: cover;
+  }
+
+  @media (max-width: 767px) {
+    .card {
+      grid-template-columns: 1fr;
+    }
+
+    .content {
+      padding: var(--space-lg);
+    }
+  }
+</style>

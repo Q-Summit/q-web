@@ -1,0 +1,43 @@
+{
+  "name": "cms",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Q-Summit CMS: Payload 3 on Next.js with Neon Postgres (see ADR-0002).",
+  "scripts": {
+    "predev": "node ../../scripts/local/assert-db.mjs",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "check": "tsc --noEmit",
+    "test": "vitest run",
+    "payload": "payload",
+    "generate:types": "payload generate:types",
+    "generate:importmap": "payload generate:importmap",
+    "generate:migrations": "payload migrate:create",
+    "migrate": "payload migrate"
+  },
+  "dependencies": {
+    "@payloadcms/db-postgres": "3.86.0",
+    "@payloadcms/next": "3.86.0",
+    "@payloadcms/richtext-lexical": "3.86.0",
+    "@payloadcms/storage-s3": "3.86.0",
+    "@payloadcms/ui": "3.86.0",
+    "google-auth-library": "^10.9.0",
+    "graphql": "^16.8.1",
+    "next": "~16.2.6",
+    "payload": "3.86.0",
+    "payload-oauth2": "^1.0.21",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
+    "sharp": "^0.34.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "jsdom": "^29.1.1",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.10"
+  }
+}

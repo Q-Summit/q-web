@@ -1,0 +1,497 @@
+---
+// Partner logo band, ported from the live site's stats/logo showcase rows:
+// two rows (startup/corporate partners, network partners). Each row is one
+// full-width marquee with the label (running count + name) rendered as a
+// fixed layer ON TOP of the strip: logos flow underneath it, disappear
+// into its feathered right edge, re-emerge from its feathered left edge,
+// and travel on to the band's left edge where the viewport mask fades
+// them out -- the "bridge" effect. Both rows share the same label inset
+// and width, so the two labels align pixel-for-pixel. The logo track is
+// two identical groups animated with a CSS keyframe translateX(-50%) loop
+// (no client JS needed for a working marquee), paused on hover/focus, and
+// falls back to a static wrapped grid under prefers-reduced-motion.
+//
+// Seamless-loop coverage: translateX(-50%) is only gapless while one
+// group is at least as wide as the viewport (worst case, exactly one
+// group width of track remains on screen). A short row (the network
+// partners) can't rely on a single logo set for that at 120rem, so each
+// group repeats its set `repeats` times, computed at build time from the
+// logos' rendered widths against the band's maximum width.
+//
+// The band is a breakout (DESIGN.md LAYOUT-1's one documented exception, see
+// tokens.css's --container-marquee): it runs to the actual browser edge on
+// any viewport up to a full 1080p window (120rem) and is capped, centered,
+// only on wider monitors. On phones it collapses to a stacked label above
+// an edge-to-edge marquee with fades at both screen edges.
+//
+// Motion can be paused by hovering or focusing the track; reduced-motion
+// removes the animation entirely (below).
+import Section from "../ui/Section.astro";
+import Container from "../ui/Container.astro";
+import Button from "../ui/Button.astro";
+
+export interface PartnerLogo {
+  name: string;
+  href: string;
+  src: string;
+  width: number;
+  height: number;
+}
+
+export interface PartnerLogoGroup {
+  value: string;
+  label: string;
+  logos: PartnerLogo[];
+}
+
+interface Props {
+  groups: PartnerLogoGroup[];
+  cta?: { label: string; href: string };
+}
+
+const { groups, cta } = Astro.props;
+
+// Rendered strip metrics, mirroring the CSS below: logos display at 2rem
+// (32px) tall capped at 7rem (112px) wide, with a 1.75rem (28px) flex gap,
+// and each set carries a trailing 1.75rem padding. One group must cover
+// the band's maximum width (--container-marquee, 120rem = 1920px) for the
+// -50% loop to stay gapless; a small margin absorbs rounding.
+const LOGO_HEIGHT_PX = 32;
+const LOGO_MAX_WIDTH_PX = 112;
+const LOGO_GAP_PX = 28;
+const GROUP_MIN_WIDTH_PX = 1920 + LOGO_GAP_PX;
+
+function renderedSetWidth(logos: PartnerLogo[]): number {
+  return logos.reduce((sum, logo) => {
+    const scaled = Math.min(
+      (logo.width / logo.height) * LOGO_HEIGHT_PX,
+      LOGO_MAX_WIDTH_PX,
+    );
+    return sum + scaled + LOGO_GAP_PX;
+  }, 0);
+}
+
+function repeatsFor(logos: PartnerLogo[]): number {
+  const setWidth = renderedSetWidth(logos);
+  return setWidth > 0
+    ? Math.max(1, Math.ceil(GROUP_MIN_WIDTH_PX / setWidth))
+    : 1;
+}
+---
+
+{
+  groups.length > 0 && (
+    <Section small class="partners" aria-label="Q-Summit partners">
+      <div class="partner-band-wrap">
+        {groups.map((group) => {
+          const repeats = repeatsFor(group.logos);
+          return (
+            <div
+              class="partner-band"
+              style={`--logo-count: ${group.logos.length * repeats}`}
+            >
+              <div class="partner-band-label">
+                <p class="partner-band-value">{group.value}</p>
+                <p class="partner-band-name">{group.label}</p>
+              </div>
+              <div class="partner-band-viewport">
+                <div class="partner-band-track">
+                  <div class="partner-band-group">
+                    <ul
+                      class="partner-band-logos"
+                      aria-label={`${group.label} partners`}
+                    >
+                      {group.logos.map((logo) => (
+                        <li>
+                          <a
+                            href={logo.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={`${logo.name} (opens in a new tab)`}
+                          >
+                            <img
+                              src={logo.src}
+                              alt={`${logo.name} logo`}
+                              width={logo.width}
+                              height={logo.height}
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                    {/* Coverage repeats: pad a short set out to the band's
+                        maximum width. Decorative (plain img, no link) and
+                        aria-hidden, so assistive tech and keyboard users
+                        only ever encounter the real list once. */}
+                    {Array.from({ length: repeats - 1 }).map(() => (
+                      <ul class="partner-band-logos" aria-hidden="true">
+                        {group.logos.map((logo) => (
+                          <li>
+                            <img
+                              src={logo.src}
+                              alt=""
+                              width={logo.width}
+                              height={logo.height}
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          </li>
+                        ))}
+                      </ul>
+                    ))}
+                  </div>
+                  {/* Decorative duplicate group: continues the visual strip
+                      so the -50% loop reads as seamless. Hidden from
+                      assistive tech like the coverage repeats above. */}
+                  <div class="partner-band-group" aria-hidden="true">
+                    {Array.from({ length: repeats }).map(() => (
+                      <ul class="partner-band-logos">
+                        {group.logos.map((logo) => (
+                          <li>
+                            <img
+                              src={logo.src}
+                              alt=""
+                              width={logo.width}
+                              height={logo.height}
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          </li>
+                        ))}
+                      </ul>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {cta && (
+        <Container>
+          <div class="u-section-cta partners-cta">
+            <Button variant="secondary" small href={cta.href}>
+              {cta.label}
+            </Button>
+          </div>
+        </Container>
+      )}
+    </Section>
+  )
+}
+
+<style>
+  /* Breakout band: runs to the actual browser edge on any viewport up to
+     --container-marquee (120rem = a full 1080p window, tokens.css) and only
+     caps -- centered -- on wider monitors. No --padding-global inset: the
+     viewport mask's edge fade is what keeps the strip from ending in a
+     hard cut at the screen border. Vertical padding comes from
+     .section.is-small only. The shared label width/inset/scrim tokens live
+     here so both rows read the exact same values and their labels line up
+     pixel-for-pixel. */
+  .partner-band-wrap {
+    --partner-label-col: 14rem;
+    /* The label's left edge lands exactly where .container's text does
+       (global.css): centered max-width column plus the global 5% padding.
+       Both percentages here resolve against the full-width band, the same
+       reference .container's own math uses, so the label tracks the
+       content column exactly at every viewport width while the strip runs
+       wider underneath it. */
+    --partner-label-inset: calc(
+      max((100% - var(--container-large)) / 2, 0px) + var(--padding-global)
+    );
+    /* Length of the gradient scrim OUTSIDE each of the label's hard
+       edges, and of the viewport's edge fade. */
+    --partner-scrim: 1.5rem;
+    --partner-edge-fade: 3rem;
+    width: 100%;
+    display: grid;
+    gap: var(--space-md);
+  }
+
+  .partner-band {
+    position: relative;
+    min-width: 0;
+  }
+
+  /* The label is a layer ON TOP of the full-width marquee: a fully solid
+     section-surface block (works on white and on .is-alternate) with a
+     crisp 1px hairline at each side -- a deliberate hard edge, not a mushy
+     fade -- plus a short gradient scrim OUTSIDE each hairline (the
+     pseudo-elements below), so logos dim as they approach, cut cleanly
+     under the line, and re-emerge the same way on the other side.
+     No pill, glass, blur, or radius. It also intercepts the pointer over
+     that area, so covered logos are never hover/click targets. */
+  .partner-band-label {
+    position: absolute;
+    inset-block: 0;
+    left: var(--partner-label-inset);
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: var(--partner-label-col);
+    padding-inline: 1.75rem;
+    background: var(--section-surface);
+    border-inline: 1px solid var(--color-neutral-lighter);
+  }
+
+  .partner-band-label::before,
+  .partner-band-label::after {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    width: var(--partner-scrim);
+    pointer-events: none;
+  }
+
+  /* Scrims run transparent (strip side) to ~3/4 surface (label side): the
+     logos visibly dim on approach but the hairline still lands on
+     something, keeping the edge readable as a hard line. */
+  .partner-band-label::before {
+    right: 100%;
+    background: linear-gradient(
+      to left,
+      color-mix(in srgb, var(--section-surface) 75%, transparent),
+      transparent
+    );
+  }
+
+  .partner-band-label::after {
+    left: 100%;
+    background: linear-gradient(
+      to right,
+      color-mix(in srgb, var(--section-surface) 75%, transparent),
+      transparent
+    );
+  }
+
+  /* Stat number stays navy, matching StatsBand: DESIGN.md COLOR-1 keeps
+     orange out of stat numbers. */
+  .partner-band-value {
+    margin: 0;
+    font-size: var(--heading-h4-size);
+    font-weight: var(--heading-weight);
+    color: var(--color-heading);
+  }
+
+  .partner-band-name {
+    margin: 0.25rem 0 0;
+    font-size: var(--text-size-small);
+    color: var(--color-neutral-dark);
+  }
+
+  /* The strip runs under the label to the actual browser edge on any
+     viewport up to --container-marquee (a full 1080p window) and caps,
+     centered, only on wider monitors. Only it is masked/clipped. The fade
+     is a fixed length so edge softness is constant regardless of viewport
+     width (MDN mask-image, Baseline 2023-12; keep the -webkit- twin). */
+  .partner-band-viewport {
+    width: min(100%, var(--container-marquee));
+    margin-inline: auto;
+    min-width: 0;
+    overflow: hidden;
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      var(--color-black) var(--partner-edge-fade),
+      var(--color-black) calc(100% - var(--partner-edge-fade)),
+      transparent 100%
+    );
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      var(--color-black) var(--partner-edge-fade),
+      var(--color-black) calc(100% - var(--partner-edge-fade)),
+      transparent 100%
+    );
+  }
+
+  /* Both marquees must move at the same constant px/s regardless of how
+     many logos a row has (and regardless of how wide those logos happen to
+     be). Each row's track is exactly double one logo list's width, so
+     animating it -50% always covers one list's width, keeping the loop
+     seamless (Ryan Mulligan / Smashing). --marquee-duration is set
+     precisely per row by the inline script below from that row's measured
+     width; the calc() here is only the no-JS fallback, approximating from
+     --logo-count (set inline per row).
+     Deviation from DESIGN.md MOTION-1 (no bare duration): this is the
+     continuous loop case in DESIGN.md's Motion table, whose curve is
+     `linear` and whose duration is the loop's own period, derived per row
+     from its measured width. There is no --duration-* step for it, and the
+     UI-transition tokens (all <=500ms) would spin the strip. The 2.4s here
+     is the per-logo no-JS approximation, not a UI timing. */
+  .partner-band-track {
+    display: flex;
+    width: max-content;
+    padding-block: 1.75rem;
+    animation: partner-marquee
+      var(--marquee-duration, calc(var(--logo-count, 10) * 2.4s)) linear
+      infinite;
+  }
+
+  .partner-band:hover .partner-band-track,
+  .partner-band:focus-within .partner-band-track {
+    animation-play-state: paused;
+  }
+
+  /* One group = one full translation distance of the loop; the JS below
+     measures its width for the exact duration. */
+  .partner-band-group {
+    display: flex;
+  }
+
+  .partner-band-logos {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 1.75rem;
+    margin: 0;
+    padding-right: 1.75rem;
+    list-style: none;
+  }
+
+  .partner-band-logos img {
+    width: auto;
+    height: 2rem;
+    max-width: 7rem;
+    object-fit: contain;
+  }
+
+  @keyframes partner-marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  /* Phones: too narrow for an overlay layer, so the label stacks above an
+     edge-to-edge marquee as a normal static block with the global page
+     inset; the marquee keeps its both-edge fade (shortened to suit the
+     narrow screen). */
+  @media (max-width: 767px) {
+    .partner-band-wrap {
+      --partner-edge-fade: 2rem;
+    }
+
+    .partner-band-label {
+      position: static;
+      width: auto;
+      border: none;
+      padding: 0 var(--padding-global) var(--space-xs);
+    }
+
+    .partner-band-label::before,
+    .partner-band-label::after {
+      content: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    /* Static fallback: a wrapped, non-scrolling logo grid with the mask,
+       overlay, and duplicate removed, so every partner is readable,
+       appears once, and nothing sits covered under the label. Without the
+       edge fades the band must not touch the screen border, so it aligns
+       with the normal content column (.container's width and padding). */
+    .partner-band-wrap {
+      width: min(100%, var(--container-large));
+      margin-inline: auto;
+      padding-inline: var(--padding-global);
+    }
+
+    .partner-band-label {
+      position: static;
+      width: auto;
+      border: none;
+      padding: 0 0 var(--space-xs);
+    }
+
+    .partner-band-label::before,
+    .partner-band-label::after {
+      content: none;
+    }
+
+    .partner-band-viewport {
+      overflow: visible;
+      mask-image: none;
+      -webkit-mask-image: none;
+    }
+
+    .partner-band-track {
+      width: auto;
+      padding-block: var(--space-2xs);
+      animation: none;
+    }
+
+    .partner-band-logos {
+      flex-wrap: wrap;
+      padding-right: 0;
+    }
+
+    /* The coverage repeats and the duplicate group only exist to fill the
+       animated loop; without motion they would just repeat the same logos
+       over and over. The surviving single set wraps inside its group. */
+    .partner-band-group[aria-hidden="true"],
+    .partner-band-logos[aria-hidden="true"] {
+      display: none;
+    }
+
+    .partner-band-viewport {
+      width: 100%;
+    }
+
+    .partner-band-group {
+      display: contents;
+    }
+  }
+
+  /* Shared .u-section-cta (DESIGN.md COMP-3); the marquee sits closer to
+     its CTA than the --section-gap default, so only margin is local. */
+  .partners-cta {
+    margin-top: var(--space-lg);
+  }
+</style>
+
+<script>
+  // Progressive enhancement: the --logo-count-based CSS duration (above)
+  // only approximates equal px/s, because it assumes every logo+gap is
+  // about the same width; real logos vary enough (a wordmark vs. a square
+  // mark) that two rows can visibly drift apart. Once real layout is
+  // available, measure each row's actual one-list width and set an exact
+  // duration for a genuinely constant px/s, overriding the CSS
+  // approximation via the same --marquee-duration property the animation
+  // reads. Runs after load (fonts/images settled) and on a debounced
+  // resize, improving on a one-shot measure that drifts. No JS: the CSS
+  // fallback still applies, just less precisely.
+  const PX_PER_SECOND = 60;
+  const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  function measure() {
+    if (motionQuery.matches) return;
+    document
+      .querySelectorAll<HTMLElement>(".partner-band-track")
+      .forEach((track) => {
+        const firstList = track.firstElementChild as HTMLElement | null;
+        const listWidth = firstList?.getBoundingClientRect().width ?? 0;
+        if (listWidth > 0) {
+          track.style.setProperty(
+            "--marquee-duration",
+            `${listWidth / PX_PER_SECOND}s`,
+          );
+        }
+      });
+  }
+
+  let resizeTimer: number | undefined;
+  function onResize() {
+    window.clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(measure, 200);
+  }
+
+  window.addEventListener("load", measure);
+  window.addEventListener("resize", onResize);
+</script>

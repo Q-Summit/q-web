@@ -1,0 +1,73 @@
+---
+// Conference agenda timeline section: the shared ui/Timeline pattern
+// (COMP-3, PRIM-3) inside the program page's section shell, with the
+// scroll-driven reveal switched on. The hackathon schedule renders the same
+// Timeline without `reveal`, which is the only behavioral difference
+// between the two pages. The JS fallback below stays here rather than in the
+// primitive so the pages that never ask for the reveal ship no script.
+import type { AgendaItem } from "../../lib/content";
+import Section from "../ui/Section.astro";
+import Container from "../ui/Container.astro";
+import SectionHeader from "../ui/SectionHeader.astro";
+import Timeline, { type TimelineImage } from "../ui/Timeline.astro";
+
+interface Props {
+  heading: string;
+  intro?: string;
+  items: AgendaItem[];
+  /** `/media/...` image per agenda item, matched by index. */
+  images: (TimelineImage | undefined)[];
+}
+
+const { heading, intro, items, images } = Astro.props;
+---
+
+<Section aria-labelledby="agenda-heading">
+  <Container>
+    <SectionHeader>
+      <h2 id="agenda-heading">{heading}</h2>
+      {
+        /* .timeline-intro is Timeline's own class (DESIGN.md COMP-3); the
+          rule lives there, next to the pattern both timeline pages share. */
+      }
+      {intro && <p class="timeline-intro">{intro}</p>}
+    </SectionHeader>
+
+    <Timeline items={items} images={images} reveal priorityFirstImage />
+  </Container>
+</Section>
+
+<script>
+  // Progressive-enhancement fallback for the per-row reveal: only takes
+  // over when the browser lacks `animation-timeline: view()` (the CSS in
+  // ui/Timeline.astro already handles it there) and the user has not asked
+  // for reduced motion. Without JS, or in a browser with neither, rows keep
+  // their CSS default of fully visible. Only timelines that opted into the
+  // reveal ([data-reveal]) are touched.
+  const supportsScrollTimeline =
+    typeof CSS !== "undefined" && CSS.supports("animation-timeline", "view()");
+  const reduceMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)",
+  ).matches;
+
+  if (!supportsScrollTimeline && !reduceMotion) {
+    document
+      .querySelectorAll<HTMLOListElement>(".timeline[data-reveal]")
+      .forEach((timeline) => {
+        timeline.setAttribute("data-timeline-js", "true");
+        const rows = timeline.querySelectorAll<HTMLLIElement>(".row");
+        const observer = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (entry.isIntersecting) {
+                entry.target.classList.add("is-revealed");
+                observer.unobserve(entry.target);
+              }
+            }
+          },
+          { rootMargin: "0px 0px -15% 0px", threshold: 0.15 },
+        );
+        rows.forEach((row) => observer.observe(row));
+      });
+  }
+</script>

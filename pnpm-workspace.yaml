@@ -6,10 +6,13 @@ packages:
 # Supply-chain defaults. Dependencies never run install scripts unless
 # explicitly allowlisted here, and new releases must be at least 3 days old
 # before pnpm will resolve to them (mitigates freshly published malware).
-# sharp and esbuild will need allowlisting here when apps/web and apps/cms
-# land (Astro and Payload run their install scripts); a missing entry looks
+# esbuild/sharp: Astro + Payload image pipelines. workerd: Cloudflare
+# Workers runtime used by wrangler / web vitest pool. A missing entry looks
 # like a broken install.
 # Trade-off: the quarantine also delays urgent security fixes younger than 3
 # days; lower it temporarily when such a fix cannot wait (see dependabot.yml).
-onlyBuiltDependencies: []
+onlyBuiltDependencies:
+  - esbuild
+  - sharp
+  - workerd
 minimumReleaseAge: 4320

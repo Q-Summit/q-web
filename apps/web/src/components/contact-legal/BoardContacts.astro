@@ -1,0 +1,149 @@
+---
+// Contact page: board member mailto cards next to the board group photo.
+// Mirrors the live site's "section_contact_feature-4" two-column layout.
+import type { BoardMember } from "../../lib/content";
+import Section from "../ui/Section.astro";
+import Container from "../ui/Container.astro";
+
+interface Props {
+  heading: string;
+  paragraphs: string[];
+  members: BoardMember[];
+}
+
+const { heading, paragraphs, members } = Astro.props;
+---
+
+<!-- Left-aligned opener (DESIGN.md LAYOUT-4 exception): the live page pairs the
+     heading with the board photo in a two-column layout, not a centered
+     .section-header. -->
+<Section>
+  <Container>
+    <div class="board-grid">
+      <div class="board-copy">
+        {
+          /* The mirror's raw/contact.html has a literal "Connect" tagline
+             div (class="text-style-tagline") above this heading; the
+             scrape only extracts real <h*>/<p> tags so it never made it
+             into pages.json, but it is real page content, not invented
+             copy (see raw/contact.html's "section_contact_feature-4"). */
+        }
+        <p class="u-eyebrow is-sentence board-eyebrow">Connect</p>
+        <h2>{heading}</h2>
+        {paragraphs.map((text) => <p class="intro">{text}</p>)}
+        <ul class="member-list">
+          {
+            members.map((member) => (
+              <li class="member">
+                <p class="member-name">{member.name}</p>
+                <p class="member-role">{member.role}</p>
+                <a class="member-mail" href={`mailto:${member.email}`}>
+                  {member.linkLabel}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      <img
+        class="board-photo"
+        src="/media/6a3aa1e8a29ff5bd96b1ceb7_Q2027-Board-p-1080.jpg"
+        srcset="/media/6a3aa1e8a29ff5bd96b1ceb7_Q2027-Board-p-500.jpg 500w, /media/6a3aa1e8a29ff5bd96b1ceb7_Q2027-Board-p-800.jpg 800w, /media/6a3aa1e8a29ff5bd96b1ceb7_Q2027-Board-p-1080.jpg 1080w"
+        sizes="(max-width: 991px) 90vw, 45vw"
+        width="1080"
+        height="720"
+        alt="The Q-Summit board members"
+        loading="eager"
+      />
+    </div>
+  </Container>
+</Section>
+
+<style>
+  .board-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-xl);
+    align-items: center;
+  }
+
+  @media (min-width: 992px) {
+    .board-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 5rem;
+    }
+  }
+
+  /* Shared .u-eyebrow (DESIGN.md COMP-3); only the gap to the heading
+     is local. */
+  .board-eyebrow {
+    margin-bottom: var(--space-2xs);
+  }
+
+  h2 {
+    margin-bottom: var(--space-md);
+  }
+
+  .intro {
+    margin-bottom: var(--space-lg);
+    font-size: var(--text-size-medium);
+  }
+
+  .member-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.25rem var(--space-lg);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (min-width: 480px) {
+    .member-list {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .member {
+    padding: 1.25rem;
+    border: 1px solid var(--color-neutral-lighter);
+    border-radius: var(--radius-card);
+    background-color: var(--color-background);
+    /* A whisper on a light card next to the hairline border: this is exactly
+       the --shadow-subtle step (DESIGN.md DEPTH-1). */
+    box-shadow: var(--shadow-subtle);
+  }
+
+  /* The card's title line is a <p>, but it carries the heading role and
+     the heading weight (DESIGN.md TYPE-4). */
+  .member-name {
+    margin-bottom: 0.25rem;
+    font-weight: var(--heading-weight);
+    color: var(--color-heading);
+  }
+
+  .member-role {
+    margin-bottom: var(--space-2xs);
+    font-size: var(--text-size-small);
+    color: var(--color-neutral-dark);
+  }
+
+  /* Navy, not orange: mailto links are not the one sanctioned
+     accent uses (DESIGN.md COLOR-1). */
+  .member-mail {
+    font-weight: var(--heading-weight);
+    font-size: var(--text-size-small);
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+
+  .member-mail:hover {
+    text-decoration: underline;
+  }
+
+  .board-photo {
+    width: 100%;
+    border-radius: var(--radius-card-large);
+    object-fit: cover;
+  }
+</style>

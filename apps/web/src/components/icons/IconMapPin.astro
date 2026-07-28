@@ -1,0 +1,34 @@
+---
+// Map pin glyph for the location line on a job listing (DESIGN.md COMP-3).
+// One copy of the 24-grid path the Webflow port pasted inline into both
+// places a job's location is printed: the card on /job-listings
+// (jobs/JobCard.astro) and the detail page /job-listings/<slug>
+// (pages/job-listings/[slug].astro). Single path, fill=currentColor, so it
+// takes the surrounding text color; the location text right next to it
+// carries the meaning, so the icon is decorative (aria-hidden here), like
+// IconChevron and the four social icons.
+//
+// The svg is rendered by THIS component, so it carries this component's
+// scope, not the caller's: a caller that needs to style it selects
+// `:global(svg)` inside its own wrapper, the same way layout/Footer.astro
+// and the four accordions do with IconChevron.
+interface Props {
+  /** Rendered box in px. 16 on the card, 15 on the detail page. */
+  size?: number;
+}
+
+const { size = 16 } = Astro.props;
+---
+
+<svg
+  width={size}
+  height={size}
+  viewBox="0 0 24 24"
+  fill="currentColor"
+  aria-hidden="true"
+  focusable="false"
+>
+  <path
+    d="M12 2C7.86 2 4.5 5.36 4.5 9.5c0 5.34 6.63 11.8 6.91 12.07a.85.85 0 0 0 1.18 0c.28-.27 6.91-6.73 6.91-12.07C19.5 5.36 16.14 2 12 2Zm0 10.25a2.75 2.75 0 1 1 0-5.5 2.75 2.75 0 0 1 0 5.5Z"
+  ></path>
+</svg>

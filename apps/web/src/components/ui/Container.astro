@@ -1,0 +1,20 @@
+---
+// Layout primitive (AGENTS.md PRIM-1): the one sanctioned page-width wrapper (.container,
+// max-width --container-large; DESIGN.md LAYOUT-1). Styling lives in global.css;
+// this component just centralizes the markup so pages and sections stop
+// hand-writing <div class="container">. It has no scoped <style>, so it emits
+// exactly <div class="container">...</div> (no extra scope attribute) and is
+// byte-identical to the hand-written wrapper it replaces.
+//
+// Use it for a plain container. A container that carries a bespoke,
+// component-scoped class (e.g. `container faq-inner`) must stay raw markup:
+// that class is styled by the owning component's scoped CSS, which only
+// applies to elements the component itself renders.
+interface Props {
+  /** Extra classes appended after "container". */
+  class?: string;
+}
+const { class: className } = Astro.props;
+---
+
+<div class:list={["container", className]}><slot /></div>

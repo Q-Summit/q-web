@@ -1,0 +1,313 @@
+---
+// Homepage hero: background video behind a dark overlay, ported from the
+// Webflow section_header7. The poster paints immediately so first paint
+// never waits on video; HLS is then loaded lazily via an idle-time dynamic
+// import (see the script below), and a single <video> element streams a
+// 480p/720p/1080p ladder, stepping itself up to the best rendition the
+// connection supports. The quality upgrade happens inside that one element
+// via Media Source Extensions -- there is no second <video>, no
+// currentTime handoff, and no cross-fade, so there is nothing for a seek
+// or drift to desync. An earlier two-element (poster video + upgrade video)
+// approach was dropped for exactly that reason: it could not be made
+// seamless.
+// Reduced-motion and data-saver users get the poster only; no video bytes
+// are fetched for them. No-JS clients get the 480p progressive fallback.
+import type { PageLink } from "../../lib/content";
+import Container from "../ui/Container.astro";
+
+interface Props {
+  headline: string;
+  tagline: string;
+  /** Announcement lines shown under the headline. */
+  announcement: string[];
+  cta: PageLink | undefined;
+}
+
+const { headline, tagline, announcement, cta } = Astro.props;
+---
+
+<header class="section is-dark hero">
+  <div class="hero-media" aria-hidden="true">
+    <video
+      id="hero-video"
+      autoplay
+      loop
+      muted
+      playsinline
+      preload="metadata"
+      poster="/media/hero-poster.jpg"
+      width="1920"
+      height="1080"
+    >
+      <noscript>
+        <source src="/media/hero-480.mp4" type="video/mp4" />
+      </noscript>
+    </video>
+    <div class="hero-overlay"></div>
+  </div>
+  <script>
+    // Not is:inline: this script imports hls.js (bundled, no CDN -- see
+    // AGENTS.md) and Astro/Vite only processes and bundles npm imports for
+    // scripts it's allowed to transform.
+    const video = document.getElementById(
+      "hero-video",
+    ) as HTMLVideoElement | null;
+
+    if (video) {
+      const reducedMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
+      const conn = (
+        navigator as unknown as {
+          connection?: { saveData?: boolean; effectiveType?: string };
+        }
+      ).connection;
+      // Only restrict on an explicit signal; an unsupported API must not be
+      // treated as "data saver on".
+      const saveData = !!conn?.saveData;
+      const slowConn = !!(
+        conn && /^(slow-2g|2g|3g)$/.test(conn.effectiveType ?? "")
+      );
+      const reducedData = window.matchMedia(
+        "(prefers-reduced-data: reduce)",
+      ).matches;
+
+      if (reducedMotion || saveData || slowConn || reducedData) {
+        // Poster-only: remove the element so it can never fetch or autoplay.
+        video.remove();
+      } else {
+        // Desktop viewports get the full ladder (480p/720p/1080p); mobile
+        // gets a ladder capped at 720p (no 1080p variant listed at all, so
+        // it can never be requested, on any HLS client -- native or MSE).
+        const desktop = window.innerWidth >= 810;
+        const masterUrl = desktop
+          ? "/media/hero-hls/hero.m3u8"
+          : "/media/hero-hls/hero-mobile.m3u8";
+
+        const playWhenReady = () => {
+          video.play().catch(() => {
+            // Autoplay may be blocked; the poster stays visible, not an error.
+          });
+        };
+
+        // hls.js (tuned ABR below) is preferred on EVERY browser with
+        // MSE, including ones that also claim native HLS support: Linux
+        // Chromium builds with system ffmpeg report native HLS but ramp
+        // up with an untunably conservative ABR (several seconds of 480p
+        // on broadband), which reads as "the video is low-res". Native
+        // playback is only the fallback for MSE-less browsers -- in
+        // practice iOS Safari, where native HLS is mandatory and fine.
+        //
+        // The import (and hls.js's parse/init) is deferred to browser idle
+        // time: that work is ~700ms of long tasks under CPU throttling, and
+        // the poster already paints, so starting this muted decorative loop a
+        // few hundred ms later keeps that cost out of the interactivity window
+        // with no perceptible delay. The timeout caps the wait so playback
+        // still starts promptly on a busy or non-supporting browser.
+        const startHls = () => {
+          import("hls.js/light").then(({ default: Hls }) => {
+            if (!Hls.isSupported()) {
+              if (video.canPlayType("application/vnd.apple.mpegurl")) {
+                // No MSE but native HLS (iOS Safari): the browser's own
+                // decoder owns level selection inside this one element.
+                video.src = masterUrl;
+                video.addEventListener("loadedmetadata", playWhenReady, {
+                  once: true,
+                });
+                return;
+              }
+              // No MSE and no native HLS: single progressive rendition,
+              // the same fallback the pre-HLS implementation used.
+              const webm = video.canPlayType(
+                'video/webm; codecs="vp09.00.10.08"',
+              );
+              const src = desktop
+                ? webm
+                  ? "/media/hero-1080.webm"
+                  : "/media/hero-1080.mp4"
+                : "/media/hero-480.mp4";
+              const source = document.createElement("source");
+              source.src = src;
+              source.type = src.endsWith(".webm") ? "video/webm" : "video/mp4";
+              video.appendChild(source);
+              video.load();
+              playWhenReady();
+              return;
+            }
+
+            const hls = new Hls({
+              capLevelToPlayerSize: false, // let measured bandwidth alone drive level choice, unrestrained by the (small, cropped) on-screen player size
+              // The poster already paints instantly, so there is no need to
+              // deliberately start small and climb: startLevel -1 lets hls.js's
+              // ABR pick the initial rendition itself, using an assumed 4
+              // Mbps (comfortably above the 1080p rung's ~2.9 Mbps, rather
+              // than hls.js's very conservative 500 Kbps default) until a
+              // segment has actually been measured -- broadband/Wi-Fi clients
+              // land on 1080p from the very first fragment.
+              // testBandwidth: false turns off hls.js's default behavior of
+              // always fetching one full lowest-quality segment first as a
+              // deliberate bitrate probe -- without it, that forced low-res
+              // segment added a whole segment duration (4s) of guaranteed
+              // 480p before the real (already-accurate) estimate could take
+              // over. Genuinely slow/constrained connections still
+              // self-correct within a few segments: the per-fragment
+              // abandon check (maxStarvationDelay, left at its default)
+              // aborts and downshifts a fragment that's loading too slowly
+              // to keep up, so recovery isn't gated on the bitrate test
+              // either -- it just may cost one brief rebuffer on a
+              // borderline connection instead of zero, in exchange for
+              // broadband clients never seeing a deliberately-slow start.
+              startLevel: -1,
+              abrEwmaDefaultEstimate: 4_000_000,
+              testBandwidth: false,
+            });
+            hls.loadSource(masterUrl);
+            hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, playWhenReady);
+          });
+        };
+
+        if ("requestIdleCallback" in window) {
+          window.requestIdleCallback(startHls, { timeout: 2000 });
+        } else {
+          setTimeout(startHls, 1500);
+        }
+      }
+    }
+  </script>
+  <Container>
+    <div class="hero-content">
+      <h1 data-lp="hero.headline">{headline}</h1>
+      {
+        announcement.length > 0 && (
+          <p
+            class="hero-announcement"
+            data-lp="hero.announcementLines"
+            data-lp-lines
+          >
+            {announcement.map((line) => (
+              <span>{line}</span>
+            ))}
+          </p>
+        )
+      }
+      <p class="hero-tagline" data-lp="hero.tagline">{tagline}</p>
+      {
+        cta && (
+          <a
+            class="button hero-cta"
+            href={cta.href}
+            data-lp="hero.cta"
+            data-lp-href="hero.cta.href"
+          >
+            {cta.label}
+          </a>
+        )
+      }
+    </div>
+  </Container>
+</header>
+
+<style>
+  /* .section.is-dark supplies the navy background, inverse text color, and
+     standard section padding; this adds only what a video masthead needs
+     on top (centering, min-height, layered video/overlay). */
+  .hero {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: min(90svh, 52rem);
+    overflow: hidden;
+  }
+
+  .hero-media,
+  .hero-media video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .hero-media video {
+    object-fit: cover;
+  }
+
+  .hero-overlay {
+    position: absolute;
+    inset: 0;
+    background-color: var(--color-overlay);
+  }
+
+  /* The page width stays .container's --container-large (DESIGN.md
+     LAYOUT-1: no component defines its own page width); the hero copy is a
+     measure block INSIDE that container, capped at --container-medium,
+     which is what the medium token is for (LAYOUT-2). Sits above the video
+     overlay, which is why it carries the stacking context. */
+  .hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: var(--container-medium);
+    margin-inline: auto;
+    text-align: center;
+  }
+
+  /* Home-page-only oversized weight/size (DESIGN.md TYPE-1 exception);
+     color is inherited from .section.is-dark, not restated here. */
+  .hero h1 {
+    font-size: var(--heading-h1-home-size);
+    font-weight: var(--heading-weight-home);
+    text-wrap: balance;
+  }
+
+  .hero-announcement {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin: var(--space-md) 0 0;
+    /* Both clamp endpoints are scale steps, so they are written as tokens
+       (DESIGN.md TYPE-2): the floor is the large body step, the ceiling the
+       h4 step. Both also shrink at the breakpoints, which keeps the
+       announcement in step with the rest of the type on small screens. */
+    font-size: clamp(var(--text-size-large), 3.5vw, var(--heading-h4-size));
+    font-weight: var(--heading-weight);
+    font-style: italic;
+    line-height: var(--heading-line-height-tight);
+  }
+
+  /* The date line is its own upright, non-italic callout on the live site
+     (not part of the italic announcement quote) and stays white, never
+     orange: dates are a navy/neutral-only element per DESIGN.md COLOR-1. */
+  .hero-announcement span:last-child {
+    margin-top: var(--space-xs);
+    font-size: var(--text-size-large);
+    font-style: normal;
+  }
+
+  .hero-tagline {
+    margin: var(--space-md) auto 0;
+    max-width: 36rem;
+    font-size: var(--text-size-large);
+    font-weight: var(--heading-weight);
+    font-style: italic;
+  }
+
+  .hero-cta {
+    margin-top: var(--space-md);
+  }
+
+  @media (max-width: 767px) {
+    /* tokens.css only overrides --heading-h1-home-size at the 479px
+       (mobile-portrait) breakpoint, so between 767px and 991px it still
+       resolves to the 4rem desktop value; that wraps the headline onto two
+       lines here where the live site keeps it on one. Sized to match the
+       live hero at this breakpoint, which is why this one stays a raw value
+       (DESIGN.md TYPE-2): 2.75rem is not a step of the scale, and the two
+       nearest steps at this breakpoint (--heading-h1-size 2.5rem,
+       --heading-h2-size 2.25rem) both undersize the headline against the
+       live site. */
+    .hero h1 {
+      font-size: 2.75rem;
+    }
+  }
+</style>

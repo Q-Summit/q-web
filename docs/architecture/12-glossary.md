@@ -8,11 +8,13 @@ The terms the docs and issues assume you know. Domain terms land here when the f
 
 | Term | Meaning |
 | --- | --- |
-| **Division** | An organizational unit of Q-Summit e.V. (for example partners, PR, program). Each division edits its own content in the CMS under its own accounts. |
+| **Division** | An organizational unit of Q-Summit e.V. (for example partner, PR, concept). Each division edits its own content in the CMS under its own accounts. |
 | **Editor** | A division member with a personal, scoped Payload account. Edits drafts; cannot publish without approval. |
 | **Approver** | Someone with publish rights; the gate between drafts and the live site. |
-| **Edition** | One conference year's content. New editions are created alongside the current one; past editions archive themselves. |
-| **Collection** | A content type in Payload (partners, speakers, jobs, team, FAQ, pages). |
+| **Edition** | One conference year's content. Year fields exist on some collections; the full create/archive rollover mechanism is still owed ([section 9](09-architecture-decisions.md)). |
+| **Collection** | A content type in Payload (Users, Media, Partners, Jobs, Speakers, Team, PastTeams, Faqs, Testimonials). Pages and site settings are globals. |
+| **Content package** | Versioned JSON transfer artifact (`bundle.json`) under `scripts/content-packages/`; not the git source of truth. Procedure: [`../dev/content-sync.md`](../dev/content-sync.md). |
+| **Content sync / propose** | `POST /api/content-sync`: draft-only upserts as the operator's own Workspace user, stamped `@agent.q-summit.com` so the changelog reads "(agent)". Never publishes or deploys. |
 
 ## Process and docs
 
@@ -31,6 +33,9 @@ The terms the docs and issues assume you know. Domain terms land here when the f
 | **Payload** | The open-source (MIT) CMS for `apps/cms`; where all content lives and editors work. |
 | **Neon** | Managed Postgres (Frankfurt) backing Payload. |
 | **R2** | Cloudflare object storage for media, S3-compatible. |
-| **PostHog** | Cookieless analytics, EU cloud; the reason the site needs no consent banner ([ADR-0003](../decisions/0003-posthog-cookieless-analytics.md)). |
-| **Deploy hook** | The URL Payload calls on publish to trigger a Cloudflare rebuild ([section 6](06-runtime.md)). |
+| **PostHog** | Cookieless analytics, EU cloud ([ADR-0003](../decisions/0003-posthog-cookieless-analytics.md)); decided so the site can stay banner-free. Client not shipped yet. |
+| **Deploy hook** | Workers Builds URL the CMS POSTs on approver live-site changes: publish, unpublish, restore, live delete (`CLOUDFLARE_DEPLOY_HOOK_URL`; [section 6](06-runtime.md)). |
 | **vivenu** | The external ticketing provider; the site only links out to it. |
+| **llms.txt** | Curated Markdown index at `/llms.txt` for AI agents ([llmstxt.org](https://llmstxt.org/)); identity from Site Settings → `llms`, link blurbs from page meta descriptions. |
+| **llms-full.txt** | Full-text companion corpus at `/llms-full.txt` for single-pass ingestion (page bodies). |
+| **Open Graph** | HTML meta tags (`og:*`) that drive WhatsApp, LinkedIn, and similar link previews. |

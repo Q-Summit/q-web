@@ -1,0 +1,63 @@
+---
+// "Join Us as a Partner" closing CTA, ported from the Webflow
+// section_partner_cta (copy left, button right, stacked on mobile),
+// restyled as a navy brand card.
+import Container from "../ui/Container.astro";
+
+interface Props {
+  heading: string;
+  text: string;
+  buttonLabel: string;
+  buttonHref: string;
+}
+
+const { heading, text, buttonLabel, buttonHref } = Astro.props;
+---
+
+<section class="section is-small cta" aria-labelledby="partner-cta-heading">
+  <Container>
+    <div class="cta-card">
+      <div class="cta-copy">
+        <h2 id="partner-cta-heading">{heading}</h2>
+        <p>{text}</p>
+      </div>
+      <a class="button" href={buttonHref}>{buttonLabel}</a>
+    </div>
+  </Container>
+</section>
+
+<style>
+  /* Live site: plain white section, heading + text left, navy button
+     right. No card, no dark background (DESIGN.md COMP-2/COLOR-2). */
+  .cta-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-md);
+  }
+
+  @media (min-width: 768px) {
+    .cta-card {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--space-xl);
+    }
+  }
+
+  /* h3-scale size matches the live page's CTA heading (DESIGN.md TYPE-1). */
+  .cta-copy h2 {
+    margin-bottom: var(--space-xs);
+    font-size: var(--heading-h3-size);
+  }
+
+  .cta-copy p {
+    margin-bottom: 0;
+    color: var(--color-neutral-dark);
+    font-size: var(--text-size-medium);
+  }
+
+  .cta .button {
+    flex-shrink: 0;
+  }
+</style>

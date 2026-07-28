@@ -1,17 +1,15 @@
 #!/bin/sh
-# q-web pre-commit hook: keeps docs structure and markdown style green.
-# Activated by `pnpm run setup` (or directly: pnpm run hooks:install).
+# q-web pre-commit: fast local gate (docs + design).
+# Activated by `pnpm run setup`.
 #
-# Runs the fast check suite (docs validator + markdownlint + cspell + prettier).
-# Heavy app checks (astro check, typecheck, builds) stay in CI; commits must
-# stay fast. If `pnpm run check` ever grows slow steps, split a `check:fast`
-# script and point this hook at it.
+# Runs `pnpm run check:fast` only so commits stay quick. App typecheck/build/
+# tests run on pre-push (`pnpm run check`) and in CI. Agents must still run
+# full `make check` / `pnpm run check` before finishing work.
 #
-# Known tradeoff: this checks the WORKING TREE, not the staged snapshot, so a
-# partial staging can pass here and still fail in CI. CI is the gate.
+# Known tradeoff: checks the WORKING TREE, not the staged snapshot.
 
-pnpm run --silent check || {
+pnpm run --silent check:fast || {
   echo "" >&2
-  echo "pre-commit: checks failed. Run 'pnpm run format', then fix any findings above." >&2
+  echo "pre-commit: check:fast failed. Run 'pnpm run format', then fix findings above." >&2
   exit 1
 }

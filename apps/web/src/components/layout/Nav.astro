@@ -1,0 +1,109 @@
+---
+// Site navigation. Link targets keep the live site's URL paths so existing
+// inbound links keep working at cutover. Matches the live nav exactly: 7
+// items, home reachable via the logo only (no Home/Tickets/Contact entries).
+import { logoSrc } from "../../assets/media/brand";
+import { getSiteSettings } from "../../lib/content";
+import { normalizeInternalHref } from "../../lib/href";
+
+const { nav } = await getSiteSettings();
+
+// link.href comes from getSiteSettings() already run through
+// normalizeInternalHref (astro.config.mjs pins trailingSlash: "always"), so
+// this side has to go through the same normalization or the comparison below
+// never matches (e.g. "/whyq" !== "/whyq/").
+const currentPath = normalizeInternalHref(Astro.url.pathname);
+
+// Exact match plus section prefix so sub-routes keep their parent highlighted
+// (job detail pages under /job-listings/). Hrefs are trailing-slashed, so the
+// prefix test cannot cross-match sibling paths ("/job" vs "/jobs").
+const isCurrent = (href: string): boolean =>
+  currentPath === href ||
+  (href !== "/" && href.startsWith("/") && currentPath.startsWith(href));
+---
+
+<header class="site-header">
+  <div class="container nav-inner">
+    <a class="brand" href="/">
+      <img
+        src={logoSrc}
+        alt="Q-Summit home"
+        width={40}
+        height={40}
+        loading="eager"
+        decoding="async"
+      />
+    </a>
+    <nav aria-label="Main">
+      <ul>
+        {
+          nav.map((link) => (
+            <li>
+              <a
+                href={link.href}
+                aria-current={isCurrent(link.href) ? "page" : undefined}
+                data-astro-prefetch="hover"
+              >
+                {link.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    background-color: var(--color-background);
+    border-bottom: 1px solid var(--color-neutral-lighter);
+  }
+
+  .nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+    padding-block: var(--space-md);
+  }
+
+  .brand {
+    display: inline-block;
+    line-height: 0;
+  }
+
+  nav ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs) 1.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  nav a {
+    color: var(--color-text);
+    text-decoration: none;
+    font-size: var(--text-size-regular);
+    font-weight: var(--font-weight-medium);
+  }
+
+  nav a:hover,
+  nav a[aria-current="page"] {
+    color: var(--color-primary);
+  }
+
+  /* Mobile: the plain-text links above are only ~19px tall (WCAG 2.5.8
+     target size), below the 24px minimum. Vertical padding brings the tap
+     target close to the recommended 44px; scoped to this breakpoint so
+     the tighter desktop nav (DESIGN.md Layout) is unchanged. */
+  @media (max-width: 767px) {
+    nav a {
+      display: inline-flex;
+      align-items: center;
+      padding-block: 0.625rem;
+    }
+  }
+</style>

@@ -1,0 +1,132 @@
+---
+// One card in the "Speakers" grid: portrait photo over name and role.
+import { Picture } from "../../lib/astro-assets";
+import type { Speaker } from "../../lib/content";
+import { photoSrc } from "../../lib/media-filename";
+import { resolveContentImage } from "../../lib/images";
+
+interface Props {
+  speaker: Speaker;
+  /** Eager-load the first row so the hero grid paints fast. */
+  eager?: boolean;
+  /** This card is the page's LCP candidate (the very first card on
+   * /speaker): load at high fetch priority. */
+  priority?: boolean;
+}
+
+const { speaker, eager = false, priority = false } = Astro.props;
+const image = await resolveContentImage(
+  speaker.photoFilename,
+  `speaker ${speaker.name}`,
+);
+---
+
+<article class="speaker-card">
+  {
+    image ? (
+      <Picture
+        src={image}
+        alt={speaker.name}
+        widths={[300, 450, 600]}
+        sizes="(max-width: 767px) 45vw, (max-width: 991px) 30vw, 240px"
+        formats={["avif", "webp"]}
+        fallbackFormat="jpg"
+        quality={80}
+        loading={eager ? "eager" : "lazy"}
+        fetchpriority={priority ? "high" : undefined}
+        decoding="async"
+      />
+    ) : (
+      <img
+        src={photoSrc(speaker.photoFilename)}
+        alt={speaker.name}
+        width="600"
+        height="800"
+        loading={eager ? "eager" : "lazy"}
+        fetchpriority={priority ? "high" : undefined}
+        decoding="async"
+      />
+    )
+  }
+  <div class="speaker-card__body">
+    <h3 class="speaker-card__name">{speaker.name}</h3>
+    <p class="speaker-card__role">{speaker.roleLine}</p>
+  </div>
+</article>
+
+<style>
+  .speaker-card {
+    height: 100%;
+    overflow: hidden;
+    text-align: left;
+    background-color: var(--color-background);
+    border: 1px solid var(--color-neutral-lighter);
+    border-radius: var(--radius-card);
+    transition:
+      box-shadow var(--duration-hover) var(--ease-snappy),
+      transform var(--duration-hover) var(--ease-snappy);
+  }
+
+  /* DEPTH-1: the ported literal (0 12px 24px / 0.12) sits on --shadow-floating, so the hover
+     keeps the deep step rather than dropping to --shadow-card-hover; the
+     card lifts off the page instead of only nudging. */
+  .speaker-card:hover {
+    box-shadow: var(--shadow-floating);
+    transform: translateY(-4px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .speaker-card,
+    .speaker-card:hover {
+      transform: none;
+      transition: none;
+    }
+  }
+
+  .speaker-card img,
+  .speaker-card picture {
+    width: 100%;
+  }
+
+  .speaker-card img {
+    aspect-ratio: 3 / 4;
+    border-radius: var(--radius-card);
+    object-fit: cover;
+  }
+
+  .speaker-card__body {
+    padding: var(--space-sm);
+  }
+
+  /* Name and role. All three /speaker cards (this one, ModeratorCard,
+     HighlightCard) declare these two rules for themselves instead of
+     sharing them, and that is the decision, not an oversight: they are
+     three card designs on ONE page, so COMP-3 (a pattern used by 2+ pages
+     leaves the page component) never triggers, and they are not the same
+     rule three times.
+
+     What genuinely matches across all three: the name's type step
+     (--text-size-large at the normal heading line height, TYPE-2) and the
+     role rule below, declaration for declaration.
+
+     What does NOT match, so no comment here may claim it does:
+       - this name takes no margin-top, because it sits inside a padded
+         __body; the other two are direct children and add --space-sm;
+       - ModeratorCard's name is semibold, where this card and
+         HighlightCard inherit the global h3's 700 (TYPE-1). See the
+         comment on .moderator-card__name.
+     Two differences on three declarations means a ui/ primitive would need
+     a prop per difference, which is the sign a pattern is not actually
+     shared (PRIM-3). Size and weight only here; color comes from the
+     global h3 (TYPE-1). */
+  .speaker-card__name {
+    font-size: var(--text-size-large);
+    line-height: var(--heading-line-height-normal);
+  }
+
+  .speaker-card__role {
+    margin: 0.25rem 0 0;
+    font-size: var(--text-size-small);
+    color: var(--color-neutral-dark);
+  }
+</style>

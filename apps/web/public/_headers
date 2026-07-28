@@ -1,0 +1,64 @@
+# Cloudflare Workers static-assets headers (copied to dist/_headers by
+# Astro). Applies to assets served by the ASSETS binding; /media/* is served
+# by the Worker, which sets its own cache headers (see worker/index.ts).
+#
+# Astro fingerprints everything in /_astro/ with a content hash, so those
+# files never change under a given URL and can be cached immutably forever.
+# HTML and other non-fingerprinted pages use max-age=0 on `/*` below so
+# CMS Publish → Workers Builds swaps are visible without a long edge TTL
+# (Assets has no separate purge on deploy). More-specific paths override.
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Non-fingerprinted icons change rarely; a one-day edge cache is enough and
+# avoids revalidating them on every return visit.
+/favicon.ico
+  Cache-Control: public, max-age=86400
+/favicon.png
+  Cache-Control: public, max-age=86400
+/favicon-48.png
+  Cache-Control: public, max-age=86400
+/apple-touch-icon.png
+  Cache-Control: public, max-age=86400
+/icon-192.png
+  Cache-Control: public, max-age=86400
+/icon-512.png
+  Cache-Control: public, max-age=86400
+/robots.txt
+  Cache-Control: public, max-age=3600
+/sitemap-index.xml
+  Cache-Control: public, max-age=3600
+/sitemap-0.xml
+  Cache-Control: public, max-age=3600
+
+# Security headers. Cloudflare static assets ship only Content-Type,
+# Cache-Control, and ETag by default -- no security headers -- so they are set
+# here for every response. Deliberately scoped to headers that cannot break
+# resource loading:
+#   - nosniff: stop MIME-type guessing (blocks a class of injection).
+#   - Referrer-Policy: send origin only on cross-origin nav, matching the
+#     cookieless/privacy posture (ADR-0003).
+#   - frame-ancestors: allow the Payload CMS admin (local + cms.q-summit.de)
+#     to iframe pages for Live Preview; deny everyone else (clickjacking).
+#     X-Frame-Options is omitted on purpose: DENY would block the CMS iframe
+#     and override/conflict with CSP frame-ancestors.
+#   - Permissions-Policy: switch off powerful features the static site never
+#     uses.
+# HSTS is NOT set here on purpose: Cloudflare only enables it via the dashboard
+# (SSL/TLS -> Edge Certificates -> Enable HSTS) so a header-file typo cannot add
+# the apex domain to the browser preload list irreversibly.
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Content-Security-Policy: frame-ancestors 'self' http://localhost:3000 https://cms.q-summit.de
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Cache-Control: public, max-age=0, must-revalidate
+
+# LLM indexes rebuild with the site; short edge cache is fine, HTML-like
+# revalidation keeps CMS publish lag small.
+/llms.txt
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=300, must-revalidate
+/llms-full.txt
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=300, must-revalidate

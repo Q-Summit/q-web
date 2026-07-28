@@ -1,0 +1,36 @@
+---
+// /contact: board member mailto cards plus general inquiry contacts.
+// All content loads at build time from page-content.json via
+// src/lib/content.ts; plain mailto links, no forms, no client JS.
+import Base from "../layouts/Base.astro";
+import BoardContacts from "../components/contact-legal/BoardContacts.astro";
+import ReachOut from "../components/contact-legal/ReachOut.astro";
+import { getPageContent } from "../lib/content";
+
+const { contact: page } = await getPageContent();
+---
+
+<Base
+  title={page.title}
+  description={page.metaDescription}
+  livePreviewGlobal="page-contact"
+>
+  {
+    /* The design has no visible page title above the board-contacts
+       heading (the LAYOUT-4 exception opener here starts at h2); a
+       visually-hidden h1 from the real page title still gives the page
+       a single top-level heading (WCAG 1.3.1/2.4.6). */
+  }
+  <h1 class="u-visually-hidden">{page.title}</h1>
+  <BoardContacts
+    heading={page.board.heading}
+    paragraphs={page.board.paragraphs}
+    members={page.board.members}
+  />
+
+  <ReachOut
+    heading={page.reachOut.heading}
+    paragraphs={page.reachOut.paragraphs}
+    items={page.reachOut.items}
+  />
+</Base>

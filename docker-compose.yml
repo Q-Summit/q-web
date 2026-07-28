@@ -1,0 +1,61 @@
+# Local dev services for the CMS: Postgres (replaces the hand-run qweb-pg
+# container) + MinIO (simulates the public R2 media bucket used in prod).
+# See docs/dev/local-development.md for the full rationale.
+#
+# Usage: pnpm db:up
+#   (== docker compose up -d --wait postgres minio && docker compose up minio-init;
+#   split in two because `--wait` treats the one-shot minio-init container's
+#   successful exit as a failure)
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: localdev
+      POSTGRES_DB: qweb
+    ports:
+      - "5433:5432"
+    volumes:
+      - qweb-pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d qweb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    # Last official Docker Hub release before MinIO went source-only; pin so
+    # local stacks do not float on :latest.
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: qweb-local
+      MINIO_ROOT_PASSWORD: qweb-local-secret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - qweb-minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # One-shot: creates the qweb-media bucket and makes it anonymous-readable
+  # (simulates the public R2 bucket in prod). Exits after running.
+  minio-init:
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "mc alias set local http://minio:9000 qweb-local qweb-local-secret && mc mb --ignore-existing local/qweb-media && mc anonymous set download local/qweb-media && echo 'minio-init: qweb-media bucket ready'"
+
+volumes:
+  qweb-pg-data:
+  qweb-minio-data:

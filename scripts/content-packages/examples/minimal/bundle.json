@@ -1,0 +1,41 @@
+{
+  "package": {
+    "version": 1,
+    "exportedAt": "2026-01-01T00:00:00.000Z",
+    "source": "fixture",
+    "scope": {
+      "collections": ["faqs"],
+      "globals": []
+    }
+  },
+  "collections": {
+    "faqs": [
+      {
+        "question": "Content-sync minimal example FAQ?",
+        "answer": {
+          "root": {
+            "type": "root",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [
+                  {
+                    "type": "text",
+                    "text": "This draft comes from scripts/content-packages/examples/minimal. Approver must Publish before it is live."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "page": "home",
+        "order": 9999,
+        "_status": "draft"
+      }
+    ]
+  },
+  "globals": {},
+  "media": {
+    "manifest": []
+  }
+}

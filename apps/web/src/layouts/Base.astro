@@ -1,0 +1,175 @@
+---
+// Base layout: head metadata, self-hosted fonts, global styles, nav, footer.
+// Fonts go through Astro's built-in Fonts API (astro.config.mjs `fonts`,
+// local() provider reading straight out of the already-installed
+// @fontsource-variable/montserrat package -- no runtime Google Fonts, no
+// third-party CDN, at build time or in the browser; the cookieless setup is
+// a compliance property). <Font> below emits the @font-face rules (primary
+// + Astro's auto-generated metric-matched fallback) and, with `preload`,
+// the <link rel="preload" as="font"> for this page.
+import { Font } from "../lib/astro-assets";
+import "../styles/apply-global";
+import Nav from "../components/layout/Nav.astro";
+import Footer from "../components/layout/Footer.astro";
+import LivePreviewBoot from "../components/live-preview/LivePreviewBoot.astro";
+import { getSiteSettings } from "../lib/content";
+
+interface Props {
+  title: string;
+  description?: string;
+  /** BCP-47 language of this page's body content, emitted as <html lang> and
+   * mapped to og:locale. Defaults to "en"; the legal pages pass "de" because
+   * their body copy (imprint/privacy-policy/terms) is verbatim German. */
+  lang?: string;
+  /** Absolute path of this page's LCP image, when it is a single (non
+   * responsive) file, e.g. the home hero poster in public/media owned by
+   * Hero.astro. Emits a <link rel="preload" as="image" fetchpriority="high">.
+   * For a responsive pipeline (astro:assets) LCP image, use the
+   * preloadImageSrcset trio below instead so the preload matches the
+   * responsive candidate the browser actually paints. */
+  preloadImage?: string;
+  /** srcset/sizes/type for a responsive pipeline (astro:assets) LCP image
+   * (e.g. the team hero <Picture>). A bare href preload cannot express a
+   * srcset, so the browser would preload the wrong (or no) candidate; these
+   * emit imagesrcset/imagesizes/type so it preloads the exact one it renders.
+   * Resolve them with getImage() in the page using the same widths/format/
+   * quality the rendering <Picture> uses. */
+  preloadImageSrcset?: string;
+  preloadImageSizes?: string;
+  preloadImageType?: string;
+  /** Social-share card image, root-relative path under public/. Defaults to
+   * the hero poster; only pages with a purpose-built 1600x900 JPEG override
+   * it (e.g. /hackathon). The og:image:width/height/type below assume a
+   * 1600x900 JPEG, so an override must point at an asset of that shape.
+   * Keep files under ~300 KB so WhatsApp and other chat previews stay reliable. */
+  ogImage?: string;
+  /** Accessible alt for og/twitter images. Defaults to the composed page title. */
+  ogImageAlt?: string;
+  /** Open Graph object type. "website" for all current routes; ogp.me has no
+   * event type, so the homepage Event lives in JSON-LD, not here. */
+  ogType?: string;
+  /** Emit <meta name="robots" content="noindex, follow">. Future escape
+   * hatch only; every current route stays indexable (no page sets this). */
+  noindex?: boolean;
+  /**
+   * Payload global slug for Live Preview (e.g. page-home). When set, boots
+   * the vanilla live-preview client so the CMS admin iframe can push draft
+   * edits into data-lp DOM nodes.
+   */
+  livePreviewGlobal?: string;
+}
+
+const {
+  title,
+  description,
+  lang = "en",
+  preloadImage,
+  preloadImageSrcset,
+  preloadImageSizes,
+  preloadImageType,
+  ogImage = "/media/hero-poster.jpg",
+  ogImageAlt,
+  ogType = "website",
+  noindex = false,
+  livePreviewGlobal,
+} = Astro.props;
+const { siteTitle, footer } = await getSiteSettings();
+// Empty page meta falls back to the site tagline (real site copy).
+const resolvedDescription = description || footer.tagline;
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
+// og:title / twitter:title mirror the <title> below exactly.
+const ogTitle = `${siteTitle} | ${title}`;
+// og/twitter images must be absolute; resolve against the configured site.
+const ogImageUrl = new URL(ogImage, Astro.site).href;
+const resolvedOgImageAlt = ogImageAlt || ogTitle;
+// og:locale mirrors the page language; only en and de are used on this site.
+const ogLocale = lang === "de" ? "de_DE" : "en_US";
+---
+
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="description" content={resolvedDescription} />
+    <link rel="canonical" href={canonicalUrl} />
+    <title>{siteTitle} | {title}</title>
+    {noindex && <meta name="robots" content="noindex, follow" />}
+    <meta name="theme-color" content="#072077" />
+    {
+      /* Open Graph (og:image:* below assume the default/override 1600x900 JPEG). */
+    }
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content={siteTitle} />
+    <meta property="og:title" content={ogTitle} />
+    <meta property="og:description" content={resolvedDescription} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:locale" content={ogLocale} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:width" content="1600" />
+    <meta property="og:image:height" content="900" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:alt" content={resolvedOgImageAlt} />
+    {/* Twitter card: no site/creator handle (no X account in socialLinks). */}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={ogTitle} />
+    <meta name="twitter:description" content={resolvedDescription} />
+    <meta name="twitter:image" content={ogImageUrl} />
+    <meta name="twitter:image:alt" content={resolvedOgImageAlt} />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" type="image/png" href="/favicon.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="/favicon-48.png" sizes="48x48" />
+    <link rel="icon" type="image/png" href="/icon-192.png" sizes="192x192" />
+    <link rel="icon" type="image/png" href="/icon-512.png" sizes="512x512" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+    <Font cssVariable="--font-montserrat" preload />
+    {
+      preloadImageSrcset ? (
+        <link
+          rel="preload"
+          as="image"
+          imagesrcset={preloadImageSrcset}
+          imagesizes={preloadImageSizes}
+          type={preloadImageType}
+          fetchpriority="high"
+        />
+      ) : (
+        preloadImage && (
+          <link
+            rel="preload"
+            as="image"
+            href={preloadImage}
+            fetchpriority="high"
+          />
+        )
+      )
+    }
+    {/* Per-page structured data (JSON-LD via components/JsonLd.astro). */}
+    <slot name="jsonld" />
+  </head>
+  <body>
+    {
+      /* First focusable element on every page (WCAG 2.4.1 bypass-blocks); no
+        JS needed, it is a plain in-page anchor. Styling (offscreen until
+        focused) lives in global.css next to the shared :focus-visible rule. */
+    }
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <Nav />
+    {
+      /* tabindex="-1" makes main a valid focus target for the skip link
+        (fragment navigation only) without adding it to the normal Tab
+        sequence. */
+    }
+    <main id="main-content" tabindex="-1">
+      <slot />
+    </main>
+    <Footer />
+    {livePreviewGlobal && <LivePreviewBoot global={livePreviewGlobal} />}
+  </body>
+</html>
+
+<style>
+  main {
+    min-height: 60vh;
+  }
+</style>

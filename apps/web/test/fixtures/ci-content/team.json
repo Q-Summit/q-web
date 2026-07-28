@@ -1,0 +1,42 @@
+[
+  {
+    "name": "Fixture Member 1",
+    "role": "Head of Chair",
+    "division": "Chair",
+    "year": null,
+    "photoFilename": "fixture-missing-photo.webp",
+    "linkedin": "https://www.linkedin.com/in/fixture-member-1/"
+  },
+  {
+    "name": "Fixture Member 2",
+    "role": "Head of Public Relations",
+    "division": "Public Relations",
+    "year": null,
+    "photoFilename": "fixture-missing-photo.webp",
+    "linkedin": null
+  },
+  {
+    "name": "Fixture Member 3",
+    "role": "Head of Partner",
+    "division": "Partner",
+    "year": null,
+    "photoFilename": "fixture-missing-photo.webp",
+    "linkedin": "https://www.linkedin.com/in/fixture-member-3/"
+  },
+  {
+    "name": "Fixture Member 4",
+    "role": "Head of Finance",
+    "division": "Finance",
+    "year": null,
+    "photoFilename": "fixture-missing-photo.webp",
+    "linkedin": null
+  },
+  {
+    "name": "Fixture Member 5",
+    "role": "Head of Operations",
+    "division": "Operations",
+    "year": null,
+    "photoFilename": "fixture-missing-photo.webp",
+    "linkedin": "https://www.linkedin.com/in/fixture-member-5/"
+  }
+]

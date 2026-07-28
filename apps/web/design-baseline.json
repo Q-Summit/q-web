@@ -1,0 +1,19 @@
+{
+  "$comment": "Ratchet for scripts/check/design.mjs. Raw CSS literals inherited from the Webflow port, listed per file per rule as normalized values. Entries may only be REMOVED. Regenerate with `pnpm run check:design --update-baseline` AFTER removing literals, never to admit new ones.",
+  "files": {
+    "apps/web/src/components/hackathon/HackHero.astro": {
+      "TYPE-2": ["font-size: 0.5rem"]
+    },
+    "apps/web/src/components/home/Hero.astro": {
+      "TYPE-2": ["font-size: 2.75rem"]
+    },
+    "apps/web/src/components/home/PartnerLogos.astro": {
+      "MOTION-1": [
+        "animation: partner-marquee var(--marquee-duration, calc(var(--logo-count, 10) * 2.4s)) linear infinite"
+      ]
+    },
+    "apps/web/src/components/home/WhyCards.astro": {
+      "TYPE-2": ["font-size: 1.7rem"]
+    }
+  }
+}

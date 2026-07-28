@@ -1,0 +1,158 @@
+---
+// Six benefit cards, ported from the Webflow "section_hackathon_feature-1"
+// custom embed ("Why Q-Hackathon isn't just another Hackathon"). The embed's
+// ad hoc hex colors are replaced by tokens; icons are simple inline SVGs
+// keyed by card index (order comes from pages.json featureCards).
+import type { FeatureCard } from "../../lib/content";
+import Section from "../ui/Section.astro";
+import Container from "../ui/Container.astro";
+
+interface Props {
+  id?: string;
+  heading: string;
+  cards: FeatureCard[];
+}
+
+const { id, heading, cards } = Astro.props;
+
+// SVG path data (24x24 viewBox, filled with currentColor), one per card:
+// trophy, people, lightbulb, megaphone, chat, ticket.
+const iconPaths = [
+  "M17 4V2H7v2H3v4c0 2.21 1.79 4 4 4 .46 1.28 1.52 2.27 2.86 2.72L9 17H7v3h10v-3h-2l-.86-2.28c1.34-.45 2.4-1.44 2.86-2.72 2.21 0 4-1.79 4-4V4h-4zM5 8V6h2v4c-1.1 0-2-.9-2-2zm14 0c0 1.1-.9 2-2 2V6h2v2z",
+  "M8 11c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm8 0c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-8 2c-2.34 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.34 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.66-3.5-7-3.5z",
+  "M12 2a7 7 0 0 0-4 12.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26A7 7 0 0 0 12 2zm-3 17a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-.5H9V19z",
+  "M18 3l-8 4H4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h1l1.35 4.72c.12.43.51.73.96.73H9a1 1 0 0 0 .96-1.27L8.9 15H10l8 4a1 1 0 0 0 1.45-.9V3.9A1 1 0 0 0 18 3zm3 6v4a2 2 0 0 0 1-3.73V10.7A2 2 0 0 0 21 9z",
+  "M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM7 9h10a1 1 0 0 1 0 2H7a1 1 0 0 1 0-2zm6 5H7a1 1 0 0 1 0-2h6a1 1 0 0 1 0 2z",
+  "M20 12c0-1.1.9-2 2-2V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v4c1.1 0 2 .9 2 2s-.9 2-2 2v4a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-4a2 2 0 0 1-2-2zm-6 5.5h-4v-2h4v2zm0-4.5h-4v-2h4v2zm0-4.5h-4v-2h4v2z",
+];
+---
+
+<Section id={id} aria-labelledby="benefits-heading">
+  <Container>
+    {
+      /* Left-aligned opener (exception to .section-header): the live
+         section keeps a left-aligned heading, smaller than the default h2
+         scale, with a short underline accent instead of the centered
+         opener (DESIGN.md LAYOUT-4, TYPE-1). */
+    }
+    <div class="benefits-header">
+      <h2 id="benefits-heading">{heading}</h2>
+    </div>
+    <div class="benefit-grid">
+      {
+        cards.map((card, index) => (
+          <article class="benefit-card">
+            <h3>
+              <span class="benefit-icon" aria-hidden="true">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path d={iconPaths[index % iconPaths.length]} />
+                </svg>
+              </span>
+              {card.title}
+            </h3>
+            <p>{card.description}</p>
+          </article>
+        ))
+      }
+    </div>
+  </Container>
+</Section>
+
+<style>
+  .benefits-header {
+    position: relative;
+    max-width: var(--container-small);
+    margin-bottom: var(--section-gap);
+    padding-bottom: 1.25rem;
+  }
+
+  /* The live embed renders this opener smaller than the default h2 scale
+     (DESIGN.md TYPE-1 as a documented live-site deviation). */
+  .benefits-header h2 {
+    font-size: var(--heading-h4-size);
+  }
+
+  /* Underline accent from the live embed, in brand tokens (navy, not the
+     accent orange: DESIGN.md COLOR-1). */
+  .benefits-header::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 5rem;
+    height: 4px;
+    background-color: var(--color-primary);
+  }
+
+  .benefit-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-md);
+  }
+
+  /* Flat card per DESIGN.md COMP-2 (--radius-card, --color-neutral-lighter
+     hairline border): the previous treatment (a heavy navy left-border
+     plus a large soft box-shadow) produced a hazy halo around every card
+     ("cloudy borders"), especially where two shadows met between grid
+     cells. A plain hairline border reads cleanly at any zoom/background. */
+  .benefit-card {
+    display: flex;
+    flex-direction: column;
+    padding: 1.75rem;
+    background-color: var(--color-background);
+    border: 1px solid var(--color-neutral-lighter);
+    border-radius: var(--radius-card);
+  }
+
+  /* Card title, not a section opener: sized down from the default h3 scale
+     to fit the card (DESIGN.md TYPE-1 as a documented live-site deviation). */
+  .benefit-card h3 {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-sm);
+    font-size: var(--text-size-large);
+    line-height: var(--heading-line-height-normal);
+  }
+
+  .benefit-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--radius-circle);
+    /* The brand navy at 10%, mixed from the token rather than re-typed in
+       decimal (DESIGN.md COLOR-3). PricingComparisonTable uses the same
+       color-mix idiom, though it tints --color-focus rather than the brand.
+       Stays on the brand token, not --color-primary: the subject of the mix
+       is the brand color itself, not the interactive role it happens to
+       share a value with. */
+    background-color: color-mix(in srgb, var(--color-navy) 10%, transparent);
+    color: var(--color-primary);
+  }
+
+  .benefit-card p {
+    margin: 0;
+    color: var(--color-neutral-dark);
+  }
+
+  @media (max-width: 991px) {
+    .benefit-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 767px) {
+    .benefit-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

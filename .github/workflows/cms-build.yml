@@ -1,0 +1,164 @@
+name: CMS build canary
+
+# Scheduled canary: builds apps/web in CMS mode (CONTENT_SOURCE=cms) against
+# the production published REST API, read-only. This exercises the loader
+# path in apps/web/src/lib/content.ts (REST pagination, depth=1 relation
+# mapping) that pnpm run check never touches, since check:web:build always
+# builds JSON mode from the committed fake fixture
+# (apps/web/test/fixtures/ci-content/, see docs/dev/go-live.md). A CMS-mode
+# schema or loader drift would otherwise surface for the first time as a
+# live production build failure after cutover.
+#
+# This is a canary, not a PR quality gate: it blocks no merge, so it does
+# not extend pnpm run check (that house rule is for merge gates, see
+# checks.yml).
+#
+# Inert until go-live: gated on the repo variable REMOTE_CMS_URL (the same
+# published CMS origin content:pull uses; set at go-live per
+# docs/dev/go-live.md). A manual workflow_dispatch always runs, and takes a
+# `cms_url` input, so the canary can be rehearsed against a real CMS origin
+# before that variable exists. Only the SCHEDULED run owns the tracking issue:
+# a failed rehearsal is the operator's own feedback, not an incident.
+#
+# No secrets needed: this only reads published (public) documents over HTTPS.
+on:
+  schedule:
+    # Every Monday at 06:00 UTC.
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      cms_url:
+        description: >-
+          CMS origin to build against, e.g. https://your-cms.vercel.app. Use this to rehearse the canary before the REMOTE_CMS_URL repo variable exists. Falls back to that variable when left empty.
+        required: false
+        type: string
+
+# Least privilege: the job reads the repo and fetches public published REST
+# data over HTTPS; issues:write only for the tracking issue that is the
+# canary's alert channel (a red scheduled run notifies almost nobody).
+permissions:
+  contents: read
+  issues: write
+
+# One canary run at a time: a manual dispatch supersedes a scheduled run
+# still going.
+concurrency:
+  group: cms-build-canary
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build (CMS mode)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # The gate the header describes: inert until REMOTE_CMS_URL is set.
+    if: github.event_name == 'workflow_dispatch' || vars.REMOTE_CMS_URL != ''
+    steps:
+      # Pinned to full commit SHAs (house rule for workflows).
+      # Update the SHA and the trailing version comment together.
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          # The job only reads the tree; never leave the token on disk.
+          persist-credentials: false
+      # Installs the exact pnpm pinned in package.json's `packageManager` field,
+      # so CI and contributors always run the same version. Must run before
+      # setup-node so the pnpm store cache can be wired up.
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          # Single source of truth for the Node version: .nvmrc (also what
+          # contributors' version managers read). Keep it in step with engines.
+          node-version-file: ".nvmrc"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # CMS mode reads CONTENT_SOURCE, CMS_URL, and PUBLIC_CMS_URL
+      # (apps/web/src/lib/content.ts). Read-only: only GET requests against
+      # published (_status=published) REST docs.
+      #
+      # Resolve the origin once: the dispatch input wins so the canary can be
+      # rehearsed before go-live, otherwise the repo variable. Guarded, because
+      # an empty CMS_URL used to surface as an opaque fetch failure (and, on a
+      # manual run, a false-alarm tracking issue) rather than "you forgot to
+      # set the origin".
+      - name: Resolve the CMS origin
+        id: origin
+        env:
+          INPUT_URL: ${{ inputs.cms_url }}
+          VAR_URL: ${{ vars.REMOTE_CMS_URL }}
+        run: |
+          set -euo pipefail
+          url="${INPUT_URL:-$VAR_URL}"
+          if [ -z "$url" ]; then
+            echo "::error::No CMS origin. Set the REMOTE_CMS_URL repository variable, or pass cms_url when dispatching manually (docs/dev/go-live.md)."
+            exit 1
+          fi
+          case "$url" in
+            https://*) ;;
+            *) echo "::error::CMS origin must be an https:// URL (got: $url)."; exit 1 ;;
+          esac
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Building against $url"
+      - name: Build apps/web against production published REST
+        id: build
+        env:
+          CONTENT_SOURCE: cms
+          CMS_URL: ${{ steps.origin.outputs.url }}
+          # Required in CMS mode: the origin the Live Preview client checks
+          # postMessage events against. Same host we read content from.
+          PUBLIC_CMS_URL: ${{ steps.origin.outputs.url }}
+        run: pnpm --filter web run build
+      # The tracking issue is the alert channel, same lifecycle as links.yml:
+      # filed or updated in place while the canary fails, closed automatically
+      # on the first passing run. The lookup uses the List API (not Search,
+      # which is eventually consistent) and matches only issues authored by
+      # the workflow's own bot identity. The "area: infra" label comes from
+      # .github/admin/setup-labels.sh. The body derives from trusted run
+      # metadata only, never user input.
+      - name: File or update the tracking issue
+        if: failure() && github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          {
+            echo "The weekly CMS-mode build canary failed: today's production published content no longer builds the site."
+            echo
+            echo "Run (see the build log for the failing loader or page): $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo
+            echo "Likely causes, most common first:"
+            echo
+            echo "- The CMS is down or the \`REMOTE_CMS_URL\` repo variable no longer points at it (check the Vercel deployment first)."
+            echo "- A published document changed shape in a way the loader rejects (apps/web/src/lib/content.ts mappers; see the Cms*Doc contract in docs/architecture/08-concepts.md)."
+            echo "- A CMS schema change merged without the matching web mapper update (same contract; fix forward with a web PR)."
+            echo
+            echo "Until this is green again, do not cut over or rebuild production from CMS content (docs/dev/go-live.md)."
+            echo
+            echo "This issue updates in place on every failing run and closes itself on the first passing one."
+          } > ./issue-body.md
+          title="CMS build canary: published content no longer builds"
+          existing=$(gh api "repos/$GH_REPO/issues?state=open&labels=area%3A%20infra&creator=github-actions%5Bbot%5D&per_page=100" \
+            --jq "[.[] | select(.title == \"$title\")][0].number // empty")
+          if [ -n "$existing" ]; then
+            gh issue edit "$existing" --body-file ./issue-body.md
+          else
+            gh issue create --title "$title" --label "area: infra" --body-file ./issue-body.md
+          fi
+      # Filing is schedule-only (a failed manual rehearsal is the operator's own
+      # feedback, not an incident), but CLOSING is not: recovery is recovery,
+      # and a maintainer who fixes the CMS and dispatches a green run should
+      # not have to wait a week for the scheduled run to clear the issue.
+      - name: Close the tracking issue when the canary recovers
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          title="CMS build canary: published content no longer builds"
+          existing=$(gh api "repos/$GH_REPO/issues?state=open&labels=area%3A%20infra&creator=github-actions%5Bbot%5D&per_page=100" \
+            --jq "[.[] | select(.title == \"$title\")][0].number // empty")
+          if [ -n "$existing" ]; then
+            gh issue close "$existing" \
+              --comment "CMS-mode build passed: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          fi

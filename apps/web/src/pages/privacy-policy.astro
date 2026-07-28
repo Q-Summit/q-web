@@ -1,0 +1,16 @@
+---
+// /privacy-policy: German privacy policy, rendered verbatim from getLegal().
+import Base from "../layouts/Base.astro";
+import LegalBody from "../components/contact-legal/LegalBody.astro";
+import { getLegal } from "../lib/content";
+
+const legal = await getLegal();
+---
+
+<Base
+  title="Privacy Policy"
+  description="How Q-Summit handles personal data. Cookieless analytics, no tracking cookies."
+>
+  <h1 class="u-visually-hidden">Privacy Policy</h1>
+  <LegalBody html={legal["privacy-policy"]} />
+</Base>

@@ -1,0 +1,267 @@
+---
+// Pricing overview ported from the Webflow "section_tickets_pricing-comparison"
+// section. Rendered as a real table (the live site fakes one with grids):
+// one column per tier, feature-group heading rows, check icons for included
+// benefits and cross icons for excluded ones (live's "Ticket-Specific
+// Privileges" rows render both, not a blank cell). On narrow screens the
+// table scrolls horizontally inside its wrapper; the page body never
+// scrolls sideways.
+//
+// The live "Looking for an academic focus?" info banner sits between the
+// ticket cards and this table's heading. It is rendered here (not in the
+// ticket cards component) since this component's own render is what lands
+// right after the cards on the page.
+import type { PricingComparison } from "../../lib/content";
+import Section from "../ui/Section.astro";
+import Container from "../ui/Container.astro";
+import SectionHeader from "../ui/SectionHeader.astro";
+import IconCheck from "../icons/IconCheck.astro";
+
+interface Props {
+  heading: string;
+  intro?: string;
+  comparison: PricingComparison;
+  academicNote: string;
+}
+
+const { heading, intro, comparison, academicNote } = Astro.props;
+---
+
+<div class="container academic-note-wrap">
+  <div class="academic-note">
+    <span class="academic-note-icon" aria-hidden="true">
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <circle cx="12" cy="12" r="10" fill="currentColor"></circle>
+        <rect
+          x="11"
+          y="10.5"
+          width="2"
+          height="6.5"
+          rx="1"
+          fill="var(--color-background)"></rect>
+        <rect
+          x="11"
+          y="6.5"
+          width="2"
+          height="2"
+          rx="1"
+          fill="var(--color-background)"></rect>
+      </svg>
+    </span>
+    <p>{academicNote}</p>
+  </div>
+</div>
+
+<Section aria-labelledby="comparison-heading">
+  <Container>
+    <SectionHeader>
+      <h2 id="comparison-heading">{heading}</h2>
+      {intro && <p class="comparison-intro">{intro}</p>}
+    </SectionHeader>
+
+    <div class="table-scroll" tabindex="0" role="region" aria-label={heading}>
+      <table>
+        <thead>
+          <tr>
+            <td class="corner"></td>
+            {
+              comparison.tiers.map((tier) => (
+                <th scope="col">
+                  <span class="tier-name">{tier.name}</span>
+                  <span class="tier-price">{tier.price}</span>
+                  <span class="tier-audience">{tier.audience}</span>
+                </th>
+              ))
+            }
+          </tr>
+        </thead>
+        {
+          comparison.groups.map((group) => (
+            <tbody>
+              <tr class="group-row">
+                <th scope="colgroup" colspan={comparison.tiers.length + 1}>
+                  {group.group}
+                </th>
+              </tr>
+              {group.rows.map((row) => (
+                <tr>
+                  <th scope="row">{row.feature}</th>
+                  {row.included.map((included) => (
+                    <td>
+                      {included ? (
+                        <span class="check" aria-hidden="true">
+                          <IconCheck size={22} />
+                        </span>
+                      ) : (
+                        <span class="cross" aria-hidden="true">
+                          <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="M6 6L18 18M18 6L6 18"
+                              stroke="currentColor"
+                              stroke-width="2.4"
+                              stroke-linecap="round"
+                            />
+                          </svg>
+                        </span>
+                      )}
+                      <span class="u-visually-hidden">
+                        {included ? "Included" : "Not included"}
+                      </span>
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          ))
+        }
+      </table>
+    </div>
+  </Container>
+</Section>
+
+<style>
+  .academic-note-wrap {
+    margin-top: var(--space-lg);
+  }
+
+  .academic-note {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-sm) var(--space-md);
+    background-color: color-mix(
+      in srgb,
+      var(--color-focus) 8%,
+      var(--color-background)
+    );
+    border-left: 3px solid var(--color-focus);
+    border-radius: var(--radius-button-small);
+  }
+
+  .academic-note p {
+    margin: 0;
+    font-size: var(--text-size-small);
+  }
+
+  .academic-note-icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    color: var(--color-focus);
+  }
+
+  .comparison-intro {
+    margin: 0;
+    font-size: var(--text-size-medium);
+  }
+
+  .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table {
+    width: 100%;
+    min-width: 56rem;
+    border-collapse: collapse;
+  }
+
+  /* The comparison grid is a data table, not a card, so COMP-2's neutral
+     hairline does not apply: DESIGN.md COMP-5 keeps the live site's black
+     1px rules, which are what make a dense price grid readable. */
+  thead th,
+  thead td {
+    vertical-align: top;
+    padding: var(--space-md) var(--space-sm);
+    border-left: 1px solid var(--color-black);
+    border-bottom: 1px solid var(--color-black);
+  }
+
+  thead .corner {
+    border-left: none;
+    border-bottom: 1px solid var(--color-black);
+  }
+
+  thead th {
+    width: 15%;
+    text-align: center;
+    font-weight: var(--heading-weight);
+  }
+
+  .tier-name {
+    display: block;
+    font-size: var(--heading-h6-size);
+    line-height: var(--heading-line-height-normal);
+    color: var(--color-heading);
+  }
+
+  /* The price is column chrome, not a heading, but the live table sets it at
+     the h4 step, so it takes that token instead of a raw 2rem
+     (DESIGN.md TYPE-2). The token also steps down per breakpoint, which is
+     why there is no mobile override below: --heading-h4-size is already
+     1.5rem at 767px, the value that override used to hard-code. */
+  .tier-price {
+    display: block;
+    margin-block: var(--space-xs);
+    font-size: var(--heading-h4-size);
+    line-height: var(--heading-line-height-tight);
+    color: var(--color-heading);
+  }
+
+  .tier-audience {
+    display: block;
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-regular);
+    color: var(--color-neutral-dark);
+  }
+
+  .group-row th {
+    padding: var(--space-md) var(--space-sm) var(--space-sm) 0;
+    text-align: left;
+    font-size: var(--heading-h6-size);
+    line-height: var(--heading-line-height-normal);
+    color: var(--color-heading);
+    border-bottom: 1px solid var(--color-black);
+  }
+
+  tbody th[scope="row"] {
+    padding: var(--space-sm) var(--space-md) var(--space-sm) 0;
+    text-align: left;
+    font-weight: var(--font-weight-regular);
+    border-bottom: 1px solid var(--color-black);
+  }
+
+  tbody td {
+    padding: var(--space-sm);
+    text-align: center;
+    border-left: 1px solid var(--color-black);
+    border-bottom: 1px solid var(--color-black);
+  }
+
+  .check {
+    display: inline-flex;
+    color: var(--color-success);
+  }
+
+  .cross {
+    display: inline-flex;
+    color: var(--color-error);
+  }
+
+  @media (max-width: 767px) {
+    table {
+      min-width: 48rem;
+    }
+  }
+</style>

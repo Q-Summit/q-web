@@ -1,0 +1,100 @@
+{
+  "siteTitle": "Q-Summit",
+  "nav": [
+    {
+      "label": "Why Q?",
+      "href": "/whyq"
+    },
+    {
+      "label": "Speaker",
+      "href": "/speaker"
+    },
+    {
+      "label": "Partner",
+      "href": "/partner"
+    },
+    {
+      "label": "Program",
+      "href": "/program"
+    },
+    {
+      "label": "Hackathon",
+      "href": "/hackathon"
+    },
+    {
+      "label": "Our Team",
+      "href": "/our-team"
+    },
+    {
+      "label": "Job Listings",
+      "href": "/job-listings"
+    }
+  ],
+  "footer": {
+    "tagline": "Where visionaries shape tomorrow. Germany's largest student-led startup conference, organized in Mannheim since 2017.",
+    "links": [
+      {
+        "label": "Imprint",
+        "href": "/imprint"
+      },
+      {
+        "label": "Privacy Policy",
+        "href": "/privacy-policy"
+      },
+      {
+        "label": "Terms and Conditions",
+        "href": "/terms-and-conditions"
+      },
+      {
+        "label": "Our Team",
+        "href": "/our-team"
+      },
+      {
+        "label": "Contact Us",
+        "href": "/contact"
+      }
+    ],
+    "socialLinks": [
+      {
+        "label": "TikTok",
+        "href": "https://www.tiktok.com/@qsummit",
+        "platform": "tiktok"
+      },
+      {
+        "label": "Instagram Q-Summit",
+        "href": "https://www.instagram.com/qsummit/",
+        "platform": "instagram-qsummit"
+      },
+      {
+        "label": "Instagram Q-Hack",
+        "href": "https://www.instagram.com/qhackathon/",
+        "platform": "instagram-qhack"
+      },
+      {
+        "label": "LinkedIn",
+        "href": "https://www.linkedin.com/company/q-summit",
+        "platform": "linkedin"
+      },
+      {
+        "label": "YouTube",
+        "href": "https://www.youtube.com/@qsummit",
+        "platform": "youtube"
+      }
+    ],
+    "copyrightHolder": "Q-Summit"
+  },
+  "llms": {
+    "summary": "Germany's largest student-led startup conference, organized in Mannheim since 2017.",
+    "pitch": "Two days in Mannheim for students, startups, investors, and partners: talks, formats, and networking.",
+    "keyFacts": [
+      "What: Q-Summit is Germany's largest student-led startup conference (Q-Summit an der Universität Mannheim e. V.).",
+      "Where: L1, 1; 68161; Mannheim; Germany",
+      "When: Next edition April 1-2, 2027 (10 year anniversary); previous edition was Q-Summit 2026",
+      "Scale: Last edition hosted 1500 participants, 30 speakers, 60 startups, and 80 partners",
+      "Audience: Attendees, startups, investors, partners, and founders",
+      "Value: Inspiring speakers, insightful formats, and an innovative partner network",
+      "Contact: contact-us@q-summit.com"
+    ],
+    "lastReviewed": "2026-07-20"
+  }
+}
