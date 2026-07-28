@@ -7,7 +7,6 @@ import { existsSync } from "node:fs";
 
 import {
   MEDIA_DIR,
-  sanitize,
   variant,
 } from "./media-filename";
 
@@ -22,7 +21,7 @@ export interface ResponsivePhoto {
   srcset: string | undefined;
 }
 
-/** Wide photo src + optional srcset from local -p-800/-p-1600, or optimistic R2 keys. */
+/** Wide photo src + optional srcset from local -p-800/-p-1600, else CMS/R2 key. */
 export function widePhotoSrc(photoFilename: string): ResponsivePhoto {
   const sources: { url: string; width: number }[] = [];
   for (const [suffix, width] of [
@@ -35,16 +34,10 @@ export function widePhotoSrc(photoFilename: string): ResponsivePhoto {
     }
   }
   if (sources.length === 0) {
-    const cleaned = sanitize(photoFilename);
-    if (/-p-\d+\./.test(cleaned)) {
-      return { src: `/media/${cleaned}`, srcset: undefined };
-    }
-    const p800 = variant(photoFilename, "-p-800");
-    const p1600 = variant(photoFilename, "-p-1600");
-    return {
-      src: `/media/${p1600}`,
-      srcset: `/media/${p800} 800w, /media/${p1600} 1600w`,
-    };
+    // Same rule as resolvePhotoMediaKey: no invented sized keys when R2 only
+    // has the original (or an already-sized CMS filename).
+    const key = encodeURIComponent(photoFilename);
+    return { src: `/media/${key}`, srcset: undefined };
   }
   const largest = sources[sources.length - 1];
   return {

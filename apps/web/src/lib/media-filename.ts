@@ -52,8 +52,11 @@ export function probeVariant(
 }
 
 /**
- * Object key for `/media/…`. Local mirror wins; otherwise `-p-800` (or keep
- * an already-sized filename).
+ * Object key for `/media/…`. Local mirror wins (sized variants preferred).
+ * With an empty `public/media/` (CMS / Workers Builds) use the CMS filename
+ * as the R2 object key: do not invent `-p-800`. Prod R2 often only has
+ * the original upload; optimistic sized keys 404 (home speakers, previous
+ * speaker grid). Keep already-sized CMS filenames (`*-p-500.webp`, etc.).
  */
 export function resolvePhotoMediaKey(
   photoFilename: string,
@@ -61,11 +64,11 @@ export function resolvePhotoMediaKey(
 ): string {
   const found = probeVariant(photoFilename, suffixes);
   if (found) return found;
-  const cleaned = sanitize(photoFilename);
-  if (/-p-\d+\./.test(cleaned)) return cleaned;
-  return variant(photoFilename, "-p-800");
+  // Exact CMS / R2 key (spaces, accents). Encode in photoSrc, not here.
+  return photoFilename;
 }
 
+/** `/media/…` href; encodes the object key so spaces match R2. */
 export function photoSrc(photoFilename: string): string {
-  return `/media/${resolvePhotoMediaKey(photoFilename)}`;
+  return `/media/${encodeURIComponent(resolvePhotoMediaKey(photoFilename))}`;
 }
