@@ -4,47 +4,50 @@ The website for [Q-Summit](https://q-summit.com), Germany's largest student-orga
 
 ## How it works
 
-The public site is pre-built static HTML, served from Cloudflare's edge. Content lives in Payload CMS, where division members edit their own collections under personal, division-scoped accounts, with drafts and an approval step before anything goes live. Publishing triggers a static rebuild; the live site never depends on the CMS being up.
+The public site is pre-built static HTML, served from Cloudflare's edge. Content lives in Payload CMS, where division members edit their own collections under personal, division-scoped accounts, with drafts and approver publish before anything goes live. Merges to `main` and approver Publish both rebuild the site through Cloudflare Workers Builds (Publish needs `CLOUDFLARE_DEPLOY_HOOK_URL` on the CMS). The live site never depends on the CMS being up.
 
-| Layer     | Technology                   | Where                    |
-| --------- | ---------------------------- | ------------------------ |
-| Site      | Astro (static output)        | Cloudflare               |
-| CMS       | Payload 3                    | Vercel                   |
-| Database  | Postgres                     | Neon, Frankfurt          |
-| Media     | R2 object storage            | Cloudflare               |
-| Analytics | PostHog Cloud EU, cookieless | No consent banner needed |
+| Layer     | Technology                   | Where                           |
+| --------- | ---------------------------- | ------------------------------- |
+| Site      | Astro (static output)        | Cloudflare (free plan)          |
+| CMS       | Payload 3                    | Vercel Hobby                    |
+| Database  | Postgres                     | Neon free tier, Frankfurt       |
+| Media     | R2 object storage            | Cloudflare                      |
+| Analytics | PostHog Cloud EU, cookieless | Decided; client not shipped yet |
 
-Publish flow: an approver publishes in Payload, a hook calls the Cloudflare deploy hook, the site rebuilds in roughly 2 to 4 minutes, and the deploy is atomic. A failed build never touches the live site.
+Setup and cutover: [`docs/dev/go-live.md`](docs/dev/go-live.md).
 
-The full decision trail is in [`docs/decisions/`](docs/decisions/): [ADR-0001](docs/decisions/0001-astro-static-site.md), [ADR-0002](docs/decisions/0002-payload-cms-on-vercel-neon.md), [ADR-0003](docs/decisions/0003-posthog-cookieless-analytics.md). Architecture, costs, risks, and compliance live in [`docs/architecture/`](docs/architecture/).
+Agents and maintainers can **propose** content packages as remote drafts via `make propose` (`POST /api/content-sync`); only human approvers Publish, and propose never deploys the site. Runbook: [`docs/dev/content-sync.md`](docs/dev/content-sync.md).
 
-## Editing content
-
-Content (partners, speakers, jobs, team, FAQ, page text, images) is edited in Payload, not in this repository. Editors need no GitHub account and no developer tools: the [editor handbook](docs/editors/) explains drafts, previews, and the approval step in plain language.
+The full decision trail is in [`docs/decisions/`](docs/decisions/), starting with [ADR-0001](docs/decisions/0001-astro-static-site.md).
 
 ## Repository layout
 
-| Path             | Holds                                    |
-| ---------------- | ---------------------------------------- |
-| `apps/web/`      | Astro site                               |
-| `apps/cms/`      | Payload CMS                              |
-| [`docs/`](docs/) | Decisions, architecture, editor handbook |
-| `scripts/`       | Setup and maintenance scripts            |
-| `.github/`       | CI workflows, issue and PR templates     |
+| Path | Holds |
+| --- | --- |
+| `apps/web/` | Astro site, Worker, build-time JSON under `content/` |
+| `apps/cms/` | Payload CMS (+ `/api/content-sync`) |
+| `docs/` | Decisions, architecture, editor handbook, `dev/` how-tos |
+| `scripts/` | Purpose folders: local, content, check, preview, ops ([catalog](docs/dev/scripts.md)) |
+| `docker-compose.yml` | Local Postgres + MinIO |
+| `Makefile` | Front door: `setup`, `dev`, `pull`, `package`, `propose`, … |
+| `.github/` | CI workflows, issue and PR templates |
 
 ## Getting started
 
-Requires Node `>=22.18` and pnpm `>=10` (exact version pinned in `package.json`).
+Requires Node `>=22.18`, pnpm `>=10` (exact version pinned in `package.json`), and Docker for the CMS database.
 
 ```sh
-pnpm run setup   # install, git hooks, skills symlink, docs validation
-pnpm run check   # lint, spelling, formatting, docs structure
-pnpm run format  # Prettier write
+make setup    # install, git hooks, skills symlink, Chrome-for-Testing, docs validation
+make dev      # Postgres + MinIO + seed-if-empty + CMS + Astro
+make check    # full gate (pre-push + CI): docs/design + web + cms (apps in parallel)
+make lighthouse  # Q1 mobile loop; contract in .lighthouse/README.md, live report → AGENT.md
 ```
+
+Local default is `make dev` (Docker volumes persist; Astro reads local Payload). JSON escape hatch: `make dev-web`. Details: [`docs/dev/local-development.md`](docs/dev/local-development.md). Pull (read-only) / propose (drafts only): [`docs/dev/content-sync.md`](docs/dev/content-sync.md). Production go-live (CF + Vercel): [`docs/dev/go-live.md`](docs/dev/go-live.md). Pre-commit runs `check:fast` only; push runs the full gate.
 
 ## Contributing
 
-Code and docs changes: see [`CONTRIBUTING.md`](CONTRIBUTING.md). Content changes go through Payload (see [Editing content](#editing-content) above).
+Code and docs changes: see [`CONTRIBUTING.md`](CONTRIBUTING.md). Division editors work in Payload admin; code agents may pull/package/propose drafts but never Publish or production-deploy.
 
 ## Security
 
