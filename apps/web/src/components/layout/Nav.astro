@@ -94,12 +94,16 @@ const isCurrent = (href: string): boolean =>
 
 <style>
   .site-header {
+    /* Sticky (not fixed): keeps document flow. flex-shrink:0 so the body
+       column flex from global.css cannot compress the bar during scroll. */
     position: sticky;
     top: 0;
     z-index: 100;
+    flex-shrink: 0;
     background-color: var(--color-background);
     border-bottom: 1px solid var(--color-neutral-lighter);
-    view-transition-name: site-header;
+    /* No view-transition-name here: naming a sticky header (or its
+       .nav-inner child) makes Chromium jitter the bar while scrolling. */
   }
 
   .nav-inner {
