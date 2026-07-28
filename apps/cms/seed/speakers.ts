@@ -6,16 +6,15 @@ import config from "../src/payload.config";
 
 const extractedDir = resolveContentDir();
 
+type SpeakerGroup = "current" | "moderation" | "panel" | "previous";
+
 type SpeakerData = {
   name: string;
   role: string;
   company: string | null;
   photoFilename: string;
-  group:
-    | "speakers-2026"
-    | "moderation-2026"
-    | "main-stage-homepage"
-    | "previous-highlights";
+  /** CMS enum or legacy Webflow slug; mapGroup normalizes both. */
+  group: string;
   roleLine?: string;
   bio?: string;
 };
@@ -26,10 +25,17 @@ function readJson(name: string): any[] {
   );
 }
 
-// Map Webflow group values to schema select options
-function mapGroup(
-  group: string,
-): "current" | "moderation" | "panel" | "previous" {
+const CMS_GROUPS = new Set<SpeakerGroup>([
+  "current",
+  "moderation",
+  "panel",
+  "previous",
+]);
+
+// Accept CMS enum values (ci-content fixture / content-sync) and legacy
+// Webflow slugs from older snapshots.
+function mapGroup(group: string): SpeakerGroup {
+  if (CMS_GROUPS.has(group as SpeakerGroup)) return group as SpeakerGroup;
   switch (group) {
     case "speakers-2026":
       return "current";
@@ -45,9 +51,7 @@ function mapGroup(
 }
 
 // Get year based on group; current/moderation require 2026
-function getYear(
-  group: "current" | "moderation" | "panel" | "previous",
-): number | null {
+function getYear(group: SpeakerGroup): number | null {
   if (group === "current" || group === "moderation") {
     return 2026;
   }

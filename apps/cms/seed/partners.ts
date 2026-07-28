@@ -77,10 +77,14 @@ for (let index = 0; index < partnersList.length; index++) {
       continue;
     }
 
-    // Get logo ID from media filename
+    // Get logo ID from media filename. Missing logos are expected on a fresh
+    // fixture seed (binaries are never in git); skip the partner until media
+    // is pulled into MinIO/local and re-seeded.
     const logoId = mediaByFilename.get(partner.logoFilename);
     if (!logoId) {
-      errors.push(`Logo not found: ${partner.name} (${partner.logoFilename})`);
+      console.warn(
+        `Logo not found, skipping: ${partner.name} (${partner.logoFilename})`,
+      );
       continue;
     }
 

@@ -1002,9 +1002,9 @@ export interface PageWhyq {
         }[]
       | null;
     /**
-     * Section photo.
+     * Section photo. Leave empty until the asset is in the Media library; the page still renders using the convention /media/whyq-<anchor>.
      */
-    imageFile: number | Media;
+    imageFile?: (number | null) | Media;
     /**
      * Alt text for the section photo (kept separate from the media library's own alt).
      */

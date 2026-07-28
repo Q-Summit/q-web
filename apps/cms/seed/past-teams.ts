@@ -30,7 +30,8 @@ async function run() {
   let updated = 0;
 
   for (const item of pastTeams) {
-    // Find the media document by filename
+    // Find the media document by filename. Fixture / fresh-clone seed has no
+    // binaries in git; skip the year until media is present locally.
     const mediaResult = await payload.find({
       collection: "media",
       where: {
@@ -40,10 +41,10 @@ async function run() {
     });
 
     if (mediaResult.totalDocs === 0) {
-      console.error(
-        `Media not found for: ${item.photoFilename} (year ${item.year})`,
+      console.warn(
+        `Media not found, skipping past-team year ${item.year} (${item.photoFilename})`,
       );
-      throw new Error(`Media not found for: ${item.photoFilename}`);
+      continue;
     }
 
     const mediaId = mediaResult.docs[0].id;

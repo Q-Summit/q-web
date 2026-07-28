@@ -30,6 +30,8 @@ const toValueRows = (values: boolean[]) => values.map((value) => ({ value }));
 // component (FeatureSection.astro, off-limits here) derives its srcset from
 // a base filename + code-side extension registry, so the canonical upload
 // is the -800 variant of each (matching the `src` FeatureSection renders).
+// Binaries are never in git: seed uploads only when a local/MinIO mirror
+// already placed the file under public/media (same soft-miss as seed/media.ts).
 const WHYQ_IMAGE_EXT: Record<string, "webp" | "jpg"> = {
   "whyq-attendees": "webp",
   "whyq-startups": "webp",
@@ -42,12 +44,14 @@ async function resolveWhyqImageId(
   payload: Payload,
   imageFile: string,
   alt: string,
-): Promise<number> {
+): Promise<number | null> {
   const ext = WHYQ_IMAGE_EXT[imageFile];
-  if (!ext)
-    throw new Error(
-      `No known asset extension registered for whyq image "${imageFile}"`,
+  if (!ext) {
+    console.warn(
+      `  no known asset extension for whyq image "${imageFile}"; leaving image unset`,
     );
+    return null;
+  }
   const uploadFilename = `${imageFile}-800.${ext}`;
 
   const existing = await payload.find({
@@ -59,7 +63,10 @@ async function resolveWhyqImageId(
 
   const sourcePath = path.join(webMediaDir, uploadFilename);
   if (!fs.existsSync(sourcePath)) {
-    throw new Error(`Missing whyq image file on disk: ${sourcePath}`);
+    console.warn(
+      `  whyq image missing on disk (${uploadFilename}); leave unset until media is pulled locally`,
+    );
+    return null;
   }
 
   const created = await payload.create({
@@ -126,16 +133,18 @@ async function run() {
     console.log("page-home: updated and published");
   }
 
-  // page-whyq (resolves each audience's photo to a media doc)
+  // page-whyq (resolves each audience's photo to a media doc when present)
   {
     const whyq = content.whyq;
     const audiences = [];
+    let missingImages = 0;
     for (const audience of whyq.audiences) {
       const imageId = await resolveWhyqImageId(
         payload,
         audience.imageFile,
         audience.imageAlt,
       );
+      if (imageId === null) missingImages += 1;
       audiences.push({
         // Web JSON keeps "id" as the anchor; the CMS field is "anchorId" so it
         // does not collide with Payload's own array-row id (which content-sync
@@ -144,7 +153,7 @@ async function run() {
         heading: audience.heading,
         intro: audience.intro,
         items: audience.items,
-        imageFile: imageId,
+        ...(imageId !== null ? { imageFile: imageId } : {}),
         imageAlt: audience.imageAlt,
         imageLeft: audience.imageLeft,
       });
@@ -163,7 +172,9 @@ async function run() {
       overrideAccess: true,
     });
     console.log(
-      `page-whyq: updated and published (${audiences.length} audiences)`,
+      `page-whyq: updated and published (${audiences.length} audiences` +
+        (missingImages > 0 ? `, ${missingImages} without local media` : "") +
+        ")",
     );
   }
 

@@ -66,7 +66,9 @@ async function run() {
       throw new Error(`Unknown division: ${item.division}`);
     }
 
-    // Find the media document by filename
+    // Find the media document by filename. Fixture seed uses
+    // fixture-missing-photo.webp; binaries are never in git, so skip until
+    // media is pulled locally.
     const mediaResult = await payload.find({
       collection: "media",
       where: {
@@ -76,10 +78,10 @@ async function run() {
     });
 
     if (mediaResult.totalDocs === 0) {
-      console.error(
-        `Media not found for: ${item.photoFilename} (${item.name})`,
+      console.warn(
+        `Media not found, skipping: ${item.photoFilename} (${item.name})`,
       );
-      throw new Error(`Media not found for: ${item.photoFilename}`);
+      continue;
     }
 
     const mediaId = mediaResult.docs[0].id;

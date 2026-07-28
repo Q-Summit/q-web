@@ -113,11 +113,6 @@ async function run() {
         );
         if (match) {
           logoId = match.id;
-        } else {
-          missingLogo += 1;
-          console.warn(
-            `No media found for logoFilename: ${job.logoFilename} (job ${job.slug})`,
-          );
         }
       }
     }
@@ -129,15 +124,20 @@ async function run() {
       );
     }
 
+    if (!logoId) {
+      missingLogo += 1;
+      unfittedValues.push(`missing logo for ${job.slug} (${job.logoFilename})`);
+      console.warn(
+        `Skipping ${job.slug}: no local media for logo (expected on fixture seed)`,
+      );
+      continue;
+    }
+
     const description = convertHTMLToLexical({
       editorConfig: sanitizedEditorConfig,
       html: job.richTextHtml,
       JSDOM,
     });
-
-    if (!logoId) {
-      unfittedValues.push(`missing logo for ${job.slug} (${job.logoFilename})`);
-    }
 
     try {
       await retry(() =>
@@ -151,12 +151,7 @@ async function run() {
             workload: workload ?? null,
             description,
             applyUrl: job.applyUrl,
-            // logo is required (non-nullable) by the schema; fall back to
-            // undefined only if truly unresolved, which surfaces as a
-            // runtime validation error (caught below) rather than silently
-            // creating an invalid doc. Cast needed because the generated
-            // type does not include `undefined` for this required field.
-            logo: (logoId ?? undefined) as number,
+            logo: logoId as number,
             order: index * 10,
             _status: "published",
           },

@@ -476,10 +476,14 @@ async function cmsGetWhyq(): Promise<WhyqContent> {
         title: i.title,
         description: i.description,
       })),
-      imageFile: await resolveWhyqImageBase(
-        audience.imageFile,
-        `whyq audience ${audience.anchorId}`,
-      ),
+      // Empty upload (fixture seed without local media) falls back to the
+      // conventional basename so /whyq still points at /media/whyq-<anchor>
+      // until MinIO/R2 or a Media upload supplies the file.
+      imageFile:
+        (await resolveWhyqImageBase(
+          audience.imageFile,
+          `whyq audience ${audience.anchorId}`,
+        )) || `whyq-${audience.anchorId}`,
       imageAlt: audience.imageAlt,
       imageLeft: Boolean(audience.imageLeft),
     });

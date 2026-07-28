@@ -9,11 +9,11 @@
  * snapshot or a CMS. Policy:
  *  - verbatim: page-content.json and site-settings.json (their copy already
  *    lives in the committed generator apps/web/scripts/build-page-content.mjs),
- *    faqs.json (public marketing copy; any email addresses scrubbed), and
- *    past-teams.json (years plus group photo filenames only)
- *  - faked: speakers, team, partners, testimonials, jobs (people data from
- *    the scrape; obviously fake replacements, real registry/enum values kept
- *    so every page and validator still exercises its real code path)
+ *    and faqs.json (public marketing copy; any email addresses scrubbed)
+ *  - faked: speakers, team, partners, testimonials, jobs, past-teams (people
+ *    data and photo filenames from the scrape; obviously fake replacements,
+ *    real registry/enum values kept so every page and validator still
+ *    exercises its real code path)
  *  - legal.json: placeholder sections (the real text is CMS-owned)
  *
  * Run manually after a content-schema change (maintainers with a snapshot):
@@ -82,7 +82,13 @@ if (pageContent?.home?.partnerBand?.items) {
 }
 write("page-content.json", pageContent);
 write("site-settings.json", read("site-settings.json"));
-write("past-teams.json", read("past-teams.json"));
+write(
+  "past-teams.json",
+  read("past-teams.json").map((row) => ({
+    year: row.year,
+    photoFilename: "fixture-missing-photo.webp",
+  })),
+);
 write(
   "faqs.json",
   read("faqs.json").map((f) => ({

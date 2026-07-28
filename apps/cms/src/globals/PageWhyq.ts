@@ -53,8 +53,14 @@ export const PageWhyq: GlobalConfig = pageGlobal({
           name: "imageFile",
           type: "upload",
           relationTo: "media",
-          required: true,
-          admin: { description: "Section photo." },
+          // Optional so fixture seed / fresh clones work without gitignored
+          // media binaries; the site falls back to /media/whyq-<anchorId>
+          // until a real upload exists (docs/dev/local-development.md).
+          required: false,
+          admin: {
+            description:
+              "Section photo. Leave empty until the asset is in the Media library; the page still renders using the convention /media/whyq-<anchor>.",
+          },
         },
         {
           name: "imageAlt",
