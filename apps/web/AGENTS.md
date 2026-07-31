@@ -16,7 +16,21 @@ pnpm --filter web run cf-typegen  # regenerate worker-configuration.d.ts
 pnpm run check:design       # DESIGN.md spec + token drift + rule citations + literals ratchet
 make preview                # r2:sync + preview:cf (local CF; not a deploy)
 pnpm run check:web          # check + build + test, wired into root pnpm run check
+pnpm --filter web run vrt:docker  # visual regression vs committed baselines (pinned image)
 ```
+
+## Visual regression
+
+Every component's look is captured by a co-located `*.vrt.ts` (variants) that the
+`/vrt/` gallery renders and Playwright screenshots against committed baselines
+in `tests/visual/__screenshots__/`. It is an **advisory** PR review
+(`.github/workflows/visual.yml`), NOT part of `pnpm run check` and never a
+blocking status: a diff posts a sticky comment (with a hosted report link) and,
+in AUTO mode, auto-commits refreshed baselines to the PR branch. Add coverage or
+accept an intended change per [`docs/dev/visual-testing.md`](../../docs/dev/visual-testing.md)
+([ADR-0007](../../docs/decisions/0007-visual-regression-testing.md)). Baselines
+are never hand-committed from your own OS; they are regenerated in the pinned
+image (AUTO, the `Update visual baselines` workflow, or `vrt:docker:update`).
 
 ## Design system
 

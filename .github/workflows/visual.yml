@@ -1,0 +1,415 @@
+name: Visual review
+
+# Advisory git-native visual-regression review, adapted from the Noa-IQ
+# marketing-website VRT and hardened per docs/decisions/0007. It NEVER blocks a
+# merge: on a pixel change it posts a sticky PR comment linking a click-to-view
+# report, and (when a VRT_PAT is set) auto-pushes the refreshed baselines onto
+# the PR branch so merging adopts them. Runs inside the SAME pinned Playwright
+# image the baselines were generated in, so rendering is byte-identical.
+#
+# Baseline model: the PR is rendered ON TOP OF current main and always diffed
+# against MAIN's committed baselines, never the PNGs committed on the PR branch.
+# That way a contributor who updates the look AND commits the matching baseline
+# cannot hide the change from review, and a component only main changed does not
+# false-diff. Docs: docs/dev/visual-testing.md, ADR-0007.
+#
+# Modes (each lights up when its secret is present; degrades gracefully):
+#   COMPARE (no secrets)      - comment lists changed shots + downloadable report artifact.
+#   PUBLISH (CLOUDFLARE_*)    - also hosts the expected/actual/diff report on Cloudflare Pages.
+#   AUTO    (VRT_PAT)         - also commits the refreshed baselines to the PR branch.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    # Only PRs targeting main. For pull_request, GitHub runs the workflow file
+    # from the base branch, so restricting the base guarantees this trusted
+    # (main) definition runs, never a collaborator's malicious branch workflow.
+    branches: [main]
+
+# Least privilege at the top; the visual job elevates to pull-requests:write.
+permissions:
+  contents: read
+
+# One run per PR: the AUTO baseline push re-opens a run in this group and
+# cancels the current one, so the comment + artifact are always posted before
+# the push step (see the job ordering).
+concurrency:
+  group: visual-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  # Cheap gate: skip the heavy container job on docs-only PRs, and on the bot's
+  # own baseline-only commit (else the AUTO push would loop).
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read # botcheck reads the PR head commit's file list
+    outputs:
+      visual: ${{ steps.filter.outputs.visual }}
+      bot_baseline: ${{ steps.botcheck.outputs.bot_baseline }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # The AUTO baseline push lands as a PR `synchronize`. That commit changes
+      # only committed PNGs and can't affect any render, so skip the advisory
+      # job on it. Fail-closed: any error defaults to false (job runs normally).
+      - name: detect auto-baseline commit
+        id: botcheck
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            try {
+              const { owner, repo } = context.repo;
+              const pr = context.payload.pull_request;
+              const { data: head } = await github.rest.repos.getCommit({ owner, repo, ref: pr.head.sha });
+              const msg = (head.commit && head.commit.message) || '';
+              const files = head.files || [];
+              const sameRepo = pr.head.repo.full_name === `${owner}/${repo}`;
+              const messageOk = /^chore\(vrt\): refresh visual baselines/.test(msg);
+              const baselinesOnly = files.length > 0 && files.every(
+                (f) => f.filename.startsWith('apps/web/tests/visual/__screenshots__/'),
+              );
+              // Require a GitHub-linked bot actor (login), not forgeable git
+              // author email: a human `git commit --author=...` must still be
+              // re-rendered. Only a real github-actions[bot] AUTO commit skips.
+              // Attribution comes from the commit email
+              // (41898282+github-actions[bot]@users.noreply.github.com), which
+              // the push step sets; the VRT_PAT only authenticates the push.
+              const byBot =
+                (head.author && head.author.login === 'github-actions[bot]') ||
+                (head.committer && head.committer.login === 'github-actions[bot]');
+              const botBaseline = sameRepo && messageOk && baselinesOnly && byBot;
+              core.setOutput('bot_baseline', String(botBaseline));
+              // If this looks like an AUTO commit but GitHub did not map it to
+              // the bot login, the visual job will re-run and may loop. Surface
+              // that loudly so a misconfigured VRT_PAT / email is caught on the
+              // first enablement, not after burning CI minutes.
+              if (sameRepo && messageOk && baselinesOnly && !byBot) {
+                core.warning(
+                  'Commit looks like an AUTO baseline refresh but is not attributed to github-actions[bot] ' +
+                    `(author=${head.author && head.author.login}, committer=${head.committer && head.committer.login}). ` +
+                    'Confirm the push step still sets the bot noreply email; otherwise the visual job may loop.',
+                );
+              }
+            } catch (e) {
+              core.info(`botcheck failed (${e.message}); defaulting to false`);
+              core.setOutput('bot_baseline', 'false');
+            }
+      - uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4.0.2
+        id: filter
+        with:
+          filters: |
+            visual:
+              - 'apps/web/src/**'
+              - 'apps/web/astro.config.mjs'
+              - 'apps/web/playwright.config.ts'
+              - 'apps/web/tests/visual/gallery.spec.ts'
+              - 'scripts/check/vrt-report.mjs'
+              # A dependency bump can shift rendering without touching src; run
+              # on web deps and the lockfile too. Over-triggering is harmless
+              # (the job no-diffs and stays silent); missing a render shift is not.
+              - 'apps/web/package.json'
+              - 'pnpm-lock.yaml'
+              # Fixture JSON feeds vrt:build (WEB_CONTENT_DIR); Nav/Footer and
+              # any variant that calls getSiteSettings() can shift without a
+              # src/ edit when only fixtures change.
+              - 'apps/web/test/fixtures/ci-content/**'
+              # Also run when baselines themselves change, so a PR that hand-edits
+              # or hand-commits a PNG is still verified against the container
+              # render (the botcheck above skips the bot's own baseline commits,
+              # so this does not loop).
+              - 'apps/web/tests/visual/__screenshots__/**'
+
+  visual:
+    needs: changes
+    if: ${{ github.event.pull_request.draft != true && needs.changes.outputs.bot_baseline != 'true' && needs.changes.outputs.visual == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Same image the baselines are generated in (vrt:docker* / update-visual-baselines):
+    # identical fonts + Chromium, so no cross-environment flake and no browser install.
+    container: mcr.microsoft.com/playwright:v1.62.0-noble
+    # Playwright image defaults to sh; pipefail and [[ ]] need bash.
+    defaults:
+      run:
+        shell: bash
+    permissions:
+      contents: read # checkout only; the baseline push uses the step-scoped VRT_PAT
+      pull-requests: write # upsert the review comment
+    env:
+      # AUTO needs the write token AND a same-repo PR (a fork can't be pushed to).
+      AUTO: ${{ secrets.VRT_PAT != '' && github.event.pull_request.head.repo.full_name == github.repository }}
+      # PUBLISH is independent: host the report when the CF token is set on a same-repo PR.
+      PUBLISH: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && github.event.pull_request.head.repo.full_name == github.repository }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Always the PR head commit (not the merge ref): we merge main in
+          # explicitly below, in every mode, so the render is the PR on top of
+          # current main. Never persist a token; untrusted PR code runs below.
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      # The container runs as a different UID than the workspace owner, so mark
+      # it safe before any git command (the push step relies on this too).
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      # Render the PR ON TOP OF its base branch, and always diff against the
+      # BASE's committed baselines (never the PNGs committed on the PR branch).
+      # We do NOT trust an in-tree merge driver (a PR could edit .gitattributes
+      # to neutralize it); instead we merge, then inspect the ACTUAL conflicted
+      # paths ourselves (this workflow file comes from the trusted base branch,
+      # not the PR). A conflict only in the baseline images is fine, since we
+      # reset the baselines to the base next anyway; any conflict OUTSIDE the
+      # baseline dir is a real code conflict -> STOP and post a "skipped, update
+      # your branch" comment rather than diff a mis-merged tree.
+      - name: compare against the base branch's baselines
+        id: compare
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          SCREENS=apps/web/tests/visual/__screenshots__
+          PR_HEAD="$(git rev-parse HEAD)"
+          echo "pr_head=$PR_HEAD" >> "$GITHUB_OUTPUT"
+          git fetch --no-tags origin "$BASE_REF"
+          reset_baselines() {
+            if git rev-parse -q --verify "FETCH_HEAD:$SCREENS" >/dev/null; then
+              git checkout FETCH_HEAD -- "$SCREENS"
+            else
+              rm -rf "$SCREENS"
+              echo "::notice::No baselines on $BASE_REF yet; treating all snapshots as new."
+            fi
+          }
+          if git merge --no-edit FETCH_HEAD; then
+            echo "merge_ok=true" >> "$GITHUB_OUTPUT"
+            reset_baselines
+          elif [ -n "$(git diff --name-only --diff-filter=U)" ] && \
+               ! git diff --name-only --diff-filter=U | grep -qv "^$SCREENS/"; then
+            # Every conflicted path is under the baseline dir: acceptable, since
+            # the code merged cleanly and we reset the baselines to the base.
+            echo "merge_ok=true" >> "$GITHUB_OUTPUT"
+            reset_baselines
+          else
+            git merge --abort || true
+            echo "merge_ok=false" >> "$GITHUB_OUTPUT"
+            RUN_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            {
+              echo '<!-- vrt-report -->'
+              echo "### Visual review: skipped (branch conflicts with \`$BASE_REF\`)"
+              echo ''
+              echo "This PR conflicts with \`$BASE_REF\` outside the baseline images, so it cannot be rendered on top of the latest \`$BASE_REF\` for an accurate diff. Update the branch, resolve the conflicts, and push; the review re-runs automatically."
+              echo ''
+              echo "[Job log]($RUN_URL)"
+            } > vrt-comment.md
+          fi
+      # Install AFTER the merge, gated on it: the deps then match the merged
+      # tree (a behind branch picks up a dependency main bumped), and untrusted
+      # PR lifecycle scripts run only once we are past the base fetch/merge.
+      - name: install dependencies
+        if: ${{ steps.compare.outputs.merge_ok == 'true' }}
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+      - name: build VRT gallery
+        if: ${{ steps.compare.outputs.merge_ok == 'true' }}
+        run: pnpm --filter web run vrt:build
+      - name: visual regression check
+        id: vrt
+        if: ${{ steps.compare.outputs.merge_ok == 'true' }}
+        continue-on-error: true # advisory: a diff never blocks the merge
+        run: pnpm --filter web exec playwright test
+      # Publish the interactive report (expected/actual/diff slider) to a
+      # dedicated Cloudflare Pages project so the comment can link a click-to-view
+      # diff. Token exposed ONLY here, after untrusted PR code, same-repo only.
+      # A hosting hiccup must never fail the advisory job (comment falls back to
+      # the artifact). One-time setup: docs/dev/visual-testing.md.
+      # Pin wrangler by version from the registry, never `pnpm exec wrangler`
+      # from the PR-installed tree: the CF token must not run untrusted
+      # node_modules. Keep in lockstep with apps/web/package.json wrangler.
+      - name: publish report to Cloudflare Pages
+        id: deploy
+        if: ${{ steps.compare.outputs.merge_ok == 'true' && env.PUBLISH == 'true' && steps.vrt.outcome == 'failure' }}
+        continue-on-error: true
+        working-directory: apps/web
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: >
+          npx --yes wrangler@4.112.0 pages deploy playwright-report --project-name=q-web-vrt-reports --branch="pr-${PR_NUMBER}"
+      - name: build report + comment (AUTO stages actuals over baselines)
+        id: report
+        if: ${{ steps.compare.outputs.merge_ok == 'true' }}
+        env:
+          VRT_WRITE_BASELINES: ${{ env.AUTO == 'true' && '1' || '0' }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          # The comment says "match <base>": use the PR's actual base, not a
+          # hardcoded "main", so a stacked/release-branch PR is described truthfully.
+          VRT_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          VRT_REPORT_URL: ${{ steps.deploy.outcome == 'success' && format('https://pr-{0}.q-web-vrt-reports.pages.dev', github.event.pull_request.number) || '' }}
+        run: node scripts/check/vrt-report.mjs apps/web/vrt-results.json >> "$GITHUB_STEP_SUMMARY"
+      # Post the comment + artifact BEFORE the push: the push re-opens a run in
+      # this concurrency group that cancels this one, so the report goes first.
+      # Also creates the comment on the merge-conflict "skipped" path.
+      - name: upsert the sticky VRT comment
+        if: ${{ !cancelled() }}
+        # A fork PR runs with a read-only GITHUB_TOKEN, so createComment 403s;
+        # that must not red-X the advisory job. The report artifact + step
+        # summary still carry the diff for external contributors.
+        continue-on-error: true
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          # Pass step outputs through env, never interpolate them into the script.
+          HAS_CHANGES: ${{ steps.report.outputs.has_changes }}
+          MERGE_OK: ${{ steps.compare.outputs.merge_ok }}
+          UNAVAILABLE: ${{ steps.report.outputs.unavailable }}
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- vrt-report -->';
+            let body;
+            try { body = fs.readFileSync('vrt-comment.md', 'utf8'); }
+            catch {
+              // Reporter always writes under the repo root (REPO_ROOT), which is
+              // GITHUB_WORKSPACE here; a missing file means the report step did
+              // not run (cancelled / conflict path without a comment yet).
+              core.info('No vrt-comment.md; nothing to post.');
+              return;
+            }
+            const hasChanges = process.env.HAS_CHANGES === 'true';
+            const conflict = process.env.MERGE_OK === 'false';
+            const unavailable = process.env.UNAVAILABLE === 'true';
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner, repo, issue_number, per_page: 100,
+            });
+            // Scope to the bot's own comment: a human posting the marker text
+            // must not hijack (or get overwritten by) the sticky VRT comment.
+            const mine = comments.find(
+              (c) => c.user && c.user.type === 'Bot' && c.body && c.body.includes(marker),
+            );
+            // Sticky: update in place (incl. flipping to the all-clear when
+            // resolved, or back from the conflict "skipped" note). Only CREATE
+            // when there is something to say: a change, a conflict, or an
+            // unavailable report (the review could not actually run, which must
+            // not read as a silent green). An unaffected PR stays silent.
+            if (mine) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
+            } else if (hasChanges || conflict || unavailable) {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+      - name: upload report on diff
+        if: ${{ steps.report.outputs.has_changes == 'true' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: visual-report
+          path: apps/web/playwright-report/
+          retention-days: 7
+          if-no-files-found: ignore
+      # LAST: commit the refreshed baselines and push with the PAT (exposed only
+      # here). Anchored to the PR head (NOT the in-job merge commit): we stash the
+      # baseline dir (main's baselines + this PR's changed renders), hard-reset to
+      # the PR head, restore the dir, and commit only __screenshots__. So the push
+      # is a single baseline-only commit derived from the exact code diffed, with
+      # no bot merge-of-main commit rewriting the contributor's history. The
+      # botcheck skips this advisory job on that commit, so it does not loop.
+      - name: commit + push refreshed baselines (AUTO, on change)
+        id: push
+        if: ${{ steps.compare.outputs.merge_ok == 'true' && env.AUTO == 'true' && steps.report.outputs.has_changes == 'true' && (steps.report.outputs.wrote != '0' || steps.report.outputs.deleted != '0') }}
+        continue-on-error: true # a push race must not fail the advisory job; the next run reconciles
+        env:
+          VRT_PAT: ${{ secrets.VRT_PAT }}
+          HEAD_REF: ${{ github.head_ref }} # via env, never inline in the shell
+          PR_HEAD: ${{ steps.compare.outputs.pr_head }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          SCREENS=apps/web/tests/visual/__screenshots__
+          TMP="${RUNNER_TEMP:?RUNNER_TEMP is not set}/vrt-baselines"
+          rm -rf "$TMP"
+          cp -a "$SCREENS" "$TMP" # main's baselines + this PR's fresh renders (orphans already pruned)
+          git checkout -f "$PR_HEAD" # back to the PR tree (its deletions intact)
+          # Apply ONLY the baselines vrt-report refreshed / deleted (manifests),
+          # so a baseline the PR intentionally deleted stays deleted; copying
+          # the whole dir back would resurrect it as an orphan. Re-validate
+          # every manifest line in this trusted shell (basename + SAFE stem +
+          # path containment): the reporter ran from the merged PR tree.
+          safe_rel() {
+            local rel="$1"
+            # basename-only, png, kebab--kebab-(390|768|1280). Widths MUST match
+            # apps/web/tests/visual/widths.ts (single source for the spec +
+            # orphan prune). Kept inline because this workflow file is the
+            # trusted base-branch definition; do not shell out to PR-tree JS.
+            [[ "$rel" == "$(basename "$rel")" ]] || return 1
+            [[ "$rel" =~ ^[a-z0-9]+(-[a-z0-9]+)*--[a-z0-9]+(-[a-z0-9]+)*-(390|768|1280)\.png$ ]] || return 1
+            local dest
+            dest="$(realpath -m "$SCREENS/$rel")"
+            local root
+            root="$(realpath -m "$SCREENS")"
+            [[ "$dest" == "$root"/* ]] || return 1
+            return 0
+          }
+          if [ -f vrt-wrote-baselines.txt ]; then
+            while IFS= read -r rel || [ -n "$rel" ]; do
+              [ -n "$rel" ] || continue
+              if ! safe_rel "$rel"; then
+                echo "::warning::refusing unsafe baseline write '$rel'"
+                continue
+              fi
+              mkdir -p "$SCREENS"
+              cp -a "$TMP/$rel" "$SCREENS/$rel"
+              git add "$SCREENS/$rel"
+            done < vrt-wrote-baselines.txt
+          fi
+          if [ -f vrt-deleted-baselines.txt ]; then
+            while IFS= read -r rel || [ -n "$rel" ]; do
+              [ -n "$rel" ] || continue
+              if ! safe_rel "$rel"; then
+                echo "::warning::refusing unsafe baseline delete '$rel'"
+                continue
+              fi
+              if [ -f "$SCREENS/$rel" ] || git ls-files --error-unmatch "$SCREENS/$rel" >/dev/null 2>&1; then
+                git rm -f --ignore-unmatch "$SCREENS/$rel"
+              fi
+            done < vrt-deleted-baselines.txt
+          fi
+          if git diff --cached --quiet; then
+            echo "pushed=0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git commit --no-verify -m "chore(vrt): refresh visual baselines"
+          git push --no-verify "https://x-access-token:${VRT_PAT}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:$HEAD_REF"
+          echo "pushed=1" >> "$GITHUB_OUTPUT"
+      # Truthfulness guard: the comment optimistically says "merging adopts these
+      # baselines". If the push actually landed, this run is cancelled and this
+      # step is skipped (claim true). It only runs when the push did NOT land, and
+      # corrects the comment so it never claims a commit that did not happen.
+      - name: correct the comment if the baseline push did not land
+        if: ${{ steps.compare.outputs.merge_ok == 'true' && env.AUTO == 'true' && steps.report.outputs.has_changes == 'true' && (steps.report.outputs.wrote != '0' || steps.report.outputs.deleted != '0') && steps.push.outputs.pushed != '1' }}
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const marker = '<!-- vrt-report -->';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const warning =
+              '> [!WARNING]\n> The baseline auto-commit did not land (push failed or nothing to commit), ' +
+              `so the diff is accurate but not yet committed. See the [run log](${runUrl}); re-running reconciles.\n\n`;
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner, repo, issue_number, per_page: 100,
+            });
+            // Scope to the bot's own comment: a human posting the marker text
+            // must not hijack (or get overwritten by) the sticky VRT comment.
+            const mine = comments.find(
+              (c) => c.user && c.user.type === 'Bot' && c.body && c.body.includes(marker),
+            );
+            if (mine && !mine.body.includes('did not land')) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body: warning + mine.body });
+            }

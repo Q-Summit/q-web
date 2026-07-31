@@ -22,7 +22,7 @@ Advanced (JSON-only site, CF preview): [`docs/dev/local-development.md`](docs/de
 2. Keep diffs small and reviewable.
 3. Update every doc your change invalidates in the same PR (see [`docs/README.md`](docs/README.md)).
 4. Before you push, `make check` / `pnpm run check` must be green (pre-push runs it too; CI re-runs it). Pre-commit only runs `check:fast` (docs structure, markdownlint, cspell, prettier, design, cms styles, scripts tests) so commits stay quick. Dependency changes commit the updated `pnpm-lock.yaml` in the same PR (CI installs with `--frozen-lockfile`); note that pnpm resolves no release younger than 3 days (`pnpm-workspace.yaml`).
-5. Open a PR; `main` is protected and needs one review plus a green Checks run. Merge options: squash (default for small PRs; title and body become the commit), merge commit, or rebase (use those when you want the PR's atomic commits on `main`). PR titles stay prefixed (`feat:`, `fix:`, `docs:`, `ci:`, `chore:`), imperative, under 72 characters.
+5. Open a PR; `main` is protected and needs one review plus a green Checks run. UI changes also get an **advisory** Visual review comment (never a required status); review the diff or accept baselines per [`docs/dev/visual-testing.md`](docs/dev/visual-testing.md). Merge options: squash (default for small PRs; title and body become the commit), merge commit, or rebase (use those when you want the PR's atomic commits on `main`). PR titles stay prefixed (`feat:`, `fix:`, `docs:`, `ci:`, `chore:`), imperative, under 72 characters.
 
 ## House style
 
@@ -30,7 +30,7 @@ Advanced (JSON-only site, CF preview): [`docs/dev/local-development.md`](docs/de
 - No em or en dashes anywhere; use a comma, colon, or parentheses. The commit hook enforces this for commit messages, CI for files and for the PR title and body (title and body become the squash commit when you squash).
 - Spell check flags a real word: add it to `words` in `cspell.config.yaml` (sorted), never an inline disable.
 - Architecture-level choices need an ADR in [`docs/decisions/`](docs/decisions/) before code lands on them.
-- Visual identity: [`apps/web/DESIGN.md`](apps/web/DESIGN.md) and `pnpm run check:design`. SEO / `/llms.txt`: [`docs/editors/seo.md`](docs/editors/seo.md), [`docs/editors/llms.md`](docs/editors/llms.md).
+- Visual identity: [`apps/web/DESIGN.md`](apps/web/DESIGN.md) and `pnpm run check:design`. Component look regressions: co-located `*.vrt.ts` + [`docs/dev/visual-testing.md`](docs/dev/visual-testing.md). SEO / `/llms.txt`: [`docs/editors/seo.md`](docs/editors/seo.md), [`docs/editors/llms.md`](docs/editors/llms.md).
 - Never commit secrets or `.env` files; see the NEVER list in `AGENTS.md`.
 
 ## Security

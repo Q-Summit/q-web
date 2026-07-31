@@ -14,9 +14,13 @@
   // (Response, Request, DOMException, ...) if both were in the same program.
   "exclude": [
     "dist",
+    "dist-vrt",
     "worker",
     "worker-configuration.d.ts",
     "test",
-    "vitest.config.ts"
+    "vitest.config.ts",
+    "tests",
+    "playwright.config.ts",
+    "playwright-report"
   ]
 }

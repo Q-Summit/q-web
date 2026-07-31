@@ -1,0 +1,31 @@
+---
+// Minimal layout for the VRT gallery (src/pages/vrt/). It loads the SAME global
+// styles and self-hosted Montserrat font as the real Base layout, so a rendered
+// component is pixel-faithful to production, but drops Nav/Footer/SEO/live-preview
+// so a screenshot captures only the component under test. Never linked, never in
+// prod (the gallery route's getStaticPaths returns nothing unless VRT=1).
+import { Font } from "../lib/astro-assets";
+import "../styles/apply-global";
+---
+
+<!doctype html>
+<!-- data-vrt: signals VRT mode so client enhancements that settle to a
+     non-deterministic resting state (e.g. the speaker carousel) can skip and
+     leave the deterministic SSR layout for the screenshot. -->
+<html lang="en" data-vrt>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <Font cssVariable="--font-montserrat" preload />
+    <title>VRT gallery</title>
+    <style>
+      body {
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

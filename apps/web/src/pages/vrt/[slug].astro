@@ -1,0 +1,24 @@
+---
+// One page per component x variant, e.g. /vrt/home-stats-band--long-labels/.
+// The Playwright spec screenshots each of these. getStaticPaths returns nothing
+// unless VRT=1, so a normal `astro build` never emits any /vrt/ page and the
+// gallery cannot ship to production.
+import VrtGallery from "../../layouts/VrtGallery.astro";
+import { entries } from "../../vrt/collect";
+
+export function getStaticPaths() {
+  if (process.env.VRT !== "1") return [];
+  return entries.map((entry) => ({ params: { slug: entry.id }, props: entry }));
+}
+
+const { Component, props } = Astro.props;
+// Component is `unknown` at the type level (globbed module) but always an Astro
+// component factory at runtime. A variant may set a string `children` to fill
+// the component's default slot (e.g. a Button label); the rest are props.
+const Rendered = Component as any;
+const { children, ...rest } = props as { children?: unknown };
+---
+
+<VrtGallery>
+  <Rendered {...rest}>{children}</Rendered>
+</VrtGallery>

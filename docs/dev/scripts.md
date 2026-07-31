@@ -29,7 +29,7 @@ scripts/
   lib/                 paths, run, args, env, s3, human-confirm, …
   local/               setup, ensure-chrome, dev, assert-db, reset, web-remote
   content/             pull, export, import, propose, sync-scope
-  check/               fast, docs, design, cms-styles, build-web, budgets, lighthouse*, run-parallel, scripts.test
+  check/               fast, docs, design, cms-styles, build-web, budgets, lighthouse*, vrt-report, vrt-cleanup, run-parallel, scripts.test
   preview/             r2-sync, seed-local-r2, serve, cf, sync-picture-assets
   ops/                 mirror-db, mirror-media, cms-remote
   content-packages/    current/ (gitignored) + examples/
@@ -47,6 +47,7 @@ scripts/
 | Content drafts (down then up) | [`content-sync.md`](content-sync.md): `make pull ARGS='--collections faqs'` → edit `bundle.json` → `make propose` |
 | Local CF Worker + media | `make preview` |
 | Mobile Lighthouse (Q1) | `make lighthouse` → read `.lighthouse/AGENT.md` (local). Format: [`.lighthouse/README.md`](../../.lighthouse/README.md) + [`AGENT.example.md`](../../.lighthouse/AGENT.example.md) |
+| Visual regression (advisory PR review) | Runs in `.github/workflows/visual.yml` (comment + hosted report); local compare `pnpm --filter web run vrt:docker`; accept via AUTO / the `Update visual baselines` workflow / `vrt:docker:update`. Guide: [`visual-testing.md`](visual-testing.md) |
 | Wipe local DB volumes | `make reset-local` (human TTY) |
 | Neon / R2 / remote CMS admin (break-glass) | `pnpm ops:mirror-db` / `ops:mirror-media` / `ops:cms-remote` (prefer `make pull` for text) |
 | New GitHub labels / repo settings | `.github/admin/` |
@@ -130,6 +131,9 @@ Also (pnpm only): `content:import`, `content:fixture`, `picture:sync`, `seed:loc
 | `lighthouse-report.mjs` | Agent findings from LHR (CWV bands, CLS/LCP, opportunities) |
 | `lighthouse-urls.mjs` | Default audit routes |
 | `scripts.test.mjs` | Root scripts unit + fail-closed smoke (`check:scripts`) |
+| `vrt-report.mjs` | Playwright JSON into the sticky PR comment; AUTO stages refreshed baselines (advisory `visual.yml`, not in `check`) |
+| `vrt-report.test.mjs` | Unit tests for `vrt-report.mjs` (`check:scripts`) |
+| `vrt-cleanup.mjs` | Sweep closed PRs' Cloudflare Pages VRT reports (advisory `visual-cleanup.yml`) |
 | `run-parallel.mjs` | CLI: parallel `pnpm run` scripts |
 
 ### `preview/`

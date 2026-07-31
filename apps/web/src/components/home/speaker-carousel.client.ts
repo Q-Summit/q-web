@@ -120,9 +120,7 @@ function setUpSpeakerCarousel(root: HTMLElement) {
 
   // Controls.
   navButtons.forEach((button) => {
-    button.addEventListener("click", () =>
-      go(Number(button.dataset.dir) || 0),
-    );
+    button.addEventListener("click", () => go(Number(button.dataset.dir) || 0));
   });
   dots.forEach((dot) => {
     dot.addEventListener("click", () => {
@@ -249,6 +247,11 @@ function setUpSpeakerCarousel(root: HTMLElement) {
 }
 
 export function initSpeakerCarousels(): void {
+  // The VRT gallery marks <html data-vrt>; skip the carousel enhancement there
+  // so the screenshot captures the deterministic SSR layout. The live carousel
+  // does an idle recentre onto a viewport-dependent resting slide, which would
+  // otherwise vary the baseline between runs and breakpoints.
+  if (document.documentElement.hasAttribute("data-vrt")) return;
   document
     .querySelectorAll<HTMLElement>(".speakers-carousel")
     .forEach(setUpSpeakerCarousel);

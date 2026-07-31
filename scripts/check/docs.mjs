@@ -27,6 +27,12 @@ const SKIP_DIRS = new Set([
   "node_modules",
   ".git",
   "dist",
+  // VRT build output + Playwright run artifacts (gitignored, generated): the
+  // built HTML and the report carry upstream punctuation and are not authored
+  // docs, same rationale as dist.
+  "dist-vrt",
+  "playwright-report",
+  "test-results",
   ".astro",
   ".next",
   ".vercel",

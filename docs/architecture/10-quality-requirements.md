@@ -14,3 +14,4 @@
 | Q7 | Maintainability | A new maintainer after board handover → runs the full stack locally from repo docs alone within one day |
 | Q8 | AI discoverability | An assistant fetches `/llms.txt` → gets a factual identity block plus curated main-page links within one request; `/llms-full.txt` covers the main page sections without crawling HTML |
 | Q9 | Draft-only sync | `CONTENT_SYNC_TOKEN` is used (or stolen) → drafts may change in the sync user's divisions; Publish and Cloudflare deploy remain impossible ([content-sync](../dev/content-sync.md)) |
+| Q10 | Visual regression | A token or `global.css` edit reflows a component the author did not open → the advisory `visual.yml` job renders every variant, diffs against `main`'s baselines, and surfaces the change on the PR before merge; never a silent ship ([ADR-0007](../decisions/0007-visual-regression-testing.md)) |

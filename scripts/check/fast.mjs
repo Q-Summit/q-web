@@ -25,7 +25,10 @@ const parallel = [
   ],
   ["node", ["scripts/check/design.mjs"]],
   ["node", ["scripts/check/cms-styles.mjs"]],
-  ["node", ["--test", "scripts/check/scripts.test.mjs"]],
+  // check:scripts is the single source of truth for the scripts unit tests
+  // (both scripts.test.mjs and vrt-report.test.mjs); run it via pnpm so a new
+  // test file wired there is picked up by this gate too.
+  ["pnpm", ["run", "check:scripts"]],
 ];
 
 const codes = await Promise.all(

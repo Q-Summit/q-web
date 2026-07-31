@@ -1,0 +1,57 @@
+name: Update visual baselines
+
+# Manual fallback for the advisory visual.yml AUTO mode: regenerate the
+# committed VRT baselines ON THE RUNNER, in the SAME pinned Playwright image the
+# visual gate verifies against, then commit them to the selected branch. Use it
+# when AUTO is off (no VRT_PAT) or to force a full refresh. Dispatch it against
+# the PR's branch from the Actions tab; only users with write access can.
+# See docs/dev/visual-testing.md and ADR-0007.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write # commit the regenerated baselines back to the branch
+
+concurrency:
+  group: update-visual-baselines-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  update-baselines:
+    name: Update visual baselines
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Same image as visual.yml, so regenerated baselines match how the gate renders.
+    container: mcr.microsoft.com/playwright:v1.62.0-noble
+    # Playwright image defaults to sh; pipefail needs bash.
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.ref_name }}
+          persist-credentials: true # push the regenerated baselines back
+      # Container runs as a different UID than the workspace owner.
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter web run vrt:update
+      # vrt:update already prunes with --trust-gallery; this is a no-op safety
+      # net if the script ever drops the prune step.
+      - run: node scripts/check/vrt-report.mjs --prune-only --trust-gallery
+      - name: commit and push regenerated baselines
+        env:
+          REF: ${{ github.ref_name }} # via env, never interpolate a ref inline
+        run: |
+          set -euo pipefail
+          BASELINES=apps/web/tests/visual/__screenshots__
+          if [ -z "$(git status --porcelain -- "$BASELINES")" ]; then
+            echo "Baselines already match this environment; nothing to update."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A -- "$BASELINES"
+          git commit --no-verify -m "chore(vrt): refresh visual baselines"
+          git push --no-verify origin "HEAD:$REF"

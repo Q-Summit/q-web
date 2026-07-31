@@ -23,10 +23,12 @@ on:
 permissions:
   contents: read
 
-# One in-flight run per ref: a new push to a PR cancels the superseded run.
+# One in-flight run per ref: a new push to a PR cancels the superseded run,
+# but a run on main is never cancelled, so every merged commit is fully
+# verified even when merges land back to back.
 concurrency:
   group: checks-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   check:
