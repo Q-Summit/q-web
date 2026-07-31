@@ -20,6 +20,7 @@ import {
   renderManifest,
   reportFilterUrl,
   summarizeBuckets,
+  vrtSlugFromPath,
 } from "./vrt-report.mjs";
 
 // A minimal Playwright JSON report: one changed (has -diff), one added
@@ -444,54 +445,83 @@ test("buildReportBanner lists chips, hides PW outcome chips, defaults to changed
   assert.ok(!/Playwright's Passed\/Failed chips still count/.test(html));
 });
 
+test("vrtSlugFromPath mirrors collect.ts component ids", () => {
+  assert.equal(
+    vrtSlugFromPath("apps/web/src/components/home/StatsBand.vrt.ts"),
+    "home-stats-band",
+  );
+  assert.equal(
+    vrtSlugFromPath("apps/web/src/components/ui/Button.vrt.ts"),
+    "ui-button",
+  );
+});
+
 test("regroupReportFilesByComponent splits gallery.spec.ts by describe path", () => {
-  const files = regroupReportFilesByComponent([
-    {
-      fileId: "gallery-id",
-      fileName: "gallery.spec.ts",
-      tests: [
-        {
-          testId: "gallery-id-setup",
-          title: "gallery has entries",
-          path: [],
-          outcome: "expected",
-          ok: true,
-        },
-        {
-          testId: "gallery-id-a",
-          title: "[changed] default @ 390px",
-          path: ["ui-button"],
-          outcome: "unexpected",
-          ok: false,
-        },
-        {
-          testId: "gallery-id-b",
-          title: "[added] default @ 390px",
-          path: ["home-hero"],
-          outcome: "unexpected",
-          ok: false,
-        },
-        {
-          testId: "gallery-id-c",
-          title: "[changed] primary @ 768px",
-          path: ["ui-button"],
-          outcome: "unexpected",
-          ok: false,
-        },
-      ],
-      stats: { total: 4 },
-    },
+  const vrtFiles = new Map([
+    ["ui-button", "apps/web/src/components/ui/Button.vrt.ts"],
+    ["home-hero", "apps/web/src/components/home/Hero.vrt.ts"],
   ]);
+  const files = regroupReportFilesByComponent(
+    [
+      {
+        fileId: "gallery-id",
+        fileName: "gallery.spec.ts",
+        tests: [
+          {
+            testId: "gallery-id-setup",
+            title: "gallery has entries",
+            path: [],
+            outcome: "expected",
+            ok: true,
+            location: { file: "gallery.spec.ts", line: 33, column: 1 },
+          },
+          {
+            testId: "gallery-id-a",
+            title: "[changed] default @ 390px",
+            path: ["ui-button"],
+            outcome: "unexpected",
+            ok: false,
+            location: { file: "gallery.spec.ts", line: 56, column: 9 },
+          },
+          {
+            testId: "gallery-id-b",
+            title: "[added] default @ 390px",
+            path: ["home-hero"],
+            outcome: "unexpected",
+            ok: false,
+            location: { file: "gallery.spec.ts", line: 56, column: 9 },
+          },
+          {
+            testId: "gallery-id-c",
+            title: "[changed] primary @ 768px",
+            path: ["ui-button"],
+            outcome: "unexpected",
+            ok: false,
+            location: { file: "gallery.spec.ts", line: 56, column: 9 },
+          },
+        ],
+        stats: { total: 4 },
+      },
+    ],
+    vrtFiles,
+  );
   assert.deepEqual(
     files.map((f) => f.fileName),
-    ["gallery", "home-hero", "ui-button"],
+    [
+      "tests/visual/gallery.spec.ts",
+      "components/home/Hero.vrt.ts",
+      "components/ui/Button.vrt.ts",
+    ],
   );
   // testIds stay stable for sticky deep links.
-  assert.equal(files[2].tests[0].testId, "gallery-id-a");
-  assert.equal(files[2].tests.length, 2);
+  const button = files.find((f) => f.fileName.endsWith("Button.vrt.ts"));
+  assert.equal(button.tests[0].testId, "gallery-id-a");
+  assert.equal(button.tests.length, 2);
   // Component describe is the file; path no longer repeats it.
-  assert.deepEqual(files[2].tests[0].path, []);
-  assert.equal(files[1].fileName, "home-hero");
+  assert.deepEqual(button.tests[0].path, []);
+  // Source link no longer claims gallery.spec.ts:56 on every row.
+  assert.equal(button.tests[0].location.file, "components/ui/Button.vrt.ts");
+  assert.equal(button.tests[0].location.line, 1);
 });
 
 test("renderComment: lists orphan baselines without claiming deletion in COMPARE", () => {

@@ -696,13 +696,72 @@ function labelTestEntry(test, bucket) {
 }
 
 /**
+ * Mirror of apps/web/src/vrt/collect.ts slugFromPath:
+ * `…/components/home/StatsBand.vrt.ts` -> `home-stats-band`.
+ */
+export function vrtSlugFromPath(filePath) {
+  return String(filePath)
+    .replace(/^.*[/\\]components[/\\]/, "")
+    .replace(/\.vrt\.ts$/i, "")
+    .replace(/[/\\]/g, "-")
+    .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+    .toLowerCase();
+}
+
+/**
+ * Map component slug -> repo-relative `*.vrt.ts` path for report source links.
+ * Scanned from disk so the HTML report stops claiming every shot is
+ * `gallery.spec.ts:56`.
+ */
+export function mapVrtComponentFiles(
+  componentsRoot = path.join(REPO_ROOT, "apps/web/src/components"),
+) {
+  const out = new Map();
+  if (!existsSync(componentsRoot)) return out;
+  const stack = [componentsRoot];
+  while (stack.length) {
+    const dir = stack.pop();
+    let entries;
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const ent of entries) {
+      const full = path.join(dir, ent.name);
+      if (ent.isDirectory()) {
+        stack.push(full);
+        continue;
+      }
+      if (!ent.isFile() || !ent.name.endsWith(".vrt.ts")) continue;
+      const rel = path.relative(REPO_ROOT, full).split(path.sep).join("/");
+      const slug = vrtSlugFromPath(rel);
+      if (slug) out.set(slug, rel);
+    }
+  }
+  return out;
+}
+
+/** Short label for report accordion + source link (drop apps/web/src/). */
+export function displayVrtSource(component, vrtFiles = mapVrtComponentFiles()) {
+  if (component === "gallery") return "tests/visual/gallery.spec.ts";
+  const rel = vrtFiles.get(component);
+  if (rel) return rel.replace(/^apps\/web\/src\//, "");
+  return `${component}.vrt.ts`;
+}
+
+/**
  * Playwright's HTML report groups by test FILE. Our suite is one
  * `gallery.spec.ts` with `test.describe(component)`, so reviewers only see a
  * single "gallery.spec.ts" shell. Split that into one virtual file per
- * component (from `test.path[0]`) so the report top-level matches components
- * / `*.vrt.ts`. Keeps `testId`s stable so sticky deep links still work.
+ * component (from `test.path[0]`) and rewrite each test's `location.file`
+ * from `gallery.spec.ts` to the co-located `*.vrt.ts`. Keeps `testId`s
+ * stable so sticky deep links still work.
  */
-export function regroupReportFilesByComponent(files) {
+export function regroupReportFilesByComponent(
+  files,
+  vrtFiles = mapVrtComponentFiles(),
+) {
   if (!Array.isArray(files) || files.length === 0) return [];
   const out = [];
   for (const file of files) {
@@ -721,7 +780,22 @@ export function regroupReportFilesByComponent(files) {
       if (!byComponent.has(component)) byComponent.set(component, []);
       // Component describe becomes the file name; drop it from path so the UI
       // does not show `ui-button › ui-button › …`.
-      byComponent.get(component).push({ ...test, path: suitePath.slice(1) });
+      const sourceFile = displayVrtSource(component, vrtFiles);
+      const location = {
+        ...(test.location && typeof test.location === "object"
+          ? test.location
+          : {}),
+        file: sourceFile,
+        // Line in the runner is meaningless once regrouped; point at the
+        // declaration file instead of gallery.spec.ts:56 on every row.
+        line: 1,
+        column: 1,
+      };
+      byComponent.get(component).push({
+        ...test,
+        path: suitePath.slice(1),
+        location,
+      });
     }
     for (const component of [...byComponent.keys()].sort()) {
       const groupTests = byComponent.get(component);
@@ -729,9 +803,11 @@ export function regroupReportFilesByComponent(files) {
         .update(`vrt-component:${component}`)
         .digest("hex")
         .slice(0, 20);
+      const displayName = displayVrtSource(component, vrtFiles);
       out.push({
         fileId,
-        fileName: component,
+        // Prefer the real *.vrt.ts path as the top-level accordion label.
+        fileName: displayName,
         tests: groupTests,
         stats: {
           total: groupTests.length,
