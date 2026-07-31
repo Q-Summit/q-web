@@ -5,6 +5,7 @@ import {
   buildReportBanner,
   classifyByTestId,
   collectChanges,
+  COMMENT_EXPAND_VARIANT_ROWS,
   escapeInline,
   findOrphanBaselines,
   formatFailureLabel,
@@ -15,6 +16,7 @@ import {
   parseSnapshot,
   renderComment,
   renderManifest,
+  reportFilterUrl,
   summarizeBuckets,
 } from "./vrt-report.mjs";
 
@@ -332,7 +334,16 @@ test("summarizeBuckets / formatTally expose added·changed·same·failed", () =>
   ]);
 });
 
-test("renderComment: changes list the components and link the report", () => {
+test("reportFilterUrl deep-links Playwright search for a bucket", () => {
+  const base = "https://pr-9.q-web-vrt-reports.pages.dev";
+  assert.equal(
+    reportFilterUrl(`${base}/`, "changed"),
+    `${base}/#?q=${encodeURIComponent("[changed]")}`,
+  );
+  assert.equal(reportFilterUrl("", "added"), "");
+});
+
+test("renderComment: changed first, clear copy, no Playwright lecture", () => {
   const body = renderComment(collectChanges(report), {
     ok: true,
     reportUrl: "https://pr-9.q-web-vrt-reports.pages.dev",
@@ -343,13 +354,49 @@ test("renderComment: changes list the components and link the report", () => {
   assert.match(body, /1 added · 1 changed · 2 same · 1 failed/);
   assert.match(body, /home-stats-band/);
   assert.match(body, /q-web-vrt-reports\.pages\.dev\/#\?testId=id-changed/);
-  assert.match(body, /1 added snapshot/); // added accordion, listed first
-  assert.match(body, /1 changed snapshot/);
-  // Added section appears before changed in the body.
-  assert.ok(body.indexOf("added snapshot") < body.indexOf("changed snapshot"));
+  assert.match(body, /<summary>1 changed<\/summary>/);
+  assert.match(body, /<summary>1 added<\/summary>/);
+  assert.match(body, /<summary>1 failed \(render error\)<\/summary>/);
+  // Changed before added (review priority).
+  assert.ok(body.indexOf(">1 changed<") < body.indexOf(">1 added<"));
+  assert.ok(!/Playwright labels missing baselines/.test(body));
+  assert.match(body, /Open report/);
+  assert.ok(
+    body.includes(
+      reportFilterUrl("https://pr-9.q-web-vrt-reports.pages.dev", "changed"),
+    ),
+  );
 });
 
-test("buildReportBanner lists every bucket chip", () => {
+test("renderComment: large added lists compact to components", () => {
+  const added = new Map();
+  for (let i = 0; i < COMMENT_EXPAND_VARIANT_ROWS + 5; i++) {
+    added.set(`comp-${i}--default-390`, { id: `id-${i}`, actual: "/a.png" });
+    added.set(`comp-${i}--default-768`, { id: `id-${i}b`, actual: "/a.png" });
+  }
+  const reportUrl = "https://pr-9.q-web-vrt-reports.pages.dev";
+  const body = renderComment(
+    {
+      total: added.size,
+      changed: new Map(),
+      added,
+      removed: [],
+      otherFailures: [],
+    },
+    {
+      ok: true,
+      reportUrl,
+      committed: true,
+    },
+  );
+  assert.match(body, /Browse in the report/);
+  assert.ok(body.includes(reportFilterUrl(reportUrl, "added")));
+  assert.match(body, /variant/);
+  assert.ok(!/ , /.test(body)); // no weird double-spaced width joins
+  assert.match(body, /Baselines are staged/);
+});
+
+test("buildReportBanner lists chips, hides PW outcome chips, defaults to changed", () => {
   const html = buildReportBanner({
     baseRef: "main",
     tally: "3 added · 1 changed · 0 same · 0 failed",
@@ -361,7 +408,10 @@ test("buildReportBanner lists every bucket chip", () => {
   assert.match(html, /id="vrt-summary"/);
   assert.match(html, /Added 3/);
   assert.match(html, /data-vrt-filter="\[added\]"/);
-  assert.match(html, /VRT vs main/);
+  assert.match(html, /Visual review vs main/);
+  assert.match(html, /hidePlaywrightChips/);
+  assert.match(html, /var DEFAULT = "\[changed\]"/);
+  assert.ok(!/Playwright's Passed\/Failed chips still count/.test(html));
 });
 
 test("renderComment: lists orphan baselines without claiming deletion in COMPARE", () => {
@@ -375,8 +425,8 @@ test("renderComment: lists orphan baselines without claiming deletion in COMPARE
     },
     { ok: true, committed: false },
   );
-  assert.match(body, /orphan baseline/);
-  assert.match(body, /AUTO \/ vrt:update will delete/);
+  assert.match(body, /orphan/);
+  assert.match(body, /will delete on AUTO/);
   assert.match(body, /old-comp/);
 });
 

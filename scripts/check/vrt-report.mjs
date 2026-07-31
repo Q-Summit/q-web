@@ -401,10 +401,25 @@ export function formatTally({ nAdded, nChanged, nSame, nFailed }) {
   return `${nAdded} added · ${nChanged} changed · ${nSame} same · ${nFailed} failed`;
 }
 
+/** Hosted-report deep link that pre-fills Playwright search (title prefixes). */
+export function reportFilterUrl(reportBase, bucket) {
+  const base = String(reportBase || "").replace(/\/+$/, "");
+  if (!base) return "";
+  if (!bucket) return base;
+  return `${base}/#?q=${encodeURIComponent(`[${bucket}]`)}`;
+}
+
+/** How many variant rows to expand with per-width links before compacting. */
+export const COMMENT_EXPAND_VARIANT_ROWS = 20;
+
 /**
  * Render the sticky PR comment. One comment per PR, updated in place on every
  * push, including flipping back to the all-clear when a later commit removes
  * the change.
+ *
+ * Review UX: changed (pixel diffs) first, then failed, then a compact added
+ * list (component summary when large), then removed. No meta lectures about
+ * Playwright's internal Failed chip.
  */
 export function renderComment(stats, env = {}) {
   const {
@@ -448,101 +463,159 @@ export function renderComment(stats, env = {}) {
     out.push(
       "### Visual review: no changes",
       "",
-      `All ${total} snapshot${total === 1 ? "" : "s"} match \`${baseRef}\`.${commit ? `  (${commit})` : ""}`,
+      `All ${total} snapshot${total === 1 ? "" : "s"} match \`${baseRef}\`.${commit ? ` (${commit})` : ""}`,
     );
     return out.join("\n");
   }
 
-  const widthLink = (w) => {
+  const widthLink = (w, source) => {
     const label = w.width || "view";
-    const id = (changed.get(w.name) ?? added.get(w.name))?.id;
+    const id = source.get(w.name)?.id;
     if (reportBase && id) return `[${label}](${reportBase}/#?testId=${id})`;
     if (committed) return `[${label}](${filesUrl}#${filesAnchor(w.name)})`;
     return label;
   };
-  const accordion = (snapNames, summary, linkWidths = true) => {
-    const rows = groupChanges(snapNames).flatMap(({ component, variants }) =>
+
+  const variantRows = (snapNames) =>
+    groupChanges(snapNames).flatMap(({ component, variants }) =>
       variants.map(({ variant, widths }) => ({ component, variant, widths })),
     );
+
+  /** Full per-width accordion (for changed / small lists). */
+  const accordionDetailed = (snapNames, summary, source, linkWidths = true) => {
+    const rows = variantRows(snapNames);
     const lines = [`<details><summary>${summary}</summary>`, ""];
-    for (const { component, variant, widths } of rows.slice(0, 50)) {
+    for (const { component, variant, widths } of rows.slice(
+      0,
+      COMMENT_EXPAND_VARIANT_ROWS,
+    )) {
       const head = variant
-        ? `\`${escapeInline(component)}\` : ${escapeInline(variant)}`
+        ? `\`${escapeInline(component)}\` · ${escapeInline(variant)}`
         : `\`${escapeInline(component)}\``;
       const widthBits = linkWidths
-        ? widths.map(widthLink).join(" , ")
-        : widths.map((w) => w.width || "view").join(" , ");
+        ? widths.map((w) => widthLink(w, source)).join(", ")
+        : widths.map((w) => w.width || "view").join(", ");
       lines.push(`- **${head}** ${widthBits}`);
     }
-    if (rows.length > 50)
+    if (rows.length > COMMENT_EXPAND_VARIANT_ROWS) {
+      const more = rows.length - COMMENT_EXPAND_VARIANT_ROWS;
+      const browse = reportFilterUrl(reportBase, "changed");
       lines.push(
-        `- and ${rows.length - 50} more variants, see the full report`,
+        browse
+          ? `- …and ${more} more · [open in report](${browse})`
+          : `- …and ${more} more`,
       );
+    }
     lines.push("", "</details>");
     return lines;
   };
 
-  // Headline always lists added/changed/same/failed so a coverage PR is not
-  // misread as "1 component changed" when hundreds of snapshots are new.
+  /**
+   * Compact accordion for large "added" sets: one line per component, no
+   * width spam. Reviewers browse shots in the hosted report.
+   */
+  const accordionCompactComponents = (snapNames, summary, bucket) => {
+    const groups = groupChanges(snapNames);
+    const browse = reportFilterUrl(reportBase, bucket);
+    const lines = [`<details><summary>${summary}</summary>`, ""];
+    if (browse) {
+      lines.push(`[Browse in the report](${browse})`, "");
+    }
+    for (const { component, variants } of groups.slice(0, 60)) {
+      const nVar = variants.length;
+      const nShot = variants.reduce((acc, v) => acc + v.widths.length, 0);
+      lines.push(
+        `- \`${escapeInline(component)}\` · ${nVar} variant${nVar === 1 ? "" : "s"} (${nShot} shot${nShot === 1 ? "" : "s"})`,
+      );
+    }
+    if (groups.length > 60) {
+      lines.push(`- …and ${groups.length - 60} more components`);
+    }
+    lines.push("", "</details>");
+    return lines;
+  };
+
+  // Headline: clear tally. Reviewers should not need a second glossary line.
   out.push(
-    `### Visual review vs \`${baseRef}\`: ${formatTally({ nAdded, nChanged: n, nSame, nFailed })}`,
+    `### Visual review vs \`${baseRef}\``,
+    "",
+    formatTally({ nAdded, nChanged: n, nSame, nFailed }),
     "",
   );
 
-  // Hero line: the click-to-open hosted report and the commit under review.
   const hero = [];
-  if (reportBase) hero.push(`[Open the visual report](${reportBase})`);
-  if (commit) hero.push(`commit ${commit}`);
-  if (hero.length) out.push(hero.join("  |  "), "");
+  if (reportBase) {
+    // Prefer the bucket that needs review: changed > failed > added.
+    const defaultBucket = n > 0 ? "changed" : nFailed > 0 ? "failed" : "added";
+    hero.push(
+      `[Open report](${reportFilterUrl(reportBase, defaultBucket) || reportBase})`,
+    );
+  }
+  if (commit) hero.push(commit);
+  if (hero.length) out.push(hero.join(" · "), "");
 
-  out.push(
-    "Playwright labels missing baselines as Failed; **added** = new snapshot, **changed** = pixel diff, **same** = matches `" +
-      baseRef +
-      "`, **failed** = render error (not a pixel diff).",
-    "",
-  );
-
-  if (committed) {
+  if (n > 0 && nAdded > 0) {
     out.push(
-      "Merging this PR adopts these baselines. Review the diffs, then merge if intended.",
+      `Review **changed** pixel diffs first. **Added** means new vs \`${baseRef}\` (no baseline there yet).`,
       "",
     );
-  } else {
+  } else if (n > 0) {
+    out.push("Review the pixel diffs below.", "");
+  } else if (nAdded > 0) {
     out.push(
-      "This check is advisory and never blocks the merge. Review the diffs below.",
+      `**Added** snapshots are new vs \`${baseRef}\`. Open the report to preview them.`,
       "",
     );
   }
 
-  // Added first: that is usually the bulk of a coverage PR and what reviewers
-  // need to confirm is intentional, not a sea of red "failures".
-  if (nAdded > 0)
-    out.push(
-      ...accordion(
-        addedNames,
-        `${nAdded} added snapshot${nAdded === 1 ? "" : "s"}`,
-      ),
-    );
-  if (n > 0)
-    out.push(...accordion(names, `${n} changed snapshot${n === 1 ? "" : "s"}`));
-  if (nRemoved > 0)
-    out.push(
-      ...accordion(
-        removedNames,
-        committed
-          ? `${nRemoved} orphan baseline${nRemoved === 1 ? "" : "s"} deleted`
-          : `${nRemoved} orphan baseline${nRemoved === 1 ? "" : "s"} (no gallery entry; AUTO / vrt:update will delete)`,
-        false,
-      ),
-    );
+  if (committed) {
+    out.push("Baselines are staged on this PR. Merging adopts them.", "");
+  } else {
+    out.push("Advisory only: does not block merge.", "");
+  }
+
+  // Changed first: that is what humans must approve as intentional.
+  if (n > 0) {
+    out.push(...accordionDetailed(names, `${n} changed`, changed, true));
+  }
   if (nFailed > 0) {
+    const failLines = otherFailures
+      .slice(0, 40)
+      .map((t) => `- ${escapeInline(t)}`);
+    if (otherFailures.length > 40) {
+      failLines.push(`- …and ${otherFailures.length - 40} more`);
+    }
     out.push(
+      `<details><summary>${nFailed} failed (render error)</summary>`,
       "",
-      `<details><summary>${nFailed} failed (render issue${nFailed === 1 ? "" : "s"}, not a pixel diff)</summary>`,
-      "",
-      ...otherFailures.slice(0, 50).map((t) => `- ${escapeInline(t)}`),
+      ...failLines,
       "",
       "</details>",
+      "",
+    );
+  }
+  if (nAdded > 0) {
+    const addedRows = variantRows(addedNames);
+    const useCompact = addedRows.length > COMMENT_EXPAND_VARIANT_ROWS;
+    const addedSummary = `${nAdded} added`;
+    if (useCompact) {
+      out.push(
+        ...accordionCompactComponents(addedNames, addedSummary, "added"),
+      );
+    } else {
+      out.push(...accordionDetailed(addedNames, addedSummary, added, true));
+    }
+  }
+  if (nRemoved > 0) {
+    out.push(
+      ...accordionDetailed(
+        removedNames,
+        committed
+          ? `${nRemoved} removed`
+          : `${nRemoved} orphan${nRemoved === 1 ? "" : "s"} (will delete on AUTO)`,
+        new Map(),
+        false,
+      ),
     );
   }
   out.push("", `[Job log](${runUrl})`);
@@ -744,39 +817,101 @@ export function buildReportBanner({
 }) {
   // Inline CSS/JS only: the report is a static Pages deploy with no bundler.
   // Filters fill Playwright's search box with the title prefix we stamped on
-  // each test (`[added]`, …) so the built-in search narrows the list.
-  return `<div id="vrt-summary" role="region" aria-label="VRT summary" style="position:sticky;top:0;z-index:9999;background:#1b1b1f;color:#f0f0f0;border-bottom:1px solid #444;font:14px/1.4 ui-sans-serif,system-ui,sans-serif;padding:10px 16px;">
+  // each test (`[added]`, …). Playwright's own Passed/Failed chips are hidden:
+  // they count missing baselines as Failed and fight the VRT tally.
+  const defaultFilter =
+    nChanged > 0
+      ? "[changed]"
+      : nFailed > 0
+        ? "[failed]"
+        : nAdded > 0
+          ? "[added]"
+          : "";
+  const safeDefault = JSON.stringify(defaultFilter);
+  return `<div id="vrt-summary" role="region" aria-label="Visual review summary" style="position:sticky;top:0;z-index:9999;background:#141418;color:#f0f0f0;border-bottom:1px solid #333;font:14px/1.45 ui-sans-serif,system-ui,sans-serif;padding:12px 16px;">
+  <style>
+    /* Hide Playwright outcome chips (Failed N includes missing baselines). */
+    #vrt-hide-pw-chips ~ * a[href*="q=s:failed"],
+    #vrt-hide-pw-chips ~ * a[href*="q=s:passed"],
+    #vrt-hide-pw-chips ~ * a[href*="q=s:flaky"],
+    #vrt-hide-pw-chips ~ * a[href*="q=s:skipped"] { display: none !important; }
+    #vrt-filters button[aria-pressed="true"] { outline: 2px solid #9cf; outline-offset: 1px; }
+  </style>
+  <div id="vrt-hide-pw-chips" hidden></div>
   <div style="display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;">
-    <div><strong>VRT vs ${escapeInline(baseRef)}</strong>: ${escapeInline(tally)}</div>
-    <div style="display:flex;flex-wrap:wrap;gap:8px;" id="vrt-filters">
-      <button type="button" data-vrt-filter="[added]" style="cursor:pointer;border:1px solid #5a8;background:#1e3a2f;color:#cfe;border-radius:6px;padding:4px 10px;">Added ${nAdded}</button>
-      <button type="button" data-vrt-filter="[changed]" style="cursor:pointer;border:1px solid #a85;background:#3a2e1e;color:#fec;border-radius:6px;padding:4px 10px;">Changed ${nChanged}</button>
-      <button type="button" data-vrt-filter="[same]" style="cursor:pointer;border:1px solid #555;background:#2a2a2e;color:#ddd;border-radius:6px;padding:4px 10px;">Same ${nSame}</button>
-      <button type="button" data-vrt-filter="[failed]" style="cursor:pointer;border:1px solid #a55;background:#3a1e1e;color:#fcc;border-radius:6px;padding:4px 10px;">Failed ${nFailed}</button>
-      <button type="button" data-vrt-filter="" style="cursor:pointer;border:1px solid #666;background:transparent;color:#ddd;border-radius:6px;padding:4px 10px;">All</button>
+    <div>
+      <div style="font-size:12px;letter-spacing:.04em;text-transform:uppercase;opacity:.7;margin-bottom:2px;">Visual review vs ${escapeInline(baseRef)}</div>
+      <div style="font-size:16px;font-weight:600;">${escapeInline(tally)}</div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;" id="vrt-filters" role="group" aria-label="Filter by VRT bucket">
+      <button type="button" data-vrt-filter="[added]" aria-pressed="false" style="cursor:pointer;border:1px solid #3d7a5c;background:#1a3328;color:#d4f0e0;border-radius:6px;padding:5px 11px;">Added ${nAdded}</button>
+      <button type="button" data-vrt-filter="[changed]" aria-pressed="false" style="cursor:pointer;border:1px solid #8a6a3d;background:#332818;color:#f5e6c8;border-radius:6px;padding:5px 11px;">Changed ${nChanged}</button>
+      <button type="button" data-vrt-filter="[same]" aria-pressed="false" style="cursor:pointer;border:1px solid #555;background:#222226;color:#ccc;border-radius:6px;padding:5px 11px;">Same ${nSame}</button>
+      <button type="button" data-vrt-filter="[failed]" aria-pressed="false" style="cursor:pointer;border:1px solid #8a3d3d;background:#331818;color:#f0d0d0;border-radius:6px;padding:5px 11px;">Failed ${nFailed}</button>
+      <button type="button" data-vrt-filter="" aria-pressed="false" style="cursor:pointer;border:1px solid #666;background:transparent;color:#ddd;border-radius:6px;padding:5px 11px;">All</button>
     </div>
   </div>
-  <p style="margin:6px 0 0;opacity:.8;font-size:12px;">Playwright's Passed/Failed chips still count missing baselines as Failed. Use these filters (title prefixes) for the VRT buckets.</p>
 </div>
 <script>
 (function () {
+  var DEFAULT = ${safeDefault};
   function findSearch() {
     return document.querySelector('input[placeholder*="Search"], input[type="search"], [class*="search"] input');
   }
+  function hidePlaywrightChips() {
+    var root = document.getElementById("root") || document.body;
+    var links = root.querySelectorAll('a[href*="q=s:failed"], a[href*="q=s:passed"], a[href*="q=s:flaky"], a[href*="q=s:skipped"]');
+    for (var i = 0; i < links.length; i++) {
+      var el = links[i];
+      // Only hide chip-like nav links, not deep links inside the test list.
+      if (el.closest("[class*='chip']") || el.closest("nav") || (el.parentElement && el.parentElement.querySelectorAll("a").length >= 3 && el.textContent && /^(All|Passed|Failed|Flaky|Skipped)\\b/.test(el.textContent.trim()))) {
+        el.style.display = "none";
+      }
+    }
+    // Fallback: hide by visible label next to Search (Playwright header row).
+    var all = document.querySelectorAll("a");
+    for (var j = 0; j < all.length; j++) {
+      var t = (all[j].textContent || "").replace(/\\s+/g, " ").trim();
+      if (/^(Passed|Failed|Flaky|Skipped) \\d+$/.test(t)) all[j].style.display = "none";
+    }
+  }
+  function setPressed(q) {
+    var buttons = document.querySelectorAll("#vrt-filters [data-vrt-filter]");
+    for (var i = 0; i < buttons.length; i++) {
+      var b = buttons[i];
+      var v = b.getAttribute("data-vrt-filter") || "";
+      b.setAttribute("aria-pressed", v === q ? "true" : "false");
+    }
+  }
   function apply(q) {
     var input = findSearch();
-    if (!input) return;
+    if (!input) return false;
     var proto = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value");
     if (proto && proto.set) proto.set.call(input, q);
     else input.value = q;
     input.dispatchEvent(new Event("input", { bubbles: true }));
     input.dispatchEvent(new Event("change", { bubbles: true }));
+    setPressed(q);
+    return true;
+  }
+  function boot() {
+    hidePlaywrightChips();
+    if (DEFAULT) apply(DEFAULT);
   }
   document.getElementById("vrt-filters")?.addEventListener("click", function (e) {
     var btn = e.target.closest("[data-vrt-filter]");
     if (!btn) return;
     apply(btn.getAttribute("data-vrt-filter") || "");
   });
+  // Playwright mounts #root after our banner; retry briefly so chips hide + filter sticks.
+  boot();
+  var tries = 0;
+  var timer = setInterval(function () {
+    tries += 1;
+    hidePlaywrightChips();
+    if (DEFAULT) apply(DEFAULT);
+    if (tries >= 20 || findSearch()) clearInterval(timer);
+  }, 100);
 })();
 </script>`;
 }
