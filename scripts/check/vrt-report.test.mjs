@@ -7,6 +7,7 @@ import {
   collectChanges,
   escapeInline,
   findOrphanBaselines,
+  formatFailureLabel,
   formatTally,
   groupChanges,
   hasReportableChanges,
@@ -94,6 +95,57 @@ test("collectChanges buckets diff / added / failure and counts total", () => {
   assert.deepEqual([...s.changed.keys()], ["home-stats-band--default-1280"]);
   assert.deepEqual([...s.added.keys()], ["ui-button--new-390"]);
   assert.deepEqual(s.otherFailures, ["home-hero--default @ 768px"]);
+  assert.equal(s.failedById.get("id-failed"), "home-hero--default @ 768px");
+});
+
+test("collectChanges keeps distinct render failures under nested describes", () => {
+  const r = {
+    suites: [
+      {
+        title: "gallery.spec.ts",
+        suites: [
+          {
+            title: "ui-button",
+            specs: [
+              {
+                id: "fail-a",
+                title: "default @ 390px",
+                tests: [
+                  { status: "unexpected", results: [{ attachments: [] }] },
+                ],
+              },
+            ],
+          },
+          {
+            title: "home-hero",
+            specs: [
+              {
+                id: "fail-b",
+                title: "default @ 390px",
+                tests: [
+                  { status: "unexpected", results: [{ attachments: [] }] },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+  const s = collectChanges(r);
+  assert.deepEqual(s.otherFailures, [
+    "home-hero › default @ 390px",
+    "ui-button › default @ 390px",
+  ]);
+  assert.equal(s.failedById.size, 2);
+  assert.equal(
+    formatFailureLabel(["ui-button"], "default @ 390px"),
+    "ui-button › default @ 390px",
+  );
+  assert.deepEqual([...classifyByTestId(s).entries()].sort(), [
+    ["fail-a", "failed"],
+    ["fail-b", "failed"],
+  ]);
 });
 
 test("collectChanges treats actual+expected (no diff) as added too", () => {
@@ -276,6 +328,7 @@ test("summarizeBuckets / formatTally expose added·changed·same·failed", () =>
   assert.deepEqual([...classifyByTestId(s).entries()].sort(), [
     ["id-added", "added"],
     ["id-changed", "changed"],
+    ["id-failed", "failed"],
   ]);
 });
 

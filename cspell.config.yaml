@@ -29,6 +29,8 @@ ignorePaths:
   # Visual-regression fixtures: deliberate fake company names and German
   # variant copy, same content-shaped rationale as the CI content fixture.
   - "apps/web/src/components/**/*.vrt.ts"
+  # Tiny Python zip helper for the Playwright container.
+  - scripts/check/vrt-unzip.py
   # Symlink into .agents (checked via its real path).
   - .claude/skills
   # VS Code extension IDs are vendor handles, not project vocabulary.

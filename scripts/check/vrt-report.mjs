@@ -93,22 +93,50 @@ function rootScratch(name) {
   return path.join(REPO_ROOT, name);
 }
 
+/** Suite titles that are file paths, not useful describe() labels. */
+function isFileSuiteTitle(title) {
+  return /\.(?:spec|test)\.(?:[cm]?[jt]s|tsx?)$/i.test(title);
+}
+
+/**
+ * Human label for a render failure: include describe() ancestors so two
+ * components that both have `default @ 1280px` do not collapse into one entry.
+ */
+export function formatFailureLabel(suitePath, specTitle) {
+  const title =
+    typeof specTitle === "string" && specTitle.trim()
+      ? specTitle.trim()
+      : "(unnamed spec)";
+  const parts = [...suitePath, title];
+  return parts.join(" › ");
+}
+
 /**
  * Walk the Playwright JSON report and bucket each unexpected test:
  *   - changed: a -diff.png attachment means an existing baseline differs;
  *   - added: an -actual.png with no -diff.png means a brand-new snapshot
  *     (missing baseline, or updateSnapshots:'missing'); AUTO commits it;
  *   - otherFailures: no screenshot at all means a genuine render error.
+ *
+ * `failedById` maps Playwright spec/test id -> failure label so the HTML
+ * report enhance can tag failures even when titles collide across describes.
  */
 export function collectChanges(report) {
   const changed = new Map();
   const added = new Map();
   const otherFailures = new Set();
+  const failedById = new Map();
   let total = 0;
 
-  const visit = (suites) => {
+  const visit = (suites, suitePath = []) => {
     if (!Array.isArray(suites)) return;
     for (const suite of suites) {
+      const rawTitle =
+        typeof suite?.title === "string" ? suite.title.trim() : "";
+      const nextPath =
+        rawTitle && !isFileSuiteTitle(rawTitle)
+          ? [...suitePath, rawTitle]
+          : suitePath;
       for (const spec of Array.isArray(suite?.specs) ? suite.specs : []) {
         total += 1;
         for (const test of Array.isArray(spec?.tests) ? spec.tests : []) {
@@ -158,16 +186,24 @@ export function collectChanges(report) {
               expected: expectedBase === actualBase ? shot.expected : undefined,
             });
           } else {
-            otherFailures.add(spec?.title ?? "(unnamed spec)");
+            const label = formatFailureLabel(nextPath, spec?.title);
+            otherFailures.add(label);
+            if (id) failedById.set(id, label);
           }
         }
       }
-      visit(suite?.suites);
+      visit(suite?.suites, nextPath);
     }
   };
   visit(report?.suites);
 
-  return { total, changed, added, otherFailures: [...otherFailures].sort() };
+  return {
+    total,
+    changed,
+    added,
+    otherFailures: [...otherFailures].sort(),
+    failedById,
+  };
 }
 
 // True when a relative baseline filename is safe to copy/delete under
@@ -504,7 +540,7 @@ export function renderComment(stats, env = {}) {
       "",
       `<details><summary>${nFailed} failed (render issue${nFailed === 1 ? "" : "s"}, not a pixel diff)</summary>`,
       "",
-      ...otherFailures.slice(0, 50).map((t) => `- ${t}`),
+      ...otherFailures.slice(0, 50).map((t) => `- ${escapeInline(t)}`),
       "",
       "</details>",
     );
@@ -527,7 +563,9 @@ export function classifyByTestId(stats) {
   for (const [, a] of stats?.changed ?? []) {
     if (a?.id) byId.set(a.id, "changed");
   }
-  // Render failures have no stable attachment stem; match by exact title later.
+  for (const id of stats?.failedById?.keys?.() ?? []) {
+    byId.set(id, "failed");
+  }
   return byId;
 }
 
@@ -580,15 +618,11 @@ export function enhancePlaywrightReport(
     const zipPath = path.join(tmp, "report.zip");
     const extractDir = path.join(tmp, "out");
     writeFileSync(zipPath, Buffer.from(m[1], "base64"));
-    // Playwright's noble image ships python3 but not zip/unzip.
+    // Playwright's noble image ships python3 but not zip/unzip. The helper
+    // rejects Zip Slip members before writing.
     execFileSync(
       "python3",
-      [
-        "-c",
-        "import sys,zipfile; zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])",
-        zipPath,
-        extractDir,
-      ],
+      [path.join(REPO_ROOT, "scripts/check/vrt-unzip.py"), zipPath, extractDir],
       { stdio: "pipe" },
     );
 
@@ -601,7 +635,7 @@ export function enhancePlaywrightReport(
     }
     const reportJson = JSON.parse(readFileSync(reportJsonPath, "utf8"));
     const byId = classifyByTestId(stats);
-    const failTitles = new Set(stats?.otherFailures ?? []);
+    const failLabels = new Set(stats?.otherFailures ?? []);
     const buckets = summarizeBuckets(stats);
 
     const relabelTests = (tests) => {
@@ -609,15 +643,21 @@ export function enhancePlaywrightReport(
       for (const test of tests) {
         if (!test || typeof test !== "object") continue;
         let bucket = byId.get(test.testId);
+        if (!bucket && Array.isArray(test.path) && test.path.length) {
+          // HTML report nests describe titles in `path`; match the sticky label.
+          const bare =
+            test.title?.replace?.(VRT_TITLE_PREFIX, "") ?? test.title;
+          const label = formatFailureLabel(test.path, bare);
+          if (failLabels.has(label)) bucket = "failed";
+        }
+        // Flaky-but-passed counts as same in summarizeBuckets (not unexpected);
+        // label it the same way so the banner chips and titles agree.
         if (
           !bucket &&
-          failTitles.has(
-            test.title?.replace?.(VRT_TITLE_PREFIX, "") ?? test.title,
-          )
+          (test.outcome === "expected" || test.outcome === "flaky")
         ) {
-          bucket = "failed";
+          bucket = "same";
         }
-        if (!bucket && test.outcome === "expected") bucket = "same";
         if (!bucket && test.ok === false) {
           // Fallback: unexpected with no diff attachment in the HTML entry → added
           const shotAttachments = (test.results || []).flatMap(
@@ -757,10 +797,16 @@ if (invokedDirectly) {
   // gallery is complete: allow large intentional deletions. Standalone
   // `--prune-only` stays cautious so a stale dist-vrt cannot wipe the corpus.
   const trustGallery = process.argv.includes("--trust-gallery");
+  // Post-deploy pass: rewrite the sticky comment with the live Pages URL only
+  // (no re-staging, no second HTML rewrite). Set by visual.yml after deploy.
+  const commentOnly =
+    process.argv.includes("--comment-only") ||
+    process.env.VRT_COMMENT_ONLY === "1";
   const reportPath =
     process.argv.find((a, i) => i >= 2 && !a.startsWith("--")) ||
     "vrt-results.json";
-  const write = process.env.VRT_WRITE_BASELINES === "1" || pruneOnly;
+  const write =
+    !commentOnly && (process.env.VRT_WRITE_BASELINES === "1" || pruneOnly);
   const setOutput = (k, v) => {
     if (process.env.GITHUB_OUTPUT)
       appendFileSync(process.env.GITHUB_OUTPUT, `${k}=${v}\n`);
@@ -849,14 +895,19 @@ if (invokedDirectly) {
 
     const changes = hasReportableChanges(stats);
     const baseRef = process.env.VRT_BASE_REF || "main";
-    // Relabel the HTML report BEFORE Pages deploy (workflow runs this step
-    // first) so reviewers see Added/Changed/Same/Failed instead of a sea of
-    // Playwright "Failed" for missing baselines.
-    const htmlReportDir = path.join(REPO_ROOT, "apps/web/playwright-report");
-    enhancePlaywrightReport(htmlReportDir, stats, { baseRef });
+    const committed = commentOnly
+      ? process.env.VRT_COMMITTED === "true"
+      : write && (wrote > 0 || deleted.length > 0);
+    // Relabel the HTML report BEFORE Pages deploy so reviewers see
+    // Added/Changed/Same/Failed instead of a sea of Playwright "Failed".
+    // Skip on --comment-only: the HTML was already enhanced in the first pass.
+    if (!commentOnly) {
+      const htmlReportDir = path.join(REPO_ROOT, "apps/web/playwright-report");
+      enhancePlaywrightReport(htmlReportDir, stats, { baseRef });
+    }
     const body = renderComment(stats, {
       ok: true,
-      committed: write && (wrote > 0 || deleted.length > 0),
+      committed,
       reportUrl: process.env.VRT_REPORT_URL || "",
       baseRef,
       server: process.env.GITHUB_SERVER_URL,
@@ -866,10 +917,13 @@ if (invokedDirectly) {
       sha: process.env.PR_HEAD_SHA || process.env.GITHUB_SHA,
     });
     writeFileSync(rootScratch("vrt-comment.md"), body);
-    setOutput("has_changes", String(changes));
-    setOutput("wrote", String(wrote));
-    setOutput("deleted", String(deleted.length));
-    setOutput("unavailable", "false");
+    if (!commentOnly) {
+      setOutput("has_changes", String(changes));
+      setOutput("wrote", String(wrote));
+      setOutput("deleted", String(deleted.length));
+      setOutput("committed", String(committed));
+      setOutput("unavailable", "false");
+    }
     console.log(body);
   } catch (e) {
     const body = renderComment(

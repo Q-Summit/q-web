@@ -224,9 +224,10 @@ jobs:
         continue-on-error: true # advisory: a diff never blocks the merge
         run: pnpm --filter web exec playwright test
       # Classify Added/Changed/Same/Failed, rewrite the HTML report banner +
-      # titles, stage AUTO baselines, and write the sticky comment. MUST run
-      # before Pages deploy so the hosted report includes the VRT labels
-      # (Playwright alone marks every missing baseline as Failed).
+      # titles, stage AUTO baselines, and write the sticky comment (without a
+      # Pages URL yet). MUST run before Pages deploy so the hosted report
+      # includes the VRT labels (Playwright alone marks every missing baseline
+      # as Failed).
       - name: build report + comment (AUTO stages actuals over baselines)
         id: report
         if: ${{ steps.compare.outputs.merge_ok == 'true' }}
@@ -237,9 +238,8 @@ jobs:
           # The comment says "match <base>": use the PR's actual base, not a
           # hardcoded "main", so a stacked/release-branch PR is described truthfully.
           VRT_BASE_REF: ${{ github.event.pull_request.base.ref }}
-          # URL is deterministic per PR; set whenever we will publish so the
-          # comment can link before the deploy step finishes.
-          VRT_REPORT_URL: ${{ env.PUBLISH == 'true' && steps.vrt.outcome == 'failure' && format('https://pr-{0}.q-web-vrt-reports.pages.dev', github.event.pull_request.number) || '' }}
+          # No optimistic URL: a failed deploy must not leave a stale/404 link.
+          VRT_REPORT_URL: ""
         run: node scripts/check/vrt-report.mjs apps/web/vrt-results.json >> "$GITHUB_STEP_SUMMARY"
       # Publish the (already enhanced) interactive report. Token exposed ONLY
       # here, after untrusted PR code, same-repo only. Pin wrangler by version
@@ -256,6 +256,18 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: >
           npx --yes wrangler@4.112.0 pages deploy playwright-report --project-name=q-web-vrt-reports --branch="pr-${PR_NUMBER}"
+      # Only after a successful deploy: rewrite the sticky body with the live
+      # Pages URL. Keeps "Open the visual report" honest when publish fails.
+      - name: attach hosted report URL to comment
+        if: ${{ steps.deploy.outcome == 'success' }}
+        env:
+          VRT_COMMENT_ONLY: "1"
+          VRT_COMMITTED: ${{ steps.report.outputs.committed }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          VRT_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          VRT_REPORT_URL: ${{ format('https://pr-{0}.q-web-vrt-reports.pages.dev', github.event.pull_request.number) }}
+        run: node scripts/check/vrt-report.mjs apps/web/vrt-results.json --comment-only >> "$GITHUB_STEP_SUMMARY"
       # Post the comment + artifact BEFORE the push: the push re-opens a run in
       # this concurrency group that cancels this one, so the report goes first.
       # Also creates the comment on the merge-conflict "skipped" path.
