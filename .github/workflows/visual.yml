@@ -175,10 +175,13 @@ jobs:
           echo "pr_head=$PR_HEAD" >> "$GITHUB_OUTPUT"
           git fetch --no-tags origin "$BASE_REF"
           reset_baselines() {
+            # Wipe first: `git checkout TREE -- dir` updates files that exist in
+            # TREE but leaves PR-only paths in place. New coverage PNGs would
+            # then compare against themselves and silently pass review.
+            rm -rf "$SCREENS"
             if git rev-parse -q --verify "FETCH_HEAD:$SCREENS" >/dev/null; then
               git checkout FETCH_HEAD -- "$SCREENS"
             else
-              rm -rf "$SCREENS"
               echo "::notice::No baselines on $BASE_REF yet; treating all snapshots as new."
             fi
           }
