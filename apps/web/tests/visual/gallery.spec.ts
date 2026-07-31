@@ -16,6 +16,7 @@ const FREEZE = `*,*::before,*::after{animation:none!important;transition:none!im
 // Enumerate entries from the built gallery: each /vrt/<id>/ page is one
 // directory in dist-vrt. Read at collection time (before the web server starts)
 // so we generate one test per entry x width, which gives a granular report.
+// HTML report nests suites via test.describe(component) below.
 // `pnpm vrt` builds dist-vrt first.
 const galleryDir = new URL("../../dist-vrt/vrt/", import.meta.url);
 let entries: { id: string }[] = [];
