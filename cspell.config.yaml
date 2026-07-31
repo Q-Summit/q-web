@@ -29,6 +29,8 @@ ignorePaths:
   # Visual-regression fixtures: deliberate fake company names and German
   # variant copy, same content-shaped rationale as the CI content fixture.
   - "apps/web/src/components/**/*.vrt.ts"
+  # Tiny Python zip helper for the Playwright container.
+  - scripts/check/vrt-unzip.py
   # Symlink into .agents (checked via its real path).
   - .claude/skills
   # VS Code extension IDs are vendor handles, not project vocabulary.
@@ -97,6 +99,7 @@ words:
   - eslint
   - Ewma
   - extensionless
+  - extractall
   - externalagent
   - exxeta
   - featherlessai
@@ -241,6 +244,9 @@ words:
   - xxlarge
   - Zauber
   - zauber
+  # Python zip helpers used by vrt-report.mjs inside the Playwright container
+  # (python3 is present there; the zip/unzip CLIs are not).
+  - zipfile
   - zizmor
 overrides:
   # GitHub label colors are 6-digit hex codes, not words.

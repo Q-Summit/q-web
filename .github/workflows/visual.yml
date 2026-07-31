@@ -223,25 +223,11 @@ jobs:
         if: ${{ steps.compare.outputs.merge_ok == 'true' }}
         continue-on-error: true # advisory: a diff never blocks the merge
         run: pnpm --filter web exec playwright test
-      # Publish the interactive report (expected/actual/diff slider) to a
-      # dedicated Cloudflare Pages project so the comment can link a click-to-view
-      # diff. Token exposed ONLY here, after untrusted PR code, same-repo only.
-      # A hosting hiccup must never fail the advisory job (comment falls back to
-      # the artifact). One-time setup: docs/dev/visual-testing.md.
-      # Pin wrangler by version from the registry, never `pnpm exec wrangler`
-      # from the PR-installed tree: the CF token must not run untrusted
-      # node_modules. Keep in lockstep with apps/web/package.json wrangler.
-      - name: publish report to Cloudflare Pages
-        id: deploy
-        if: ${{ steps.compare.outputs.merge_ok == 'true' && env.PUBLISH == 'true' && steps.vrt.outcome == 'failure' }}
-        continue-on-error: true
-        working-directory: apps/web
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: >
-          npx --yes wrangler@4.112.0 pages deploy playwright-report --project-name=q-web-vrt-reports --branch="pr-${PR_NUMBER}"
+      # Classify Added/Changed/Same/Failed, rewrite the HTML report banner +
+      # titles, stage AUTO baselines, and write the sticky comment (without a
+      # Pages URL yet). MUST run before Pages deploy so the hosted report
+      # includes the VRT labels (Playwright alone marks every missing baseline
+      # as Failed).
       - name: build report + comment (AUTO stages actuals over baselines)
         id: report
         if: ${{ steps.compare.outputs.merge_ok == 'true' }}
@@ -252,8 +238,39 @@ jobs:
           # The comment says "match <base>": use the PR's actual base, not a
           # hardcoded "main", so a stacked/release-branch PR is described truthfully.
           VRT_BASE_REF: ${{ github.event.pull_request.base.ref }}
-          VRT_REPORT_URL: ${{ steps.deploy.outcome == 'success' && format('https://pr-{0}.q-web-vrt-reports.pages.dev', github.event.pull_request.number) || '' }}
+          # No optimistic URL: a failed deploy must not leave a stale/404 link.
+          VRT_REPORT_URL: ""
         run: node scripts/check/vrt-report.mjs apps/web/vrt-results.json >> "$GITHUB_STEP_SUMMARY"
+      # Publish the (already enhanced) interactive report. Token exposed ONLY
+      # here, after untrusted PR code, same-repo only. Pin wrangler by version
+      # from the registry, never `pnpm exec wrangler` from the PR-installed
+      # tree. Keep in lockstep with apps/web/package.json wrangler.
+      - name: publish report to Cloudflare Pages
+        id: deploy
+        # Publish on pixel diffs (Playwright failure) OR other reportable
+        # changes (e.g. orphan-only) so reviewers always get a hosted report
+        # when the sticky has something to say.
+        if: ${{ steps.compare.outputs.merge_ok == 'true' && env.PUBLISH == 'true' && (steps.vrt.outcome == 'failure' || steps.report.outputs.has_changes == 'true') }}
+        continue-on-error: true
+        working-directory: apps/web
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: >
+          npx --yes wrangler@4.112.0 pages deploy playwright-report --project-name=q-web-vrt-reports --branch="pr-${PR_NUMBER}"
+      # Only after a successful deploy: rewrite the sticky body with the live
+      # Pages URL. Keeps "Open the visual report" honest when publish fails.
+      - name: attach hosted report URL to comment
+        if: ${{ steps.deploy.outcome == 'success' }}
+        env:
+          VRT_COMMENT_ONLY: "1"
+          VRT_COMMITTED: ${{ steps.report.outputs.committed }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          VRT_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          VRT_REPORT_URL: ${{ format('https://pr-{0}.q-web-vrt-reports.pages.dev', github.event.pull_request.number) }}
+        run: node scripts/check/vrt-report.mjs apps/web/vrt-results.json --comment-only >> "$GITHUB_STEP_SUMMARY"
       # Post the comment + artifact BEFORE the push: the push re-opens a run in
       # this concurrency group that cancels this one, so the report goes first.
       # Also creates the comment on the merge-conflict "skipped" path.
