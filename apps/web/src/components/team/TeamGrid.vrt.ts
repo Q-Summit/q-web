@@ -1,6 +1,7 @@
-// VRT variants for TeamGrid. Covers a normal division, a long name that
-// must wrap next to the LinkedIn icon, a member without a LinkedIn link,
-// and an empty grid.
+// VRT variants for TeamGrid. The default grid covers the full contact-icon
+// matrix (LinkedIn + mail, LinkedIn only, mail only, neither), long-name
+// stresses a wrapping name next to both icons, and empty guards the
+// no-members render.
 import TeamGrid from "./TeamGrid.astro";
 import type { TeamMember } from "../../lib/content";
 
@@ -11,6 +12,7 @@ const member = (overrides: Partial<TeamMember> = {}): TeamMember => ({
   photoFilename: "nora-albrecht.jpg",
   year: "2026",
   linkedin: "https://www.linkedin.com/in/nora-albrecht",
+  email: "nora.albrecht@example.com",
   ...overrides,
 });
 
@@ -24,6 +26,14 @@ export default {
           name: "Tobias Kramer",
           role: "Vice Chair",
           photoFilename: "tobias-kramer.jpg",
+          email: undefined,
+        }),
+        member({
+          name: "Amira Haddad",
+          role: "Head of Finance",
+          division: "Finance",
+          photoFilename: "amira-haddad.jpg",
+          linkedin: undefined,
         }),
         member({
           name: "Sofia Marchetti",
@@ -31,6 +41,7 @@ export default {
           division: "Operations",
           photoFilename: "sofia-marchetti.jpg",
           linkedin: undefined,
+          email: undefined,
         }),
       ],
     },
