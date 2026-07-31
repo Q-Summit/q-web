@@ -661,6 +661,59 @@ function labelTestEntry(test, bucket) {
 }
 
 /**
+ * Playwright's HTML report groups by test FILE. Our suite is one
+ * `gallery.spec.ts` with `test.describe(component)`, so reviewers only see a
+ * single "gallery.spec.ts" shell. Split that into one virtual file per
+ * component (from `test.path[0]`) so the report top-level matches components
+ * / `*.vrt.ts`. Keeps `testId`s stable so sticky deep links still work.
+ */
+export function regroupReportFilesByComponent(files) {
+  if (!Array.isArray(files) || files.length === 0) return [];
+  const out = [];
+  for (const file of files) {
+    const tests = Array.isArray(file?.tests) ? file.tests : [];
+    const isGalleryShell =
+      typeof file?.fileName === "string" &&
+      /(^|[/\\])gallery\.spec\.[cm]?[jt]s$/i.test(file.fileName);
+    if (!isGalleryShell || tests.length === 0) {
+      out.push(file);
+      continue;
+    }
+    const byComponent = new Map();
+    for (const test of tests) {
+      const suitePath = Array.isArray(test?.path) ? test.path : [];
+      const component = suitePath.length > 0 ? String(suitePath[0]) : "gallery";
+      if (!byComponent.has(component)) byComponent.set(component, []);
+      // Component describe becomes the file name; drop it from path so the UI
+      // does not show `ui-button › ui-button › …`.
+      byComponent.get(component).push({ ...test, path: suitePath.slice(1) });
+    }
+    for (const component of [...byComponent.keys()].sort()) {
+      const groupTests = byComponent.get(component);
+      const fileId = createHash("sha256")
+        .update(`vrt-component:${component}`)
+        .digest("hex")
+        .slice(0, 20);
+      out.push({
+        fileId,
+        fileName: component,
+        tests: groupTests,
+        stats: {
+          total: groupTests.length,
+          expected: groupTests.filter((t) => t.outcome === "expected").length,
+          unexpected: groupTests.filter((t) => t.outcome === "unexpected")
+            .length,
+          flaky: groupTests.filter((t) => t.outcome === "flaky").length,
+          skipped: groupTests.filter((t) => t.outcome === "skipped").length,
+          ok: groupTests.every((t) => t.ok !== false),
+        },
+      });
+    }
+  }
+  return out;
+}
+
+/**
  * Rewrite the Playwright HTML report so Added / Changed / Same / Failed are
  * visible: title prefixes plus a sticky banner with filter chips.
  * Playwright's own Passed/Failed chips are hidden (they count missing
@@ -747,12 +800,24 @@ export function enhancePlaywrightReport(
 
     for (const file of reportJson.files || []) {
       relabelTests(file.tests);
-      const fileJsonPath = path.join(extractDir, `${file.fileId}.json`);
-      if (existsSync(fileJsonPath)) {
-        const fileJson = JSON.parse(readFileSync(fileJsonPath, "utf8"));
-        relabelTests(fileJson.tests);
-        writeFileSync(fileJsonPath, JSON.stringify(fileJson));
+    }
+    // One file per component (not one giant gallery.spec.ts). testIds stay so
+    // sticky deep links keep working.
+    reportJson.files = regroupReportFilesByComponent(reportJson.files || []);
+    for (const name of readdirSync(extractDir)) {
+      if (name !== "report.json" && name.endsWith(".json")) {
+        unlinkSync(path.join(extractDir, name));
       }
+    }
+    for (const file of reportJson.files) {
+      writeFileSync(
+        path.join(extractDir, `${file.fileId}.json`),
+        JSON.stringify({
+          fileId: file.fileId,
+          fileName: file.fileName,
+          tests: file.tests,
+        }),
+      );
     }
     // Stash the VRT tally on metadata so a future UI can read it; harmless today.
     reportJson.metadata = {
@@ -797,7 +862,9 @@ export function enhancePlaywrightReport(
       html = html.replace("<body>", `<body>\n${banner}\n`);
     }
     writeFileSync(indexPath, html);
-    console.log(`vrt-report: enhanced HTML report (${tally})`);
+    console.log(
+      `vrt-report: enhanced HTML report (${tally}; ${reportJson.files.length} component groups)`,
+    );
     return true;
   } catch (e) {
     console.log(`vrt-report: could not enhance HTML report (${e.message})`);

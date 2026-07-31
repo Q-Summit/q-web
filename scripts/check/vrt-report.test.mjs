@@ -14,6 +14,7 @@ import {
   hasReportableChanges,
   isSafeBaselineRel,
   parseSnapshot,
+  regroupReportFilesByComponent,
   renderComment,
   renderManifest,
   reportFilterUrl,
@@ -413,6 +414,56 @@ test("buildReportBanner lists chips, hides PW outcome chips, defaults to changed
   assert.ok(html.includes("q=s%3A") || html.includes('href*="q=s%3A"'));
   assert.match(html, /var DEFAULT = "\[changed\]"/);
   assert.ok(!/Playwright's Passed\/Failed chips still count/.test(html));
+});
+
+test("regroupReportFilesByComponent splits gallery.spec.ts by describe path", () => {
+  const files = regroupReportFilesByComponent([
+    {
+      fileId: "gallery-id",
+      fileName: "gallery.spec.ts",
+      tests: [
+        {
+          testId: "gallery-id-setup",
+          title: "gallery has entries",
+          path: [],
+          outcome: "expected",
+          ok: true,
+        },
+        {
+          testId: "gallery-id-a",
+          title: "[changed] default @ 390px",
+          path: ["ui-button"],
+          outcome: "unexpected",
+          ok: false,
+        },
+        {
+          testId: "gallery-id-b",
+          title: "[added] default @ 390px",
+          path: ["home-hero"],
+          outcome: "unexpected",
+          ok: false,
+        },
+        {
+          testId: "gallery-id-c",
+          title: "[changed] primary @ 768px",
+          path: ["ui-button"],
+          outcome: "unexpected",
+          ok: false,
+        },
+      ],
+      stats: { total: 4 },
+    },
+  ]);
+  assert.deepEqual(
+    files.map((f) => f.fileName),
+    ["gallery", "home-hero", "ui-button"],
+  );
+  // testIds stay stable for sticky deep links.
+  assert.equal(files[2].tests[0].testId, "gallery-id-a");
+  assert.equal(files[2].tests.length, 2);
+  // Component describe is the file; path no longer repeats it.
+  assert.deepEqual(files[2].tests[0].path, []);
+  assert.equal(files[1].fileName, "home-hero");
 });
 
 test("renderComment: lists orphan baselines without claiming deletion in COMPARE", () => {
