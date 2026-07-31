@@ -71,26 +71,25 @@ jobs:
               const baselinesOnly = files.length > 0 && files.every(
                 (f) => f.filename.startsWith('apps/web/tests/visual/__screenshots__/'),
               );
-              // Require a GitHub-linked bot actor (login), not forgeable git
-              // author email: a human `git commit --author=...` must still be
-              // re-rendered. Only a real github-actions[bot] AUTO commit skips.
-              // Attribution comes from the commit email
-              // (41898282+github-actions[bot]@users.noreply.github.com), which
-              // the push step sets; the VRT_PAT only authenticates the push.
+              // AUTO commits set author = PR contributor (so squash merges do
+              // not list github-actions[bot] as a co-author) and committer =
+              // github-actions[bot] (noreply email). Require the GitHub-linked
+              // committer login, not forgeable author email, so a human
+              // `git commit --author=...` still gets re-rendered. The VRT_PAT
+              // only authenticates the push.
               const byBot =
-                (head.author && head.author.login === 'github-actions[bot]') ||
-                (head.committer && head.committer.login === 'github-actions[bot]');
+                head.committer && head.committer.login === 'github-actions[bot]';
               const botBaseline = sameRepo && messageOk && baselinesOnly && byBot;
               core.setOutput('bot_baseline', String(botBaseline));
-              // If this looks like an AUTO commit but GitHub did not map it to
-              // the bot login, the visual job will re-run and may loop. Surface
-              // that loudly so a misconfigured VRT_PAT / email is caught on the
-              // first enablement, not after burning CI minutes.
+              // If this looks like an AUTO commit but GitHub did not map the
+              // committer to the bot login, the visual job will re-run and may
+              // loop. Surface that loudly so a misconfigured VRT_PAT / email is
+              // caught on the first enablement, not after burning CI minutes.
               if (sameRepo && messageOk && baselinesOnly && !byBot) {
                 core.warning(
-                  'Commit looks like an AUTO baseline refresh but is not attributed to github-actions[bot] ' +
+                  'Commit looks like an AUTO baseline refresh but committer is not github-actions[bot] ' +
                     `(author=${head.author && head.author.login}, committer=${head.committer && head.committer.login}). ` +
-                    'Confirm the push step still sets the bot noreply email; otherwise the visual job may loop.',
+                    'Confirm the push step still sets the bot noreply email as committer; otherwise the visual job may loop.',
                 );
               }
             } catch (e) {
@@ -176,10 +175,13 @@ jobs:
           echo "pr_head=$PR_HEAD" >> "$GITHUB_OUTPUT"
           git fetch --no-tags origin "$BASE_REF"
           reset_baselines() {
+            # Wipe first: `git checkout TREE -- dir` updates files that exist in
+            # TREE but leaves PR-only paths in place. New coverage PNGs would
+            # then compare against themselves and silently pass review.
+            rm -rf "$SCREENS"
             if git rev-parse -q --verify "FETCH_HEAD:$SCREENS" >/dev/null; then
               git checkout FETCH_HEAD -- "$SCREENS"
             else
-              rm -rf "$SCREENS"
               echo "::notice::No baselines on $BASE_REF yet; treating all snapshots as new."
             fi
           }
@@ -326,8 +328,13 @@ jobs:
           VRT_PAT: ${{ secrets.VRT_PAT }}
           HEAD_REF: ${{ github.head_ref }} # via env, never inline in the shell
           PR_HEAD: ${{ steps.compare.outputs.pr_head }}
+          # Fallback when the PR tip has no non-bot author (should not happen).
+          PR_USER: ${{ github.event.pull_request.user.login }}
+          PR_USER_ID: ${{ github.event.pull_request.user.id }}
         run: |
           set -euo pipefail
+          # Committer = Actions bot (botcheck + push identity). Author = the PR
+          # contributor so GitHub squash merges do not list the bot as co-author.
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           SCREENS=apps/web/tests/visual/__screenshots__
@@ -335,6 +342,15 @@ jobs:
           rm -rf "$TMP"
           cp -a "$SCREENS" "$TMP" # main's baselines + this PR's fresh renders (orphans already pruned)
           git checkout -f "$PR_HEAD" # back to the PR tree (its deletions intact)
+          PR_AUTHOR=$(
+            git log -5 --format='%an <%ae>' "$PR_HEAD" \
+              | grep -v 'github-actions\[bot\]' \
+              | head -1 \
+              || true
+          )
+          if [ -z "$PR_AUTHOR" ]; then
+            PR_AUTHOR="${PR_USER} <${PR_USER_ID}+${PR_USER}@users.noreply.github.com>"
+          fi
           # Apply ONLY the baselines vrt-report refreshed / deleted (manifests),
           # so a baseline the PR intentionally deleted stays deleted; copying
           # the whole dir back would resurrect it as an orphan. Re-validate
@@ -383,7 +399,7 @@ jobs:
             echo "pushed=0" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          git commit --no-verify -m "chore(vrt): refresh visual baselines"
+          git commit --no-verify --author="$PR_AUTHOR" -m "chore(vrt): refresh visual baselines"
           git push --no-verify "https://x-access-token:${VRT_PAT}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:$HEAD_REF"
           echo "pushed=1" >> "$GITHUB_OUTPUT"
       # Truthfulness guard: the comment optimistically says "merging adopts these
