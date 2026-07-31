@@ -10,6 +10,7 @@ Maintainer how-tos. Extends [`../AGENTS.md`](../AGENTS.md). Index: [`README.md`]
 | Clone, Docker, seed, Astro/CMS, local CF preview | [`local-development.md`](local-development.md) |
 | Pull / package / propose, upsert keys, sync security | [`content-sync.md`](content-sync.md) |
 | Production CF / Vercel keys | [`go-live.md`](go-live.md) |
+| Visual regression (`*.vrt.ts`, baselines, advisory CI) | [`visual-testing.md`](visual-testing.md) |
 | Incident response runbook | [`incident.md`](incident.md) |
 | Topology / system truth | [`../architecture/`](../architecture/) |
 | Root MAY/NEVER | [`../../AGENTS.md`](../../AGENTS.md) |

@@ -26,6 +26,9 @@ ignorePaths:
   - LEGAL.md
   # Content-shaped fixture data (job titles, German legal HTML, etc.).
   - apps/web/test/fixtures/ci-content/**
+  # Visual-regression fixtures: deliberate fake company names and German
+  # variant copy, same content-shaped rationale as the CI content fixture.
+  - "apps/web/src/components/**/*.vrt.ts"
   # Symlink into .agents (checked via its real path).
   - .claude/skills
   # VS Code extension IDs are vendor handles, not project vocabulary.
@@ -43,6 +46,7 @@ ignorePaths:
   - apps/cms/src/migrations/**
 useGitignore: true
 words:
+  - actuals
   - adrs
   - affordances
   - afterparty
@@ -55,6 +59,7 @@ words:
   - aula
   - authjs
   - autoplaying
+  - autoplays
   - auxww
   - axeltaubertphoto
   - baselined
@@ -62,6 +67,7 @@ words:
   - Bblack
   - Blau
   - blockquotes
+  - botcheck
   - Bytespider
   - changeme
   - CHANGEME
@@ -80,7 +86,9 @@ words:
   - Dedup
   - desync
   - disambiguator
+  - distros
   - docstrings
+  - dorny
   - downgradeable
   - dtcg
   - elevenlabs
@@ -136,6 +144,7 @@ words:
   - Mannheim
   - maximalism
   - Mbps
+  - metacharacter
   - miniflare
   - misalign
   - moto
@@ -150,6 +159,7 @@ words:
   - oauth
   - oklab
   - oklch
+  - passwordless
   - payloadcms
   - PGDATABASE
   - PGHOST
@@ -157,6 +167,7 @@ words:
   - PGPORT
   - PGSSLMODE
   - PGUSER
+  - pipefail
   - pitchbattle
   - PITR
   - PKCE

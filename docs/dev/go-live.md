@@ -12,6 +12,19 @@ Documented as owed work in [architecture/09](../architecture/09-architecture-dec
 
 Publish → Workers Builds is **shipped** ([architecture/06](../architecture/06-runtime.md)): live-site changes POST `CLOUDFLARE_DEPLOY_HOOK_URL`. Set that URL on the Vercel CMS project and as the GitHub secret for **Rebuild site**. Cloudflare dedupes bursts ([Deploy Hooks](https://developers.cloudflare.com/workers/ci-cd/builds/deploy-hooks/)).
 
+## Repository branch protection
+
+Every merge to `main` deploys, so `main` must be protected. In the repo settings, protect `main` and mark the **Checks** status (`.github/workflows/checks.yml`) as a **required** status check. GitHub branch protection is not expressible in the repo, so it is set once here. The visual-regression check is **advisory** and intentionally NOT a required status ([visual-testing.md](visual-testing.md)).
+
+**"Require branches up to date" is optional and left off by default** to avoid the per-PR update chore. It is safe to omit: `Checks` re-runs on `push: main`, so a bad merge goes red on `main` immediately (post-merge detection rather than pre-merge prevention), and visual baselines are committed PNGs that git 3-way-merges (different components merge cleanly; the same component hits a binary conflict that forces a re-render), with `visual-propagate.yml` keeping open PRs fresh after each merge. Enable it only if you want to prevent a red `main` rather than react to one.
+
+## Visual review secrets (optional, for seamless mode)
+
+The visual-regression review ([visual-testing.md](visual-testing.md)) works with no secrets (COMPARE mode: a PR comment + a downloadable report). To light up the hosted report and automatic baseline commits, add:
+
+- A Cloudflare **Pages** project named `q-web-vrt-reports` (Direct Upload), plus repo secrets `CLOUDFLARE_API_TOKEN` (Pages:Edit) and `CLOUDFLARE_ACCOUNT_ID` (PUBLISH mode: hosts the click-to-view report). The report is public, which is safe here: it only ever shows template-fixture renders with images neutralized to placeholder glyphs, never production content. An **Access** policy is optional if you want to restrict viewing anyway.
+- A `VRT_PAT` repo secret, a fine-grained token with `contents: write` on this repo (AUTO mode: the job commits refreshed baselines onto the PR branch, and `visual-propagate` re-runs updated PRs; the default `GITHUB_TOKEN` cannot re-trigger CI). After the first AUTO push, confirm the commit's GitHub author is `github-actions[bot]` (the push step sets the bot noreply email; the PAT only authenticates). If attribution is wrong, the visual job will re-run on every baseline push and may loop; the workflow emits a warning when it detects that shape.
+
 ## One-time Cloudflare setup
 
 1. **R2 bucket** `qweb-media` (same name as MinIO / wrangler binding). Prefer the Worker as the only public reader for `/media/*`.

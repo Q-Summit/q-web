@@ -47,6 +47,12 @@ export default tseslint.config(
     ignores: [
       "**/node_modules/",
       "**/dist/",
+      // VRT build output + Playwright run artifacts (see .gitignore). The
+      // committed baselines under apps/web/tests/visual/__screenshots__/ are
+      // PNGs, not linted; everything a run generates is ignored here.
+      "**/dist-vrt/",
+      "**/playwright-report/",
+      "**/test-results/",
       "**/.astro/",
       "**/.next/",
       "**/.vercel/",

@@ -15,6 +15,23 @@ node_modules/
 dist/
 .astro/
 
+# Visual regression (VRT) transient output. The committed baselines under
+# apps/web/tests/visual/__screenshots__/ are the tracked source of truth and
+# are NOT ignored; everything a run produces is.
+apps/web/dist-vrt/
+apps/web/playwright-report/
+apps/web/test-results/
+apps/web/vrt-results.json
+# Scratch files a VRT run writes to the repo root (comment body + AUTO baseline
+# manifests); consumed by the workflow, never committed.
+/vrt-comment.md
+/vrt-wrote-baselines.txt
+/vrt-deleted-baselines.txt
+# pnpm's content-addressable store. The vrt:docker scripts point it inside the
+# gitignored node_modules; this catches any stray in-repo store (e.g. an old
+# docker run) so a 1 GB cache can never be staged.
+.pnpm-store/
+
 # Media binaries never live in git. Local copies seed CMS / CF preview;
 # production serves the same keys from R2 via the Worker `/media/*` route.
 # Content packages carry filenames only; agents propose drafts against CMS.

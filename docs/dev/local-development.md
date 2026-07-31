@@ -28,6 +28,10 @@ make lighthouse     # local mobile Lighthouse (Q1); needs Chrome-for-Testing fro
 | Wipe local DB volumes + reseed | `make reset-local` |
 | Quality gate | `make check` |
 | Mobile Lighthouse (Q1) | `make lighthouse` |
+| Visual regression vs baselines (pinned Playwright image) | `pnpm --filter web run vrt:docker` |
+| Accept visual baselines (pinned image) | `pnpm --filter web run vrt:docker:update` |
+
+Visual regression is advisory CI, not part of `make check`. Variants, accepting baselines, and the PR comment: [`visual-testing.md`](visual-testing.md).
 
 `make dev` starts Postgres + MinIO, seeds if the users table is empty, then runs Payload (`:3000`) and Astro CMS mode (`:4321`). If ports 5433/9000/9001 are taken by another project's containers, `assert-db.mjs` detects the foreign compose project and fails loudly naming the container's working directory; reuse that stack only if it is this repo's (same creds as `.env.example`), otherwise stop it and re-run `make dev` / `pnpm db:up`. `pnpm seed` and CMS `predev` run `scripts/local/assert-db.mjs`.
 

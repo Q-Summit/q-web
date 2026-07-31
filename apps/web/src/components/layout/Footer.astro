@@ -5,11 +5,7 @@
 // footer has (Main Navigation column, Stay Updated social column with
 // labels) in a modernized three-column arrangement: brand block left,
 // the two link columns right, hairline, copyright bar.
-import {
-  logoHeight,
-  logoSrc,
-  logoWidth,
-} from "../../assets/media/brand";
+import { logoHeight, logoSrc, logoWidth } from "../../assets/media/brand";
 import { getSiteSettings } from "../../lib/content";
 import IconTikTok from "../icons/IconTikTok.astro";
 import IconInstagram from "../icons/IconInstagram.astro";
@@ -93,7 +89,12 @@ function iconFor(platform: string) {
     </div>
     <div class="footer-bottom">
       <p class="copyright">
-        &copy; {year}{" "}{copyrightHolder}. All rights reserved.
+        {
+          /* year is a build-time constant; mask it for VRT so a rebuild in a
+        later calendar year does not diff the baseline (docs/dev/visual-testing.md). */
+        }
+        &copy; <span data-vrt-mask>{year}</span>{" "}{copyrightHolder}. All
+        rights reserved.
       </p>
     </div>
   </div>

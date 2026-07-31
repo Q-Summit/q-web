@@ -11,10 +11,16 @@
     "build:fixture": "CONTENT_SOURCE=json WEB_CONTENT_DIR=test/fixtures/ci-content astro build",
     "build:cms": "CONTENT_SOURCE=cms CMS_URL=http://localhost:3000 PUBLIC_CMS_URL=http://localhost:3000 astro build",
     "preview": "astro preview",
-    "check": "astro check && tsc --noEmit -p worker/tsconfig.json && tsc --noEmit -p test/tsconfig.json && tsc --noEmit -p test/tsconfig.node.json",
+    "check": "astro check && tsc --noEmit -p worker/tsconfig.json && tsc --noEmit -p test/tsconfig.json && tsc --noEmit -p test/tsconfig.node.json && tsc --noEmit -p tests/visual/tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "cf-typegen": "wrangler types"
+    "cf-typegen": "wrangler types",
+    "vrt:build": "CONTENT_SOURCE=json WEB_CONTENT_DIR=test/fixtures/ci-content VRT=1 astro build",
+    "vrt": "pnpm run vrt:build && playwright test",
+    "vrt:update": "pnpm run vrt:build && playwright test --update-snapshots && node ../../scripts/check/vrt-report.mjs --prune-only --trust-gallery",
+    "vrt:report": "playwright show-report",
+    "vrt:docker": "docker run --rm -e CI=1 -e HOME=/tmp -u \"$(id -u):$(id -g)\" -v \"$PWD/../..\":/w -w /w/apps/web mcr.microsoft.com/playwright:v1.62.0-noble bash -lc 'export PATH=/tmp/bin:$PATH; mkdir -p /tmp/bin && corepack enable --install-directory /tmp/bin pnpm && pnpm install --frozen-lockfile --store-dir=/w/node_modules/.pnpm-store && pnpm run vrt'",
+    "vrt:docker:update": "docker run --rm -e CI=1 -e HOME=/tmp -u \"$(id -u):$(id -g)\" -v \"$PWD/../..\":/w -w /w/apps/web mcr.microsoft.com/playwright:v1.62.0-noble bash -lc 'export PATH=/tmp/bin:$PATH; mkdir -p /tmp/bin && corepack enable --install-directory /tmp/bin pnpm && pnpm install --frozen-lockfile --store-dir=/w/node_modules/.pnpm-store && pnpm run vrt:update'"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
@@ -27,6 +33,7 @@
     "@astrojs/check": "^0.9.4",
     "@astrojs/ts-plugin": "^1.10.10",
     "@cloudflare/vitest-pool-workers": "^0.18.6",
+    "@playwright/test": "1.62.0",
     "@types/node": "^22.18.0",
     "sharp": "^0.34.5",
     "simple-icons": "^16.26.0",

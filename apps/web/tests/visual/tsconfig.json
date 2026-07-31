@@ -1,0 +1,18 @@
+{
+  // Isolated like test/tsconfig.json: the Playwright visual specs are run by
+  // the Playwright runner (its own esbuild transpile), never shipped, and are
+  // excluded from the app's astro check (see ../../tsconfig.json). They type
+  // against Node + the DOM (page.evaluate bodies) + @playwright/test.
+  "compilerOptions": {
+    "target": "es2022",
+    "lib": ["es2022", "dom"],
+    "module": "es2022",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "types": ["node"]
+  },
+  "include": ["./**/*.ts", "../../playwright.config.ts"]
+}

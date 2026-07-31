@@ -8,6 +8,11 @@ import sitemap from "@astrojs/sitemap";
 export default defineConfig({
   site: "https://q-summit.com",
   output: "static",
+  // Visual-regression builds (VRT=1) emit to a separate dir and include the
+  // /vrt/ component gallery (src/pages/vrt/, getStaticPaths gated on VRT).
+  // Prod builds keep the default dist/ and never contain the gallery, so the
+  // gallery cannot ship to visitors and the two builds never share an outDir.
+  outDir: process.env.VRT === "1" ? "dist-vrt" : "dist",
   // Directory build format already serves every route trailing-slashed
   // (/program/index.html); pin trailingSlash so dev/preview and the emitted
   // canonical/OG URLs cannot drift from the sitemap's trailing-slash form.

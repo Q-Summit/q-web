@@ -1,0 +1,56 @@
+name: Visual review propagate
+
+# When a merge lands on main, open PRs are now behind. This updates each open
+# PR's branch with main so its next visual run and its comment refresh promptly.
+# It is a FRESHNESS optimization, not a correctness dependency: the visual job
+# itself merges current main in before rendering and always diffs against main's
+# baselines, so a PR is measured correctly even if it is behind. It only updates
+# PRs with no merge conflict; the rest surface the conflict to their author as
+# usual. See docs/dev/visual-testing.md.
+on:
+  push:
+    branches: [main]
+
+# updateBranch writes a merge commit onto each PR head ref.
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: visual-propagate
+  cancel-in-progress: true
+
+jobs:
+  update-open-prs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: update open PR branches with main
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          # Prefer VRT_PAT so the branch update re-triggers each PR's CI (a
+          # GITHUB_TOKEN push does not). Falls back to the job token, which still
+          # updates the branch (contents:write above) but leaves the re-run to
+          # the next push / manual.
+          github-token: ${{ secrets.VRT_PAT || github.token }}
+          script: |
+            const { owner, repo } = context.repo;
+            const prs = await github.paginate(github.rest.pulls.list, {
+              owner, repo, state: 'open', base: 'main', per_page: 100,
+            });
+            let updated = 0, skipped = 0;
+            for (const pr of prs) {
+              if (pr.draft) { skipped++; continue; }
+              // Only same-repo branches can be updated with a token.
+              if (pr.head.repo?.full_name !== `${owner}/${repo}`) { skipped++; continue; }
+              try {
+                await github.rest.pulls.updateBranch({ owner, repo, pull_number: pr.number });
+                updated++;
+                core.info(`updated #${pr.number} (${pr.head.ref})`);
+              } catch (e) {
+                // 422 = already up to date or a merge conflict; both are fine to skip.
+                skipped++;
+                core.info(`skipped #${pr.number}: ${e.status || ''} ${e.message}`);
+              }
+            }
+            core.notice(`visual-propagate: updated ${updated}, skipped ${skipped} of ${prs.length} open PR(s).`);
