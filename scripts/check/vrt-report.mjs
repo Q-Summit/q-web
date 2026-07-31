@@ -649,9 +649,8 @@ function labelTitle(title, bucket) {
 
 function labelTestEntry(test, bucket) {
   test.title = labelTitle(test.title, bucket);
-  const tags = Array.isArray(test.tags) ? test.tags : [];
-  if (!tags.includes(bucket)) tags.push(bucket);
-  test.tags = tags;
+  // Prefer title prefix for filtering; skip Playwright tags so the UI does not
+  // show both `[changed]` in the title and a duplicate blue tag chip.
   const annotations = Array.isArray(test.annotations) ? test.annotations : [];
   if (
     !annotations.some((a) => a?.type === "vrt" && a?.description === bucket)
@@ -663,9 +662,9 @@ function labelTestEntry(test, bucket) {
 
 /**
  * Rewrite the Playwright HTML report so Added / Changed / Same / Failed are
- * visible: title prefixes + tags, plus a sticky banner with filter chips.
- * Playwright's own Passed/Failed chips still reflect raw outcomes (missing
- * baselines are "Failed"); the banner is the source of truth for VRT buckets.
+ * visible: title prefixes plus a sticky banner with filter chips.
+ * Playwright's own Passed/Failed chips are hidden (they count missing
+ * baselines as Failed); the banner is the source of truth for VRT buckets.
  *
  * Returns true when the report was rewritten.
  */
@@ -788,7 +787,13 @@ export function enhancePlaywrightReport(
 
     const tally = formatTally(buckets);
     const banner = buildReportBanner({ baseRef, tally, ...buckets });
-    if (!html.includes('id="vrt-summary"')) {
+    // Always refresh the banner so a re-enhance picks up copy/CSS fixes.
+    if (html.includes('id="vrt-summary"')) {
+      html = html.replace(
+        /<div id="vrt-summary"[\s\S]*?<\/script>/,
+        banner.trim(),
+      );
+    } else {
       html = html.replace("<body>", `<body>\n${banner}\n`);
     }
     writeFileSync(indexPath, html);
@@ -830,14 +835,11 @@ export function buildReportBanner({
   const safeDefault = JSON.stringify(defaultFilter);
   return `<div id="vrt-summary" role="region" aria-label="Visual review summary" style="position:sticky;top:0;z-index:9999;background:#141418;color:#f0f0f0;border-bottom:1px solid #333;font:14px/1.45 ui-sans-serif,system-ui,sans-serif;padding:12px 16px;">
   <style>
-    /* Hide Playwright outcome chips (Failed N includes missing baselines). */
-    #vrt-hide-pw-chips ~ * a[href*="q=s:failed"],
-    #vrt-hide-pw-chips ~ * a[href*="q=s:passed"],
-    #vrt-hide-pw-chips ~ * a[href*="q=s:flaky"],
-    #vrt-hide-pw-chips ~ * a[href*="q=s:skipped"] { display: none !important; }
+    /* Playwright encodes status chip hrefs as q=s%3A… (percent-encoded colon). */
+    nav a[href*="q=s%3A"],
+    nav a[href*="q=s:"] { display: none !important; }
     #vrt-filters button[aria-pressed="true"] { outline: 2px solid #9cf; outline-offset: 1px; }
   </style>
-  <div id="vrt-hide-pw-chips" hidden></div>
   <div style="display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;">
     <div>
       <div style="font-size:12px;letter-spacing:.04em;text-transform:uppercase;opacity:.7;margin-bottom:2px;">Visual review vs ${escapeInline(baseRef)}</div>
@@ -855,24 +857,22 @@ export function buildReportBanner({
 <script>
 (function () {
   var DEFAULT = ${safeDefault};
+  var appliedDefault = false;
+  var statusHref = new RegExp("q=s(%" + "3A|:)(passed|failed|flaky|skipped)", "i");
   function findSearch() {
     return document.querySelector('input[placeholder*="Search"], input[type="search"], [class*="search"] input');
   }
   function hidePlaywrightChips() {
-    var root = document.getElementById("root") || document.body;
-    var links = root.querySelectorAll('a[href*="q=s:failed"], a[href*="q=s:passed"], a[href*="q=s:flaky"], a[href*="q=s:skipped"]');
-    for (var i = 0; i < links.length; i++) {
-      var el = links[i];
-      // Only hide chip-like nav links, not deep links inside the test list.
-      if (el.closest("[class*='chip']") || el.closest("nav") || (el.parentElement && el.parentElement.querySelectorAll("a").length >= 3 && el.textContent && /^(All|Passed|Failed|Flaky|Skipped)\\b/.test(el.textContent.trim()))) {
-        el.style.display = "none";
-      }
-    }
-    // Fallback: hide by visible label next to Search (Playwright header row).
+    // Chip text is often "Failed387" (no space); hrefs use a percent-encoded colon.
     var all = document.querySelectorAll("a");
     for (var j = 0; j < all.length; j++) {
-      var t = (all[j].textContent || "").replace(/\\s+/g, " ").trim();
-      if (/^(Passed|Failed|Flaky|Skipped) \\d+$/.test(t)) all[j].style.display = "none";
+      var a = all[j];
+      var href = a.getAttribute("href") || "";
+      var t = (a.textContent || "").replace(/\\s+/g, " ").trim();
+      var byHref = statusHref.test(href);
+      var byText = /^(Passed|Failed|Flaky|Skipped)\\s*\\d+$/i.test(t);
+      if (!(byHref || byText)) continue;
+      if (a.closest("nav") || byText) a.style.setProperty("display", "none", "important");
     }
   }
   function setPressed(q) {
@@ -896,22 +896,27 @@ export function buildReportBanner({
   }
   function boot() {
     hidePlaywrightChips();
-    if (DEFAULT) apply(DEFAULT);
+    if (DEFAULT && !appliedDefault && apply(DEFAULT)) appliedDefault = true;
   }
   document.getElementById("vrt-filters")?.addEventListener("click", function (e) {
     var btn = e.target.closest("[data-vrt-filter]");
     if (!btn) return;
+    appliedDefault = true;
     apply(btn.getAttribute("data-vrt-filter") || "");
   });
-  // Playwright mounts #root after our banner; retry briefly so chips hide + filter sticks.
   boot();
+  // Keep hiding chips while Playwright hydrates nav (search can appear before chips).
   var tries = 0;
   var timer = setInterval(function () {
     tries += 1;
-    hidePlaywrightChips();
-    if (DEFAULT) apply(DEFAULT);
-    if (tries >= 20 || findSearch()) clearInterval(timer);
+    boot();
+    if (tries >= 40) clearInterval(timer);
   }, 100);
+  if (typeof MutationObserver !== "undefined") {
+    var mo = new MutationObserver(function () { hidePlaywrightChips(); });
+    mo.observe(document.documentElement, { childList: true, subtree: true });
+    setTimeout(function () { mo.disconnect(); }, 5000);
+  }
 })();
 </script>`;
 }

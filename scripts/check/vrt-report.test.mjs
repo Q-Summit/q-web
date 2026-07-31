@@ -410,6 +410,7 @@ test("buildReportBanner lists chips, hides PW outcome chips, defaults to changed
   assert.match(html, /data-vrt-filter="\[added\]"/);
   assert.match(html, /Visual review vs main/);
   assert.match(html, /hidePlaywrightChips/);
+  assert.ok(html.includes("q=s%3A") || html.includes('href*="q=s%3A"'));
   assert.match(html, /var DEFAULT = "\[changed\]"/);
   assert.ok(!/Playwright's Passed\/Failed chips still count/.test(html));
 });
