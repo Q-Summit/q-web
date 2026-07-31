@@ -104,12 +104,25 @@ const {
   }
 
   .image-wrapper {
-    display: flex;
-    aspect-ratio: 3 / 2;
+    position: relative;
+  }
+
+  /* A 3:2 padding spacer sets the image column's MINIMUM height from its width,
+     and the img is taken out of flow (absolute) so it fills whatever height the
+     row ends up being. This replaces `aspect-ratio: 3/2`, which (combined with
+     the grid's align: stretch) capped the row and clipped a long heading: the
+     copy used to overflow the fixed-height card into .card's overflow: hidden.
+     Now short copy still gets the 3:2 image, and long copy grows the card. */
+  .image-wrapper::before {
+    content: "";
+    display: block;
+    padding-top: 66.667%;
   }
 
   .image-wrapper img,
   .image-wrapper picture {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
   }
