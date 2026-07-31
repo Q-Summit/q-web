@@ -33,7 +33,7 @@ The terms the docs and issues assume you know. Domain terms land here when the f
 | **Payload** | The open-source (MIT) CMS for `apps/cms`; where all content lives and editors work. |
 | **Neon** | Managed Postgres (Frankfurt) backing Payload. |
 | **R2** | Cloudflare object storage for media, S3-compatible. |
-| **PostHog** | Cookieless analytics, EU cloud ([ADR-0003](../decisions/0003-posthog-cookieless-analytics.md)); decided so the site can stay banner-free. Client not shipped yet. |
+| **PostHog** | Cookieless analytics, EU cloud ([ADR-0003](../decisions/0003-posthog-cookieless-analytics.md)); decided so the site can stay banner-free. Client shipped in `apps/web/src/lib/analytics/`, gated to production hostnames. |
 | **Deploy hook** | Workers Builds URL the CMS POSTs on approver live-site changes: publish, unpublish, restore, live delete (`CLOUDFLARE_DEPLOY_HOOK_URL`; [section 6](06-runtime.md)). |
 | **vivenu** | The external ticketing provider; the site only links out to it. |
 | **llms.txt** | Curated Markdown index at `/llms.txt` for AI agents ([llmstxt.org](https://llmstxt.org/)); identity from Site Settings → `llms`, link blurbs from page meta descriptions. |

@@ -9,6 +9,7 @@
 import Section from "../ui/Section.astro";
 import Button from "../ui/Button.astro";
 import Container from "../ui/Container.astro";
+import { EVENTS } from "../../lib/analytics/events";
 
 interface Props {
   heading: string;
@@ -27,7 +28,13 @@ const { heading, text, ctaLabel, ctaHref } = Astro.props;
         <h2 id="hack-cta-heading">{heading}</h2>
         {text && <p class="cta-text">{text}</p>}
       </div>
-      <Button href={ctaHref}>{ctaLabel}</Button>
+      <Button
+        href={ctaHref}
+        data-ph-event={EVENTS.hackathon_contact_clicked}
+        data-ph-prop-cta-href={ctaHref}
+      >
+        {ctaLabel}
+      </Button>
     </div>
   </Container>
 </Section>

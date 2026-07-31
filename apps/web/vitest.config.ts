@@ -23,6 +23,7 @@ export default defineConfig({
           name: "node",
           environment: "node",
           include: [
+            "test/analytics.test.ts",
             "test/content.test.ts",
             "test/media-filename.test.ts",
             "test/media-match.test.ts",
@@ -57,6 +58,32 @@ export default defineConfig({
                   return new Response(`asset:${new URL(request.url).pathname}`);
                 },
               },
+              // Hermetic stand-in for the open internet: every outbound
+              // fetch() from the Worker (only the /qm/* analytics proxy makes
+              // one) echoes back what would have left the edge, so the proxy
+              // tests assert the exact upstream URL, headers, and body
+              // without any real network access.
+              async outboundService(request) {
+                return new Response(
+                  JSON.stringify({
+                    url: request.url,
+                    method: request.method,
+                    headers: Object.fromEntries(request.headers),
+                    body:
+                      request.method === "GET" || request.method === "HEAD"
+                        ? null
+                        : await request.text(),
+                  }),
+                  {
+                    headers: {
+                      "content-type": "application/json",
+                      // The proxy must strip this before returning; the
+                      // cookieless origin never sets cookies (ADR-0003).
+                      "set-cookie": "upstream-cookie=1; Path=/",
+                    },
+                  },
+                );
+              },
             },
           }),
         ],
@@ -64,6 +91,7 @@ export default defineConfig({
           name: "workers",
           include: ["test/**/*.test.ts"],
           exclude: [
+            "test/analytics.test.ts",
             "test/content.test.ts",
             "test/media-filename.test.ts",
             "test/media-match.test.ts",

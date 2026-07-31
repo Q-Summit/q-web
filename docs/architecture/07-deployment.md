@@ -12,7 +12,7 @@ Set by [ADR-0001](../decisions/0001-astro-static-site.md), [ADR-0002](../decisio
 | Media objects | Cloudflare R2 bucket `qweb-media` | Global edge |
 | Payload CMS | Vercel | EU function region |
 | Postgres | Neon | Frankfurt |
-| Analytics (decided, client not shipped) | PostHog Cloud EU | EU |
+| Analytics (cookieless client shipped, proxied via the site Worker) | PostHog Cloud EU | EU |
 
 ```mermaid
 flowchart LR
@@ -61,7 +61,7 @@ _A merge to main triggers Workers Builds, which builds `apps/web` and deploys at
 
 Durable facts only (setup steps: [`../dev/go-live.md`](../dev/go-live.md)):
 
-- `apps/web/wrangler.jsonc`: assets from `./dist`, `MEDIA` → `qweb-media`, `run_worker_first: ["/media/*"]`
+- `apps/web/wrangler.jsonc`: assets from `./dist`, `MEDIA` → `qweb-media`, `run_worker_first: ["/media/*", "/qm/*"]` (R2 media and the PostHog ingestion proxy)
 - `not_found_handling: "404-page"` serves `dist/404.html` (built from `src/pages/404.astro`) on unmatched routes
 - Handler: `apps/web/worker/index.ts`
 - `apps/web/public/.assetsignore` excludes `media` from asset uploads

@@ -23,7 +23,6 @@
 Implied by the stack decisions; each becomes an ADR PR when the work that needs it starts:
 
 - Edition rollover mechanism in the Payload schema (how a new year is created, how past years archive)
-- PostHog cookieless client on the public site (ADR-0003 accepted; no site code yet)
 - Form handling on a static site (contact or application forms, if ever needed)
 - Media pipeline conventions (image sizes, hero/HLS video seeding into R2; Payload Media is images-only today)
 - Neon backup and export policy beyond point-in-time restore

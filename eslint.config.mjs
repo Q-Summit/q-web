@@ -134,6 +134,7 @@ export default tseslint.config(
     // Node-vitest files live in test/tsconfig.node.json (not tsconfig.json),
     // so projectService cannot type-check them via the nearest tsconfig.json.
     ignores: [
+      "apps/web/test/analytics.test.ts",
       "apps/web/test/content.test.ts",
       "apps/web/test/media-filename.test.ts",
       "apps/web/test/media-match.test.ts",
@@ -152,12 +153,13 @@ export default tseslint.config(
     },
   },
 
-  // content.test.ts is the one .ts file no tsconfig.json includes: it lives in
-  // test/tsconfig.node.json, and projectService only recognizes that exact
-  // filename. Typed rules are off for it explicitly, so the reason stays
-  // visible rather than being hidden behind allowDefaultProject.
+  // content.test.ts and analytics.test.ts are the .ts files no tsconfig.json
+  // includes: they live in test/tsconfig.node.json, and projectService only
+  // recognizes those exact filenames. Typed rules are off for them
+  // explicitly, so the reason stays visible rather than being hidden behind
+  // allowDefaultProject.
   {
-    files: ["apps/web/test/content.test.ts"],
+    files: ["apps/web/test/analytics.test.ts", "apps/web/test/content.test.ts"],
     extends: [tseslint.configs.disableTypeChecked],
   },
 

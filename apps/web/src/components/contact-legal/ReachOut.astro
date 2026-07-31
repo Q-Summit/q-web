@@ -3,6 +3,7 @@
 // contact group photo. Mirrors the live site's "section_contact_contact"
 // two-column layout (icon list left, photo right).
 import type { ContactItem } from "../../lib/content";
+import { EVENTS } from "../../lib/analytics/events";
 import Section from "../ui/Section.astro";
 import Container from "../ui/Container.astro";
 
@@ -76,7 +77,12 @@ const { heading, paragraphs, items } = Astro.props;
                   <p class="item-detail">{detail}</p>
                 ))}
                 {item.email && (
-                  <a class="item-mail" href={`mailto:${item.email}`}>
+                  <a
+                    class="item-mail"
+                    href={`mailto:${item.email}`}
+                    data-ph-event={EVENTS.contact_email_clicked}
+                    data-ph-prop-contact-label={item.label}
+                  >
                     {item.email}
                   </a>
                 )}

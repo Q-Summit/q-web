@@ -33,6 +33,7 @@ _Drafts stay invisible until publish. Rebuilds also fire on unpublish, restore, 
 | **HTML** | New Assets deploy; `Cache-Control: max-age=0, must-revalidate` (`_headers`) |
 | **`/_astro/*`** | Content-hashed + `immutable` |
 | **`/media/*`** | Worker Cache API keyed by R2 etag; browser TTL 1 day (no `immutable`) |
+| **`/qm/*`** | Never cached; the Worker forwards each analytics request to PostHog EU |
 | **HLS `.m3u8`** | `max-age=3600` |
 
 Media uploads alone do not rebuild; Publish (or **Rebuild site**) updates pages that reference new files.

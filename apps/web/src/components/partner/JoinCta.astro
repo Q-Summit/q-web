@@ -3,6 +3,7 @@
 // section_partner_cta (copy left, button right, stacked on mobile),
 // restyled as a navy brand card.
 import Container from "../ui/Container.astro";
+import { EVENTS } from "../../lib/analytics/events";
 
 interface Props {
   heading: string;
@@ -21,7 +22,12 @@ const { heading, text, buttonLabel, buttonHref } = Astro.props;
         <h2 id="partner-cta-heading">{heading}</h2>
         <p>{text}</p>
       </div>
-      <a class="button" href={buttonHref}>{buttonLabel}</a>
+      <a
+        class="button"
+        href={buttonHref}
+        data-ph-event={EVENTS.partner_cta_clicked}
+        data-ph-prop-cta-label={buttonLabel}>{buttonLabel}</a
+      >
     </div>
   </Container>
 </section>

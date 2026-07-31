@@ -4,9 +4,10 @@ Quality-gate CLIs (`check:*`).
 
 | File | pnpm |
 | --- | --- |
-| `fast.mjs` | `check:fast` (pre-commit): docs then md/spell/prettier/design/cms-styles/scripts-tests |
+| `fast.mjs` | `check:fast` (pre-commit): docs then md/spell/prettier/design/events/cms-styles/scripts-tests |
 | `docs.mjs` | `check:docs` |
 | `design.mjs` | `check:design` (apps/web visual identity) |
+| `events.mjs` | `check:events` (analytics taxonomy gate; see [`docs/dev/analytics.md`](../../docs/dev/analytics.md)) |
 | `cms-styles.mjs` | `check:cms-styles` (apps/cms admin surfaces) |
 | `scripts.test.mjs` | `check:scripts` (node:test) |
 | `vrt-report.mjs` | advisory `visual.yml` (sticky PR comment + AUTO baseline staging); not in `check` |

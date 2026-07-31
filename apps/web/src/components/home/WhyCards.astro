@@ -4,6 +4,7 @@
 // gitignored src/assets/media/ copy exists (local: `pnpm picture:sync`);
 // otherwise fall back to the R2 /media/ -800 webp (CI/prod).
 import type { PageLink } from "../../lib/content";
+import { EVENTS } from "../../lib/analytics/events";
 import { Picture } from "../../lib/astro-assets";
 import { resolveContentImage } from "../../lib/images";
 import Button from "../ui/Button.astro";
@@ -102,6 +103,8 @@ const images = await Promise.all(
             href={cta.href}
             data-lp="whyAttend.cta"
             data-lp-href="whyAttend.cta.href"
+            data-ph-event={EVENTS.why_attend_cta_clicked}
+            data-ph-prop-cta-href={cta.href}
           >
             {cta.label}
           </Button>

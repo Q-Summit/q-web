@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * Fast quality gate for pre-commit: structural docs first, then the rest in
- * parallel (markdownlint, cspell, prettier, design, cms styles, scripts
- * tests). Full
+ * parallel (markdownlint, cspell, prettier, design, events taxonomy, cms
+ * styles, scripts tests). Full
  * `pnpm run check` calls this, then runs web + cms apps in parallel.
  */
 import { runCommand } from "../lib/run.mjs";
@@ -24,6 +24,7 @@ const parallel = [
     ["exec", "prettier", "--check", "**/*.{md,json,jsonc,yml,yaml,mjs}"],
   ],
   ["node", ["scripts/check/design.mjs"]],
+  ["node", ["scripts/check/events.mjs"]],
   ["node", ["scripts/check/cms-styles.mjs"]],
   // check:scripts is the single source of truth for the scripts unit tests
   // (both scripts.test.mjs and vrt-report.test.mjs); run it via pnpm so a new

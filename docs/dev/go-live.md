@@ -4,11 +4,9 @@ Production setup for what exists today: R2, the site Worker, Vercel CMS migratio
 
 Production deploys through Cloudflare Workers Builds, git-connected to this repo ([ADR-0004](../decisions/0004-cloudflare-workers-builds-deploy.md)): a merge to `main` builds `apps/web` and deploys atomically. Humans merge; the platform deploys; agents never deploy. `apps/web/wrangler.jsonc` is the deploy contract.
 
-## Not built yet (do not treat as done)
+## Shipped flows that still need one-time keys
 
-Documented as owed work in [architecture/09](../architecture/09-architecture-decisions.md); no how-to steps here until code lands:
-
-- PostHog cookieless client (ADR-0003 accepted; no site code yet)
+The PostHog analytics client and the publish rebuild hook both ship in the site but stay inert until their production keys are set. PostHog turn-on and rollback are in [PostHog analytics](#posthog-analytics) below.
 
 Publish → Workers Builds is **shipped** ([architecture/06](../architecture/06-runtime.md)): live-site changes POST `CLOUDFLARE_DEPLOY_HOOK_URL`. Set that URL on the Vercel CMS project and as the GitHub secret for **Rebuild site**. Cloudflare dedupes bursts ([Deploy Hooks](https://developers.cloudflare.com/workers/ci-cd/builds/deploy-hooks/)).
 
@@ -29,7 +27,7 @@ The visual-regression review ([visual-testing.md](visual-testing.md)) works with
 
 1. **R2 bucket** `qweb-media` (same name as MinIO / wrangler binding). Prefer the Worker as the only public reader for `/media/*`.
 2. **R2 API token** for Payload (S3-compatible) on Vercel: `S3_BUCKET`, `S3_ENDPOINT` (`https://<accountid>.r2.cloudflarestorage.com`), `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_REGION=auto`. Do not set `S3_FORCE_PATH_STYLE` in prod (MinIO only).
-3. **Worker** from `apps/web` (`wrangler.jsonc`: `ASSETS` → `./dist`, `MEDIA` → `qweb-media`, `run_worker_first: ["/media/*"]`). `public/.assetsignore` excludes `media` from asset uploads.
+3. **Worker** from `apps/web` (`wrangler.jsonc`: `ASSETS` → `./dist`, `MEDIA` → `qweb-media`, `run_worker_first: ["/media/*", "/qm/*"]`). `public/.assetsignore` excludes `media` from asset uploads.
 4. **Custom domain** on the Worker for `q-summit.com` (and `www` if needed).
 5. **Workers Builds** git-connect this repo to the `q-web` Worker in the Cloudflare dashboard ([ADR-0004](../decisions/0004-cloudflare-workers-builds-deploy.md)). Production branch `main`; build command `pnpm --filter web run build` (Astro static output to `apps/web/dist/`, per `apps/web/package.json`); the Worker lives in `apps/web` (`wrangler.jsonc`), which the platform deploys with `wrangler deploy`. Build env in the next section. Once git-connected, every merge to `main` triggers a production CMS-mode build, so complete the CMS on Vercel section below before merging anything; a build without a reachable CMS fails.
 6. **Deploy hook** URL. In Cloudflare: Workers & Pages → your site Worker → Settings → Builds → Deploy Hooks → create one for `main`. Store the URL in **both** places: the `CLOUDFLARE_DEPLOY_HOOK_URL` **GitHub** repository secret (manual **Rebuild site** workflow) and the same-named env var on the **Vercel CMS** project (Payload publish → rebuild). The URL is the credential (no Authorization header); treat it as a secret. Docs: [Deploy Hooks](https://developers.cloudflare.com/workers/ci-cd/builds/deploy-hooks/).
@@ -45,6 +43,7 @@ Set in the Workers Builds environment, not in code:
 | `CONTENT_SOURCE=cms` | Build from Payload instead of local JSON |
 | `CMS_URL` | Published CMS origin (HTTPS) |
 | `PUBLIC_CMS_URL` | CMS origin baked into the client at build time (Live Preview origin check); omitting it silently bakes `http://localhost:3000` |
+| `PUBLIC_POSTHOG_KEY` | PostHog project API key (`phc_...`, public by design). Enables the cookieless analytics client; turn-on and rollback are in [PostHog analytics](#posthog-analytics) below. Omitting it builds a site that sends nothing |
 
 Real content is never committed to git. Production Workers Builds run in CMS mode: set `CONTENT_SOURCE=cms`, `CMS_URL`, and `PUBLIC_CMS_URL` in the Workers Builds env (`apps/web/.env.workers.example`) from the very first production deploy. The CMS on Vercel, seeded and published, is a hard prerequisite for the first site deploy. CI and fresh clones build from the committed fake fixture (`apps/web/test/fixtures/ci-content/`, regenerated with `pnpm content:fixture -- --from <snapshot dir>`); a real JSON build needs a maintainer-held content snapshot restored at `apps/web/content/` (gitignored). Workers Builds runs `wrangler deploy` on every merge to `main`; do not deploy by hand. A manual `wrangler deploy` stays human break-glass only and never runs from agent workflows.
 
@@ -70,6 +69,18 @@ For `CONTENT_SOURCE=cms` builds, Site Settings → AI assistants and each page m
 At go-live, set up the external uptime monitor against the canonical URLs (see [`incident.md`](incident.md) Detection).
 
 Also set the repository variable `REMOTE_CMS_URL` (repo Settings, Secrets and variables, Actions, Variables) to the published CMS origin so the weekly CMS mode build canary ([`.github/workflows/cms-build.yml`](../../.github/workflows/cms-build.yml)) arms itself; it stays inert until this variable is set.
+
+## PostHog analytics
+
+The cookieless PostHog client ships with the site; how it works is documented in [analytics.md](analytics.md). Two settings switch collection on in production, and the order between them matters. In the PostHog EU project settings, enable cookieless server hash mode first: the client runs `cookieless_mode: "always"`, and PostHog drops every event silently until that mode is on. While there, enable heatmap capture, web vitals autocapture, and exception autocapture. Then add `PUBLIC_POSTHOG_KEY` (the `phc_...` project key) to the Workers Builds env in the table above and deploy; the key is inlined at build time, so collection begins only once that build finishes.
+
+To verify, open the deployed site with devtools: analytics requests go to `/qm/e/` on the same origin with no request to any `posthog.com` host, no cookies, and an empty localStorage, and `$pageview` and the custom events appear in PostHog EU within a minute. The world map fills from `$geoip_country_code`, which the Worker's `/qm/geo` route supplies from Cloudflare's edge.
+
+To roll back, clear `PUBLIC_POSTHOG_KEY` and redeploy; the build then tree-shakes the SDK out entirely and the site sends nothing.
+
+The `phc_...` key is public in the bundle, as it is for any client-side analytics, so anyone can send events to the project. This cannot leak data (the key only writes), but it lets someone pollute the numbers and run up the bill. At turn-on, set a per-product usage limit on the PostHog EU project (Settings, Billing) so spam can dirty the data but never inflate the invoice; a Cloudflare rate-limiting rule on `/qm/*` is an optional second line.
+
+The public legal pages name PostHog Cloud EU as a sub-processor; that copy lives with the Datenschutzerklaerung in the CMS, maintained by the team.
 
 ## CMS on Vercel
 
