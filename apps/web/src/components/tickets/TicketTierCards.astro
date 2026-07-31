@@ -6,6 +6,7 @@
 // transform (scripts/build-page-content.mjs): cards show the base price
 // only, and the LATEBIRD intro paragraph never reaches this component.
 import type { TicketTier } from "../../lib/content";
+import { EVENTS } from "../../lib/analytics/events";
 import Section from "../ui/Section.astro";
 import Container from "../ui/Container.astro";
 import IconCheck from "../icons/IconCheck.astro";
@@ -51,6 +52,9 @@ const { heading, intro, tiers } = Astro.props;
                 href={tier.buyHref}
                 target="_blank"
                 rel="noopener noreferrer"
+                data-ph-event={EVENTS.ticket_purchase_initiated}
+                data-ph-prop-tier-name={tier.name}
+                data-ph-prop-tier-price={tier.price}
               >
                 {tier.buyLabel}
               </a>

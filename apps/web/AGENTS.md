@@ -106,7 +106,8 @@ listed in `design-baseline.json`.
 - Design tokens live in `src/styles/tokens.css`, paired with `DESIGN.md`'s front matter (`check:design` enforces it).
 - Keep live URL paths (`/whyq`, `/speaker`, `/partner`, `/job-listings`, ...) so inbound links survive cutover.
 - SEO / LLM / social: load the **discoverability** skill. Surfaces: `Base.astro`, `lib/llms.ts`, `pages/llms*.txt.ts`, `public/robots.txt`. New public routes update `buildRouteTable` in the same PR. AI identity (`llms`) is curated in the CMS Site Settings global; `build-page-content.mjs` preserves it across snapshot regenerations.
-- Cloudflare: `wrangler.jsonc` + `worker/index.ts` serve `/media/*` from R2; everything else is static assets. Do not upload `dist/media/` (see `public/.assetsignore`).
+- Cloudflare: `wrangler.jsonc` + `worker/index.ts` serve `/media/*` from R2 and proxy `/qm/*` to PostHog EU; everything else is static assets. Do not upload `dist/media/` (see `public/.assetsignore`).
+- Analytics: cookieless PostHog client in `src/lib/analytics/` (ADR-0003; boots only on prod hostnames with `PUBLIC_POSTHOG_KEY`). Load the **posthog-analytics** skill before touching events, config, or the `/qm` proxy; reference: [`docs/dev/analytics.md`](../../docs/dev/analytics.md).
 
 ## Image pipeline
 

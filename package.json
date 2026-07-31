@@ -37,6 +37,7 @@
     "check:fast": "node scripts/check/fast.mjs",
     "check:docs": "node scripts/check/docs.mjs",
     "check:design": "node scripts/check/design.mjs",
+    "check:events": "node scripts/check/events.mjs",
     "check:cms-styles": "node scripts/check/cms-styles.mjs",
     "check:scripts": "node --test scripts/check/scripts.test.mjs scripts/check/vrt-report.test.mjs",
     "check:web": "pnpm --filter web run check && node scripts/check/run-parallel.mjs check:web:build check:web:test",

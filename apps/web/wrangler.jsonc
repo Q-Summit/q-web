@@ -8,16 +8,21 @@
   "compatibility_date": "2026-07-17",
   "main": "./worker/index.ts",
 
-  // Astro's static build output. The Worker only intercepts /media/*
-  // (below); everything else is answered directly by the assets binding
-  // without invoking the Worker at all.
+  // Workers Logs: capture invocation status and exceptions so the /qm proxy's
+  // 202-on-upstream-failure drops and any error are visible in the dashboard.
+  "observability": { "enabled": true },
+
+  // Astro's static build output. The Worker only intercepts /media/* (R2)
+  // and /qm/* (PostHog EU ingestion proxy, see worker/index.ts); everything
+  // else is answered directly by the assets binding without invoking the
+  // Worker at all.
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
     // src/pages/404.astro builds to dist/404.html; "404-page" serves it for
     // any unmatched route instead of the plain platform default.
     "not_found_handling": "404-page",
-    "run_worker_first": ["/media/*"],
+    "run_worker_first": ["/media/*", "/qm/*"],
   },
 
   // Local-only stand-in for R2 in prod: wrangler simulates this binding

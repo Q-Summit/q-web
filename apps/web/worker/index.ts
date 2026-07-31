@@ -1,4 +1,5 @@
-// /media/* from R2 (run_worker_first); everything else → ASSETS.
+// /media/* from R2, /qm/geo (edge country) and /qm/* to PostHog EU (all
+// run_worker_first); everything else → ASSETS.
 // Cache API: full 200 cached, Range sliced to 206; keys include R2 etag so
 // same-key overwrites miss. See docs/dev/local-development.md (Media).
 
@@ -207,6 +208,135 @@ async function handleMedia(
   return full;
 }
 
+// Analytics ingestion proxy: /qm/* forwards to PostHog Cloud EU so event
+// requests stay first-party (content blockers key on PostHog's domains, not
+// on this site's own paths; see ADR-0003 and docs/dev/analytics.md). The SDK
+// is bundled into the site's own JS (no-external build), so no /static/*
+// script assets are requested at runtime and nothing is cached.
+const POSTHOG_API_HOST = "eu.i.posthog.com";
+// The endpoint families the bundled SDK can call: events (/e/), newer
+// ingestion plus logs/metrics (/i/), remote config (/flags/, /array/), and
+// batching (/batch/). Everything else 404s before an upstream URL is even
+// built, so this route can never act as a general relay.
+const POSTHOG_PATH = /^\/(e|i|flags|array|batch)\//;
+
+// Beacons are best-effort and never block the page, so if PostHog is slow or
+// down we degrade to an accepted-and-dropped 202 rather than hanging the
+// subrequest or surfacing a 500. Ten seconds is well past a healthy round trip.
+const UPSTREAM_TIMEOUT_MS = 10_000;
+// Cap the buffered body: capture batches are small, and this is an
+// unauthenticated same-origin route, so refuse absurd payloads outright.
+const MAX_BODY_BYTES = 4_000_000;
+
+async function handleAnalyticsProxy(request: Request): Promise<Response> {
+  // The SDK only ever issues GET (config, flags) and POST (capture); refuse
+  // any other method rather than relay an arbitrary verb to PostHog.
+  if (request.method !== "GET" && request.method !== "POST") {
+    return new Response("Method not allowed\n", {
+      status: 405,
+      headers: { allow: "GET, POST" },
+    });
+  }
+  const url = new URL(request.url);
+  // url.pathname is already dot-segment-normalized by the URL parser (e.g.
+  // /qm/e/../flags/ arrives as /qm/flags/), so the allowlist below runs on the
+  // final path -- there is no pre-normalization window to slip a traversal
+  // through, and the host is pinned regardless.
+  const path = url.pathname.slice("/qm".length);
+  if (!POSTHOG_PATH.test(path)) return notFound();
+  // Buffer the body: streaming request.body through fetch corrupts POST
+  // payloads on this path (a documented PostHog reverse-proxy gotcha). Enforce
+  // the size cap on the real byte length, not the Content-Length header, which
+  // is client-controlled and absent on a chunked request. The header, when
+  // present, is a cheap early reject before buffering.
+  if (Number(request.headers.get("content-length")) > MAX_BODY_BYTES) {
+    return new Response("Payload too large\n", { status: 413 });
+  }
+  const body = request.method === "POST" ? await request.arrayBuffer() : null;
+  if (body && body.byteLength > MAX_BODY_BYTES) {
+    return new Response("Payload too large\n", { status: 413 });
+  }
+  // Host is pinned: the pathname/search setters cannot change the authority.
+  // Never build this from `new URL(path, base)`: a path starting with "//"
+  // would reparse as a scheme-relative URL and swap in an attacker-chosen
+  // host, turning the route into an open same-origin relay.
+  const upstream = new URL(`https://${POSTHOG_API_HOST}`);
+  upstream.pathname = path;
+  upstream.search = url.search;
+  const headers = new Headers(request.headers);
+  // The site sets no cookies (ADR-0003), so there is nothing legitimate to
+  // forward; dropping the header keeps it that way even if some extension
+  // injected one.
+  headers.delete("cookie");
+  // GeoIP at PostHog needs the visitor's IP, not this Worker's egress IP.
+  // Always overwrite: an inbound X-Forwarded-For is client-controlled and
+  // must never pass through as if it were trusted.
+  headers.set("X-Forwarded-For", request.headers.get("CF-Connecting-IP") ?? "");
+  let upstreamRes: Response;
+  try {
+    upstreamRes = await fetch(upstream, {
+      method: request.method,
+      headers,
+      body,
+      redirect: request.redirect,
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+    });
+  } catch {
+    // Real upstream failure (network error, DNS, or the abort timeout firing)
+    // rejects the fetch here: accept and drop. The client ignores the beacon
+    // response, so this loses at most a few events, never the page. Logged (no
+    // payload, no IP) so the drop rate is visible in Workers Logs. (Not unit
+    // tested -- the workers-pool outbound stub cannot produce a rejecting fetch
+    // for a pinned host; this path only fires against the real network.)
+    console.error("qm: PostHog upstream unreachable");
+    return new Response(null, {
+      status: 202,
+      headers: { "cache-control": "no-store" },
+    });
+  }
+  // Worker responses bypass public/_headers (same as /media/*), so set the
+  // security headers here; and an upstream Set-Cookie must never land on
+  // this origin -- the cookieless posture is a compliance property.
+  const resHeaders = new Headers(upstreamRes.headers);
+  resHeaders.delete("set-cookie");
+  resHeaders.set("x-content-type-options", "nosniff");
+  resHeaders.set("referrer-policy", "strict-origin-when-cross-origin");
+  resHeaders.set("cache-control", "no-store");
+  return new Response(upstreamRes.body, {
+    status: upstreamRes.status,
+    statusText: upstreamRes.statusText,
+    headers: resHeaders,
+  });
+}
+
+// Coarse visitor country from Cloudflare's edge (`request.cf.country`, a
+// 2-letter ISO code Cloudflare derives at the PoP -- NOT the IP, which never
+// leaves the edge). The analytics client fetches this once and registers it
+// as a PostHog super property, so events carry a country breakdown while
+// staying cookieless and IP-free (PostHog's own IP GeoIP yields nothing in
+// cookieless mode). "XX"/"T1" (unknown, Tor) collapse to null so they are not
+// registered. Never cached: the value is per-visitor.
+function handleGeo(request: Request): Response {
+  // Read-only lookup: only GET/HEAD answer with data; a stray write or
+  // preflight gets 405 rather than a 200 body.
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    return new Response("Method not allowed\n", {
+      status: 405,
+      headers: { allow: "GET, HEAD" },
+    });
+  }
+  const raw = request.cf?.country;
+  const country = raw && raw !== "XX" && raw !== "T1" ? raw : null;
+  return new Response(JSON.stringify({ country }), {
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "x-content-type-options": "nosniff",
+      "referrer-policy": "strict-origin-when-cross-origin",
+    },
+  });
+}
+
 export default {
   async fetch(
     request: Request,
@@ -216,6 +346,12 @@ export default {
     const url = new URL(request.url);
     if (url.pathname.startsWith("/media/")) {
       return handleMedia(request, env, ctx);
+    }
+    if (url.pathname === "/qm/geo") {
+      return handleGeo(request);
+    }
+    if (url.pathname.startsWith("/qm/")) {
+      return handleAnalyticsProxy(request);
     }
     return env.ASSETS.fetch(request);
   },

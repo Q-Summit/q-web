@@ -13,6 +13,7 @@
 // Reduced-motion and data-saver users get the poster only; no video bytes
 // are fetched for them. No-JS clients get the 480p progressive fallback.
 import type { PageLink } from "../../lib/content";
+import { EVENTS } from "../../lib/analytics/events";
 import Container from "../ui/Container.astro";
 
 interface Props {
@@ -199,6 +200,9 @@ const { headline, tagline, announcement, cta } = Astro.props;
             href={cta.href}
             data-lp="hero.cta"
             data-lp-href="hero.cta.href"
+            data-ph-event={EVENTS.hero_cta_clicked}
+            data-ph-prop-cta-label={cta.label}
+            data-ph-prop-cta-href={cta.href}
           >
             {cta.label}
           </a>

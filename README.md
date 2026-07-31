@@ -6,13 +6,13 @@ The website for [Q-Summit](https://q-summit.com), Germany's largest student-orga
 
 The public site is pre-built static HTML, served from Cloudflare's edge. Content lives in Payload CMS, where division members edit their own collections under personal, division-scoped accounts, with drafts and approver publish before anything goes live. Merges to `main` and approver Publish both rebuild the site through Cloudflare Workers Builds (Publish needs `CLOUDFLARE_DEPLOY_HOOK_URL` on the CMS). The live site never depends on the CMS being up.
 
-| Layer     | Technology                   | Where                           |
-| --------- | ---------------------------- | ------------------------------- |
-| Site      | Astro (static output)        | Cloudflare (free plan)          |
-| CMS       | Payload 3                    | Vercel Hobby                    |
-| Database  | Postgres                     | Neon free tier, Frankfurt       |
-| Media     | R2 object storage            | Cloudflare                      |
-| Analytics | PostHog Cloud EU, cookieless | Decided; client not shipped yet |
+| Layer | Technology | Where |
+| --- | --- | --- |
+| Site | Astro (static output) | Cloudflare (free plan) |
+| CMS | Payload 3 | Vercel Hobby |
+| Database | Postgres | Neon free tier, Frankfurt |
+| Media | R2 object storage | Cloudflare |
+| Analytics | PostHog Cloud EU, cookieless | Client shipped, gated to production hostnames |
 
 Setup and cutover: [`docs/dev/go-live.md`](docs/dev/go-live.md).
 

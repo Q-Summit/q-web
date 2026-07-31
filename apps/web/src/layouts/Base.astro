@@ -13,6 +13,7 @@ import Nav from "../components/layout/Nav.astro";
 import Footer from "../components/layout/Footer.astro";
 import LivePreviewBoot from "../components/live-preview/LivePreviewBoot.astro";
 import { getSiteSettings } from "../lib/content";
+import type { EventName } from "../lib/analytics/events";
 
 interface Props {
   title: string;
@@ -57,6 +58,13 @@ interface Props {
    * edits into data-lp DOM nodes.
    */
   livePreviewGlobal?: string;
+  /**
+   * Page-level analytics event, captured once per full page load by
+   * lib/analytics/dom.ts. The name comes from the frozen EVENTS taxonomy
+   * (lib/analytics/events.ts); props are snake_case string values, emitted
+   * as data-ph-prop-* attributes on <main>. Anonymous only, never PII.
+   */
+  pageEvent?: { name: EventName; props?: Record<string, string> };
 }
 
 const {
@@ -72,6 +80,7 @@ const {
   ogType = "website",
   noindex = false,
   livePreviewGlobal,
+  pageEvent,
 } = Astro.props;
 const { siteTitle, footer } = await getSiteSettings();
 // Empty page meta falls back to the site tagline (real site copy).
@@ -84,6 +93,17 @@ const ogImageUrl = new URL(ogImage, Astro.site).href;
 const resolvedOgImageAlt = ogImageAlt || ogTitle;
 // og:locale mirrors the page language; only en and de are used on this site.
 const ogLocale = lang === "de" ? "de_DE" : "en_US";
+// Analytics page-event marks for lib/analytics/dom.ts: taxonomy prop keys
+// are snake_case, data attributes want kebab-case.
+const pageEventAttrs = pageEvent
+  ? Object.fromEntries([
+      ["data-ph-page-event", pageEvent.name],
+      ...Object.entries(pageEvent.props ?? {}).map(([key, value]) => [
+        `data-ph-prop-${key.replace(/_/g, "-")}`,
+        value,
+      ]),
+    ])
+  : {};
 ---
 
 <html lang={lang} translate="no">
@@ -146,6 +166,18 @@ const ogLocale = lang === "de" ? "de_DE" : "en_US";
     }
     {/* Per-page structured data (JSON-LD via components/JsonLd.astro). */}
     <slot name="jsonld" />
+    {
+      /* Cookieless analytics (ADR-0003): pageviews, pageleave, web vitals,
+         heatmaps, exceptions, plus the frozen event taxonomy in
+         lib/analytics/events.ts. Boots only on the production hostnames and
+         only with PUBLIC_POSTHOG_KEY set (no-ops on localhost / CI / VRT /
+         previews, so those never pollute the project). Bundled (not
+         is:inline) so Astro hashes the chunk and the no-external build never
+         fetches a third-party script at runtime. */
+    }
+    <script>
+      import "../lib/analytics/boot";
+    </script>
   </head>
   <body>
     {
@@ -160,7 +192,7 @@ const ogLocale = lang === "de" ? "de_DE" : "en_US";
         (fragment navigation only) without adding it to the normal Tab
         sequence. */
     }
-    <main id="main-content" tabindex="-1">
+    <main id="main-content" tabindex="-1" {...pageEventAttrs}>
       <slot />
     </main>
     <Footer />

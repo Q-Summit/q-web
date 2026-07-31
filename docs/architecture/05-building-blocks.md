@@ -9,7 +9,7 @@ Set by [ADR-0001](../decisions/0001-astro-static-site.md) and [ADR-0002](../deci
 | Container | Package | Holds |
 | --- | --- | --- |
 | Public site | `apps/web` (Astro, static output) | 16 Astro pages, layouts and components, build-time content loaders (`src/lib/content.ts`), SEO head (`Base.astro`), `/llms.txt` + `/llms-full.txt`, `robots.txt`, sitemap |
-| Media Worker | `apps/web/worker` + `wrangler.jsonc` | Serves `/media/*` from the R2 `MEDIA` binding; static assets otherwise |
+| Media Worker | `apps/web/worker` + `wrangler.jsonc` | Serves `/media/*` from the R2 `MEDIA` binding and proxies `/qm/*` to PostHog EU; static assets otherwise |
 | CMS | `apps/cms` (Payload 3) | Collection schemas, globals for pages/settings, per-division access control, drafts and approver publish rights, R2 upload adapter, draft-only `POST /api/content-sync`, Publish → Workers Builds deploy hook ([section 6](06-runtime.md), [`../dev/content-sync.md`](../dev/content-sync.md), [`../dev/go-live.md`](../dev/go-live.md)) |
 | Database | Neon Postgres (Frankfurt) | All CMS content and editor accounts; about 10 MB against a 500 MB free cap |
 | Media | Cloudflare R2 (`qweb-media`) | Images uploaded through Payload; hero/hack video and HLS are seeded into R2 outside the image-only Media allowlist (media pipeline: [section 9](09-architecture-decisions.md)) |

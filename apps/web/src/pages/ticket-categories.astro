@@ -8,6 +8,7 @@ import TicketTierCards from "../components/tickets/TicketTierCards.astro";
 import PricingComparisonTable from "../components/tickets/PricingComparisonTable.astro";
 import CategoryAccordion from "../components/tickets/CategoryAccordion.astro";
 import { getPageContent } from "../lib/content";
+import { EVENTS } from "../lib/analytics/events";
 
 const { ticketCategories: page } = await getPageContent();
 ---
@@ -16,6 +17,7 @@ const { ticketCategories: page } = await getPageContent();
   title={page.title}
   description={page.metaDescription}
   livePreviewGlobal="page-tickets"
+  pageEvent={{ name: EVENTS.ticket_page_viewed }}
 >
   <TicketTierCards
     heading={page.tiers.heading}

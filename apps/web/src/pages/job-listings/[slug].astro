@@ -6,6 +6,7 @@
 import Base from "../../layouts/Base.astro";
 import JsonLd from "../../components/seo/JsonLd.astro";
 import { getJobs, getPageContent, type Job } from "../../lib/content";
+import { EVENTS } from "../../lib/analytics/events";
 import { logoSrc } from "../../components/jobs/logo";
 import IconMapPin from "../../components/icons/IconMapPin.astro";
 import Container from "../../components/ui/Container.astro";
@@ -99,6 +100,10 @@ const breadcrumbLd = {
   title={metaTitle}
   description={metaDescription}
   livePreviewGlobal="page-jobs"
+  pageEvent={{
+    name: EVENTS.job_listing_viewed,
+    props: { job_title: job.title, company: job.company, slug: job.slug },
+  }}
 >
   <Fragment slot="jsonld">
     <JsonLd data={breadcrumbLd} />
@@ -176,6 +181,10 @@ const breadcrumbLd = {
             aria-label={isMailto
               ? undefined
               : `${applyLabel} (opens in a new tab)`}
+            data-ph-event={EVENTS.job_application_started}
+            data-ph-prop-job-title={job.title}
+            data-ph-prop-company={job.company}
+            data-ph-prop-apply-type={isMailto ? "email" : "url"}
           >
             {applyLabel}
           </a>

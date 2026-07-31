@@ -491,3 +491,46 @@ describe("lighthouse helpers", () => {
     assert.match(md, /PASS/);
   });
 });
+
+describe("check/events", () => {
+  it("parses the frozen taxonomy and accepts the current tree", async () => {
+    const { parseAllowed, run } = await import("./events.mjs");
+    const allowed = parseAllowed(
+      fs.readFileSync(
+        path.join(root, "apps/web/src/lib/analytics/events.ts"),
+        "utf8",
+      ),
+    );
+    assert.ok(allowed.has("ticket_purchase_initiated"));
+    assert.ok(allowed.has("faq_opened"));
+    // The live tree must be clean, or check:fast would fail.
+    assert.deepEqual(run().problems, []);
+  });
+
+  it("flags literals, unknown names, PII keys, and identify()", async () => {
+    const { lintText, parseAllowed } = await import("./events.mjs");
+    const allowed = parseAllowed(
+      'export const EVENTS = {\n  faq_opened: "faq_opened",\n}',
+    );
+    const bad = [
+      'data-ph-event="faq_opened"', // literal instead of EVENTS.*
+      'pageEvent={{ name: "faq_opened" }}', // literal instead of EVENTS.*
+      'posthog.capture("made_up_event")', // outside the taxonomy
+      "el.dataset x data-ph-prop-email={user.email}", // PII key on analytics line
+      "posthog.identify(id)", // identity is forbidden
+    ].map((line) => lintText("src/pages/x.astro", line, allowed));
+    for (const problems of bad) assert.equal(problems.length, 1);
+    const good = [
+      "data-ph-event={EVENTS.faq_opened}",
+      'posthog.capture("faq_opened")',
+      'capture("$pageview")', // PostHog-internal names pass
+      'const email = "mailto"; // not an analytics line',
+    ].map((line) => lintText("src/pages/x.astro", line, allowed));
+    for (const problems of good) assert.deepEqual(problems, []);
+    // The analytics lib itself is exempt (it defines the machinery).
+    assert.deepEqual(
+      lintText("src/lib/analytics/dom.ts", 'capture("anything")', allowed),
+      [],
+    );
+  });
+});

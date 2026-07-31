@@ -3,6 +3,7 @@
 // build animated the answers with interaction JS; native details/summary
 // elements need none.
 import type { Faq, PageLink } from "../../lib/content";
+import { EVENTS } from "../../lib/analytics/events";
 import { buildFaqPageJsonLd } from "../../lib/faq-json-ld";
 import JsonLd from "../seo/JsonLd.astro";
 import Button from "../ui/Button.astro";
@@ -48,7 +49,10 @@ const faqLd = buildFaqPageJsonLd(faqs);
     <div class="faq-list">
       {
         faqs.map((faq) => (
-          <details>
+          <details
+            data-ph-toggle-event={EVENTS.faq_opened}
+            data-ph-prop-question={faq.question}
+          >
             <summary class="u-accordion-summary">
               <span>{faq.question}</span>
               <IconChevron size={24} />

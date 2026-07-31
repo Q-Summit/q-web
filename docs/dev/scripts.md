@@ -29,7 +29,7 @@ scripts/
   lib/                 paths, run, args, env, s3, human-confirm, …
   local/               setup, ensure-chrome, dev, assert-db, reset, web-remote
   content/             pull, export, import, propose, sync-scope
-  check/               fast, docs, design, cms-styles, build-web, budgets, lighthouse*, vrt-report, vrt-cleanup, run-parallel, scripts.test
+  check/               fast, docs, design, events, cms-styles, build-web, budgets, lighthouse*, vrt-report, vrt-cleanup, run-parallel, scripts.test
   preview/             r2-sync, seed-local-r2, serve, cf, sync-picture-assets
   ops/                 mirror-db, mirror-media, cms-remote
   content-packages/    current/ (gitignored) + examples/
@@ -81,7 +81,7 @@ scripts/
 | `check-fast` | `check:fast` | `check/fast.mjs` |
 | `db-up` / `db-down` | `db:up` / `db:down` | docker compose |
 
-Also (pnpm only): `content:import`, `content:fixture`, `picture:sync`, `seed:local-r2`, `dev:web:remote` → `local/web-remote.mjs`, `check:docs`, `check:design`, `check:cms-styles`, `check:scripts`, `check:lint`, `check:md`, `check:spell`, `check:web` / `check:cms` (and their `:build` / `:test` / `:types` sub-gates), `test`, `format`, `format:check` (both cover `md,json,jsonc,yml,yaml,mjs,ts,tsx,astro,css`; generated files are exempt in `.prettierignore`).
+Also (pnpm only): `content:import`, `content:fixture`, `picture:sync`, `seed:local-r2`, `dev:web:remote` → `local/web-remote.mjs`, `check:docs`, `check:design`, `check:events` (analytics taxonomy gate, see [analytics.md](analytics.md)), `check:cms-styles`, `check:scripts`, `check:lint`, `check:md`, `check:spell`, `check:web` / `check:cms` (and their `:build` / `:test` / `:types` sub-gates), `test`, `format`, `format:check` (both cover `md,json,jsonc,yml,yaml,mjs,ts,tsx,astro,css`; generated files are exempt in `.prettierignore`).
 
 ## Shared lib rules
 

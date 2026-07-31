@@ -25,6 +25,7 @@
     "../worker-configuration.d.ts"
   ],
   "exclude": [
+    "./analytics.test.ts",
     "./content.test.ts",
     "./media-filename.test.ts",
     "./media-match.test.ts"
