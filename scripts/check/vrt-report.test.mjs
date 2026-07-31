@@ -13,6 +13,7 @@ import {
   groupChanges,
   hasReportableChanges,
   isSafeBaselineRel,
+  loadDeletedBaselineManifest,
   parseSnapshot,
   regroupReportFilesByComponent,
   renderComment,
@@ -328,6 +329,10 @@ test("summarizeBuckets / formatTally expose added·changed·same·failed", () =>
     nSame: 2,
   });
   assert.equal(formatTally(b), "1 added · 1 changed · 2 same · 1 failed");
+  assert.equal(
+    formatTally({ ...b, nRemoved: 2 }),
+    "1 added · 1 changed · 2 same · 1 failed · 2 removed",
+  );
   assert.deepEqual([...classifyByTestId(s).entries()].sort(), [
     ["id-added", "added"],
     ["id-changed", "changed"],
@@ -358,6 +363,11 @@ test("renderComment: changed first, clear copy, no Playwright lecture", () => {
   assert.match(body, /<summary>1 changed<\/summary>/);
   assert.match(body, /<summary>1 added<\/summary>/);
   assert.match(body, /<summary>1 failed \(render error\)<\/summary>/);
+  // Failures deep-link into the hosted report via failedById.
+  assert.match(
+    body,
+    /\[home-hero--default @ 768px\]\(https:\/\/pr-9\.q-web-vrt-reports\.pages\.dev\/#\?testId=id-failed\)/,
+  );
   // Changed before added (review priority).
   assert.ok(body.indexOf(">1 changed<") < body.indexOf(">1 added<"));
   assert.ok(!/Playwright labels missing baselines/.test(body));
@@ -367,6 +377,24 @@ test("renderComment: changed first, clear copy, no Playwright lecture", () => {
       reportFilterUrl("https://pr-9.q-web-vrt-reports.pages.dev", "changed"),
     ),
   );
+});
+
+test("loadDeletedBaselineManifest reads AUTO prune list", async () => {
+  const { mkdtempSync, writeFileSync, rmSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const dir = mkdtempSync(join(tmpdir(), "vrt-deleted-"));
+  try {
+    const file = join(dir, "vrt-deleted-baselines.txt");
+    writeFileSync(file, "gone--old-390.png\ngone--old-768.png\n");
+    assert.deepEqual(loadDeletedBaselineManifest(file), [
+      "gone--old-390.png",
+      "gone--old-768.png",
+    ]);
+    assert.equal(loadDeletedBaselineManifest(join(dir, "missing.txt")), null);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("renderComment: large added lists compact to components", () => {

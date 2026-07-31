@@ -247,7 +247,10 @@ jobs:
       # tree. Keep in lockstep with apps/web/package.json wrangler.
       - name: publish report to Cloudflare Pages
         id: deploy
-        if: ${{ steps.compare.outputs.merge_ok == 'true' && env.PUBLISH == 'true' && steps.vrt.outcome == 'failure' }}
+        # Publish on pixel diffs (Playwright failure) OR other reportable
+        # changes (e.g. orphan-only) so reviewers always get a hosted report
+        # when the sticky has something to say.
+        if: ${{ steps.compare.outputs.merge_ok == 'true' && env.PUBLISH == 'true' && (steps.vrt.outcome == 'failure' || steps.report.outputs.has_changes == 'true') }}
         continue-on-error: true
         working-directory: apps/web
         env:

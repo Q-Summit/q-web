@@ -397,8 +397,33 @@ export function summarizeBuckets(stats) {
 }
 
 /** One-line tally used in the sticky H3 and the hosted report banner. */
-export function formatTally({ nAdded, nChanged, nSame, nFailed }) {
-  return `${nAdded} added · ${nChanged} changed · ${nSame} same · ${nFailed} failed`;
+export function formatTally({
+  nAdded,
+  nChanged,
+  nSame,
+  nFailed,
+  nRemoved = 0,
+}) {
+  const parts = [
+    `${nAdded} added`,
+    `${nChanged} changed`,
+    `${nSame} same`,
+    `${nFailed} failed`,
+  ];
+  // Removed only when present: orphans are not in the Playwright HTML report.
+  if (nRemoved > 0) parts.push(`${nRemoved} removed`);
+  return parts.join(" · ");
+}
+
+/** Baselines deleted in the first AUTO pass (one filename per line). */
+export function loadDeletedBaselineManifest(
+  filePath = rootScratch("vrt-deleted-baselines.txt"),
+) {
+  if (!existsSync(filePath)) return null;
+  return readFileSync(filePath, "utf8")
+    .split(/\r?\n/)
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
 /** Hosted-report deep link that pre-fills Playwright search (title prefixes). */
@@ -428,6 +453,7 @@ export function renderComment(stats, env = {}) {
     added = new Map(),
     removed = [],
     otherFailures,
+    failedById = new Map(),
   } = stats;
   const { committed = false, reportUrl = "", baseRef = "main" } = env;
   const names = [...changed.keys()].sort();
@@ -442,6 +468,9 @@ export function renderComment(stats, env = {}) {
     nRemoved,
     nSame,
   } = summarizeBuckets(stats);
+  const failIdByLabel = new Map(
+    [...(failedById?.entries?.() ?? [])].map(([id, label]) => [label, id]),
+  );
   const repoUrl = `${env.server ?? "https://github.com"}/${env.repo ?? ""}`;
   const filesUrl = env.pr ? `${repoUrl}/pull/${env.pr}/files` : repoUrl;
   const runUrl = env.runId ? `${repoUrl}/actions/runs/${env.runId}` : repoUrl;
@@ -539,14 +568,15 @@ export function renderComment(stats, env = {}) {
   out.push(
     `### Visual review vs \`${baseRef}\``,
     "",
-    formatTally({ nAdded, nChanged: n, nSame, nFailed }),
+    formatTally({ nAdded, nChanged: n, nSame, nFailed, nRemoved }),
     "",
   );
 
   const hero = [];
   if (reportBase) {
     // Prefer the bucket that needs review: changed > failed > added.
-    const defaultBucket = n > 0 ? "changed" : nFailed > 0 ? "failed" : "added";
+    const defaultBucket =
+      n > 0 ? "changed" : nFailed > 0 ? "failed" : nAdded > 0 ? "added" : "";
     hero.push(
       `[Open report](${reportFilterUrl(reportBase, defaultBucket) || reportBase})`,
     );
@@ -579,9 +609,14 @@ export function renderComment(stats, env = {}) {
     out.push(...accordionDetailed(names, `${n} changed`, changed, true));
   }
   if (nFailed > 0) {
-    const failLines = otherFailures
-      .slice(0, 40)
-      .map((t) => `- ${escapeInline(t)}`);
+    const failLines = otherFailures.slice(0, 40).map((t) => {
+      const label = escapeInline(t);
+      const id = failIdByLabel.get(t);
+      if (reportBase && id) {
+        return `- [${label}](${reportBase}/#?testId=${id})`;
+      }
+      return `- ${label}`;
+    });
     if (otherFailures.length > 40) {
       failLines.push(`- …and ${otherFailures.length - 40} more`);
     }
@@ -1048,10 +1083,16 @@ if (invokedDirectly) {
     // Orphans = committed PNGs with no gallery page (removed *.vrt.ts variant).
     // Detect always so COMPARE mode surfaces them; delete only in AUTO/write.
     // CI / AUTO always runs after a fresh vrt:build in this job -> trust gallery.
+    // --comment-only runs AFTER AUTO prune: re-scan would see zero orphans and
+    // drop the removed accordion. Prefer the first-pass delete manifest.
     const orphans = findOrphanBaselines(BASELINE_DIR, GALLERY_DIR, {
       cautious: false,
     });
-    stats.removed = orphans;
+    if (commentOnly) {
+      stats.removed = loadDeletedBaselineManifest() ?? orphans;
+    } else {
+      stats.removed = orphans;
+    }
 
     // AUTO mode: stage each changed/added actual over its committed baseline so
     // the workflow can commit them. No second Playwright run needed. Also prune
@@ -1133,6 +1174,15 @@ if (invokedDirectly) {
     }
     console.log(body);
   } catch (e) {
+    // --comment-only is a post-deploy rewrite: never clobber a good sticky
+    // body from the first pass if this second pass fails.
+    const commentPath = rootScratch("vrt-comment.md");
+    if (commentOnly && existsSync(commentPath)) {
+      console.log(
+        `vrt-report: comment-only failed (${e.message}); keeping prior comment`,
+      );
+      process.exit(0);
+    }
     const body = renderComment(
       {
         total: 0,
@@ -1143,7 +1193,7 @@ if (invokedDirectly) {
       },
       { ok: false },
     );
-    writeFileSync(rootScratch("vrt-comment.md"), body);
+    writeFileSync(commentPath, body);
     setOutput("has_changes", "false");
     setOutput("wrote", "0");
     setOutput("deleted", "0");
