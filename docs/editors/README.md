@@ -38,6 +38,8 @@ Each person under **Lists & people → Team** carries a name, role, portrait, di
 
 It only accepts linkedin.com addresses. A search result, a company page, or a bare handle is rejected when you save, because all three would render a broken link on the live site.
 
+The **Email address** field works the same way: enter the person's address (for example `jane.doe@q-summit.com`) and a small mail icon appears beside the LinkedIn icon. Leave it empty and no mail icon shows.
+
 ## Images
 
 Upload photos and logos under **Shared assets → Media library**. You can search by file name as well as by description, and the list shows a thumbnail of each file.

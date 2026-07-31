@@ -5,7 +5,8 @@
     "division": "Chair",
     "year": null,
     "photoFilename": "fixture-missing-photo.webp",
-    "linkedin": "https://www.linkedin.com/in/fixture-member-1/"
+    "linkedin": "https://www.linkedin.com/in/fixture-member-1/",
+    "email": "fixture.member1@example.com"
   },
   {
     "name": "Fixture Member 2",
@@ -13,7 +14,8 @@
     "division": "Public Relations",
     "year": null,
     "photoFilename": "fixture-missing-photo.webp",
-    "linkedin": null
+    "linkedin": null,
+    "email": "fixture.member2@example.com"
   },
   {
     "name": "Fixture Member 3",
@@ -21,7 +23,8 @@
     "division": "Partner",
     "year": null,
     "photoFilename": "fixture-missing-photo.webp",
-    "linkedin": "https://www.linkedin.com/in/fixture-member-3/"
+    "linkedin": "https://www.linkedin.com/in/fixture-member-3/",
+    "email": null
   },
   {
     "name": "Fixture Member 4",
@@ -29,7 +32,8 @@
     "division": "Finance",
     "year": null,
     "photoFilename": "fixture-missing-photo.webp",
-    "linkedin": null
+    "linkedin": null,
+    "email": null
   },
   {
     "name": "Fixture Member 5",
@@ -37,6 +41,7 @@
     "division": "Operations",
     "year": null,
     "photoFilename": "fixture-missing-photo.webp",
-    "linkedin": "https://www.linkedin.com/in/fixture-member-5/"
+    "linkedin": "https://www.linkedin.com/in/fixture-member-5/",
+    "email": "fixture.member5@example.com"
   }
 ]

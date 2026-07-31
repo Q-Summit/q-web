@@ -8,6 +8,7 @@ import type { TeamMember } from "../../lib/content";
 import { photoSrc } from "../../lib/media-filename";
 import { resolveContentImage } from "../../lib/images";
 import IconLinkedIn from "../icons/IconLinkedIn.astro";
+import IconMail from "../icons/IconMail.astro";
 
 interface Props {
   members: TeamMember[];
@@ -60,13 +61,22 @@ const memberImages = await Promise.all(
             {member.name}
             {member.linkedin && (
               <a
-                class="member-card__linkedin"
+                class="member-card__contact"
                 href={member.linkedin}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={`${member.name} on LinkedIn`}
               >
                 <IconLinkedIn />
+              </a>
+            )}
+            {member.email && (
+              <a
+                class="member-card__contact"
+                href={`mailto:${member.email}`}
+                aria-label={`Email ${member.name}`}
+              >
+                <IconMail />
               </a>
             )}
           </p>
@@ -155,11 +165,12 @@ const memberImages = await Promise.all(
     color: var(--color-heading);
   }
 
-  /* Sits inline after the last word of the name rather than in a flex row of
-     its own: a two-line name then keeps the icon beside its final line
-     instead of centering it against the whole block. The nudge values are
-     optical sub-rem alignment, which SPACE-1 leaves raw on purpose. */
-  .member-card__linkedin {
+  /* The contact icons (LinkedIn, mail) sit inline after the last word of the
+     name rather than in a flex row of their own: a two-line name then keeps
+     them beside its final line instead of centering them against the whole
+     block. The nudge values are optical sub-rem alignment, which SPACE-1
+     leaves raw on purpose. */
+  .member-card__contact {
     display: inline-flex;
     margin-left: 0.375rem;
     vertical-align: -0.125em;
@@ -171,22 +182,22 @@ const memberImages = await Promise.all(
 
   /* Paint-only hover feedback, which MOTION-3 allows; no second color token
      is needed and the mark keeps its brand color throughout. */
-  .member-card__linkedin:focus-visible {
+  .member-card__contact:focus-visible {
     opacity: 0.7;
   }
 
   @media (hover: hover) {
-    .member-card__linkedin:hover {
+    .member-card__contact:hover {
       opacity: 0.7;
     }
   }
 
-  /* :global because the svg comes from IconLinkedIn.astro, so it carries that
-     component's scope id, not this one. Same idiom as the footer social
-     icons (Footer.astro). Without it the rule never matches and the icon
-     renders with no intrinsic size. `em` ties the mark to the name's size so
-     the two scale together at the 767px type breakpoint. */
-  .member-card__linkedin :global(svg) {
+  /* :global because the svg comes from the icon components, so it carries
+     their scope id, not this one. Same idiom as the footer social icons
+     (Footer.astro). Without it the rule never matches and the icons render
+     with no intrinsic size. `em` ties the marks to the name's size so they
+     scale together at the 767px type breakpoint. */
+  .member-card__contact :global(svg) {
     width: 1em;
     height: 1em;
     display: block;
@@ -197,7 +208,7 @@ const memberImages = await Promise.all(
      specificity, so a media block placed earlier in the file loses on source
      order and the transition would survive. */
   @media (prefers-reduced-motion: reduce) {
-    .member-card__linkedin {
+    .member-card__contact {
       transition: none;
     }
   }

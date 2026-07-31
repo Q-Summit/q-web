@@ -356,6 +356,10 @@ export interface Team {
    */
   linkedin?: string | null;
   /**
+   * Shown as a mail icon on the member's card; leave empty to show no icon.
+   */
+  email?: string | null;
+  /**
    * Which section this person appears under on /our-team/. The site spells the short names out, so "pr" shows as "Public Relations".
    */
   division: 'chair' | 'pr' | 'partner' | 'finance' | 'operations' | 'concept' | 'it';
@@ -677,6 +681,7 @@ export interface TeamSelect<T extends boolean = true> {
   role?: T;
   photo?: T;
   linkedin?: T;
+  email?: T;
   division?: T;
   year?: T;
   order?: T;

@@ -99,6 +99,19 @@ export const Team: CollectionConfig = draftCollection({
       validate: linkedinUrlValidate,
     },
     {
+      // Optional for the same reason as linkedin: addresses land on the
+      // roster gradually, and the card simply omits the icon when this is
+      // empty. Payload's email field type validates the address shape.
+      name: "email",
+      type: "email",
+      label: "Email address",
+      admin: {
+        placeholder: "jane.doe@q-summit.com",
+        description:
+          "Shown as a mail icon on the member's card; leave empty to show no icon.",
+      },
+    },
+    {
       // Display grouping on the team page. Reuses the shared division list
       // (single source of truth); the site maps values to headings, e.g.
       // "pr" renders as "Public Relations".

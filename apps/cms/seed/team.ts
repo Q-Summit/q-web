@@ -14,6 +14,8 @@ interface TeamSource {
   year: string;
   /** Optional profile URL; omitted for members who have none. */
   linkedin?: string | null;
+  /** Optional email address; omitted for members who have none. */
+  email?: string | null;
 }
 
 function readTeamJson(): TeamSource[] {
@@ -102,6 +104,7 @@ async function run() {
       photo: mediaId,
       year: item.year,
       linkedin: item.linkedin ?? null,
+      email: item.email ?? null,
       order: index * 10,
     };
 
