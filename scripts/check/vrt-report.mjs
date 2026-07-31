@@ -1,29 +1,21 @@
 #!/usr/bin/env node
 /**
- * vrt-report: the brains of the advisory visual (VRT) job. Adapted from the
- * Noa-IQ marketing-website VRT. From the Playwright JSON report it:
+ * vrt-report: classify Playwright VRT results, write the sticky PR comment,
+ * enhance the HTML report (buckets + component grouping), and in AUTO mode
+ * stage refreshed baselines.
  *
- *   1. figures out which snapshots changed vs the committed baselines (retry
- *      aware: keys off the test's FINAL status, so a flaky-but-passed test is
- *      never reported as a change);
- *   2. in AUTO mode (VRT_WRITE_BASELINES=1) copies each changed snapshot's
- *      *-actual.png over its committed baseline, so the workflow can commit
- *      them (turning the before/after into GitHub's native image diff in the
- *      PR "Files changed" tab, which merging then adopts);
- *   3. writes the sticky PR comment body (vrt-comment.md), an accordion of the
- *      changed snapshots, each deep-linked into the hosted report when
- *      published, else the native image diff; and
- *   4. emits has_changes / wrote to $GITHUB_OUTPUT and prints the body to
- *      stdout (the workflow tees it into the run step summary).
+ * Pipeline (see visual.yml):
+ *   1. collectChanges - bucket unexpected tests (changed / added / failed)
+ *   2. enhancePlaywrightReport - title prefixes, banner, regroup by *.vrt.ts
+ *   3. renderComment - sticky body (changed first; compact added)
+ *   4. AUTO - copy *-actual.png over baselines + prune orphans
  *
- * It NEVER throws: a missing or garbage report degrades to a note rather than
- * failing the (non-blocking) job. The pure parts (collectChanges, groupChanges,
- * renderComment) are exported for scripts/check/vrt-report.test.mjs.
+ * Never throws at the CLI: garbage input degrades to "report unavailable".
+ * Pure helpers are exported for scripts/check/vrt-report.test.mjs.
  *
- * Env (all optional, supplied by Actions): VRT_MODE=auto|compare ,
- * VRT_WRITE_BASELINES=1 , VRT_REPORT_URL (Cloudflare Pages report) ,
- * GITHUB_SERVER_URL , GITHUB_REPOSITORY , GITHUB_RUN_ID , PR_NUMBER ,
- * PR_HEAD_SHA (the reviewed commit, falls back to GITHUB_SHA) , GITHUB_OUTPUT.
+ * Env (optional, from Actions): VRT_WRITE_BASELINES, VRT_REPORT_URL,
+ * VRT_BASE_REF, VRT_COMMENT_ONLY, VRT_COMMITTED, GITHUB_*, PR_NUMBER,
+ * PR_HEAD_SHA, GITHUB_OUTPUT.
  */
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
@@ -415,6 +407,17 @@ export function formatTally({
   return parts.join(" · ");
 }
 
+/**
+ * Default filter for sticky hero + report banner: review priority is
+ * changed > failed > added (empty string = show all).
+ */
+export function preferredReviewBucket({ nChanged, nFailed, nAdded }) {
+  if ((nChanged ?? 0) > 0) return "changed";
+  if ((nFailed ?? 0) > 0) return "failed";
+  if ((nAdded ?? 0) > 0) return "added";
+  return "";
+}
+
 /** Baselines deleted in the first AUTO pass (one filename per line). */
 export function loadDeletedBaselineManifest(
   filePath = rootScratch("vrt-deleted-baselines.txt"),
@@ -436,6 +439,23 @@ export function reportFilterUrl(reportBase, bucket) {
 
 /** How many variant rows to expand with per-width links before compacting. */
 export const COMMENT_EXPAND_VARIANT_ROWS = 20;
+/** Max component lines in a compact "added" accordion. */
+export const COMMENT_COMPACT_COMPONENT_ROWS = 60;
+/** Max render-failure lines listed in the sticky. */
+export const COMMENT_FAIL_ROWS = 40;
+
+/** Playwright HTML file stats block for a regrouped component group. */
+export function htmlFileStats(tests) {
+  const list = Array.isArray(tests) ? tests : [];
+  return {
+    total: list.length,
+    expected: list.filter((t) => t.outcome === "expected").length,
+    unexpected: list.filter((t) => t.outcome === "unexpected").length,
+    flaky: list.filter((t) => t.outcome === "flaky").length,
+    skipped: list.filter((t) => t.outcome === "skipped").length,
+    ok: list.every((t) => t.ok !== false),
+  };
+}
 
 /**
  * Render the sticky PR comment. One comment per PR, updated in place on every
@@ -452,7 +472,7 @@ export function renderComment(stats, env = {}) {
     changed,
     added = new Map(),
     removed = [],
-    otherFailures,
+    otherFailures = [],
     failedById = new Map(),
   } = stats;
   const { committed = false, reportUrl = "", baseRef = "main" } = env;
@@ -468,15 +488,18 @@ export function renderComment(stats, env = {}) {
     nRemoved,
     nSame,
   } = summarizeBuckets(stats);
-  const failIdByLabel = new Map(
-    [...(failedById?.entries?.() ?? [])].map(([id, label]) => [label, id]),
-  );
+  const failIdByLabel = new Map();
+  for (const [id, label] of failedById instanceof Map
+    ? failedById
+    : Object.entries(failedById ?? {})) {
+    if (id && label) failIdByLabel.set(label, id);
+  }
   const repoUrl = `${env.server ?? "https://github.com"}/${env.repo ?? ""}`;
   const filesUrl = env.pr ? `${repoUrl}/pull/${env.pr}/files` : repoUrl;
   const runUrl = env.runId ? `${repoUrl}/actions/runs/${env.runId}` : repoUrl;
   const sha7 = (env.sha ?? "").slice(0, 7);
   const commit = sha7 ? `[\`${sha7}\`](${repoUrl}/commit/${env.sha})` : "";
-  const reportBase = reportUrl.replace(/\/+$/, "");
+  const reportBase = String(reportUrl || "").replace(/\/+$/, "");
   const out = [MARKER];
 
   if (env.ok === false) {
@@ -511,7 +534,12 @@ export function renderComment(stats, env = {}) {
     );
 
   /** Full per-width accordion (for changed / small lists). */
-  const accordionDetailed = (snapNames, summary, source, linkWidths = true) => {
+  const accordionDetailed = (
+    snapNames,
+    summary,
+    source,
+    { linkWidths = true, browseBucket = "changed" } = {},
+  ) => {
     const rows = variantRows(snapNames);
     const lines = [`<details><summary>${summary}</summary>`, ""];
     for (const { component, variant, widths } of rows.slice(
@@ -528,7 +556,7 @@ export function renderComment(stats, env = {}) {
     }
     if (rows.length > COMMENT_EXPAND_VARIANT_ROWS) {
       const more = rows.length - COMMENT_EXPAND_VARIANT_ROWS;
-      const browse = reportFilterUrl(reportBase, "changed");
+      const browse = reportFilterUrl(reportBase, browseBucket);
       lines.push(
         browse
           ? `- …and ${more} more · [open in report](${browse})`
@@ -550,15 +578,20 @@ export function renderComment(stats, env = {}) {
     if (browse) {
       lines.push(`[Browse in the report](${browse})`, "");
     }
-    for (const { component, variants } of groups.slice(0, 60)) {
+    for (const { component, variants } of groups.slice(
+      0,
+      COMMENT_COMPACT_COMPONENT_ROWS,
+    )) {
       const nVar = variants.length;
       const nShot = variants.reduce((acc, v) => acc + v.widths.length, 0);
       lines.push(
         `- \`${escapeInline(component)}\` · ${nVar} variant${nVar === 1 ? "" : "s"} (${nShot} shot${nShot === 1 ? "" : "s"})`,
       );
     }
-    if (groups.length > 60) {
-      lines.push(`- …and ${groups.length - 60} more components`);
+    if (groups.length > COMMENT_COMPACT_COMPONENT_ROWS) {
+      lines.push(
+        `- …and ${groups.length - COMMENT_COMPACT_COMPONENT_ROWS} more components`,
+      );
     }
     lines.push("", "</details>");
     return lines;
@@ -574,9 +607,11 @@ export function renderComment(stats, env = {}) {
 
   const hero = [];
   if (reportBase) {
-    // Prefer the bucket that needs review: changed > failed > added.
-    const defaultBucket =
-      n > 0 ? "changed" : nFailed > 0 ? "failed" : nAdded > 0 ? "added" : "";
+    const defaultBucket = preferredReviewBucket({
+      nChanged: n,
+      nFailed,
+      nAdded,
+    });
     hero.push(
       `[Open report](${reportFilterUrl(reportBase, defaultBucket) || reportBase})`,
     );
@@ -606,10 +641,14 @@ export function renderComment(stats, env = {}) {
 
   // Changed first: that is what humans must approve as intentional.
   if (n > 0) {
-    out.push(...accordionDetailed(names, `${n} changed`, changed, true));
+    out.push(
+      ...accordionDetailed(names, `${n} changed`, changed, {
+        browseBucket: "changed",
+      }),
+    );
   }
   if (nFailed > 0) {
-    const failLines = otherFailures.slice(0, 40).map((t) => {
+    const failLines = otherFailures.slice(0, COMMENT_FAIL_ROWS).map((t) => {
       const label = escapeInline(t);
       const id = failIdByLabel.get(t);
       if (reportBase && id) {
@@ -617,8 +656,8 @@ export function renderComment(stats, env = {}) {
       }
       return `- ${label}`;
     });
-    if (otherFailures.length > 40) {
-      failLines.push(`- …and ${otherFailures.length - 40} more`);
+    if (otherFailures.length > COMMENT_FAIL_ROWS) {
+      failLines.push(`- …and ${otherFailures.length - COMMENT_FAIL_ROWS} more`);
     }
     out.push(
       `<details><summary>${nFailed} failed (render error)</summary>`,
@@ -638,7 +677,11 @@ export function renderComment(stats, env = {}) {
         ...accordionCompactComponents(addedNames, addedSummary, "added"),
       );
     } else {
-      out.push(...accordionDetailed(addedNames, addedSummary, added, true));
+      out.push(
+        ...accordionDetailed(addedNames, addedSummary, added, {
+          browseBucket: "added",
+        }),
+      );
     }
   }
   if (nRemoved > 0) {
@@ -649,7 +692,7 @@ export function renderComment(stats, env = {}) {
           ? `${nRemoved} removed`
           : `${nRemoved} orphan${nRemoved === 1 ? "" : "s"} (will delete on AUTO)`,
         new Map(),
-        false,
+        { linkWidths: false, browseBucket: "" },
       ),
     );
   }
@@ -658,6 +701,7 @@ export function renderComment(stats, env = {}) {
 }
 
 const VRT_TITLE_PREFIX = /^\s*\[(?:added|changed|failed|same)\]\s*/i;
+const GALLERY_SPEC_FILE = /(^|[/\\])gallery\.spec\.[cm]?[jt]s$/i;
 
 /**
  * Map Playwright HTML-report testIds -> vrt bucket from collectChanges stats.
@@ -671,21 +715,25 @@ export function classifyByTestId(stats) {
   for (const [, a] of stats?.changed ?? []) {
     if (a?.id) byId.set(a.id, "changed");
   }
-  for (const id of stats?.failedById?.keys?.() ?? []) {
-    byId.set(id, "failed");
+  const failedById = stats?.failedById;
+  if (failedById instanceof Map) {
+    for (const id of failedById.keys()) byId.set(id, "failed");
   }
   return byId;
 }
 
+function stripVrtTitlePrefix(title) {
+  return String(title || "").replace(VRT_TITLE_PREFIX, "");
+}
+
 function labelTitle(title, bucket) {
-  const bare = String(title || "").replace(VRT_TITLE_PREFIX, "");
-  return `[${bucket}] ${bare}`;
+  return `[${bucket}] ${stripVrtTitlePrefix(title)}`;
 }
 
 function labelTestEntry(test, bucket) {
   test.title = labelTitle(test.title, bucket);
-  // Prefer title prefix for filtering; skip Playwright tags so the UI does not
-  // show both `[changed]` in the title and a duplicate blue tag chip.
+  // Title prefix drives search filters; skip Playwright tags so the UI does
+  // not show both `[changed]` in the title and a duplicate blue chip.
   const annotations = Array.isArray(test.annotations) ? test.annotations : [];
   if (
     !annotations.some((a) => a?.type === "vrt" && a?.description === bucket)
@@ -693,6 +741,30 @@ function labelTestEntry(test, bucket) {
     annotations.push({ type: "vrt", description: bucket });
   }
   test.annotations = annotations;
+}
+
+/** Bucket for one HTML-report test entry (title prefix / filter chip). */
+export function classifyHtmlTestBucket(test, byId, failLabels) {
+  if (!test || typeof test !== "object") return null;
+  let bucket = byId.get(test.testId);
+  if (!bucket && Array.isArray(test.path) && test.path.length) {
+    const bare = stripVrtTitlePrefix(test.title);
+    const label = formatFailureLabel(test.path, bare);
+    if (failLabels.has(label)) bucket = "failed";
+  }
+  // Flaky-but-passed counts as same in summarizeBuckets (not unexpected).
+  if (!bucket && (test.outcome === "expected" || test.outcome === "flaky")) {
+    bucket = "same";
+  }
+  if (!bucket && test.ok === false) {
+    const names = (test.results || [])
+      .flatMap((r) => r.attachments || [])
+      .map((a) => a.name || "");
+    if (names.some((n) => n.endsWith("-diff.png"))) bucket = "changed";
+    else if (names.some((n) => n.endsWith("-actual.png"))) bucket = "added";
+    else bucket = "failed";
+  }
+  return bucket || null;
 }
 
 /**
@@ -710,8 +782,7 @@ export function vrtSlugFromPath(filePath) {
 
 /**
  * Map component slug -> repo-relative `*.vrt.ts` path for report source links.
- * Scanned from disk so the HTML report stops claiming every shot is
- * `gallery.spec.ts:56`.
+ * First writer wins on slug collisions (keeps the tree deterministic).
  */
 export function mapVrtComponentFiles(
   componentsRoot = path.join(REPO_ROOT, "apps/web/src/components"),
@@ -736,18 +807,26 @@ export function mapVrtComponentFiles(
       if (!ent.isFile() || !ent.name.endsWith(".vrt.ts")) continue;
       const rel = path.relative(REPO_ROOT, full).split(path.sep).join("/");
       const slug = vrtSlugFromPath(rel);
-      if (slug) out.set(slug, rel);
+      if (!slug || out.has(slug)) continue;
+      out.set(slug, rel);
     }
   }
   return out;
 }
 
 /** Short label for report accordion + source link (drop apps/web/src/). */
-export function displayVrtSource(component, vrtFiles = mapVrtComponentFiles()) {
+export function displayVrtSource(component, vrtFiles = new Map()) {
   if (component === "gallery") return "tests/visual/gallery.spec.ts";
   const rel = vrtFiles.get(component);
   if (rel) return rel.replace(/^apps\/web\/src\//, "");
   return `${component}.vrt.ts`;
+}
+
+function componentFileId(component) {
+  return createHash("sha256")
+    .update(`vrt-component:${component}`)
+    .digest("hex")
+    .slice(0, 20);
 }
 
 /**
@@ -768,7 +847,7 @@ export function regroupReportFilesByComponent(
     const tests = Array.isArray(file?.tests) ? file.tests : [];
     const isGalleryShell =
       typeof file?.fileName === "string" &&
-      /(^|[/\\])gallery\.spec\.[cm]?[jt]s$/i.test(file.fileName);
+      GALLERY_SPEC_FILE.test(file.fileName);
     if (!isGalleryShell || tests.length === 0) {
       out.push(file);
       continue;
@@ -778,51 +857,54 @@ export function regroupReportFilesByComponent(
       const suitePath = Array.isArray(test?.path) ? test.path : [];
       const component = suitePath.length > 0 ? String(suitePath[0]) : "gallery";
       if (!byComponent.has(component)) byComponent.set(component, []);
-      // Component describe becomes the file name; drop it from path so the UI
-      // does not show `ui-button › ui-button › …`.
       const sourceFile = displayVrtSource(component, vrtFiles);
-      const location = {
-        ...(test.location && typeof test.location === "object"
-          ? test.location
-          : {}),
-        file: sourceFile,
-        // Line in the runner is meaningless once regrouped; point at the
-        // declaration file instead of gallery.spec.ts:56 on every row.
-        line: 1,
-        column: 1,
-      };
+      // Drop the component describe from path (it is now the file name) and
+      // rewrite location so rows do not all claim gallery.spec.ts:56.
       byComponent.get(component).push({
         ...test,
         path: suitePath.slice(1),
-        location,
+        location: {
+          ...(test.location && typeof test.location === "object"
+            ? test.location
+            : {}),
+          file: sourceFile,
+          line: 1,
+          column: 1,
+        },
       });
     }
     for (const component of [...byComponent.keys()].sort()) {
       const groupTests = byComponent.get(component);
-      const fileId = createHash("sha256")
-        .update(`vrt-component:${component}`)
-        .digest("hex")
-        .slice(0, 20);
       const displayName = displayVrtSource(component, vrtFiles);
       out.push({
-        fileId,
-        // Prefer the real *.vrt.ts path as the top-level accordion label.
+        fileId: componentFileId(component),
         fileName: displayName,
         tests: groupTests,
-        stats: {
-          total: groupTests.length,
-          expected: groupTests.filter((t) => t.outcome === "expected").length,
-          unexpected: groupTests.filter((t) => t.outcome === "unexpected")
-            .length,
-          flaky: groupTests.filter((t) => t.outcome === "flaky").length,
-          skipped: groupTests.filter((t) => t.outcome === "skipped").length,
-          ok: groupTests.every((t) => t.ok !== false),
-        },
+        stats: htmlFileStats(groupTests),
       });
     }
   }
   return out;
 }
+
+/** Inject or replace the sticky VRT banner in index.html. */
+export function injectReportBanner(html, banner) {
+  const trimmed = banner.trim();
+  if (html.includes('id="vrt-summary"')) {
+    return html.replace(/<div id="vrt-summary"[\s\S]*?<\/script>/, trimmed);
+  }
+  return html.replace("<body>", `<body>\n${trimmed}\n`);
+}
+
+const ZIP_REPACK_PY =
+  "import os,sys,zipfile\n" +
+  "root, out = sys.argv[1], sys.argv[2]\n" +
+  "if not root.endswith(('/', '\\\\')): root += os.sep\n" +
+  "with zipfile.ZipFile(out,'w',compression=zipfile.ZIP_DEFLATED) as z:\n" +
+  "  for dirpath,_,files in os.walk(root):\n" +
+  "    for name in sorted(files):\n" +
+  "      full=os.path.join(dirpath,name)\n" +
+  "      z.write(full, full[len(root):].replace('\\\\','/'))\n";
 
 /**
  * Rewrite the Playwright HTML report so Added / Changed / Same / Failed are
@@ -874,43 +956,12 @@ export function enhancePlaywrightReport(
     const failLabels = new Set(stats?.otherFailures ?? []);
     const buckets = summarizeBuckets(stats);
 
-    const relabelTests = (tests) => {
-      if (!Array.isArray(tests)) return;
-      for (const test of tests) {
-        if (!test || typeof test !== "object") continue;
-        let bucket = byId.get(test.testId);
-        if (!bucket && Array.isArray(test.path) && test.path.length) {
-          // HTML report nests describe titles in `path`; match the sticky label.
-          const bare =
-            test.title?.replace?.(VRT_TITLE_PREFIX, "") ?? test.title;
-          const label = formatFailureLabel(test.path, bare);
-          if (failLabels.has(label)) bucket = "failed";
-        }
-        // Flaky-but-passed counts as same in summarizeBuckets (not unexpected);
-        // label it the same way so the banner chips and titles agree.
-        if (
-          !bucket &&
-          (test.outcome === "expected" || test.outcome === "flaky")
-        ) {
-          bucket = "same";
-        }
-        if (!bucket && test.ok === false) {
-          // Fallback: unexpected with no diff attachment in the HTML entry → added
-          const shotAttachments = (test.results || []).flatMap(
-            (r) => r.attachments || [],
-          );
-          const names = shotAttachments.map((a) => a.name || "");
-          if (names.some((n) => n.endsWith("-diff.png"))) bucket = "changed";
-          else if (names.some((n) => n.endsWith("-actual.png")))
-            bucket = "added";
-          else bucket = "failed";
-        }
+    for (const file of reportJson.files || []) {
+      if (!Array.isArray(file?.tests)) continue;
+      for (const test of file.tests) {
+        const bucket = classifyHtmlTestBucket(test, byId, failLabels);
         if (bucket) labelTestEntry(test, bucket);
       }
-    };
-
-    for (const file of reportJson.files || []) {
-      relabelTests(file.tests);
     }
     // One file per component (not one giant gallery.spec.ts). testIds stay so
     // sticky deep links keep working.
@@ -930,7 +981,6 @@ export function enhancePlaywrightReport(
         }),
       );
     }
-    // Stash the VRT tally on metadata so a future UI can read it; harmless today.
     reportJson.metadata = {
       ...(reportJson.metadata || {}),
       vrt: { baseRef, ...buckets },
@@ -938,23 +988,9 @@ export function enhancePlaywrightReport(
     writeFileSync(reportJsonPath, JSON.stringify(reportJson));
 
     const outZip = path.join(tmp, "report-out.zip");
-    execFileSync(
-      "python3",
-      [
-        "-c",
-        "import os,sys,zipfile\n" +
-          "root, out = sys.argv[1], sys.argv[2]\n" +
-          "if not root.endswith(('/', '\\\\')): root += os.sep\n" +
-          "with zipfile.ZipFile(out,'w',compression=zipfile.ZIP_DEFLATED) as z:\n" +
-          "  for dirpath,_,files in os.walk(root):\n" +
-          "    for name in sorted(files):\n" +
-          "      full=os.path.join(dirpath,name)\n" +
-          "      z.write(full, full[len(root):].replace('\\\\','/'))\n",
-        extractDir,
-        outZip,
-      ],
-      { stdio: "pipe" },
-    );
+    execFileSync("python3", ["-c", ZIP_REPACK_PY, extractDir, outZip], {
+      stdio: "pipe",
+    });
     const b64 = readFileSync(outZip).toString("base64");
     html = html.replace(
       /<template id="playwrightReportBase64">data:application\/zip;base64,[^<]+<\/template>/,
@@ -962,16 +998,10 @@ export function enhancePlaywrightReport(
     );
 
     const tally = formatTally(buckets);
-    const banner = buildReportBanner({ baseRef, tally, ...buckets });
-    // Always refresh the banner so a re-enhance picks up copy/CSS fixes.
-    if (html.includes('id="vrt-summary"')) {
-      html = html.replace(
-        /<div id="vrt-summary"[\s\S]*?<\/script>/,
-        banner.trim(),
-      );
-    } else {
-      html = html.replace("<body>", `<body>\n${banner}\n`);
-    }
+    html = injectReportBanner(
+      html,
+      buildReportBanner({ baseRef, tally, ...buckets }),
+    );
     writeFileSync(indexPath, html);
     console.log(
       `vrt-report: enhanced HTML report (${tally}; ${reportJson.files.length} component groups)`,
@@ -1002,14 +1032,8 @@ export function buildReportBanner({
   // Filters fill Playwright's search box with the title prefix we stamped on
   // each test (`[added]`, …). Playwright's own Passed/Failed chips are hidden:
   // they count missing baselines as Failed and fight the VRT tally.
-  const defaultFilter =
-    nChanged > 0
-      ? "[changed]"
-      : nFailed > 0
-        ? "[failed]"
-        : nAdded > 0
-          ? "[added]"
-          : "";
+  const bucket = preferredReviewBucket({ nChanged, nFailed, nAdded });
+  const defaultFilter = bucket ? `[${bucket}]` : "";
   const safeDefault = JSON.stringify(defaultFilter);
   return `<div id="vrt-summary" role="region" aria-label="Visual review summary" style="position:sticky;top:0;z-index:9999;background:#141418;color:#f0f0f0;border-bottom:1px solid #333;font:14px/1.45 ui-sans-serif,system-ui,sans-serif;padding:12px 16px;">
   <style>
@@ -1106,6 +1130,38 @@ export function renderManifest(names) {
   return names.map((n) => `${n}\n`).join("");
 }
 
+/**
+ * Copy changed/added *-actual.png files over committed baselines.
+ * Returns { wrote, wroteNames }. Refuses unsafe / escaping paths.
+ */
+export function stageBaselineActuals(stats, baselineDir = BASELINE_DIR) {
+  const wroteNames = [];
+  const root = path.resolve(baselineDir);
+  for (const [name, a] of [
+    ...(stats?.changed ?? []),
+    ...(stats?.added ?? []),
+  ]) {
+    if (!a?.actual || !existsSync(a.actual)) continue;
+    const rel = `${name}.png`;
+    if (!isSafeBaselineRel(rel)) {
+      console.log(`vrt-report: refusing unsafe baseline name "${name}"`);
+      continue;
+    }
+    const dest = path.resolve(root, rel);
+    if (dest !== root && !dest.startsWith(root + path.sep)) {
+      console.log(`vrt-report: refusing path escape "${name}"`);
+      continue;
+    }
+    try {
+      copyFileSync(a.actual, dest);
+      wroteNames.push(rel);
+    } catch (e) {
+      console.log(`vrt-report: could not stage ${name} (${e.message})`);
+    }
+  }
+  return { wrote: wroteNames.length, wroteNames };
+}
+
 // --- CLI entry (skipped when imported by the test) -------------------------
 const invokedDirectly =
   process.argv[1] && process.argv[1].endsWith("vrt-report.mjs");
@@ -1149,67 +1205,33 @@ if (invokedDirectly) {
     process.exit(0);
   }
 
-  // NEVER throw: any failure (unreadable/garbage report, a pathological report
-  // that overflows the parser, a render error) degrades to an "unavailable"
-  // note so the advisory job never red-Xes on infrastructure. `unavailable`
-  // lets the workflow surface it instead of leaving a misleading silent-green.
+  // NEVER throw: any failure degrades to "unavailable" so the advisory job
+  // never red-Xes on infrastructure. --comment-only never clobbers a good
+  // sticky from the first pass.
   try {
     const report = JSON.parse(readFileSync(reportPath, "utf8"));
     const stats = collectChanges(report);
-    // Orphans = committed PNGs with no gallery page (removed *.vrt.ts variant).
-    // Detect always so COMPARE mode surfaces them; delete only in AUTO/write.
-    // CI / AUTO always runs after a fresh vrt:build in this job -> trust gallery.
-    // --comment-only runs AFTER AUTO prune: re-scan would see zero orphans and
-    // drop the removed accordion. Prefer the first-pass delete manifest.
+    // Orphans = committed PNGs with no gallery page. Detect always; delete
+    // only in AUTO/write. --comment-only runs AFTER prune: prefer the
+    // first-pass delete manifest so the sticky keeps the removed accordion.
     const orphans = findOrphanBaselines(BASELINE_DIR, GALLERY_DIR, {
       cautious: false,
     });
-    if (commentOnly) {
-      stats.removed = loadDeletedBaselineManifest() ?? orphans;
-    } else {
-      stats.removed = orphans;
-    }
+    stats.removed = commentOnly
+      ? (loadDeletedBaselineManifest() ?? orphans)
+      : orphans;
 
-    // AUTO mode: stage each changed/added actual over its committed baseline so
-    // the workflow can commit them. No second Playwright run needed. Also prune
-    // orphans so a deleted variant does not leave forever-bloat in the tree.
     let wrote = 0;
     let deleted = [];
     if (write) {
-      const wroteNames = [];
-      const root = path.resolve(BASELINE_DIR);
-      for (const [name, a] of [...stats.changed, ...stats.added]) {
-        if (!a.actual || !existsSync(a.actual)) continue;
-        const rel = `${name}.png`;
-        // Filename contract first (rejects `..`, slashes, odd widths), then
-        // path.resolve containment so a tampered report cannot escape the dir.
-        if (!isSafeBaselineRel(rel)) {
-          console.log(`vrt-report: refusing unsafe baseline name "${name}"`);
-          continue;
-        }
-        const dest = path.resolve(root, rel);
-        if (dest !== root && !dest.startsWith(root + path.sep)) {
-          console.log(`vrt-report: refusing path escape "${name}"`);
-          continue;
-        }
-        try {
-          copyFileSync(a.actual, dest);
-          wrote += 1;
-          wroteNames.push(rel);
-        } catch (e) {
-          console.log(`vrt-report: could not stage ${name} (${e.message})`);
-        }
-      }
+      const staged = stageBaselineActuals(stats);
+      wrote = staged.wrote;
       deleted = pruneOrphanBaselines(BASELINE_DIR, orphans);
       stats.removed = deleted;
-      // Manifests of exactly the baselines refreshed / deleted (one filename
-      // per line). Always under REPO_ROOT so the AUTO push finds them after
-      // `git checkout -f` regardless of the reporter's cwd. The push applies
-      // ONLY these onto the PR head, so a baseline the PR intentionally
-      // deleted is never resurrected, and removals are git-rm'd.
+      // Manifests under REPO_ROOT so AUTO push finds them after git checkout -f.
       writeFileSync(
         rootScratch("vrt-wrote-baselines.txt"),
-        renderManifest(wroteNames),
+        renderManifest(staged.wroteNames),
       );
       writeFileSync(
         rootScratch("vrt-deleted-baselines.txt"),
@@ -1222,12 +1244,13 @@ if (invokedDirectly) {
     const committed = commentOnly
       ? process.env.VRT_COMMITTED === "true"
       : write && (wrote > 0 || deleted.length > 0);
-    // Relabel the HTML report BEFORE Pages deploy so reviewers see
-    // Added/Changed/Same/Failed instead of a sea of Playwright "Failed".
-    // Skip on --comment-only: the HTML was already enhanced in the first pass.
+    // Enhance BEFORE Pages deploy. Skip on --comment-only (already done).
     if (!commentOnly) {
-      const htmlReportDir = path.join(REPO_ROOT, "apps/web/playwright-report");
-      enhancePlaywrightReport(htmlReportDir, stats, { baseRef });
+      enhancePlaywrightReport(
+        path.join(REPO_ROOT, "apps/web/playwright-report"),
+        stats,
+        { baseRef },
+      );
     }
     const body = renderComment(stats, {
       ok: true,
@@ -1250,8 +1273,6 @@ if (invokedDirectly) {
     }
     console.log(body);
   } catch (e) {
-    // --comment-only is a post-deploy rewrite: never clobber a good sticky
-    // body from the first pass if this second pass fails.
     const commentPath = rootScratch("vrt-comment.md");
     if (commentOnly && existsSync(commentPath)) {
       console.log(

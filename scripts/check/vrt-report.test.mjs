@@ -1,24 +1,34 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+
 import {
   buildReportBanner,
   classifyByTestId,
+  classifyHtmlTestBucket,
   collectChanges,
   COMMENT_EXPAND_VARIANT_ROWS,
+  displayVrtSource,
   escapeInline,
   findOrphanBaselines,
   formatFailureLabel,
   formatTally,
   groupChanges,
   hasReportableChanges,
+  injectReportBanner,
   isSafeBaselineRel,
   loadDeletedBaselineManifest,
+  mapVrtComponentFiles,
   parseSnapshot,
+  preferredReviewBucket,
   regroupReportFilesByComponent,
   renderComment,
   renderManifest,
   reportFilterUrl,
+  stageBaselineActuals,
   summarizeBuckets,
   vrtSlugFromPath,
 } from "./vrt-report.mjs";
@@ -632,4 +642,219 @@ test("renderManifest: trailing newline on every line so read never drops one", (
     renderManifest(["a-390.png", "b-768.png", "c-1280.png"]),
     "a-390.png\nb-768.png\nc-1280.png\n",
   );
+});
+
+test("preferredReviewBucket prioritizes changed > failed > added", () => {
+  assert.equal(
+    preferredReviewBucket({ nChanged: 1, nFailed: 9, nAdded: 9 }),
+    "changed",
+  );
+  assert.equal(
+    preferredReviewBucket({ nChanged: 0, nFailed: 1, nAdded: 9 }),
+    "failed",
+  );
+  assert.equal(
+    preferredReviewBucket({ nChanged: 0, nFailed: 0, nAdded: 1 }),
+    "added",
+  );
+  assert.equal(
+    preferredReviewBucket({ nChanged: 0, nFailed: 0, nAdded: 0 }),
+    "",
+  );
+});
+
+test("classifyHtmlTestBucket: byId, nested fail label, flaky→same, attachments", () => {
+  const byId = new Map([["id-1", "changed"]]);
+  assert.equal(
+    classifyHtmlTestBucket(
+      { testId: "id-1", outcome: "unexpected" },
+      byId,
+      new Set(),
+    ),
+    "changed",
+  );
+  assert.equal(
+    classifyHtmlTestBucket(
+      {
+        testId: "missing",
+        title: "default @ 390px",
+        path: ["home-hero"],
+        outcome: "unexpected",
+        ok: false,
+        results: [{ attachments: [] }],
+      },
+      byId,
+      new Set(["home-hero › default @ 390px"]),
+    ),
+    "failed",
+  );
+  assert.equal(
+    classifyHtmlTestBucket(
+      { testId: "x", outcome: "flaky", ok: true },
+      byId,
+      new Set(),
+    ),
+    "same",
+  );
+  assert.equal(
+    classifyHtmlTestBucket(
+      {
+        testId: "x",
+        outcome: "unexpected",
+        ok: false,
+        results: [{ attachments: [{ name: "a-diff.png" }] }],
+      },
+      byId,
+      new Set(),
+    ),
+    "changed",
+  );
+  assert.equal(
+    classifyHtmlTestBucket(
+      {
+        testId: "x",
+        outcome: "unexpected",
+        ok: false,
+        results: [{ attachments: [{ name: "a-actual.png" }] }],
+      },
+      byId,
+      new Set(),
+    ),
+    "added",
+  );
+  assert.equal(classifyHtmlTestBucket(null, byId, new Set()), null);
+});
+
+test("injectReportBanner replaces existing banner or inserts after <body>", () => {
+  const banner = '<div id="vrt-summary">NEW</div><script></script>';
+  assert.equal(
+    injectReportBanner("<html><body>\nROOT</body></html>", banner),
+    `<html><body>\n${banner}\n\nROOT</body></html>`,
+  );
+  assert.equal(
+    injectReportBanner(
+      '<html><body><div id="vrt-summary">OLD</div><script>1</script>ROOT</body></html>',
+      banner,
+    ),
+    `<html><body>${banner}ROOT</body></html>`,
+  );
+});
+
+test("displayVrtSource uses map; empty map does not invent disk paths", () => {
+  assert.equal(displayVrtSource("gallery"), "tests/visual/gallery.spec.ts");
+  assert.equal(
+    displayVrtSource(
+      "ui-button",
+      new Map([["ui-button", "apps/web/src/components/ui/Button.vrt.ts"]]),
+    ),
+    "components/ui/Button.vrt.ts",
+  );
+  assert.equal(displayVrtSource("ui-button", new Map()), "ui-button.vrt.ts");
+});
+
+test("mapVrtComponentFiles: first writer wins on slug collisions", () => {
+  // Paths are repo-relative and must contain `components/` for the slugger.
+  const root = mkdtempSync(path.join(path.resolve("."), ".tmp-vrt-map-"));
+  try {
+    const components = path.join(root, "components", "ui");
+    mkdirSync(components, { recursive: true });
+    writeFileSync(path.join(components, "Button.vrt.ts"), "export {};\n");
+    writeFileSync(path.join(components, "button.vrt.ts"), "export {};\n");
+    // Case-sensitive FS: both files exist; both slug to "ui-button". First wins.
+    const map = mapVrtComponentFiles(path.join(root, "components"));
+    assert.equal(map.size, 1);
+    assert.ok(map.has("ui-button"));
+    const kept = map.get("ui-button");
+    assert.ok(
+      kept.endsWith("ui/Button.vrt.ts") || kept.endsWith("ui/button.vrt.ts"),
+      `unexpected winner: ${kept}`,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("stageBaselineActuals copies safe actuals and refuses path tricks", () => {
+  const root = mkdtempSync(path.join(tmpdir(), "vrt-stage-"));
+  const actual = path.join(root, "pixels.png");
+  writeFileSync(actual, "png");
+  const destDir = path.join(root, "baselines");
+  mkdirSync(destDir);
+  try {
+    const { wrote, wroteNames } = stageBaselineActuals(
+      {
+        changed: new Map([
+          ["ui-button--default-390", { actual }],
+          ["../escape-390", { actual }],
+        ]),
+        added: new Map([["home-hero--default-768", { actual }]]),
+      },
+      destDir,
+    );
+    assert.equal(wrote, 2);
+    assert.deepEqual(wroteNames.sort(), [
+      "home-hero--default-768.png",
+      "ui-button--default-390.png",
+    ]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("renderComment: otherFailures / failedById defaults; more-link uses bucket", () => {
+  const reportUrl = "https://pr-17.example.test";
+  // Omit otherFailures entirely (must not throw).
+  const bodyOk = renderComment(
+    {
+      total: 1,
+      changed: new Map([
+        [
+          "ui-button--default-390",
+          { id: "id-1", actual: "/a.png", diff: "/d.png" },
+        ],
+      ]),
+      added: new Map(),
+      removed: [],
+    },
+    { ok: true, reportUrl },
+  );
+  assert.match(bodyOk, /1 changed/);
+  assert.ok(bodyOk.includes(reportFilterUrl(reportUrl, "changed")));
+
+  // Large changed list: "…and N more" deep-links [changed], not [added].
+  const changed = new Map();
+  for (let i = 0; i < COMMENT_EXPAND_VARIANT_ROWS + 3; i++) {
+    changed.set(`comp-${i}--default-390`, {
+      id: `id-${i}`,
+      actual: "/a.png",
+      diff: "/d.png",
+    });
+  }
+  const bodyMore = renderComment(
+    {
+      total: changed.size,
+      changed,
+      added: new Map(),
+      removed: [],
+      otherFailures: [],
+    },
+    { ok: true, reportUrl },
+  );
+  assert.match(bodyMore, /…and 3 more/);
+  assert.ok(bodyMore.includes(reportFilterUrl(reportUrl, "changed")));
+  assert.ok(!bodyMore.includes(reportFilterUrl(reportUrl, "added")));
+
+  // failedById as plain object still deep-links.
+  const bodyFail = renderComment(
+    {
+      total: 1,
+      changed: new Map(),
+      added: new Map(),
+      removed: [],
+      otherFailures: ["home-hero › default @ 390px"],
+      failedById: { "id-fail": "home-hero › default @ 390px" },
+    },
+    { ok: true, reportUrl },
+  );
+  assert.ok(bodyFail.includes(`${reportUrl}/#?testId=id-fail`));
 });
