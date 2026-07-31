@@ -130,6 +130,10 @@ jobs:
     # Same image the baselines are generated in (vrt:docker* / update-visual-baselines):
     # identical fonts + Chromium, so no cross-environment flake and no browser install.
     container: mcr.microsoft.com/playwright:v1.62.0-noble
+    # Playwright image defaults to sh; pipefail and [[ ]] need bash.
+    defaults:
+      run:
+        shell: bash
     permissions:
       contents: read # checkout only; the baseline push uses the step-scoped VRT_PAT
       pull-requests: write # upsert the review comment

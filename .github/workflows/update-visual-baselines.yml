@@ -23,6 +23,10 @@ jobs:
     timeout-minutes: 20
     # Same image as visual.yml, so regenerated baselines match how the gate renders.
     container: mcr.microsoft.com/playwright:v1.62.0-noble
+    # Playwright image defaults to sh; pipefail needs bash.
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
