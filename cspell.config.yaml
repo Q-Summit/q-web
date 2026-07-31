@@ -97,6 +97,7 @@ words:
   - eslint
   - Ewma
   - extensionless
+  - extractall
   - externalagent
   - exxeta
   - featherlessai
@@ -241,6 +242,9 @@ words:
   - xxlarge
   - Zauber
   - zauber
+  # Python zip helpers used by vrt-report.mjs inside the Playwright container
+  # (python3 is present there; the zip/unzip CLIs are not).
+  - zipfile
   - zizmor
 overrides:
   # GitHub label colors are 6-digit hex codes, not words.

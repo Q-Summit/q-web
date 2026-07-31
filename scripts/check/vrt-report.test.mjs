@@ -2,15 +2,19 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import {
+  buildReportBanner,
+  classifyByTestId,
   collectChanges,
   escapeInline,
   findOrphanBaselines,
+  formatTally,
   groupChanges,
   hasReportableChanges,
   isSafeBaselineRel,
   parseSnapshot,
   renderComment,
   renderManifest,
+  summarizeBuckets,
 } from "./vrt-report.mjs";
 
 // A minimal Playwright JSON report: one changed (has -diff), one added
@@ -256,6 +260,25 @@ test("renderComment: clean run flips to the all-clear", () => {
   assert.match(body, /All 12 snapshots match/);
 });
 
+test("summarizeBuckets / formatTally expose added·changed·same·failed", () => {
+  const s = collectChanges(report);
+  const b = summarizeBuckets(s);
+  // 5 specs: 1 changed, 1 added, 1 failed, 1 expected(=same), 1 flaky (not unexpected → same)
+  assert.deepEqual(b, {
+    total: 5,
+    nChanged: 1,
+    nAdded: 1,
+    nFailed: 1,
+    nRemoved: 0,
+    nSame: 2,
+  });
+  assert.equal(formatTally(b), "1 added · 1 changed · 2 same · 1 failed");
+  assert.deepEqual([...classifyByTestId(s).entries()].sort(), [
+    ["id-added", "added"],
+    ["id-changed", "changed"],
+  ]);
+});
+
 test("renderComment: changes list the components and link the report", () => {
   const body = renderComment(collectChanges(report), {
     ok: true,
@@ -264,10 +287,28 @@ test("renderComment: changes list the components and link the report", () => {
     repo: "Q-Summit/q-web",
     pr: "9",
   });
-  assert.match(body, /1 component changed/);
+  assert.match(body, /1 added · 1 changed · 2 same · 1 failed/);
   assert.match(body, /home-stats-band/);
   assert.match(body, /q-web-vrt-reports\.pages\.dev\/#\?testId=id-changed/);
-  assert.match(body, /new snapshot/); // the added bucket is reported too
+  assert.match(body, /1 added snapshot/); // added accordion, listed first
+  assert.match(body, /1 changed snapshot/);
+  // Added section appears before changed in the body.
+  assert.ok(body.indexOf("added snapshot") < body.indexOf("changed snapshot"));
+});
+
+test("buildReportBanner lists every bucket chip", () => {
+  const html = buildReportBanner({
+    baseRef: "main",
+    tally: "3 added · 1 changed · 0 same · 0 failed",
+    nAdded: 3,
+    nChanged: 1,
+    nSame: 0,
+    nFailed: 0,
+  });
+  assert.match(html, /id="vrt-summary"/);
+  assert.match(html, /Added 3/);
+  assert.match(html, /data-vrt-filter="\[added\]"/);
+  assert.match(html, /VRT vs main/);
 });
 
 test("renderComment: lists orphan baselines without claiming deletion in COMPARE", () => {
