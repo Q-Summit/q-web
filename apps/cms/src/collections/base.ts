@@ -68,9 +68,12 @@ export function draftCollection(opts: {
    */
   beforeChangeHooks?: CollectionBeforeChangeHook[];
   /**
-   * Hide the Duplicate button and block the duplicate API. For a collection
-   * whose identity field cannot be auto-renamed into a valid unused value
-   * (past-teams' one-photo-per-year), a duplicate could never be saved.
+   * Hide the Duplicate button (admin.disableDuplicate is UI-only; the REST
+   * duplicate endpoint does not consult it). For a collection whose identity
+   * field cannot be auto-renamed into a valid unused value (past-teams'
+   * one-photo-per-year), a duplicate could never be saved, so the button is
+   * pure dead weight; a raw API attempt still fails closed on the field's
+   * `unique: true` index.
    */
   disableDuplicate?: boolean;
 }): CollectionConfig {
