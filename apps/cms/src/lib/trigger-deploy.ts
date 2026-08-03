@@ -13,11 +13,34 @@ import type {
 
 import { isHead } from "../access";
 import {
+  CONTENT_SYNC_CONTEXT,
+  DEPLOY_GLOBAL_RESTORE,
   isDraftWrite,
   liveStatus,
   readPriorLiveStatus,
   stashPriorLiveStatus,
 } from "./publish-state";
+
+/**
+ * `req.context` flag: a deploy was already scheduled for this request. Bulk
+ * operations run this hook once per selected doc on one shared `req`; one
+ * Workers Builds POST covers them all (the build starts after the response,
+ * so it sees every row the transaction committed).
+ */
+const DEPLOY_SCHEDULED = "deployScheduled" as const;
+
+function contextOf(req: unknown): Record<string, unknown> | undefined {
+  return (
+    (req as { context?: Record<string, unknown> } | null)?.context ?? undefined
+  );
+}
+
+function dedupeSchedule(req: unknown, logger?: Logger | null): void {
+  const ctx = contextOf(req);
+  if (ctx?.[DEPLOY_SCHEDULED] === true) return;
+  if (ctx) ctx[DEPLOY_SCHEDULED] = true;
+  schedulePublishDeploy(logger);
+}
 
 export const PUBLISH_DEPLOY_FETCH_TIMEOUT_MS = 5_000;
 
@@ -99,15 +122,48 @@ export function schedulePublishDeploy(logger?: Logger | null): void {
 export async function maybeSchedulePublishDeploy(args: {
   doc: unknown;
   req: unknown;
+  collection?: string;
+  global?: string;
+  operation?: string;
 }): Promise<void> {
-  if (isDraftWrite(args.req)) return;
+  // Content-sync never deploys, unconditionally (module header contract).
+  const ctx = contextOf(args.req);
+  if (ctx?.[CONTENT_SYNC_CONTEXT] === true) return;
+
+  // `?draft=true` alone does not mean the live row was untouched: the admin
+  // list view's bulk Publish (PublishMany) PATCHes with `?draft=true` AND
+  // `_status: "published"`, and that write goes live. Trust the query flag
+  // only when the resulting doc is not published; otherwise 28 bulk-published
+  // docs fire zero rebuilds while a single-doc Publish (no draft param)
+  // rebuilds fine. The exception is a global "Restore as draft": Payload
+  // writes the LIVE global row on that path (the marker is set by the
+  // restoreVersion beforeOperation hook), so taking a page global down this
+  // way must still rebuild.
+  const globalRestore = ctx?.[DEPLOY_GLOBAL_RESTORE] === true;
+  if (
+    !globalRestore &&
+    isDraftWrite(args.req) &&
+    statusOf(args.doc) !== "published"
+  ) {
+    return;
+  }
+
+  // A fresh create (including the admin Duplicate button, which creates a
+  // draft copy) has no prior live row; without this, the missing stash falls
+  // back to "unknown" below and every duplicate fires a full site rebuild.
+  const nextStatus = statusOf(args.doc);
+  if (args.operation === "create" && nextStatus !== "published") return;
 
   const user = (args.req as { user?: unknown } | null)?.user;
-  const nextStatus = statusOf(args.doc);
-  const previousStatus = readPriorLiveStatus(args.req) ?? "unknown";
+  const previousStatus =
+    readPriorLiveStatus(args.req, {
+      collection: args.collection,
+      global: args.global,
+      id: (args.doc as { id?: unknown } | null)?.id,
+    }) ?? "unknown";
 
   if (!shouldTriggerDeploy({ previousStatus, nextStatus, user })) return;
-  schedulePublishDeploy(payloadLogger(args.req));
+  dedupeSchedule(args.req, payloadLogger(args.req));
 }
 
 /** beforeDelete: rebuild when removing a live list item. */
@@ -125,7 +181,7 @@ export async function maybeSchedulePublishDeployOnDelete(args: {
     id: args.id,
   });
   if (live !== "published" && live !== "unknown") return;
-  schedulePublishDeploy(payloadLogger(args.req));
+  dedupeSchedule(args.req, payloadLogger(args.req));
 }
 
 export const capturePriorLiveStatusCollection: CollectionBeforeChangeHook =
@@ -149,6 +205,9 @@ export const capturePriorLiveStatusGlobal: GlobalBeforeChangeHook = async ({
 export const capturePriorLiveStatusGlobalRestore: GlobalBeforeOperationHook =
   async ({ req, operation, global }) => {
     if (operation !== "restoreVersion") return;
+    const r = req as unknown as { context?: Record<string, unknown> };
+    if (!r.context) r.context = {};
+    r.context[DEPLOY_GLOBAL_RESTORE] = true;
     await stashPriorLiveStatus({
       req,
       global: (global as { slug: string }).slug,
@@ -156,16 +215,22 @@ export const capturePriorLiveStatusGlobalRestore: GlobalBeforeOperationHook =
   };
 
 export const triggerDeployAfterCollectionChange: CollectionAfterChangeHook =
-  async ({ doc, req }) => {
-    await maybeSchedulePublishDeploy({ doc, req });
+  async ({ collection, doc, operation, req }) => {
+    await maybeSchedulePublishDeploy({
+      doc,
+      req,
+      collection: collection?.slug,
+      operation,
+    });
     return doc;
   };
 
 export const triggerDeployAfterGlobalChange: GlobalAfterChangeHook = async ({
   doc,
+  global,
   req,
 }) => {
-  await maybeSchedulePublishDeploy({ doc, req });
+  await maybeSchedulePublishDeploy({ doc, req, global: global?.slug });
   return doc;
 };
 
