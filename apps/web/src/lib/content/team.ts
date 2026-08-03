@@ -13,6 +13,8 @@ export interface TeamMember {
   year: string;
   /** Optional LinkedIn profile URL; the card omits the icon when absent. */
   linkedin?: string | null;
+  /** Optional email address; the card omits the mail icon when absent. */
+  email?: string | null;
 }
 
 /** One group photo per past board year (see PastTeams.ts / past-teams.json). */
@@ -42,6 +44,7 @@ interface CmsTeamDoc {
   photo: CmsMediaRef | number | string | null;
   year: string;
   linkedin?: string | null;
+  email?: string | null;
   order?: number | null;
 }
 
@@ -66,6 +69,7 @@ async function cmsGetTeam(): Promise<TeamMember[]> {
       ),
       year: doc.year,
       linkedin: doc.linkedin ?? null,
+      email: doc.email ?? null,
     });
   }
   return team;
