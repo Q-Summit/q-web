@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { DEPLOY_PRIOR_LIVE_STATUS } from "../src/lib/publish-state";
+import {
+  DEPLOY_GLOBAL_RESTORE,
+  DEPLOY_PRIOR_LIVE_STATUS,
+} from "../src/lib/publish-state";
 import {
   maybeSchedulePublishDeploy,
   maybeSchedulePublishDeployOnDelete,
@@ -131,21 +134,26 @@ describe("maybeSchedulePublishDeploy", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await maybeSchedulePublishDeploy({
-      doc: { _status: "draft" },
+      doc: { id: 1, _status: "draft" },
+      collection: "team",
       req: {
         user: approver,
         payloadAPI: "REST",
         query: { draft: "true" },
-        context: { [DEPLOY_PRIOR_LIVE_STATUS]: "published" },
+        context: { [DEPLOY_PRIOR_LIVE_STATUS]: { "team:1": "published" } },
       },
     });
     expect(fetchMock).not.toHaveBeenCalled();
 
     await maybeSchedulePublishDeploy({
-      doc: { _status: "published" },
+      doc: { id: 1, _status: "published" },
+      collection: "team",
       req: {
         user: approver,
-        context: { contentSync: true, [DEPLOY_PRIOR_LIVE_STATUS]: "draft" },
+        context: {
+          contentSync: true,
+          [DEPLOY_PRIOR_LIVE_STATUS]: { "team:1": "draft" },
+        },
       },
     });
     expect(fetchMock).not.toHaveBeenCalled();
@@ -160,13 +168,137 @@ describe("maybeSchedulePublishDeploy", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await maybeSchedulePublishDeploy({
-      doc: { _status: "published" },
+      doc: { id: 1, _status: "published" },
+      collection: "team",
       req: {
         user: approver,
         payloadAPI: "REST",
         query: { draft: "true" },
-        context: { [DEPLOY_PRIOR_LIVE_STATUS]: "published" },
+        context: { [DEPLOY_PRIOR_LIVE_STATUS]: { "team:1": "published" } },
       },
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("fires on bulk Unpublish (no draft param, live row goes down)", async () => {
+    // UnpublishMany PATCHes without a draft param and `_status: "draft"`;
+    // taking live content down must rebuild or the site keeps serving it.
+    hookUrl();
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await maybeSchedulePublishDeploy({
+      doc: { id: 1, _status: "draft" },
+      collection: "team",
+      req: {
+        user: approver,
+        payloadAPI: "REST",
+        query: {},
+        context: { [DEPLOY_PRIOR_LIVE_STATUS]: { "team:1": "published" } },
+      },
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps per-doc prior status in a concurrent bulk op (no shared-slot race)", async () => {
+    // Bulk ops run every doc's hooks on ONE req; the stash must be per doc
+    // or a live row can read a sibling's "draft" and skip the rebuild.
+    hookUrl();
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchMock);
+    const req = {
+      user: approver,
+      payloadAPI: "REST" as const,
+      query: {},
+      context: {
+        [DEPLOY_PRIOR_LIVE_STATUS]: { "team:1": "published", "team:2": "draft" },
+      },
+      payload: { logger: { info: () => {} } },
+    };
+
+    await maybeSchedulePublishDeploy({
+      doc: { id: 2, _status: "draft" },
+      collection: "team",
+      req,
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    await maybeSchedulePublishDeploy({
+      doc: { id: 1, _status: "draft" },
+      collection: "team",
+      req,
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("fires when a global Restore as draft takes the live row down", async () => {
+    // Global restoreVersion writes the LIVE global row even with ?draft=true;
+    // the beforeOperation marker must override the draft-write skip.
+    hookUrl();
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await maybeSchedulePublishDeploy({
+      doc: { _status: "draft" },
+      global: "page-home",
+      req: {
+        user: approver,
+        payloadAPI: "REST",
+        query: { draft: "true" },
+        context: {
+          [DEPLOY_GLOBAL_RESTORE]: true,
+          [DEPLOY_PRIOR_LIVE_STATUS]: { "global:page-home": "published" },
+        },
+      },
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("dedupes to one hook POST per request (bulk publish of many docs)", async () => {
+    hookUrl();
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchMock);
+    const req = {
+      user: approver,
+      payloadAPI: "REST" as const,
+      query: { draft: "true" },
+      context: {
+        [DEPLOY_PRIOR_LIVE_STATUS]: { "team:1": "published", "team:2": "published" },
+      },
+      payload: { logger: { info: () => {} } },
+    };
+
+    await maybeSchedulePublishDeploy({
+      doc: { id: 1, _status: "published" },
+      collection: "team",
+      req,
+    });
+    await maybeSchedulePublishDeploy({
+      doc: { id: 2, _status: "published" },
+      collection: "team",
+      req,
+    });
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+  });
+
+  it("skips a fresh draft create (admin Duplicate) but fires a live create", async () => {
+    hookUrl();
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await maybeSchedulePublishDeploy({
+      doc: { id: 9, _status: "draft" },
+      collection: "team",
+      operation: "create",
+      req: { user: approver, payloadAPI: "REST", query: {}, context: {} },
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    await maybeSchedulePublishDeploy({
+      doc: { id: 9, _status: "published" },
+      collection: "team",
+      operation: "create",
+      req: { user: approver, payloadAPI: "REST", query: {}, context: {} },
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
@@ -176,11 +308,12 @@ describe("maybeSchedulePublishDeploy", () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
     await maybeSchedulePublishDeploy({
-      doc: { _status: "published" },
+      doc: { id: 1, _status: "published" },
+      collection: "team",
       req: {
         user: editor,
         payloadAPI: "REST",
-        context: { [DEPLOY_PRIOR_LIVE_STATUS]: "draft" },
+        context: { [DEPLOY_PRIOR_LIVE_STATUS]: { "team:1": "draft" } },
       },
     });
     expect(fetchMock).not.toHaveBeenCalled();
@@ -197,21 +330,24 @@ describe("maybeSchedulePublishDeploy", () => {
     const req = (prior: string, _next: string) => ({
       user: approver,
       payloadAPI: "REST" as const,
-      context: { [DEPLOY_PRIOR_LIVE_STATUS]: prior },
+      context: { [DEPLOY_PRIOR_LIVE_STATUS]: { "team:1": prior } },
       payload: { logger: { info: () => {} } },
     });
 
     await maybeSchedulePublishDeploy({
-      doc: { _status: "published" },
+      doc: { id: 1, _status: "published" },
+      collection: "team",
       req: req("draft", "published"),
     });
     await maybeSchedulePublishDeploy({
-      doc: { _status: "draft" },
+      doc: { id: 1, _status: "draft" },
+      collection: "team",
       // previousDoc would be draft (pending); stash says live was published
       req: req("published", "draft"),
     });
     await maybeSchedulePublishDeploy({
-      doc: { _status: "published" },
+      doc: { id: 1, _status: "published" },
+      collection: "team",
       req: req("published", "published"),
     });
 

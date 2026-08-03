@@ -116,6 +116,32 @@ export async function liveStatus(args: {
 /** Stash live-row status before write for deploy afterChange (previousDoc ≠ live). */
 export const DEPLOY_PRIOR_LIVE_STATUS = "deployPriorLiveStatus" as const;
 
+/**
+ * `req.context` marker set by the global restoreVersion beforeOperation hook.
+ * Payload's global restore writes the LIVE global row even with `?draft=true`
+ * ("Restore as draft" forces `_status: "draft"` and still calls
+ * `db.updateGlobal`), so the deploy trigger must not read that request's
+ * draft flag as "live row untouched".
+ */
+export const DEPLOY_GLOBAL_RESTORE = "deployGlobalRestore" as const;
+
+/**
+ * The stash is a per-document map, not a scalar. Bulk operations run every
+ * selected doc's hook chain concurrently on ONE shared `req`, so a scalar
+ * slot lets doc B's beforeChange overwrite doc A's prior status before doc
+ * A's afterChange reads it; a mixed bulk Unpublish could then read "draft"
+ * for a live row and skip the rebuild.
+ */
+function deployStashKey(args: {
+  collection?: string;
+  global?: string;
+  id?: unknown;
+}): string {
+  return args.global
+    ? `global:${args.global}`
+    : `${args.collection ?? "?"}:${String(args.id)}`;
+}
+
 export async function stashPriorLiveStatus(args: {
   req: unknown;
   collection?: string;
@@ -125,11 +151,20 @@ export async function stashPriorLiveStatus(args: {
   const req = args.req as { context?: Record<string, unknown> } | null;
   if (!req) return;
   if (!req.context) req.context = {};
-  req.context[DEPLOY_PRIOR_LIVE_STATUS] = await liveStatus(args);
+  const map = (req.context[DEPLOY_PRIOR_LIVE_STATUS] ??= {}) as Record<
+    string,
+    string | null
+  >;
+  map[deployStashKey(args)] = await liveStatus(args);
 }
 
-export function readPriorLiveStatus(req: unknown): string | undefined {
+export function readPriorLiveStatus(
+  req: unknown,
+  key: { collection?: string; global?: string; id?: unknown },
+): string | undefined {
   const ctx = (req as { context?: Record<string, unknown> } | null)?.context;
-  const value = ctx?.[DEPLOY_PRIOR_LIVE_STATUS];
+  const map = ctx?.[DEPLOY_PRIOR_LIVE_STATUS];
+  if (!map || typeof map !== "object") return undefined;
+  const value = (map as Record<string, unknown>)[deployStashKey(key)];
   return typeof value === "string" ? value : undefined;
 }
