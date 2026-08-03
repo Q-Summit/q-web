@@ -6,6 +6,7 @@ import type {
   CollectionAfterChangeHook,
   CollectionBeforeChangeHook,
   CollectionBeforeDeleteHook,
+  CollectionBeforeOperationHook,
   GlobalAfterChangeHook,
   GlobalBeforeChangeHook,
   GlobalBeforeOperationHook,
@@ -13,6 +14,7 @@ import type {
 
 import { isHead } from "../access";
 import {
+  COLLECTION_RESTORE_CONTEXT,
   CONTENT_SYNC_CONTEXT,
   DEPLOY_GLOBAL_RESTORE,
   isDraftWrite,
@@ -201,6 +203,21 @@ export const capturePriorLiveStatusGlobal: GlobalBeforeChangeHook = async ({
   await stashPriorLiveStatus({ req, global: global.slug });
   return data;
 };
+
+/**
+ * beforeOperation: mark restoreVersion requests so the gate and the audit
+ * stamp can tell "Restore as draft" (version-only, data still says
+ * `_status: "published"` during beforeChange) apart from a bulk Publish,
+ * whose request shape is otherwise identical.
+ */
+export const markCollectionRestoreVersion: CollectionBeforeOperationHook =
+  async ({ args, operation, req }) => {
+    if (operation !== "restoreVersion") return args;
+    const r = req as unknown as { context?: Record<string, unknown> };
+    if (!r.context) r.context = {};
+    r.context[COLLECTION_RESTORE_CONTEXT] = true;
+    return args;
+  };
 
 export const capturePriorLiveStatusGlobalRestore: GlobalBeforeOperationHook =
   async ({ req, operation, global }) => {

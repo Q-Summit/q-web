@@ -3,6 +3,7 @@ import type { CollectionConfig, NumberFieldSingleValidation } from "payload";
 import { orderField } from "../lib/order-field";
 import { enforceUniqueKey } from "../lib/unique-key";
 import { draftCollection } from "./base";
+import { copyLabelOnDuplicate } from "../lib/duplicate-copy";
 
 // Schema mirrors site-mirror/extracted/speakers.json. The Webflow groups map
 // to the `group` select as follows:
@@ -44,7 +45,6 @@ export const Speakers: CollectionConfig = draftCollection({
       slug: "speakers",
       fields: ["name", "group"],
       entityLabel: "speaker",
-      titleField: "name",
     }),
   ],
   fields: [
@@ -56,6 +56,9 @@ export const Speakers: CollectionConfig = draftCollection({
           type: "text",
           required: true,
           admin: { width: "50%" },
+          // name+group is the identity; a verbatim copy is rejected by
+          // enforceUniqueKey, so Duplicate renames it.
+          hooks: { beforeDuplicate: [copyLabelOnDuplicate] },
         },
         {
           name: "photo",

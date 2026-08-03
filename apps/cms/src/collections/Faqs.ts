@@ -3,6 +3,7 @@ import type { CollectionConfig } from "payload";
 import { orderField } from "../lib/order-field";
 import { enforceUniqueKey } from "../lib/unique-key";
 import { draftCollection } from "./base";
+import { copyLabelOnDuplicate } from "../lib/duplicate-copy";
 
 // FAQ entries rendered as accordions on the home, program, and hackathon
 // pages (source: site-mirror/extracted/faqs.json; the mirror's "index"
@@ -23,7 +24,6 @@ export const Faqs: CollectionConfig = draftCollection({
       slug: "faqs",
       fields: ["question", "page"],
       entityLabel: "FAQ",
-      titleField: "question",
     }),
   ],
   fields: [
@@ -31,6 +31,9 @@ export const Faqs: CollectionConfig = draftCollection({
       name: "question",
       type: "text",
       required: true,
+      // question+page is the identity; a verbatim copy is rejected by
+      // enforceUniqueKey, so Duplicate renames it.
+      hooks: { beforeDuplicate: [copyLabelOnDuplicate] },
     },
     {
       name: "answer",

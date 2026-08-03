@@ -27,8 +27,6 @@ export function enforceUniqueKey(opts: {
   fields: string[];
   /** Singular noun for the error message, e.g. "speaker", "team member", "FAQ". */
   entityLabel: string;
-  /** Field used to name the conflicting doc in the error; falls back to its id. */
-  titleField?: string;
 }): CollectionBeforeChangeHook {
   return async ({ data, originalDoc, req }) => {
     const values = opts.fields.map((field) => {
@@ -66,14 +64,14 @@ export function enforceUniqueKey(opts: {
     const conflict = found.docs[0] as unknown as
       Record<string, unknown> | undefined;
     if (conflict) {
-      const conflictLabel = opts.titleField
-        ? String(conflict[opts.titleField] ?? conflict.id)
-        : String(conflict.id);
+      // The lookup runs with overrideAccess, so the conflicting entry may
+      // belong to a division this editor cannot read: describe it only by
+      // the key values they typed, never by its title or id.
       const keyDescription = opts.fields
         .map((field, i) => `${field} "${String(values[i])}"`)
         .join(" + ");
       const message =
-        `Another ${opts.entityLabel} ("${conflictLabel}") already has ${keyDescription}. ` +
+        `Another ${opts.entityLabel} already has ${keyDescription}. ` +
         "Edit that entry instead of creating a duplicate, or change one of the key fields.";
       // ValidationError (not APIError) so the admin UI pins the message to
       // the key fields inline, matching how native `unique: true` collisions

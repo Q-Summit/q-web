@@ -12,6 +12,9 @@ export const PastTeams: CollectionConfig = draftCollection({
   useAsTitle: "year",
   defaultColumns: ["year"],
   defaultSort: "-year",
+  // One doc per year and no auto-rename can produce a valid unused "YY/YY",
+  // so a duplicate could never be saved; hide the button instead.
+  disableDuplicate: true,
   description:
     "One group photo per past board year ( /past-teams/ ). Owned by Chair + PR. " +
     "Add a year when a board retires; never overwrite or delete a past year. " +
