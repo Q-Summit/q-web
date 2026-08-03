@@ -51,6 +51,13 @@ export const CONTENT_SYNC_CONTEXT = "contentSync" as const;
  * - Local API / content-sync: `context.contentSync` (no query string).
  * Query-string `draft` is trusted only for REST: GraphQL takes `draft` as a
  * field arg, so `?draft=true` on `/api/graphql` must not open the gate.
+ *
+ * Caveat: the admin list view's bulk Publish (PublishMany) sends `?draft=true`
+ * WITH `_status: "published"`, and that write does go live. This predicate
+ * cannot see the body, so a caller deciding "did the live row change" must
+ * also check the resulting doc's `_status` (see trigger-deploy). The publish
+ * gate is unaffected: it 403s on incoming `_status: "published"` before
+ * consulting this.
  */
 export function isDraftWrite(req: unknown): boolean {
   const r = req as

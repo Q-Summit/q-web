@@ -13,6 +13,7 @@ import type {
 
 import { isHead } from "../access";
 import {
+  CONTENT_SYNC_CONTEXT,
   isDraftWrite,
   liveStatus,
   readPriorLiveStatus,
@@ -100,7 +101,18 @@ export async function maybeSchedulePublishDeploy(args: {
   doc: unknown;
   req: unknown;
 }): Promise<void> {
-  if (isDraftWrite(args.req)) return;
+  // Content-sync never deploys, unconditionally (module header contract).
+  const ctx = (args.req as { context?: Record<string, unknown> } | null)
+    ?.context;
+  if (ctx?.[CONTENT_SYNC_CONTEXT] === true) return;
+
+  // `?draft=true` alone does not mean the live row was untouched: the admin
+  // list view's bulk Publish (PublishMany) PATCHes with `?draft=true` AND
+  // `_status: "published"`, and that write goes live. Trust the query flag
+  // only when the resulting doc is not published; otherwise 28 bulk-published
+  // docs fire zero rebuilds while a single-doc Publish (no draft param)
+  // rebuilds fine.
+  if (isDraftWrite(args.req) && statusOf(args.doc) !== "published") return;
 
   const user = (args.req as { user?: unknown } | null)?.user;
   const nextStatus = statusOf(args.doc);

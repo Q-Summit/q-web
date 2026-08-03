@@ -151,6 +151,26 @@ describe("maybeSchedulePublishDeploy", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("fires on bulk Publish (REST ?draft=true with a published result)", async () => {
+    // The list view's PublishMany PATCHes `?draft=true` + `_status:
+    // "published"`; the query flag alone must not read as a draft-only write
+    // or a 28-doc bulk publish rebuilds nothing.
+    hookUrl();
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await maybeSchedulePublishDeploy({
+      doc: { _status: "published" },
+      req: {
+        user: approver,
+        payloadAPI: "REST",
+        query: { draft: "true" },
+        context: { [DEPLOY_PRIOR_LIVE_STATUS]: "published" },
+      },
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("skips editors", async () => {
     hookUrl();
     const fetchMock = vi.fn();
