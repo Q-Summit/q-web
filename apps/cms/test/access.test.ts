@@ -136,6 +136,49 @@ describe("requireApproverToPublish", () => {
     ).resolves.toBeDefined();
   });
 
+  it("blocks an editor bulk-publishing (?draft=true with _status published)", async () => {
+    // PublishMany's request shape: the draft query flag must not soften the
+    // publish 403.
+    await expect(
+      gate(
+        editor,
+        { _status: "published" },
+        { _status: "draft" },
+        SAVE_DRAFT,
+      )(),
+    ).rejects.toThrow(/Heads and Admins/i);
+  });
+
+  it("allows an editor's Restore as draft (server-set restore marker)", async () => {
+    // Restore-as-draft carries the restored version's _status: "published"
+    // through beforeChange but only writes a version row; with the marker it
+    // is the same act as Propose for review.
+    await expect(
+      gate(
+        editor,
+        { _status: "published", title: "old copy" },
+        { _status: "published" },
+        {
+          query: { draft: "true" },
+          context: { collectionRestoreVersion: true },
+        },
+      )(),
+    ).resolves.toBeDefined();
+  });
+
+  it("still blocks an editor's full restore (marker without draft flag)", async () => {
+    // Restore with ?draft=false republishes the old version onto the live
+    // row; the marker alone must not open the gate.
+    await expect(
+      gate(
+        editor,
+        { _status: "published", title: "old copy" },
+        { _status: "published" },
+        { query: {}, context: { collectionRestoreVersion: true } },
+      )(),
+    ).rejects.toThrow(/Heads and Admins/i);
+  });
+
   // The unpublish direction. Same data/originalDoc shape as the draft save
   // above, so the ONLY thing separating them is the draft marker on req.
   it("blocks an editor unpublishing a live doc (bulk Unpublish / bare PATCH _status:draft)", async () => {

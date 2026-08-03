@@ -3,6 +3,7 @@ import type { CollectionConfig } from "payload";
 import { orderField } from "../lib/order-field";
 import { urlOrMailtoValidate } from "../lib/url-validate";
 import { draftCollection } from "./base";
+import { copySlugOnDuplicate } from "../lib/duplicate-copy";
 
 // Job board postings from partner companies. Schema mirrors the legacy
 // Webflow collection (site-mirror/extracted/jobs.json); `slug` is the URL
@@ -127,6 +128,9 @@ export const Jobs: CollectionConfig = draftCollection({
       required: true,
       unique: true,
       index: true,
+      // Payload's built-in duplicate rename appends " - Copy", which fails
+      // the kebab-case validate below; a hook of our own replaces it.
+      hooks: { beforeDuplicate: [copySlugOnDuplicate] },
       admin: {
         position: "sidebar",
         description:

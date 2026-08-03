@@ -39,7 +39,6 @@ describe("enforceUniqueKey", () => {
     slug: "speakers",
     fields: ["name", "group"],
     entityLabel: "speaker",
-    titleField: "name",
   });
 
   it("passes on create when no doc shares the compound key", async () => {
@@ -74,8 +73,10 @@ describe("enforceUniqueKey", () => {
       thrown?.data.errors ?? [];
     expect(errors.map((e) => e.path)).toEqual(["name", "group"]);
     for (const fieldError of errors) {
+      // Key values only: the lookup ignores division scoping, so the message
+      // must never name or identify the conflicting document itself.
       expect(fieldError.message).toMatch(
-        /speaker \("Jane Doe"\).*name "Jane Doe" \+ group "current"/s,
+        /speaker already has name "Jane Doe" \+ group "current"/s,
       );
     }
   });

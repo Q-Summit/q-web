@@ -4,7 +4,7 @@ import type {
   GlobalBeforeChangeHook,
 } from "payload";
 
-import { willWriteLeavePublished } from "./publish-state";
+import { isVersionOnlyRestore, willWriteLeavePublished } from "./publish-state";
 
 /** Keys stamped by hooks; also stripped on content-sync ingest. */
 export const AUDIT_FIELD_NAMES = [
@@ -136,7 +136,18 @@ function applyAuditStamp<T>(args: {
   data.lastEditedBy = email;
   data.lastEditedAt = now;
 
-  if (willWriteLeavePublished(args.data, args.originalDoc)) {
+  // "Restore as draft" carries the restored version's `_status: "published"`
+  // through beforeChange even though the live row is untouched; without the
+  // marker check it would stamp a publish that never happened.
+  //
+  // Known cosmetic gap the other way: a Head's bare PATCH to a live row that
+  // has a pending draft updates the live row without this stamp, because
+  // `originalDoc` is the pending draft version and reads "draft". Only a
+  // live-row lookup could see it; not worth a query on every save.
+  if (
+    !isVersionOnlyRestore(args.req) &&
+    willWriteLeavePublished(args.data, args.originalDoc)
+  ) {
     data.lastPublishedBy = email;
     data.lastPublishedAt = now;
   }

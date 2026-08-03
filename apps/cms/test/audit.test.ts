@@ -33,6 +33,24 @@ describe("stampAuditTrail", () => {
     expect(result?.lastPublishedAt).toBeUndefined();
   });
 
+  it("does not stamp lastPublished* on Restore as draft", () => {
+    // The restored version arrives with _status: "published" in data, but
+    // the write is version-only (Payload downgrades it after beforeChange).
+    const result = stampAuditTrail({
+      data: { _status: "published", title: "old copy" },
+      originalDoc: { _status: "published" },
+      req: {
+        user: head,
+        payloadAPI: "REST",
+        query: { draft: "true" },
+        context: { collectionRestoreVersion: true },
+      },
+    } as unknown as HookArgs);
+    expect(result?.lastEditedBy).toBe("head@q-summit.de");
+    expect(result?.lastPublishedBy).toBeUndefined();
+    expect(result?.lastPublishedAt).toBeUndefined();
+  });
+
   it("stamps both edited and published when publishing", () => {
     const result = stamp(head, { _status: "published" }, { _status: "draft" });
     expect(result?.lastEditedBy).toBe("head@q-summit.de");

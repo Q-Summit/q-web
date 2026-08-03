@@ -5,6 +5,7 @@ import { orderField } from "../lib/order-field";
 import { enforceUniqueKey } from "../lib/unique-key";
 import { urlOrMailtoValidate } from "../lib/url-validate";
 import { draftCollection } from "./base";
+import { copyLabelOnDuplicate } from "../lib/duplicate-copy";
 
 const isUrl = urlOrMailtoValidate({ optional: true });
 
@@ -48,7 +49,6 @@ export const Team: CollectionConfig = draftCollection({
       slug: "team",
       fields: ["name", "year"],
       entityLabel: "team member",
-      titleField: "name",
     }),
   ],
   fields: [
@@ -60,6 +60,9 @@ export const Team: CollectionConfig = draftCollection({
           type: "text",
           required: true,
           admin: { width: "50%" },
+          // name+year is the identity; a verbatim copy is rejected by
+          // enforceUniqueKey, so Duplicate renames it.
+          hooks: { beforeDuplicate: [copyLabelOnDuplicate] },
         },
         {
           name: "role",

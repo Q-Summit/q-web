@@ -19,6 +19,7 @@ import { auditFields, stampAuditTrail } from "../lib/audit";
 import { previewUrlForCollection } from "../lib/live-preview-url";
 import {
   capturePriorLiveStatusCollection,
+  markCollectionRestoreVersion,
   triggerDeployAfterCollectionChange,
   triggerDeployBeforeCollectionDelete,
 } from "../lib/trigger-deploy";
@@ -66,6 +67,12 @@ export function draftCollection(opts: {
    * collections with no extra invariant to check.
    */
   beforeChangeHooks?: CollectionBeforeChangeHook[];
+  /**
+   * Hide the Duplicate button and block the duplicate API. For a collection
+   * whose identity field cannot be auto-renamed into a valid unused value
+   * (past-teams' one-photo-per-year), a duplicate could never be saved.
+   */
+  disableDuplicate?: boolean;
 }): CollectionConfig {
   const columns = [...opts.defaultColumns];
   const appended = opts.showAuditColumns
@@ -84,6 +91,7 @@ export function draftCollection(opts: {
     admin: {
       useAsTitle: opts.useAsTitle,
       defaultColumns: columns,
+      ...(opts.disableDuplicate ? { disableDuplicate: true } : {}),
       ...(opts.listSearchableFields
         ? { listSearchableFields: opts.listSearchableFields }
         : {}),
@@ -113,7 +121,12 @@ export function draftCollection(opts: {
       update: divisionScoped(...opts.divisions),
       delete: divisionScopedDelete(...opts.divisions),
     },
+    // `trash` (soft delete) stays OFF deliberately: enabling it would route
+    // deletes through beforeChange as a PATCH, bypassing beforeDelete (the
+    // Media reference guard and the deploy-on-delete trigger) and confusing
+    // the audit stamp. Do not add `trash: true` without reworking all three.
     hooks: {
+      beforeOperation: [markCollectionRestoreVersion],
       beforeChange: [
         ...(opts.beforeChangeHooks ?? []),
         requireApproverToPublish,

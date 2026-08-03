@@ -14,7 +14,11 @@ import type {
 // willWriteLeavePublished / willWriteUnpublish are still re-exported below for
 // lib/audit.ts and the tests, but the gate itself no longer uses them: it reads
 // the live row instead of comparing against originalDoc.
-import { isDraftWrite, liveStatus } from "../lib/publish-state";
+import {
+  isDraftWrite,
+  isVersionOnlyRestore,
+  liveStatus,
+} from "../lib/publish-state";
 import { hasRole, inDivision, type Division } from "./divisions";
 
 export {
@@ -55,9 +59,13 @@ export const isAdmin = (user: unknown): boolean => hasRole(user, "admin");
  * Write access for a content area:
  * - Heads + admins: always (so they can review/publish across divisions)
  * - Editors: only in the named division(s), and never when the write would
- *   publish (`data._status === "published"`). That hides the Admin UI Publish
- *   button (Payload probes update with `_status: "published"`) while still
- *   allowing Propose / Save draft.
+ *   publish (`data._status === "published"`). That hides the DOC VIEW's
+ *   Publish button (Payload probes update with `_status: "published"`) while
+ *   still allowing Propose / Save draft. The list view's bulk Publish is NOT
+ *   hidden by this: Payload evaluates bulk update access without `data`, so
+ *   editors see that button and get a per-doc 403 from the publish gate
+ *   instead. Access is enforced by the gate either way; this branch is UI
+ *   affordance for the doc view only.
  */
 export const divisionScoped =
   (...divisions: Division[]): Access =>
@@ -170,6 +178,16 @@ async function assertPublishAllowed(args: {
 }): Promise<void> {
   const allowed = args.allow ?? isHead;
   if (allowed(args.req.user)) return;
+
+  // Collection "Restore as draft": the restored version arrives with its
+  // original `_status: "published"` still in `data` (Payload downgrades it
+  // only after beforeChange), but the write is version-only and the live row
+  // is untouched, so it is the same editorial act as "Propose for review".
+  // The marker is server-set by the restoreVersion beforeOperation hook;
+  // REST carries no client context, so a bulk Publish cannot spoof it.
+  // Globals never take this exit: their restore writes the live row and is
+  // gated whole by requireApproverToRestoreGlobal.
+  if (!args.global && isVersionOnlyRestore(args.req)) return;
 
   const incoming = (args.data as { _status?: string } | null | undefined)
     ?._status;

@@ -86,6 +86,46 @@ export async function liveStatus(args: {
   id?: unknown;
 }): Promise<string | null> {
   const req = args.req as
+    | {
+        context?: Record<string, unknown>;
+        payload?: { db?: Record<string, (o: unknown) => Promise<unknown>> };
+      }
+    | undefined;
+
+  // Per-request memo via the deploy stash map: the publish gate and the
+  // deploy stash both need the same pre-write row status, and every caller
+  // runs before the write, so within one request the answer cannot change.
+  // Without this a bulk op costs two serialized queries per doc on one Neon
+  // connection.
+  const memoKey =
+    args.global || (args.collection && args.id !== undefined && args.id !== null)
+      ? deployStashKey(args)
+      : null;
+  if (memoKey && req?.context) {
+    const map = req.context[DEPLOY_PRIOR_LIVE_STATUS];
+    if (map && typeof map === "object" && memoKey in map) {
+      return (map as Record<string, string | null>)[memoKey] ?? null;
+    }
+  }
+
+  const status = await liveStatusUncached(args);
+  if (memoKey && req && req.context) {
+    const map = (req.context[DEPLOY_PRIOR_LIVE_STATUS] ??= {}) as Record<
+      string,
+      string | null
+    >;
+    map[memoKey] = status;
+  }
+  return status;
+}
+
+async function liveStatusUncached(args: {
+  req: unknown;
+  collection?: string;
+  global?: string;
+  id?: unknown;
+}): Promise<string | null> {
+  const req = args.req as
     | { payload?: { db?: Record<string, (o: unknown) => Promise<unknown>> } }
     | undefined;
   const db = req?.payload?.db;
@@ -111,6 +151,27 @@ export async function liveStatus(args: {
     // "not published", because that is the answer that skips the gate.
     return "unknown";
   }
+}
+
+/**
+ * `req.context` marker set by the collection restoreVersion beforeOperation
+ * hook (server-set; REST carries no client context). Restore is the one
+ * operation where `data._status: "published"` arrives together with
+ * `?draft=true` on a write that leaves the MAIN row untouched: Payload
+ * downgrades the restored version to draft only after beforeChange runs, so
+ * without this marker the gate and the audit stamp both misread "Restore as
+ * draft" as a publish.
+ */
+export const COLLECTION_RESTORE_CONTEXT = "collectionRestoreVersion" as const;
+
+/**
+ * A collection "Restore as draft": version-only, live row untouched. NOT true
+ * for global restores (Payload writes the live global row even with
+ * `?draft=true`; those are gated separately by requireApproverToRestoreGlobal).
+ */
+export function isVersionOnlyRestore(req: unknown): boolean {
+  const ctx = (req as { context?: Record<string, unknown> } | null)?.context;
+  return ctx?.[COLLECTION_RESTORE_CONTEXT] === true && isDraftWrite(req);
 }
 
 /** Stash live-row status before write for deploy afterChange (previousDoc ≠ live). */
