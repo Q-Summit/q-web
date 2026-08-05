@@ -191,6 +191,39 @@ describe("gates are live, not silently inert", () => {
   // rule (heading levels, list spacing, trailing whitespace) was unenforced
   // while check:md exited 0. Express generated-file exclusions with
   // `gitignore: true` instead; negations do not belong in `ignores`.
+  // The same failure mode in a second gate: `format` wrote ts,tsx,astro,css
+  // while the gate only checked md,json,jsonc,yml,yaml,mjs, so source
+  // formatting was written but never ratcheted and 11 tracked files drifted out
+  // of shape on main. A gate that checks less than the formatter writes is a
+  // gate with a hole, so the invocation must be the package.json script rather
+  // than a glob copied into fast.mjs where the two can drift apart.
+  it("the formatting gate checks every extension `format` writes", () => {
+    const pkg = JSON.parse(
+      fs.readFileSync(path.join(root, "package.json"), "utf-8"),
+    );
+    const extensions = (script) =>
+      new Set((/\{([^}]+)\}/.exec(script)?.[1] ?? "").split(",").sort());
+    assert.deepEqual(
+      extensions(pkg.scripts["format:check"]),
+      extensions(pkg.scripts.format),
+      "format:check must cover exactly what format writes",
+    );
+
+    const fast = fs.readFileSync(
+      path.join(root, "scripts/check/fast.mjs"),
+      "utf-8",
+    );
+    assert.match(
+      fast,
+      /"format:check"/,
+      "check:fast must run the format:check script",
+    );
+    assert.ok(
+      !/"prettier"/.test(fast),
+      "check:fast must not invoke prettier with its own glob, which is how the two drifted apart",
+    );
+  });
+
   it("check:md reports a markdown violation instead of exiting clean", () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "qweb-md-"));
     try {

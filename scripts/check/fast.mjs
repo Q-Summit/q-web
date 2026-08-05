@@ -14,15 +14,17 @@ const docsCode = await runCommand("node", ["scripts/check/docs.mjs"], {
 if (docsCode !== 0) process.exit(docsCode);
 
 const parallel = [
-  // Single source of truth for the lint invocations: the check:md and
-  // check:spell scripts in package.json. Editing their args there changes
-  // this gate too.
+  // Single source of truth for the lint invocations: the check:md,
+  // check:spell, and format:check scripts in package.json. Editing their args
+  // there changes this gate too.
   ["pnpm", ["run", "check:md"]],
   ["pnpm", ["run", "check:spell"]],
-  [
-    "pnpm",
-    ["exec", "prettier", "--check", "**/*.{md,json,jsonc,yml,yaml,mjs}"],
-  ],
+  // format:check, NOT an inline prettier glob. This gate used to carry its own
+  // narrower glob (md/json/jsonc/yml/yaml/mjs) while `format` wrote ts,tsx,astro
+  // and css too, so source formatting was written but never ratcheted and
+  // drifted out of shape across 11 files. Delegating keeps the written set and
+  // the checked set the same by construction.
+  ["pnpm", ["run", "format:check"]],
   ["node", ["scripts/check/design.mjs"]],
   ["node", ["scripts/check/events.mjs"]],
   ["node", ["scripts/check/cms-styles.mjs"]],
