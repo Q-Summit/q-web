@@ -131,6 +131,35 @@ describe("root gates skip nested checkouts", () => {
     });
   }
 
+  // The walking gates detect a nested checkout wherever it sits, but the
+  // glob-based ones (eslint, cspell, prettier) can only exclude a known path,
+  // and they exclude exactly .claude/worktrees/. A checkout anywhere else is
+  // therefore still linted as if it belonged to this branch. check:docs runs
+  // first and sequentially in check:fast, so it is the place to refuse that
+  // outright: one actionable line beats a cascade of findings in files the
+  // developer never touched.
+  it("docs.mjs refuses a nested checkout outside .claude/worktrees/", (t) => {
+    // Only a .git file, no content: the concurrent check:fast members must
+    // have nothing of their own to report, so a failure here can only be the
+    // rule under test.
+    const dir = fs.mkdtempSync(path.join(root, "tmp-nested-probe-"));
+    t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+    fs.writeFileSync(path.join(dir, ".git"), "gitdir: /elsewhere\n");
+
+    const r = runScript("scripts/check/docs.mjs");
+    const output = `${r.stdout}${r.stderr}`;
+    assert.notEqual(r.status, 0, `expected a refusal, got:\n${output}`);
+    assert.ok(
+      output.includes(path.basename(dir)),
+      `the refusal must name the offending path:\n${output}`,
+    );
+    assert.match(
+      output,
+      /\.claude\/worktrees\//,
+      `the refusal must say where a checkout is allowed:\n${output}`,
+    );
+  });
+
   // check:lint selects files by glob rather than by walking, so it needs the
   // exclusion in eslint.config.mjs instead. Same failure either way: every
   // path-anchored ignore and every path-scoped override in that config (the
