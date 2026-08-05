@@ -48,7 +48,7 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-import { REPO_ROOT } from "../lib/paths.mjs";
+import { isNestedCheckout, REPO_ROOT } from "../lib/paths.mjs";
 
 const SELF = fileURLToPath(import.meta.url);
 const root = REPO_ROOT;
@@ -132,6 +132,7 @@ function walk(dir, out = [], seen = new Set()) {
       continue;
     }
     if (stat.isDirectory()) {
+      if (isNestedCheckout(abs)) continue;
       const real = fs.realpathSync(abs);
       if (seen.has(real)) continue;
       seen.add(real);

@@ -17,7 +17,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { REPO_ROOT } from "../lib/paths.mjs";
+import { isNestedCheckout, REPO_ROOT } from "../lib/paths.mjs";
 
 const root = REPO_ROOT;
 const problems = [];
@@ -71,7 +71,7 @@ function walk(dir, out = []) {
     const abs = path.join(dir, entry.name);
     if (entry.isSymbolicLink()) continue;
     if (entry.isDirectory()) {
-      if (!SKIP_DIRS.has(entry.name)) walk(abs, out);
+      if (!SKIP_DIRS.has(entry.name) && !isNestedCheckout(abs)) walk(abs, out);
     } else {
       out.push(abs);
     }

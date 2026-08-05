@@ -113,6 +113,7 @@ words:
   - gaxios
   - geoip
   - geolocation
+  - gitdir
   - grayscale
   - GSAP
   - hackathon
@@ -248,6 +249,8 @@ words:
   - whyq
   - wordmark
   - workerd
+  - worktree
+  - worktrees
   - wrangler
   - Wyman
   - xxlarge

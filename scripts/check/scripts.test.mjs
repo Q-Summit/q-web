@@ -24,6 +24,7 @@ import {
   CMS_ENV,
   CMS_ENV_REMOTE,
   CMS_ENV_VERCEL,
+  isNestedCheckout,
   REPO_ROOT,
   WEB_DIR,
 } from "../lib/paths.mjs";
@@ -61,6 +62,74 @@ describe("scripts/lib/paths", () => {
     assert.equal(CMS_ENV_REMOTE, path.join(CMS_DIR, ".env.remote"));
     assert.equal(CMS_ENV_VERCEL, path.join(CMS_DIR, ".env.vercel"));
   });
+
+  it("isNestedCheckout spots a separate checkout but never this repo", (t) => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "qweb-nested-"));
+    t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+
+    assert.equal(isNestedCheckout(dir), false, "plain dir is not a checkout");
+
+    // `git worktree add` writes .git as a FILE pointing at the real gitdir;
+    // `git clone` writes it as a directory. Both mark a separate checkout, so
+    // an isDirectory() test here would miss every agent worktree.
+    fs.writeFileSync(path.join(dir, ".git"), "gitdir: /elsewhere\n");
+    assert.equal(isNestedCheckout(dir), true, "worktree .git file counts");
+
+    fs.rmSync(path.join(dir, ".git"));
+    fs.mkdirSync(path.join(dir, ".git"));
+    assert.equal(isNestedCheckout(dir), true, "clone .git dir counts");
+
+    // REPO_ROOT carries a .git of its own, so an unguarded existsSync would
+    // call the tree we are actually gating foreign and skip the entire repo.
+    assert.equal(isNestedCheckout(REPO_ROOT), false, "never the repo itself");
+  });
+});
+
+describe("root gates skip nested checkouts", () => {
+  /**
+   * Plant a fake agent worktree inside the repo: a `.git` file (what `git
+   * worktree add` writes) plus one .ts file that trips BOTH root gates, the
+   * em-dash scan in check:docs and the stale-doc citation scan in check:design.
+   *
+   * The extension matters. A .ts file is invisible to the other check:fast
+   * members that run concurrently (prettier only checks md/json/yaml/mjs,
+   * markdownlint only .md), so planting it cannot make a sibling check fail
+   * and turn this into a flake.
+   */
+  function plantWorktree(t) {
+    const dir = fs.mkdtempSync(
+      path.join(root, ".claude", "worktrees", "probe-"),
+    );
+    t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+    fs.writeFileSync(path.join(dir, ".git"), "gitdir: /elsewhere\n");
+    // Both violations are assembled from escapes / concatenation so that THIS
+    // file stays clean under the very scans it is exercising, the same reason
+    // docs.mjs writes its own dash pattern as \u escapes.
+    const emDash = "\u2014";
+    const staleDoc = "STYLE" + ".md";
+    fs.writeFileSync(
+      path.join(dir, "probe.ts"),
+      `export const probe = "a${emDash}b"; // see ${staleDoc}\n`,
+    );
+    return path.basename(dir);
+  }
+
+  // Both gates key every exemption on a repo-relative path (the CI content
+  // fixture, LICENSE.md, design.mjs exempting itself). Inside a nested
+  // checkout those paths sit one prefix deeper and match none of them, so
+  // without the skip the gate fails on another branch's files.
+  for (const script of ["scripts/check/docs.mjs", "scripts/check/design.mjs"]) {
+    it(`${script} ignores a planted worktree`, (t) => {
+      const name = plantWorktree(t);
+      const r = runScript(script);
+      const output = `${r.stdout}${r.stderr}`;
+      assert.ok(
+        !output.includes(name),
+        `${script} reported on the nested checkout:\n${output}`,
+      );
+      assert.equal(r.status, 0, output);
+    });
+  }
 });
 
 describe("scripts/lib/args", () => {
