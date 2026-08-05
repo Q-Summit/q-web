@@ -97,10 +97,20 @@ describe("root gates skip nested checkouts", () => {
    * and turn this into a flake.
    */
   function plantWorktree(t) {
-    const dir = fs.mkdtempSync(
-      path.join(root, ".claude", "worktrees", "probe-"),
-    );
-    t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+    // .claude/worktrees/ exists on a machine that has used EnterWorktree and
+    // not on a fresh checkout, and mkdtemp does not create parents. Creating it
+    // here is what makes this test environment-independent: without it the test
+    // passed locally and ENOENTed in CI, which is precisely the local-only pass
+    // this suite exists to catch.
+    const home = path.join(root, ".claude", "worktrees");
+    const homeExisted = fs.existsSync(home);
+    fs.mkdirSync(home, { recursive: true });
+    const dir = fs.mkdtempSync(path.join(home, "probe-"));
+    t.after(() => {
+      fs.rmSync(dir, { recursive: true, force: true });
+      // Leave a real worktrees dir alone; only remove one this test created.
+      if (!homeExisted) fs.rmSync(home, { recursive: true, force: true });
+    });
     fs.writeFileSync(path.join(dir, ".git"), "gitdir: /elsewhere\n");
     // Both violations are assembled from escapes / concatenation so that THIS
     // file stays clean under the very scans it is exercising, the same reason
