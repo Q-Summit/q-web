@@ -132,6 +132,27 @@ describe("root gates skip nested checkouts", () => {
   }
 });
 
+describe("repo hygiene", () => {
+  it("gitignores agent worktrees from .gitignore, not a local exclude", () => {
+    // EnterWorktree puts a second checkout of this repo under
+    // .claude/worktrees/. A machine that has one must not see it as untracked,
+    // and the rule has to ship in the committed .gitignore: a
+    // .git/info/exclude entry is per-machine, so it silently covers whoever
+    // set it up and nobody else (including CI).
+    const r = spawnSync(
+      "git",
+      ["check-ignore", "-v", ".claude/worktrees/probe/README.md"],
+      { cwd: root, encoding: "utf-8" },
+    );
+    assert.equal(r.status, 0, "expected .claude/worktrees/ to be ignored");
+    assert.match(
+      r.stdout,
+      /^\.gitignore:/,
+      `expected .gitignore to own the rule, got: ${r.stdout.trim()}`,
+    );
+  });
+});
+
 describe("scripts/lib/args", () => {
   it("reads flag values and ignores -- separators", () => {
     const argv = ["node", "x", "--", "--collections", "faqs", "--dry-run"];
