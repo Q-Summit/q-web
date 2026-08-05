@@ -62,7 +62,45 @@ export const EXCEPTION_NETWORK_NOISE =
 export const EXCEPTION_BROWSER_NOISE =
   /^AbortError: Skipping view transition because skipTransition\(\) was called\.$/;
 
-/** Client-side payload gate -- drops unactionable network-failure and engine-internal exceptions before they leave the browser. */
+/**
+ * Exceptions thrown by code the site never shipped: browser extensions and the
+ * injected bridges that in-app browsers add to every page.
+ *
+ * `Script error.` is the cross-origin placeholder the browser substitutes when
+ * it will not reveal a script's error across origins: no message, no stack, no
+ * file, so it can never be acted on. It is safe to drop only because the site
+ * loads no cross-origin scripts at all (a NEVER in AGENTS.md, and the reason the
+ * PostHog SDK is bundled rather than fetched). Adding any third-party script
+ * means revisiting this entry, because then the placeholder could be hiding a
+ * real first-party failure.
+ *
+ * `__gCrWeb` is Chrome for iOS's own JS bridge object. Matched on the identifier
+ * rather than anchored to one message, since the phrasing differs per engine
+ * ("Can't find variable:" in WebKit, "is not defined" elsewhere) and no
+ * first-party code will ever reference that name.
+ *
+ * Deliberately NOT here: `Importing a module script failed.` and
+ * `Unexpected end of input`. Those look like noise and were also observed, but a
+ * bad build, a truncated upload, or a mis-hashed chunk surfaces exactly that
+ * way, so filtering them would hide a real outage.
+ */
+export const EXCEPTION_THIRD_PARTY_NOISE = [
+  /^Script error\.$/,
+  /\b__gCrWeb\b/,
+];
+
+/**
+ * Every noise pattern the client gate applies. Add to the group whose rationale
+ * fits; the bar for a new entry is an exception with no stack that no change to
+ * this codebase could fix.
+ */
+const EXCEPTION_NOISE = [
+  EXCEPTION_NETWORK_NOISE,
+  EXCEPTION_BROWSER_NOISE,
+  ...EXCEPTION_THIRD_PARTY_NOISE,
+];
+
+/** Client-side payload gate -- drops exceptions no code change could act on (network, engine-internal, third-party) before they leave the browser. */
 export function beforeSend(
   payload: CaptureResult | null,
 ): CaptureResult | null {
@@ -72,11 +110,7 @@ export function beforeSend(
     const list = props.$exception_list as Array<{ value?: string }> | undefined;
     const values = props.$exception_values as string[] | undefined;
     const value = (list?.[0]?.value ?? values?.[0])?.trim();
-    if (
-      value &&
-      (EXCEPTION_NETWORK_NOISE.test(value) ||
-        EXCEPTION_BROWSER_NOISE.test(value))
-    )
+    if (value && EXCEPTION_NOISE.some((pattern) => pattern.test(value)))
       return null;
   }
   return payload;

@@ -118,6 +118,27 @@ describe("beforeSend -- exception noise filter", () => {
     expect(beforeSend(exc("AbortError"))).not.toBeNull();
   });
 
+  it("drops exceptions raised by code the site did not ship", () => {
+    // "Script error." is the cross-origin placeholder: no message, no stack, no
+    // file. The site loads no cross-origin scripts (a NEVER in AGENTS.md), so
+    // it can only come from an extension or an in-app browser's injected code.
+    expect(beforeSend(exc("Script error."))).toBeNull();
+    // __gCrWeb is Chrome for iOS's own injected JS bridge. Matched on the
+    // identifier rather than anchored, because the phrasing differs per engine
+    // and no first-party code will ever reference that name.
+    expect(beforeSend(exc("Can't find variable: __gCrWeb"))).toBeNull();
+    expect(beforeSend(exc("__gCrWeb is not defined"))).toBeNull();
+  });
+
+  it("KEEPS asset-delivery failures, which can mean a broken deploy", () => {
+    // These two were also in the observed noise, but unlike the above they are
+    // not inherently unactionable: a bad build, a truncated upload, or a
+    // mis-hashed chunk surfaces exactly like this. Filtering them would hide a
+    // real outage, so they stay visible even though each was a one-off.
+    expect(beforeSend(exc("Importing a module script failed."))).not.toBeNull();
+    expect(beforeSend(exc("Unexpected end of input"))).not.toBeNull();
+  });
+
   it("keeps real exceptions and non-exception events", () => {
     expect(
       beforeSend(exc("Cannot read properties of undefined")),
