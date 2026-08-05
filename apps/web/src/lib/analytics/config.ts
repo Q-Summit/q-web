@@ -44,7 +44,25 @@ export function shouldCollect(hostname: string | undefined): boolean {
 export const EXCEPTION_NETWORK_NOISE =
   /^(Load failed|Failed to fetch|NetworkError when attempting to fetch resource|The network connection was lost\.|The request timed out\.|cancelled|canceled)$/;
 
-/** Client-side payload gate -- drops unactionable network-failure exceptions before they leave the browser. */
+/**
+ * Engine-internal noise: an exception the browser raises about its own
+ * machinery, which no application code can catch or fix.
+ *
+ * The one entry is WebKit's cross-document view transition. Our page cross-fade
+ * is the native `@view-transition { navigation: auto }` in global.css (MOTION-2,
+ * MOTION-3); nothing in this codebase calls the view-transition API, so nothing
+ * ever holds the transition's promise. When WebKit skips a transition it rejects
+ * that promise anyway and reports it as an unhandled rejection, so every iOS
+ * browser (all WebKit) files an unhandled `$exception` on ordinary navigations.
+ * Chrome marks the same promise handled and stays silent. There is no stack, no
+ * user-visible failure, and the cross-fade still works.
+ *
+ * Anchored on the exact message: a genuine `AbortError` still reports.
+ */
+export const EXCEPTION_BROWSER_NOISE =
+  /^AbortError: Skipping view transition because skipTransition\(\) was called\.$/;
+
+/** Client-side payload gate -- drops unactionable network-failure and engine-internal exceptions before they leave the browser. */
 export function beforeSend(
   payload: CaptureResult | null,
 ): CaptureResult | null {
@@ -54,7 +72,12 @@ export function beforeSend(
     const list = props.$exception_list as Array<{ value?: string }> | undefined;
     const values = props.$exception_values as string[] | undefined;
     const value = (list?.[0]?.value ?? values?.[0])?.trim();
-    if (value && EXCEPTION_NETWORK_NOISE.test(value)) return null;
+    if (
+      value &&
+      (EXCEPTION_NETWORK_NOISE.test(value) ||
+        EXCEPTION_BROWSER_NOISE.test(value))
+    )
+      return null;
   }
   return payload;
 }

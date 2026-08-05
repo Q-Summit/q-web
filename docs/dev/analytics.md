@@ -16,7 +16,9 @@ Collection is gated fail-safe. The client boots only when `PUBLIC_POSTHOG_KEY` i
 
 ## What is collected
 
-The site captures `$pageview`, `$pageleave`, `$web_vitals`, heatmap coordinates, `$exception` (with network noise filtered out in `before_send`), a coarse `country_coarse` on every event, and the custom events defined in `events.ts`. The automatic signals are each turned on explicitly through the `capture_*` flags in `config.ts`; `country_coarse` is registered from the `/qm/geo` lookup, and the custom events fire through the `data-ph-*` wiring.
+The site captures `$pageview`, `$pageleave`, `$web_vitals`, heatmap coordinates, `$exception` (with network and engine-internal noise filtered out in `before_send`), a coarse `country_coarse` on every event, and the custom events defined in `events.ts`. The automatic signals are each turned on explicitly through the `capture_*` flags in `config.ts`; `country_coarse` is registered from the `/qm/geo` lookup, and the custom events fire through the `data-ph-*` wiring.
+
+`before_send` in `config.ts` holds two anchored noise patterns, both for exceptions the site cannot act on. `EXCEPTION_NETWORK_NOISE` covers per-engine fetch-layer failures on flaky or content-blocked mobile networks, which otherwise include the SDK recapturing its own failed beacons. `EXCEPTION_BROWSER_NOISE` covers WebKit reporting a skipped native view transition as an unhandled rejection: nothing in the codebase touches the view-transition API, so no script ever holds the promise WebKit rejects, and every iOS browser files it on ordinary navigations. Both are anchored on the exact message, so a real error that merely contains one of those phrases still reports. Add a pattern only for an exception with no stack that no code change could fix.
 
 It does not collect autocapture click events, session replay, surveys, person profiles, cookies, IPs, or any client-stored identifier. Unique visitors come from PostHog's server-side daily-salt hash, so cross-day uniques are approximate; that is the trade ADR-0003 accepts.
 

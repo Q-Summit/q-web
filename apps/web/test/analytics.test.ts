@@ -94,6 +94,30 @@ describe("beforeSend -- exception noise filter", () => {
     expect(beforeSend(exc("The network connection was lost."))).toBeNull();
   });
 
+  it("drops the WebKit view-transition abort", () => {
+    // Observed on iOS only, across Safari / Firefox iOS / Brave, on ordinary
+    // navigations. Nothing in this codebase touches the view-transition API:
+    // the cross-fade is the native `@view-transition { navigation: auto }` in
+    // global.css, and WebKit reports the skipped transition's rejected promise
+    // as an unhandled rejection even though no script ever held it. There is
+    // no stack and nothing to fix, and the transition itself still works.
+    expect(
+      beforeSend(
+        exc(
+          "AbortError: Skipping view transition because skipTransition() was called.",
+        ),
+      ),
+    ).toBeNull();
+  });
+
+  it("keeps an AbortError that is not the view-transition one", () => {
+    // The pattern is anchored and specific, so a genuine abort still reports.
+    expect(
+      beforeSend(exc("AbortError: The user aborted a request.")),
+    ).not.toBeNull();
+    expect(beforeSend(exc("AbortError"))).not.toBeNull();
+  });
+
   it("keeps real exceptions and non-exception events", () => {
     expect(
       beforeSend(exc("Cannot read properties of undefined")),
