@@ -154,6 +154,46 @@ describe("root gates skip nested checkouts", () => {
   });
 });
 
+describe("gates are live, not silently inert", () => {
+  // A gate that reports nothing looks identical to a gate that passes. This
+  // one went inert for real: markdownlint-cli2 prefixes every `ignores` entry
+  // with "!", so a .gitignore-style negation inside `ignores` became "!!glob",
+  // and that double negation silenced the whole run. Every markdown structure
+  // rule (heading levels, list spacing, trailing whitespace) was unenforced
+  // while check:md exited 0. Express generated-file exclusions with
+  // `gitignore: true` instead; negations do not belong in `ignores`.
+  it("check:md reports a markdown violation instead of exiting clean", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "qweb-md-"));
+    try {
+      // Runs against the REPO's config in a scratch dir, so the assertion is
+      // about our configuration rather than markdownlint's defaults, and
+      // nothing is planted in the repo where a concurrent prettier or cspell
+      // run could see it.
+      fs.copyFileSync(
+        path.join(root, ".markdownlint-cli2.jsonc"),
+        path.join(dir, ".markdownlint-cli2.jsonc"),
+      );
+      // MD022 (blanks around headings), MD025 (one top-level heading) and
+      // MD009 (trailing spaces) are all default-enabled and not switched off.
+      fs.writeFileSync(path.join(dir, "probe.md"), "# One\n# Two\nbad   \n");
+      const r = spawnSync(
+        path.join(root, "node_modules/.bin/markdownlint-cli2"),
+        ["probe.md"],
+        { cwd: dir, encoding: "utf-8" },
+      );
+      const output = `${r.stdout}${r.stderr}`;
+      assert.match(
+        output,
+        /probe\.md:\d+.*MD0/,
+        `check:md config reported no violation, so the gate is inert:\n${output}`,
+      );
+      assert.notEqual(r.status, 0, "an inert gate still exits 0");
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
 describe("repo hygiene", () => {
   it("gitignores agent worktrees from .gitignore, not a local exclude", () => {
     // EnterWorktree puts a second checkout of this repo under

@@ -14,6 +14,14 @@
     // inline HTML we need to guard against.
     "MD033": false,
   },
+  // Honor .gitignore, which is where every generated tree is already declared
+  // (build output, the .lighthouse report drop, agent worktrees). This must
+  // carry the exclusions that need a negation to express, because a negated
+  // entry in `ignores` below silently disables the ENTIRE lint: cli2 prefixes
+  // each ignore with "!", so "!.lighthouse/README.md" becomes "!!glob", and
+  // that double negation made check:md report nothing at all while exiting 0.
+  // Keep `ignores` free of "!" entries; put anything needing one here instead.
+  "gitignore": true,
   "globs": ["**/*.md"],
   // node_modules: dependencies. LICENSE.md: legal text kept byte-for-byte
   // (also prettier-ignored); we do not restyle it.
@@ -32,8 +40,5 @@
     "**/.next",
     "**/.vercel",
     "**/.wrangler",
-    ".lighthouse/**",
-    "!.lighthouse/README.md",
-    "!.lighthouse/AGENT.example.md",
   ],
 }
