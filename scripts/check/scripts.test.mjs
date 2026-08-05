@@ -130,6 +130,28 @@ describe("root gates skip nested checkouts", () => {
       assert.equal(r.status, 0, output);
     });
   }
+
+  // check:lint selects files by glob rather than by walking, so it needs the
+  // exclusion in eslint.config.mjs instead. Same failure either way: every
+  // path-anchored ignore and every path-scoped override in that config (the
+  // generated types, the seed relaxation) misses inside a nested checkout, so
+  // its files get linted at full strictness. This asserts the real resolution
+  // ESLint performs, not the presence of a string in the config.
+  it("eslint ignores a nested checkout but still lints this one", async () => {
+    const { ESLint } = await import("eslint");
+    const eslint = new ESLint({ cwd: root });
+    const probe = "apps/cms/seed/faqs.ts";
+    assert.equal(
+      await eslint.isPathIgnored(`.claude/worktrees/q-web/${probe}`),
+      true,
+      "a worktree copy must not be linted by this checkout's gate",
+    );
+    assert.equal(
+      await eslint.isPathIgnored(probe),
+      false,
+      "the same file in THIS checkout must still be linted",
+    );
+  });
 });
 
 describe("repo hygiene", () => {
