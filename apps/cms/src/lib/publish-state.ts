@@ -98,7 +98,8 @@ export async function liveStatus(args: {
   // Without this a bulk op costs two serialized queries per doc on one Neon
   // connection.
   const memoKey =
-    args.global || (args.collection && args.id !== undefined && args.id !== null)
+    args.global ||
+    (args.collection && args.id !== undefined && args.id !== null)
       ? deployStashKey(args)
       : null;
   if (memoKey && req?.context) {

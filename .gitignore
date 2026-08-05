@@ -69,6 +69,9 @@ scripts/content-packages/*
 .vscode/*
 !.vscode/extensions.json
 .claude/settings.local.json
+# Agent worktrees: a second checkout of this repo, created per task and thrown
+# away. Its contents belong to that branch, never to this one.
+.claude/worktrees/
 .DS_Store
 Thumbs.db
 

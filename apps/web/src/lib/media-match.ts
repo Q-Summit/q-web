@@ -27,7 +27,9 @@ export function normalizeLooseFilename(filename: string): string {
 export function matchMediaFilename(
   requested: string,
   candidates: readonly string[],
-): { file: string; kind: "exact" | "stripped" | "normalized" | "substring" } | undefined {
+):
+  | { file: string; kind: "exact" | "stripped" | "normalized" | "substring" }
+  | undefined {
   const exact = new Set(candidates);
   if (exact.has(requested)) return { file: requested, kind: "exact" };
 
@@ -38,9 +40,9 @@ export function matchMediaFilename(
   }
 
   const strippedReq = stripSizeSuffix(requested);
-  const viaStripped =
-    exact.has(strippedReq) ? strippedReq
-    : byStripped.get(requested) ?? byStripped.get(strippedReq);
+  const viaStripped = exact.has(strippedReq)
+    ? strippedReq
+    : (byStripped.get(requested) ?? byStripped.get(strippedReq));
   if (viaStripped) return { file: viaStripped, kind: "stripped" };
 
   const byNormalized = new Map<string, string>();

@@ -6,7 +6,9 @@ import { fetchGlobal, memoizeCms } from "./cms";
 import { CONTENT_SOURCE, readJson } from "./source";
 
 /** Undo Payload named-subfield text rows back to string[]. */
-export function fromTextRows(rows: { text: string }[] | null | undefined): string[] {
+export function fromTextRows(
+  rows: { text: string }[] | null | undefined,
+): string[] {
   return (rows ?? []).map((row) => row.text);
 }
 

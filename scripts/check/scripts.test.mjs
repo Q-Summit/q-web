@@ -24,6 +24,7 @@ import {
   CMS_ENV,
   CMS_ENV_REMOTE,
   CMS_ENV_VERCEL,
+  isNestedCheckout,
   REPO_ROOT,
   WEB_DIR,
 } from "../lib/paths.mjs";
@@ -60,6 +61,229 @@ describe("scripts/lib/paths", () => {
     assert.equal(CMS_ENV, path.join(CMS_DIR, ".env"));
     assert.equal(CMS_ENV_REMOTE, path.join(CMS_DIR, ".env.remote"));
     assert.equal(CMS_ENV_VERCEL, path.join(CMS_DIR, ".env.vercel"));
+  });
+
+  it("isNestedCheckout spots a separate checkout but never this repo", (t) => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "qweb-nested-"));
+    t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+
+    assert.equal(isNestedCheckout(dir), false, "plain dir is not a checkout");
+
+    // `git worktree add` writes .git as a FILE pointing at the real gitdir;
+    // `git clone` writes it as a directory. Both mark a separate checkout, so
+    // an isDirectory() test here would miss every agent worktree.
+    fs.writeFileSync(path.join(dir, ".git"), "gitdir: /elsewhere\n");
+    assert.equal(isNestedCheckout(dir), true, "worktree .git file counts");
+
+    fs.rmSync(path.join(dir, ".git"));
+    fs.mkdirSync(path.join(dir, ".git"));
+    assert.equal(isNestedCheckout(dir), true, "clone .git dir counts");
+
+    // REPO_ROOT carries a .git of its own, so an unguarded existsSync would
+    // call the tree we are actually gating foreign and skip the entire repo.
+    assert.equal(isNestedCheckout(REPO_ROOT), false, "never the repo itself");
+  });
+});
+
+describe("root gates skip nested checkouts", () => {
+  /**
+   * Plant a fake agent worktree inside the repo: a `.git` file (what `git
+   * worktree add` writes) plus one .ts file that trips BOTH root gates, the
+   * em-dash scan in check:docs and the stale-doc citation scan in check:design.
+   *
+   * The extension matters. A .ts file is invisible to the other check:fast
+   * members that run concurrently (prettier only checks md/json/yaml/mjs,
+   * markdownlint only .md), so planting it cannot make a sibling check fail
+   * and turn this into a flake.
+   */
+  function plantWorktree(t) {
+    // .claude/worktrees/ exists on a machine that has used EnterWorktree and
+    // not on a fresh checkout, and mkdtemp does not create parents. Creating it
+    // here is what makes this test environment-independent: without it the test
+    // passed locally and ENOENTed in CI, which is precisely the local-only pass
+    // this suite exists to catch.
+    const home = path.join(root, ".claude", "worktrees");
+    const homeExisted = fs.existsSync(home);
+    fs.mkdirSync(home, { recursive: true });
+    const dir = fs.mkdtempSync(path.join(home, "probe-"));
+    t.after(() => {
+      fs.rmSync(dir, { recursive: true, force: true });
+      // Leave a real worktrees dir alone; only remove one this test created.
+      if (!homeExisted) fs.rmSync(home, { recursive: true, force: true });
+    });
+    fs.writeFileSync(path.join(dir, ".git"), "gitdir: /elsewhere\n");
+    // Both violations are assembled from escapes / concatenation so that THIS
+    // file stays clean under the very scans it is exercising, the same reason
+    // docs.mjs writes its own dash pattern as \u escapes.
+    const emDash = "\u2014";
+    const staleDoc = "STYLE" + ".md";
+    fs.writeFileSync(
+      path.join(dir, "probe.ts"),
+      `export const probe = "a${emDash}b"; // see ${staleDoc}\n`,
+    );
+    return path.basename(dir);
+  }
+
+  // Both gates key every exemption on a repo-relative path (the CI content
+  // fixture, LICENSE.md, design.mjs exempting itself). Inside a nested
+  // checkout those paths sit one prefix deeper and match none of them, so
+  // without the skip the gate fails on another branch's files.
+  for (const script of ["scripts/check/docs.mjs", "scripts/check/design.mjs"]) {
+    it(`${script} ignores a planted worktree`, (t) => {
+      const name = plantWorktree(t);
+      const r = runScript(script);
+      const output = `${r.stdout}${r.stderr}`;
+      assert.ok(
+        !output.includes(name),
+        `${script} reported on the nested checkout:\n${output}`,
+      );
+      assert.equal(r.status, 0, output);
+    });
+  }
+
+  // The walking gates detect a nested checkout wherever it sits, but the
+  // glob-based ones (eslint, cspell, prettier) can only exclude a known path,
+  // and they exclude exactly .claude/worktrees/. A checkout anywhere else is
+  // therefore still linted as if it belonged to this branch. check:docs runs
+  // first and sequentially in check:fast, so it is the place to refuse that
+  // outright: one actionable line beats a cascade of findings in files the
+  // developer never touched.
+  it("docs.mjs refuses a nested checkout outside .claude/worktrees/", (t) => {
+    // Only a .git file, no content: the concurrent check:fast members must
+    // have nothing of their own to report, so a failure here can only be the
+    // rule under test.
+    const dir = fs.mkdtempSync(path.join(root, "tmp-nested-probe-"));
+    t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+    fs.writeFileSync(path.join(dir, ".git"), "gitdir: /elsewhere\n");
+
+    const r = runScript("scripts/check/docs.mjs");
+    const output = `${r.stdout}${r.stderr}`;
+    assert.notEqual(r.status, 0, `expected a refusal, got:\n${output}`);
+    assert.ok(
+      output.includes(path.basename(dir)),
+      `the refusal must name the offending path:\n${output}`,
+    );
+    assert.match(
+      output,
+      /\.claude\/worktrees\//,
+      `the refusal must say where a checkout is allowed:\n${output}`,
+    );
+  });
+
+  // check:lint selects files by glob rather than by walking, so it needs the
+  // exclusion in eslint.config.mjs instead. Same failure either way: every
+  // path-anchored ignore and every path-scoped override in that config (the
+  // generated types, the seed relaxation) misses inside a nested checkout, so
+  // its files get linted at full strictness. This asserts the real resolution
+  // ESLint performs, not the presence of a string in the config.
+  it("eslint ignores a nested checkout but still lints this one", async () => {
+    const { ESLint } = await import("eslint");
+    const eslint = new ESLint({ cwd: root });
+    const probe = "apps/cms/seed/faqs.ts";
+    assert.equal(
+      await eslint.isPathIgnored(`.claude/worktrees/q-web/${probe}`),
+      true,
+      "a worktree copy must not be linted by this checkout's gate",
+    );
+    assert.equal(
+      await eslint.isPathIgnored(probe),
+      false,
+      "the same file in THIS checkout must still be linted",
+    );
+  });
+});
+
+describe("gates are live, not silently inert", () => {
+  // A gate that reports nothing looks identical to a gate that passes. This
+  // one went inert for real: markdownlint-cli2 prefixes every `ignores` entry
+  // with "!", so a .gitignore-style negation inside `ignores` became "!!glob",
+  // and that double negation silenced the whole run. Every markdown structure
+  // rule (heading levels, list spacing, trailing whitespace) was unenforced
+  // while check:md exited 0. Express generated-file exclusions with
+  // `gitignore: true` instead; negations do not belong in `ignores`.
+  // The same failure mode in a second gate: `format` wrote ts,tsx,astro,css
+  // while the gate only checked md,json,jsonc,yml,yaml,mjs, so source
+  // formatting was written but never ratcheted and 11 tracked files drifted out
+  // of shape on main. A gate that checks less than the formatter writes is a
+  // gate with a hole, so the invocation must be the package.json script rather
+  // than a glob copied into fast.mjs where the two can drift apart.
+  it("the formatting gate checks every extension `format` writes", () => {
+    const pkg = JSON.parse(
+      fs.readFileSync(path.join(root, "package.json"), "utf-8"),
+    );
+    const extensions = (script) =>
+      new Set((/\{([^}]+)\}/.exec(script)?.[1] ?? "").split(",").sort());
+    assert.deepEqual(
+      extensions(pkg.scripts["format:check"]),
+      extensions(pkg.scripts.format),
+      "format:check must cover exactly what format writes",
+    );
+
+    const fast = fs.readFileSync(
+      path.join(root, "scripts/check/fast.mjs"),
+      "utf-8",
+    );
+    assert.match(
+      fast,
+      /"format:check"/,
+      "check:fast must run the format:check script",
+    );
+    assert.ok(
+      !/"prettier"/.test(fast),
+      "check:fast must not invoke prettier with its own glob, which is how the two drifted apart",
+    );
+  });
+
+  it("check:md reports a markdown violation instead of exiting clean", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "qweb-md-"));
+    try {
+      // Runs against the REPO's config in a scratch dir, so the assertion is
+      // about our configuration rather than markdownlint's defaults, and
+      // nothing is planted in the repo where a concurrent prettier or cspell
+      // run could see it.
+      fs.copyFileSync(
+        path.join(root, ".markdownlint-cli2.jsonc"),
+        path.join(dir, ".markdownlint-cli2.jsonc"),
+      );
+      // MD022 (blanks around headings), MD025 (one top-level heading) and
+      // MD009 (trailing spaces) are all default-enabled and not switched off.
+      fs.writeFileSync(path.join(dir, "probe.md"), "# One\n# Two\nbad   \n");
+      const r = spawnSync(
+        path.join(root, "node_modules/.bin/markdownlint-cli2"),
+        ["probe.md"],
+        { cwd: dir, encoding: "utf-8" },
+      );
+      const output = `${r.stdout}${r.stderr}`;
+      assert.match(
+        output,
+        /probe\.md:\d+.*MD0/,
+        `check:md config reported no violation, so the gate is inert:\n${output}`,
+      );
+      assert.notEqual(r.status, 0, "an inert gate still exits 0");
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("repo hygiene", () => {
+  it("gitignores agent worktrees from .gitignore, not a local exclude", () => {
+    // EnterWorktree puts a second checkout of this repo under
+    // .claude/worktrees/. A machine that has one must not see it as untracked,
+    // and the rule has to ship in the committed .gitignore: a
+    // .git/info/exclude entry is per-machine, so it silently covers whoever
+    // set it up and nobody else (including CI).
+    const r = spawnSync(
+      "git",
+      ["check-ignore", "-v", ".claude/worktrees/probe/README.md"],
+      { cwd: root, encoding: "utf-8" },
+    );
+    assert.equal(r.status, 0, "expected .claude/worktrees/ to be ignored");
+    assert.match(
+      r.stdout,
+      /^\.gitignore:/,
+      `expected .gitignore to own the rule, got: ${r.stdout.trim()}`,
+    );
   });
 });
 

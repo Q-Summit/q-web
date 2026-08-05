@@ -8,6 +8,8 @@
  *  - agents-pairing:   every AGENTS.md has a sibling CLAUDE.md importing it
  *                      (a line that is exactly "@AGENTS.md"), and vice versa
  *  - skills-symlink:   .claude/skills is a symlink to .agents/skills
+ *  - nested-checkout:  a second checkout of this repo lives only under
+ *                      .claude/worktrees/, the one path every gate excludes
  *  - adr-filename:     docs/decisions/ files are NNNN-slug.md or _template.md
  *  - adr-bullets:      each ADR has the "- **Status:**" and "- **Date:**" bullets
  *  - adr-indexed:      each ADR appears in docs/architecture/09-architecture-decisions.md
@@ -17,7 +19,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { REPO_ROOT } from "../lib/paths.mjs";
+import { isNestedCheckout, REPO_ROOT } from "../lib/paths.mjs";
 
 const root = REPO_ROOT;
 const problems = [];
@@ -66,12 +68,24 @@ const isContentSnapshot = (fileRel) =>
 // Dash chars as \u escapes so this file passes its own plain-text scan.
 const DASH = /[\u2013\u2014]/;
 
+/**
+ * Nested checkouts found while walking, so the nested-checkout rule below can
+ * report them. The walk has to skip them (their paths defeat every exemption
+ * here), which is exactly why something else has to say they exist.
+ */
+const nestedCheckouts = [];
+
 function walk(dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const abs = path.join(dir, entry.name);
     if (entry.isSymbolicLink()) continue;
     if (entry.isDirectory()) {
-      if (!SKIP_DIRS.has(entry.name)) walk(abs, out);
+      if (SKIP_DIRS.has(entry.name)) continue;
+      if (isNestedCheckout(abs)) {
+        nestedCheckouts.push(abs);
+        continue;
+      }
+      walk(abs, out);
     } else {
       out.push(abs);
     }
@@ -231,6 +245,27 @@ try {
   }
 } catch {
   err(".claude/skills", 'missing or broken symlink: run "pnpm run setup"');
+}
+
+// --- nested-checkout --------------------------------------------------------
+// This gate and check:design skip a nested checkout wherever it sits, because
+// isNestedCheckout looks for a .git rather than matching a path. The glob-based
+// gates cannot do that: eslint, cspell, and prettier can only exclude a path
+// they were told about, and the path they were told about is
+// .claude/worktrees/. So a second checkout anywhere else still gets linted as
+// if it belonged to this branch, and every path-keyed exemption misses it,
+// producing dozens of findings in files nobody touched (48 from eslint alone,
+// when this was live). Refuse it here instead: check:docs runs first and
+// sequentially in check:fast, so one actionable line lands before the cascade.
+const WORKTREE_HOME = ".claude/worktrees/";
+for (const abs of nestedCheckouts) {
+  const fileRel = rel(abs);
+  if (fileRel.startsWith(WORKTREE_HOME)) continue;
+  err(
+    fileRel,
+    `is a nested git checkout outside ${WORKTREE_HOME}, which eslint, cspell, and prettier do not exclude: ` +
+      `move it under ${WORKTREE_HOME}, or exclude it in .gitignore AND eslint.config.mjs`,
+  );
 }
 
 // --- ADR rules --------------------------------------------------------------

@@ -211,7 +211,10 @@ describe("maybeSchedulePublishDeploy", () => {
       payloadAPI: "REST" as const,
       query: {},
       context: {
-        [DEPLOY_PRIOR_LIVE_STATUS]: { "team:1": "published", "team:2": "draft" },
+        [DEPLOY_PRIOR_LIVE_STATUS]: {
+          "team:1": "published",
+          "team:2": "draft",
+        },
       },
       payload: { logger: { info: () => {} } },
     };
@@ -263,7 +266,10 @@ describe("maybeSchedulePublishDeploy", () => {
       payloadAPI: "REST" as const,
       query: { draft: "true" },
       context: {
-        [DEPLOY_PRIOR_LIVE_STATUS]: { "team:1": "published", "team:2": "published" },
+        [DEPLOY_PRIOR_LIVE_STATUS]: {
+          "team:1": "published",
+          "team:2": "published",
+        },
       },
       payload: { logger: { info: () => {} } },
     };

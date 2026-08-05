@@ -43,3 +43,15 @@ apps/cms/src/app/(payload)/importMap.js
 apps/web/worker-configuration.d.ts
 apps/web/.astro
 apps/web/src/env.d.ts
+
+# prettier-plugin-astro cannot PARSE a <script> nested inside a template
+# expression, and this file renders its flip-card script as `{flip && (<script>
+# ... </script>)}` so a page that does not opt in ships no JS. Prettier exits 2
+# on it (a hard parse error, not a formatting difference), which took the whole
+# `pnpm run format` run down with it and is why source formatting could never be
+# gated. Verified the trigger is the nesting, not the TypeScript generics in the
+# script: the same generics in a top-level <script> format fine, and removing
+# them here does not help. The fix that removes this exemption is to move the
+# script into its own small component with a top-level <script> and render that
+# conditionally; doing it here would mean reshaping a shared visual primitive.
+apps/web/src/components/ui/LogoGrid.astro

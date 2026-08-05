@@ -69,6 +69,13 @@ export default tseslint.config(
       "scripts/backups/",
       // Chrome-for-Testing install (ensure-chrome); not our source.
       ".browsers/",
+      // Agent worktrees are separate checkouts of this repo, so their files sit
+      // one prefix deeper than every path-anchored entry above and every
+      // path-scoped override below (generated types, the seed relaxation). They
+      // would be linted at full strictness and fail the gate on a tree this run
+      // does not own; that checkout runs its own gate. The walking gates get the
+      // same exclusion from isNestedCheckout in scripts/lib/paths.mjs.
+      ".claude/worktrees/",
     ],
   },
 

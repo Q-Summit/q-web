@@ -86,7 +86,9 @@ export async function resolveContentImage(
   const match = matchMediaFilename(filename, index.basenames);
   if (!match) {
     if (!options.quiet) {
-      console.warn(`[images] no pipeline asset found for ${label}: ${filename}`);
+      console.warn(
+        `[images] no pipeline asset found for ${label}: ${filename}`,
+      );
     }
     return undefined;
   }

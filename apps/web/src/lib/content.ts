@@ -25,7 +25,11 @@ export { normalizeHrefsDeep } from "./content/hrefs";
 export { stableOrderCompare } from "./content/cms";
 export { resolveMediaFilename } from "./content/media";
 
-export type { PartnerTier, Partner, PartnerTestimonial } from "./content/partners";
+export type {
+  PartnerTier,
+  Partner,
+  PartnerTestimonial,
+} from "./content/partners";
 export { getPartners, getPartnerTestimonials } from "./content/partners";
 
 export type { JobWorkload, Job } from "./content/jobs";
@@ -44,7 +48,11 @@ export { getTeam, getPastTeamPhotos } from "./content/team";
 export type { FaqPage, Faq } from "./content/faqs";
 export { getFaqs } from "./content/faqs";
 
-export type { PageLink, SocialLink, SiteSettings } from "./content/site-settings";
+export type {
+  PageLink,
+  SocialLink,
+  SiteSettings,
+} from "./content/site-settings";
 export { getSiteSettings } from "./content/site-settings";
 
 export type {

@@ -94,6 +94,51 @@ describe("beforeSend -- exception noise filter", () => {
     expect(beforeSend(exc("The network connection was lost."))).toBeNull();
   });
 
+  it("drops the WebKit view-transition abort", () => {
+    // Observed on iOS only, across Safari / Firefox iOS / Brave, on ordinary
+    // navigations. Nothing in this codebase touches the view-transition API:
+    // the cross-fade is the native `@view-transition { navigation: auto }` in
+    // global.css, and WebKit reports the skipped transition's rejected promise
+    // as an unhandled rejection even though no script ever held it. There is
+    // no stack and nothing to fix, and the transition itself still works.
+    expect(
+      beforeSend(
+        exc(
+          "AbortError: Skipping view transition because skipTransition() was called.",
+        ),
+      ),
+    ).toBeNull();
+  });
+
+  it("keeps an AbortError that is not the view-transition one", () => {
+    // The pattern is anchored and specific, so a genuine abort still reports.
+    expect(
+      beforeSend(exc("AbortError: The user aborted a request.")),
+    ).not.toBeNull();
+    expect(beforeSend(exc("AbortError"))).not.toBeNull();
+  });
+
+  it("drops exceptions raised by code the site did not ship", () => {
+    // "Script error." is the cross-origin placeholder: no message, no stack, no
+    // file. The site loads no cross-origin scripts (a NEVER in AGENTS.md), so
+    // it can only come from an extension or an in-app browser's injected code.
+    expect(beforeSend(exc("Script error."))).toBeNull();
+    // __gCrWeb is Chrome for iOS's own injected JS bridge. Matched on the
+    // identifier rather than anchored, because the phrasing differs per engine
+    // and no first-party code will ever reference that name.
+    expect(beforeSend(exc("Can't find variable: __gCrWeb"))).toBeNull();
+    expect(beforeSend(exc("__gCrWeb is not defined"))).toBeNull();
+  });
+
+  it("KEEPS asset-delivery failures, which can mean a broken deploy", () => {
+    // These two were also in the observed noise, but unlike the above they are
+    // not inherently unactionable: a bad build, a truncated upload, or a
+    // mis-hashed chunk surfaces exactly like this. Filtering them would hide a
+    // real outage, so they stay visible even though each was a one-off.
+    expect(beforeSend(exc("Importing a module script failed."))).not.toBeNull();
+    expect(beforeSend(exc("Unexpected end of input"))).not.toBeNull();
+  });
+
   it("keeps real exceptions and non-exception events", () => {
     expect(
       beforeSend(exc("Cannot read properties of undefined")),
