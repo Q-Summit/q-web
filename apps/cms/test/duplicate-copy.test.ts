@@ -17,9 +17,7 @@ const JOBS_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 describe("duplicate-copy beforeDuplicate hooks", () => {
   it("renames a label so compound-key collections can duplicate", () => {
     expect(run(copyLabelOnDuplicate, "Jane Doe")).toBe("Jane Doe (copy)");
-    expect(run(copyLabelOnDuplicate, "Why attend?")).toBe(
-      "Why attend? (copy)",
-    );
+    expect(run(copyLabelOnDuplicate, "Why attend?")).toBe("Why attend? (copy)");
   });
 
   it("renames a slug within the kebab-case validate rule", () => {

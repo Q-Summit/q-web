@@ -20,7 +20,9 @@ export const LoginWithGoogle: React.FC = () => {
     if (process.env.NODE_ENV === "production") {
       return (
         <div className="qs-login-intro">
-          <p className="qs-login-note">Sign-in is not configured. Contact IT.</p>
+          <p className="qs-login-note">
+            Sign-in is not configured. Contact IT.
+          </p>
         </div>
       );
     }

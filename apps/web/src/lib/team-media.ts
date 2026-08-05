@@ -5,10 +5,7 @@
 
 import { existsSync } from "node:fs";
 
-import {
-  MEDIA_DIR,
-  variant,
-} from "./media-filename";
+import { MEDIA_DIR, variant } from "./media-filename";
 
 /**
  * Group-photo LCP asset. Named `-p-1600` on purpose: R2 has no unsuffixed

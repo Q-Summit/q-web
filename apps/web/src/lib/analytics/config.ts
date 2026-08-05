@@ -84,10 +84,7 @@ export const EXCEPTION_BROWSER_NOISE =
  * bad build, a truncated upload, or a mis-hashed chunk surfaces exactly that
  * way, so filtering them would hide a real outage.
  */
-export const EXCEPTION_THIRD_PARTY_NOISE = [
-  /^Script error\.$/,
-  /\b__gCrWeb\b/,
-];
+export const EXCEPTION_THIRD_PARTY_NOISE = [/^Script error\.$/, /\b__gCrWeb\b/];
 
 /**
  * Every noise pattern the client gate applies. Add to the group whose rationale
