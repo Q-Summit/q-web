@@ -21,6 +21,7 @@ export const DRAFT_COLLECTIONS: {
 export const GLOBAL_LABELS: Record<string, string> = {
   "page-home": "Home · /",
   "page-whyq": "Why Q? · /whyq/",
+  "page-kickoff": "Join Q / Kickoff · /kickoff/",
   "page-program": "Program · /program/",
   "page-tickets": "Tickets · /ticket-categories/",
   "page-contact": "Contact · /contact/",

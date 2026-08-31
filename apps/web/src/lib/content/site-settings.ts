@@ -39,6 +39,10 @@ export interface SiteSettings {
     /** YYYY-MM-DD when the identity block was last checked. */
     lastReviewed?: string;
   };
+  kickoff: {
+    pageEnabled: boolean;
+    redirectRoot: boolean;
+  };
 }
 
 export interface CmsPageLink {
@@ -64,6 +68,10 @@ interface CmsSiteSettingsDoc {
     pitch?: string | null;
     keyFacts?: { text: string }[] | null;
     lastReviewed?: string | null;
+  } | null;
+  kickoff?: {
+    pageEnabled?: boolean | null;
+    redirectRoot?: boolean | null;
   } | null;
 }
 
@@ -96,6 +104,25 @@ async function cmsGetSiteSettings(): Promise<SiteSettings> {
       })(),
       lastReviewed: doc.llms?.lastReviewed?.trim() || undefined,
     },
+    kickoff: {
+      pageEnabled: Boolean(doc.kickoff?.pageEnabled),
+      redirectRoot: Boolean(doc.kickoff?.redirectRoot),
+    },
+  };
+}
+
+/** Old JSON snapshots omit kickoff; keep / as home until a fixture sets flags. */
+function withJsonKickoffDefaults(
+  settings: Omit<SiteSettings, "kickoff"> & {
+    kickoff?: { pageEnabled?: boolean; redirectRoot?: boolean };
+  },
+): SiteSettings {
+  return {
+    ...settings,
+    kickoff: {
+      pageEnabled: settings.kickoff?.pageEnabled ?? false,
+      redirectRoot: settings.kickoff?.redirectRoot ?? false,
+    },
   };
 }
 
@@ -103,6 +130,8 @@ export async function getSiteSettings(): Promise<SiteSettings> {
   const settings =
     CONTENT_SOURCE === "cms"
       ? memoizeCms("site-settings", cmsGetSiteSettings)
-      : readJson<SiteSettings>("site-settings.json");
+      : readJson<SiteSettings>("site-settings.json").then(
+          withJsonKickoffDefaults,
+        );
   return normalizeHrefsDeep(await settings);
 }

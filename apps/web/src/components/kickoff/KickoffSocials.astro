@@ -1,0 +1,258 @@
+---
+// Ice glass social row (DESIGN.md KICKOFF-1). Icons stay inline so the
+// zip's oversized round hits match.
+import "./kickoff-theme.css";
+import type { KickoffContent } from "../../lib/content";
+
+interface Props {
+  content: KickoffContent["socials"];
+}
+
+const { content } = Astro.props;
+
+const socialOrder = ["whatsapp", "tiktok", "instagram", "linkedin"] as const;
+const rank = (icon: string) => {
+  const index = socialOrder.indexOf(icon as (typeof socialOrder)[number]);
+  return index === -1 ? socialOrder.length : index;
+};
+const links = [...content.links].sort((a, b) => rank(a.icon) - rank(b.icon));
+---
+
+<section class="socials kickoff-reveal" aria-labelledby="socials-title">
+  <p class="kickoff-eyebrow" data-lp="socials.eyebrow">{content.eyebrow}</p>
+  <h2
+    id="socials-title"
+    class="kickoff-section-title"
+    data-lp="socials.heading"
+  >
+    {content.heading}
+  </h2>
+
+  <div class="social-frame">
+    <div class="social-blob social-blob--one"></div>
+    <div class="social-blob social-blob--two"></div>
+    <div class="social-blob social-blob--three"></div>
+
+    {
+      links.map((link) => (
+        <a
+          class="social-link"
+          href={link.href}
+          aria-label={`Open Q-Summit ${link.label}`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {link.icon === "linkedin" && (
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 9h4v12H3V9Zm6.25 0h3.84v1.64h.06c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.78 2.65 4.78 6.1V21h-4v-5.58c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.95V21h-4V9Z"
+              />
+            </svg>
+          )}
+          {link.icon === "instagram" && (
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M7.75 2h8.5A5.76 5.76 0 0 1 22 7.75v8.5A5.76 5.76 0 0 1 16.25 22h-8.5A5.76 5.76 0 0 1 2 16.25v-8.5A5.76 5.76 0 0 1 7.75 2Zm0 2A3.75 3.75 0 0 0 4 7.75v8.5A3.75 3.75 0 0 0 7.75 20h8.5A3.75 3.75 0 0 0 20 16.25v-8.5A3.75 3.75 0 0 0 16.25 4h-8.5ZM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm5.25-2.35a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2Z"
+              />
+            </svg>
+          )}
+          {link.icon === "tiktok" && (
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M16.6 3c.32 2.64 1.8 4.22 4.4 4.39v3.18a7.67 7.67 0 0 1-4.33-1.34v6.31A5.83 5.83 0 1 1 10.83 9.7c.38 0 .76.04 1.12.12v3.27a2.67 2.67 0 1 0 1.84 2.54V3h2.81Z"
+              />
+            </svg>
+          )}
+          {link.icon === "whatsapp" && (
+            <svg viewBox="0 0 32 32" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M16.02 3.2A12.64 12.64 0 0 0 5.1 22.17L3.6 28.8l6.78-1.46A12.64 12.64 0 1 0 16.02 3.2Zm0 2.36a10.28 10.28 0 0 1 8.73 15.72 10.27 10.27 0 0 1-13.62 3.82l-.42-.22-4.01.86.9-3.9-.27-.44A10.28 10.28 0 0 1 16.02 5.56Zm-4.4 5.35c-.22 0-.58.08-.88.42-.3.34-1.16 1.14-1.16 2.78s1.2 3.23 1.36 3.45c.17.22 2.34 3.73 5.76 5.08 2.85 1.12 3.43.9 4.05.84.62-.06 2.02-.82 2.3-1.62.29-.8.29-1.49.2-1.63-.08-.14-.31-.22-.65-.39-.34-.17-2.02-1-2.33-1.11-.31-.12-.54-.17-.77.17-.22.34-.88 1.11-1.08 1.34-.2.22-.4.25-.74.08-.34-.17-1.44-.53-2.74-1.7-1.01-.9-1.7-2.02-1.9-2.36-.2-.34-.02-.52.15-.69.15-.15.34-.4.51-.59.17-.2.22-.34.34-.57.11-.22.06-.42-.03-.59-.08-.17-.77-1.85-1.05-2.53-.28-.66-.56-.57-.77-.58h-.63Z"
+              />
+            </svg>
+          )}
+        </a>
+      ))
+    }
+  </div>
+</section>
+
+<style>
+  /* DESIGN.md KICKOFF-1: floating ice frame, not a conference logo row. */
+  .socials {
+    width: min(1120px, calc(100% - 2rem));
+    margin: 0 auto;
+    padding: clamp(var(--space-xl), 6vw, 5rem) 0
+      clamp(var(--space-xl), 6vw, 4.5rem);
+    text-align: center;
+  }
+
+  .social-frame {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(var(--space-lg), 7vw, 5rem);
+    width: min(760px, 100%);
+    min-height: 190px;
+    margin: var(--space-lg) auto 0;
+    overflow: hidden;
+    padding: var(--space-lg);
+    border: 1px solid color-mix(in srgb, var(--color-navy) 12%, transparent);
+    border-radius: var(--radius-kickoff-frame);
+    background:
+      radial-gradient(
+        circle at 18% 20%,
+        color-mix(in srgb, var(--color-kickoff-ice) 22%, transparent),
+        transparent 18rem
+      ),
+      radial-gradient(
+        circle at 82% 80%,
+        color-mix(in srgb, var(--color-kickoff-mid) 11%, transparent),
+        transparent 18rem
+      ),
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--color-white) 90%, transparent),
+        color-mix(in srgb, var(--color-kickoff-ground) 98%, transparent)
+      );
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, var(--color-white) 80%, transparent),
+      0 24px 70px color-mix(in srgb, var(--color-navy) 10%, transparent);
+  }
+
+  .social-blob {
+    position: absolute;
+    width: 13rem;
+    height: 13rem;
+    border-radius: var(--radius-kickoff-pill);
+    pointer-events: none;
+    filter: blur(32px);
+    opacity: 0.45;
+    animation: floatBlob var(--duration-kickoff-blob) ease-in-out infinite
+      alternate;
+  }
+
+  .social-blob--one {
+    top: -5rem;
+    left: 5%;
+    background: var(--color-kickoff-ice);
+  }
+
+  .social-blob--two {
+    right: 6%;
+    bottom: -5rem;
+    background: var(--color-kickoff-mid);
+    animation-duration: var(--duration-kickoff-blob-alt);
+    animation-delay: calc(var(--duration-kickoff-blob) * -0.44);
+  }
+
+  .social-blob--three {
+    top: 36%;
+    left: 42%;
+    width: 10rem;
+    height: 10rem;
+    background: color-mix(in srgb, var(--color-kickoff-ice) 75%, transparent);
+    opacity: 0.25;
+    animation-duration: var(--duration-kickoff-pulse);
+    animation-delay: calc(var(--duration-kickoff-blob) * -0.78);
+  }
+
+  .social-link {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: clamp(4.7rem, 11vw, 6.8rem);
+    height: clamp(4.7rem, 11vw, 6.8rem);
+    color: var(--color-navy);
+    opacity: 0.98;
+    text-decoration: none;
+    border-radius: var(--radius-kickoff-pill);
+    border: 1px solid color-mix(in srgb, var(--color-navy) 8%, transparent);
+    background: color-mix(in srgb, var(--color-white) 18%, transparent);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, var(--color-white) 44%, transparent),
+      0 10px 30px color-mix(in srgb, var(--color-navy) 5%, transparent);
+    transition:
+      color var(--duration-page) var(--ease-snappy),
+      transform var(--duration-page) var(--ease-snappy),
+      opacity var(--duration-page) var(--ease-snappy),
+      filter var(--duration-page) var(--ease-snappy),
+      border-color var(--duration-page) var(--ease-snappy),
+      background var(--duration-page) var(--ease-snappy);
+  }
+
+  .social-link:hover,
+  .social-link:focus-visible,
+  .social-link:active {
+    color: var(--color-kickoff-ice-bright);
+    opacity: 1;
+    transform: translateY(-3px) scale(1.08);
+    border-color: color-mix(in srgb, var(--color-navy) 18%, transparent);
+    background: color-mix(in srgb, var(--color-white) 36%, transparent);
+    filter: drop-shadow(
+      0 14px 24px color-mix(in srgb, var(--color-navy) 18%, transparent)
+    );
+  }
+
+  .social-link svg {
+    width: 68%;
+    height: 68%;
+    display: block;
+    filter: drop-shadow(
+        0 1px 0 color-mix(in srgb, var(--color-white) 80%, transparent)
+      )
+      drop-shadow(
+        0 8px 16px color-mix(in srgb, var(--color-navy) 10%, transparent)
+      );
+  }
+
+  @keyframes floatBlob {
+    0% {
+      transform: translate3d(-1rem, -0.4rem, 0) scale(1);
+    }
+
+    50% {
+      transform: translate3d(1.7rem, 1rem, 0) scale(1.12);
+    }
+
+    100% {
+      transform: translate3d(-0.6rem, 1.5rem, 0) scale(0.96);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .social-frame {
+      min-height: 156px;
+      gap: 1.2rem;
+      border-radius: var(--radius-kickoff-card);
+      padding: 1.3rem;
+    }
+
+    .social-link {
+      width: 3.85rem;
+      height: 3.85rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .social-blob {
+      animation: none;
+    }
+
+    .social-link {
+      transition: none;
+    }
+
+    .social-link:hover,
+    .social-link:focus-visible,
+    .social-link:active {
+      transform: none;
+    }
+  }
+</style>

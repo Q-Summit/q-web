@@ -28,6 +28,7 @@
     "ops:mirror-db": "node scripts/ops/mirror-db.mjs",
     "ops:mirror-media": "node scripts/ops/mirror-media.mjs",
     "r2:sync": "node scripts/preview/r2-sync.mjs",
+    "seed:kickoff": "node scripts/local/assert-db.mjs && pnpm --filter cms exec payload run seed/kickoff.ts",
     "seed:local-r2": "node scripts/preview/seed-local-r2.mjs",
     "picture:sync": "node scripts/preview/sync-picture-assets.mjs",
     "preview:cf": "node scripts/preview/cf.mjs",

@@ -174,6 +174,18 @@ const ALLOWED_WARNINGS = new Map([
   ["warning colors.error-light", UNREFERENCED],
   ["warning colors.focus", UNREFERENCED],
   ["warning colors.highlight", UNREFERENCED],
+  ["warning colors.kickoff-ice", UNREFERENCED],
+  ["warning colors.kickoff-ice-bright", UNREFERENCED],
+  ["warning colors.kickoff-mid", UNREFERENCED],
+  ["warning colors.kickoff-ground", UNREFERENCED],
+  ["warning colors.kickoff-deep", UNREFERENCED],
+  ["warning colors.kickoff-midnight", UNREFERENCED],
+  ["warning colors.kickoff-option", UNREFERENCED],
+  ["warning colors.kickoff-option-hover", UNREFERENCED],
+  ["warning colors.kickoff-option-deep", UNREFERENCED],
+  ["warning colors.kickoff-option-ink", UNREFERENCED],
+  ["warning colors.kickoff-badge", UNREFERENCED],
+  ["warning colors.kickoff-cyan", UNREFERENCED],
 ]);
 
 function designCli(args) {
@@ -298,6 +310,20 @@ const UNMAPPED_TOKENS = new Map([
   ["--font-weight-extrabold", "see --font-weight-light"],
   ["--font-weight-semibold", "see --font-weight-light"],
   ["--duration-reveal", "see --ease-snappy"],
+  [
+    "--duration-kickoff-leave",
+    "see --ease-snappy; Join Q glass only (DESIGN.md KICKOFF-1)",
+  ],
+  ["--duration-kickoff-progress", "see --duration-kickoff-leave"],
+  ["--duration-kickoff-fold", "see --duration-kickoff-leave"],
+  ["--duration-kickoff-card", "see --duration-kickoff-leave"],
+  ["--duration-kickoff-reveal", "see --duration-kickoff-leave"],
+  ["--duration-kickoff-blob", "see --duration-kickoff-leave"],
+  ["--duration-kickoff-blob-alt", "see --duration-kickoff-leave"],
+  ["--duration-kickoff-pulse", "see --duration-kickoff-leave"],
+  ["--duration-kickoff-pulse-alt", "see --duration-kickoff-leave"],
+  ["--duration-kickoff-flow", "see --duration-kickoff-leave"],
+  ["--ease-kickoff-fold", "see --duration-kickoff-leave"],
 ]);
 
 /** DESIGN.md front matter path -> tokens.css custom property. */

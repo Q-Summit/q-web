@@ -1,0 +1,197 @@
+---
+// Join Q hero: full-bleed photo, ice fade into the page, glass CTAs
+// (DESIGN.md KICKOFF-1). Not .section.is-dark (COLOR-2).
+import "./kickoff-theme.css";
+import type { PageLink } from "../../lib/content";
+import { hasMedia } from "./media-href";
+
+interface Props {
+  eyebrow: string;
+  headline: string;
+  copy: string;
+  image: string;
+  imageAlt: string;
+  primaryCta: PageLink;
+  secondaryCta: PageLink;
+}
+
+const { eyebrow, headline, copy, image, primaryCta, secondaryCta } =
+  Astro.props;
+---
+
+<section class="kickoff-hero kickoff-reveal">
+  <div class="hero-media" aria-hidden="true">
+    {
+      hasMedia(image) && (
+        <img
+          src={image}
+          alt=""
+          loading="eager"
+          decoding="async"
+          fetchpriority="high"
+        />
+      )
+    }
+    <div class="hero-image-fallback"></div>
+    <div class="hero-overlay"></div>
+  </div>
+
+  <div class="hero-content">
+    <p class="hero-kicker" data-lp="hero.eyebrow">{eyebrow}</p>
+    <h1 class="hero-headline" data-lp="hero.headline">{headline}</h1>
+    <p class="hero-copy" data-lp="hero.copy">{copy}</p>
+
+    <div class="hero-actions">
+      {
+        primaryCta.label && (
+          <a
+            class="kickoff-glass"
+            href={primaryCta.href}
+            data-center-scroll={`${primaryCta.href} .quiz-shell`}
+            data-lp="hero.primaryCta"
+            data-lp-href="hero.primaryCta.href"
+          >
+            {primaryCta.label}
+          </a>
+        )
+      }
+      {
+        secondaryCta.label && (
+          <a
+            class="kickoff-glass"
+            href={secondaryCta.href}
+            data-center-scroll={`${secondaryCta.href} .album-shell`}
+            data-lp="hero.secondaryCta"
+            data-lp-href="hero.secondaryCta.href"
+          >
+            {secondaryCta.label}
+          </a>
+        )
+      }
+    </div>
+  </div>
+</section>
+
+<script>
+  document.querySelectorAll("[data-center-scroll]").forEach((link) => {
+    link.addEventListener("click", (event) => {
+      const selector = link.getAttribute("data-center-scroll");
+      const target = selector ? document.querySelector(selector) : null;
+      if (!target) return;
+      event.preventDefault();
+      target.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+        inline: "nearest",
+      });
+      const href = link.getAttribute("href");
+      if (href) window.history.pushState(null, "", href);
+    });
+  });
+</script>
+
+<style>
+  /* DESIGN.md KICKOFF-1: zip hero masthead, not .section.is-dark. */
+  .kickoff-hero {
+    position: relative;
+    display: grid;
+    min-height: min(92svh, 58rem);
+    place-items: center;
+    overflow: hidden;
+    padding: 8rem var(--space-sm) 15rem;
+    color: var(--color-white);
+    background: var(--color-kickoff-ground);
+  }
+
+  .hero-media,
+  .hero-media img,
+  .hero-image-fallback,
+  .hero-overlay {
+    position: absolute;
+    inset: 0;
+  }
+
+  /* Keep the navy photo off the last band so the ice page ground
+     meets Q Kickoff with no hairline (DESIGN.md KICKOFF-1). */
+  .hero-media,
+  .hero-image-fallback,
+  .hero-overlay {
+    bottom: 4.5rem;
+  }
+
+  .hero-media img {
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    opacity: 0.56;
+  }
+
+  .hero-image-fallback {
+    z-index: 0;
+    background: linear-gradient(
+      135deg,
+      var(--color-kickoff-mid) 0%,
+      var(--color-kickoff-deep) 52%,
+      var(--color-kickoff-midnight) 100%
+    );
+  }
+
+  .hero-overlay {
+    z-index: 2;
+    background:
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--color-navy) 24%, transparent),
+        color-mix(in srgb, var(--color-navy) 8%, transparent) 48%,
+        color-mix(in srgb, var(--color-navy) 28%, transparent)
+      ),
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--color-navy) 12%, transparent) 0%,
+        color-mix(in srgb, var(--color-navy) 52%, transparent) 42%,
+        color-mix(in srgb, var(--color-navy) 44%, transparent) 58%,
+        color-mix(in srgb, var(--color-kickoff-ground) 8%, transparent) 75%,
+        color-mix(in srgb, var(--color-kickoff-ground) 58%, transparent) 90%,
+        var(--color-kickoff-ground) 100%
+      );
+  }
+
+  .kickoff-hero::after {
+    content: "";
+    position: absolute;
+    z-index: 3;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: clamp(16rem, 32vw, 26rem);
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-kickoff-ground) 0%, transparent) 0%,
+      color-mix(in srgb, var(--color-kickoff-ground) 55%, transparent) 36%,
+      var(--color-kickoff-ground) 68%,
+      var(--color-kickoff-ground) 100%
+    );
+  }
+
+  /* Type and shell live in kickoff-theme.css so global h1/p cannot win. */
+
+  @media (max-width: 700px) {
+    .hero-media img {
+      object-position: center 36%;
+      opacity: 0.62;
+    }
+
+    .hero-media,
+    .hero-image-fallback,
+    .hero-overlay {
+      bottom: 3.25rem;
+    }
+
+    .kickoff-hero::after {
+      height: 14rem;
+    }
+  }
+</style>

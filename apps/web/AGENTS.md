@@ -46,6 +46,11 @@ you deviate, and never invent an ID: `pnpm run check:design` fails on a
 citation that does not resolve, on front matter that drifts from `tokens.css`,
 and on a new raw literal.
 
+`/kickoff/` copies the Join Q zip glass design (DESIGN.md KICKOFF-1).
+Do not restyle those components onto conference primitives.
+Speaker crops and the location-card badge come from `page-kickoff`;
+never key CSS or copy to a speaker name.
+
 ### UI primitives (`components/ui/`)
 
 Two kinds live here. **Shells** (`Section`, `Container`, `SectionHeader`,

@@ -103,6 +103,7 @@ export interface Config {
   fallbackLocale: null;
   globals: {
     'page-home': PageHome;
+    'page-kickoff': PageKickoff;
     'page-whyq': PageWhyq;
     'page-speaker': PageSpeaker;
     'page-partner': PagePartner;
@@ -118,6 +119,7 @@ export interface Config {
   };
   globalsSelect: {
     'page-home': PageHomeSelect<false> | PageHomeSelect<true>;
+    'page-kickoff': PageKickoffSelect<false> | PageKickoffSelect<true>;
     'page-whyq': PageWhyqSelect<false> | PageWhyqSelect<true>;
     'page-speaker': PageSpeakerSelect<false> | PageSpeakerSelect<true>;
     'page-partner': PagePartnerSelect<false> | PagePartnerSelect<true>;
@@ -977,6 +979,274 @@ export interface PageHome {
   createdAt?: string | null;
 }
 /**
+ * Copy for /kickoff/ on the live site. Owned by PR + Concept. Use Live Preview (eye icon) to see drafts on the real layout.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "page-kickoff".
+ */
+export interface PageKickoff {
+  id: number;
+  hero: {
+    eyebrow: string;
+    headline: string;
+    copy: string;
+    /**
+     * Wide group photo behind the hero copy. Upload the sharp original.
+     */
+    image?: (number | null) | Media;
+    /**
+     * Short description of the hero photo for screen readers. Leave empty only while the image field is empty.
+     */
+    imageAlt?: string | null;
+    /**
+     * Primary hero CTA (usually the team quiz).
+     */
+    primaryCta: {
+      label: string;
+      /**
+       * A full URL (https://...), a mailto: address, an internal path (e.g. "/whyq"), or an in-page anchor (e.g. "#why-attend").
+       */
+      href: string;
+    };
+    /**
+     * Secondary hero CTA (usually Way through Q).
+     */
+    secondaryCta: {
+      label: string;
+      /**
+       * A full URL (https://...), a mailto: address, an internal path (e.g. "/whyq"), or an in-page anchor (e.g. "#why-attend").
+       */
+      href: string;
+    };
+  };
+  kickoff: {
+    eyebrow: string;
+    heading: string;
+    intro: string;
+    date: string;
+    location: string;
+    panelTitle: string;
+    ui: {
+      speakerLabel: string;
+      linkedinLabel: string;
+      kickoffLabel: string;
+      panelLabel: string;
+      /**
+       * Small badge on the location card. Leave empty to hide it.
+       */
+      registerLabel?: string | null;
+    };
+    company: {
+      name: string;
+      /**
+       * Official company or brand website opened from the spotlight.
+       */
+      href?: string | null;
+      /**
+       * Optional brand logo. If empty, the company name is rendered as text.
+       */
+      logo?: (number | null) | Media;
+      logoAlt?: string | null;
+    };
+    /**
+     * Panel guests shown as portrait cards. Keep the order you want on the website.
+     */
+    speakers: {
+      name: string;
+      role?: string | null;
+      bio?: string | null;
+      /**
+       * Full linkedin.com profile URL. The whole speaker card links here when present.
+       */
+      linkedin?: string | null;
+      /**
+       * Portrait used on the speaker card. May be left empty until the final image arrives.
+       */
+      image?: (number | null) | Media;
+      imageAlt?: string | null;
+      /**
+       * Optional frame for this card. Leave defaults if the photo already sits well.
+       */
+      crop?: {
+        /**
+         * Horizontal focus, 0 left to 100 right.
+         */
+        x?: number | null;
+        /**
+         * Vertical focus, 0 top to 100 bottom.
+         */
+        y?: number | null;
+        /**
+         * How close the photo sits. 100 fills the card.
+         */
+        zoom?: number | null;
+        /**
+         * Nudge the photo up (negative) or down (positive).
+         */
+        shiftY?: number | null;
+      };
+      id?: string | null;
+    }[];
+  };
+  socials: {
+    eyebrow: string;
+    heading: string;
+    links: {
+      label: string;
+      icon: 'whatsapp' | 'tiktok' | 'instagram' | 'linkedin';
+      /**
+       * Public profile / group URL.
+       */
+      href?: string | null;
+      id?: string | null;
+    }[];
+  };
+  quiz: {
+    eyebrow: string;
+    heading: string;
+    intro: string;
+    ui: {
+      questionLabel: string;
+      ofLabel: string;
+      backLabel: string;
+      nextLabel: string;
+      showResultLabel: string;
+      placeLabel: string;
+      teamLinkLabel: string;
+    };
+    start: {
+      eyebrow: string;
+      heading: string;
+      copy: string;
+      buttonLabel: string;
+    };
+    /**
+     * Questions render in this order. Add or remove rows; the progress bar adapts.
+     */
+    questions: {
+      kicker: string;
+      question: string;
+      answers: {
+        /**
+         * Stable key for this answer (e.g. a1). Keep it unique within the question.
+         */
+        answerId: string;
+        text: string;
+        /**
+         * Exact team names scored by this answer. They must match a Team result name below.
+         */
+        tags: {
+          text: string;
+          id?: string | null;
+        }[];
+        id?: string | null;
+      }[];
+      id?: string | null;
+    }[];
+    /**
+     * One definition per team used by the quiz. Team name must match question answer tags exactly.
+     */
+    results: {
+      team: string;
+      text: string;
+      /**
+       * Destination for the team result card.
+       */
+      notionHref?: string | null;
+      id?: string | null;
+    }[];
+    resultCopy: {
+      eyebrow: string;
+      heading: string;
+      copy: string;
+      restartLabel: string;
+      applicationCta: {
+        label: string;
+        /**
+         * A full URL (https://...), a mailto: address, an internal path (e.g. "/whyq"), or an in-page anchor (e.g. "#why-attend").
+         */
+        href: string;
+      };
+      allTeamsCta: {
+        label: string;
+        /**
+         * A full URL (https://...), a mailto: address, an internal path (e.g. "/whyq"), or an in-page anchor (e.g. "#why-attend").
+         */
+        href: string;
+      };
+    };
+  };
+  journey: {
+    eyebrow: string;
+    heading: string;
+    intro: string;
+    hint: string;
+    /**
+     * Journey cards in display order. Cards without photos keep a text-only layout.
+     */
+    moments: {
+      title: string;
+      text: string;
+      /**
+       * Photo for this journey card. Leave empty until the final image is ready.
+       */
+      image?: (number | null) | Media;
+      imageAlt?: string | null;
+      id?: string | null;
+    }[];
+  };
+  application: {
+    eyebrow: string;
+    heading: string;
+    intro: string;
+    /**
+     * Enable only once the real application form is live. Until then, application buttons show the Coming Soon label.
+     */
+    isOpen?: boolean | null;
+    /**
+     * Final Typeform / application link. Used only while Applications open is enabled.
+     */
+    applicationUrl?: string | null;
+    comingSoonLabel: string;
+    steps: {
+      date: string;
+      title: string;
+      text: string;
+      id?: string | null;
+    }[];
+  };
+  finalCta: {
+    eyebrow: string;
+    heading: string;
+    copy: string;
+    /**
+     * Final application button.
+     */
+    cta: {
+      label: string;
+      /**
+       * A full URL (https://...), a mailto: address, an internal path (e.g. "/whyq"), or an in-page anchor (e.g. "#why-attend").
+       */
+      href: string;
+    };
+  };
+  /**
+   * Browser tab and social-share title for the Join Q / Kickoff page (shown as "Q-Summit | …").
+   */
+  title: string;
+  /**
+   * Search snippet and WhatsApp/LinkedIn preview text. Also the one-line note for this page in /llms.txt. Aim for 120 to 160 characters.
+   */
+  metaDescription?: string | null;
+  lastEditedBy?: string | null;
+  lastEditedAt?: string | null;
+  lastPublishedBy?: string | null;
+  lastPublishedAt?: string | null;
+  _status?: ('draft' | 'published') | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * Copy for /whyq/ on the live site. Owned by PR + Concept. Use Live Preview (eye icon) to see drafts on the real layout.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1577,6 +1847,19 @@ export interface SiteSetting {
      */
     lastReviewed?: string | null;
   };
+  /**
+   * Whether the recruiting page is public and whether the homepage redirects to it.
+   */
+  kickoff?: {
+    /**
+     * The page is public at /kickoff/. Off means the public site 404s that path (Live Preview still works).
+     */
+    pageEnabled?: boolean | null;
+    /**
+     * When the page is public, send / to /kickoff/. Ignored while the page is off.
+     */
+    redirectRoot?: boolean | null;
+  };
   lastEditedBy?: string | null;
   lastEditedAt?: string | null;
   lastPublishedBy?: string | null;
@@ -1720,6 +2003,225 @@ export interface PageHomeSelect<T extends boolean = true> {
     | {
         heading?: T;
         intro?: T;
+        cta?:
+          | T
+          | {
+              label?: T;
+              href?: T;
+            };
+      };
+  title?: T;
+  metaDescription?: T;
+  lastEditedBy?: T;
+  lastEditedAt?: T;
+  lastPublishedBy?: T;
+  lastPublishedAt?: T;
+  _status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "page-kickoff_select".
+ */
+export interface PageKickoffSelect<T extends boolean = true> {
+  hero?:
+    | T
+    | {
+        eyebrow?: T;
+        headline?: T;
+        copy?: T;
+        image?: T;
+        imageAlt?: T;
+        primaryCta?:
+          | T
+          | {
+              label?: T;
+              href?: T;
+            };
+        secondaryCta?:
+          | T
+          | {
+              label?: T;
+              href?: T;
+            };
+      };
+  kickoff?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+        intro?: T;
+        date?: T;
+        location?: T;
+        panelTitle?: T;
+        ui?:
+          | T
+          | {
+              speakerLabel?: T;
+              linkedinLabel?: T;
+              kickoffLabel?: T;
+              panelLabel?: T;
+              registerLabel?: T;
+            };
+        company?:
+          | T
+          | {
+              name?: T;
+              href?: T;
+              logo?: T;
+              logoAlt?: T;
+            };
+        speakers?:
+          | T
+          | {
+              name?: T;
+              role?: T;
+              bio?: T;
+              linkedin?: T;
+              image?: T;
+              imageAlt?: T;
+              crop?:
+                | T
+                | {
+                    x?: T;
+                    y?: T;
+                    zoom?: T;
+                    shiftY?: T;
+                  };
+              id?: T;
+            };
+      };
+  socials?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+        links?:
+          | T
+          | {
+              label?: T;
+              icon?: T;
+              href?: T;
+              id?: T;
+            };
+      };
+  quiz?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+        intro?: T;
+        ui?:
+          | T
+          | {
+              questionLabel?: T;
+              ofLabel?: T;
+              backLabel?: T;
+              nextLabel?: T;
+              showResultLabel?: T;
+              placeLabel?: T;
+              teamLinkLabel?: T;
+            };
+        start?:
+          | T
+          | {
+              eyebrow?: T;
+              heading?: T;
+              copy?: T;
+              buttonLabel?: T;
+            };
+        questions?:
+          | T
+          | {
+              kicker?: T;
+              question?: T;
+              answers?:
+                | T
+                | {
+                    answerId?: T;
+                    text?: T;
+                    tags?:
+                      | T
+                      | {
+                          text?: T;
+                          id?: T;
+                        };
+                    id?: T;
+                  };
+              id?: T;
+            };
+        results?:
+          | T
+          | {
+              team?: T;
+              text?: T;
+              notionHref?: T;
+              id?: T;
+            };
+        resultCopy?:
+          | T
+          | {
+              eyebrow?: T;
+              heading?: T;
+              copy?: T;
+              restartLabel?: T;
+              applicationCta?:
+                | T
+                | {
+                    label?: T;
+                    href?: T;
+                  };
+              allTeamsCta?:
+                | T
+                | {
+                    label?: T;
+                    href?: T;
+                  };
+            };
+      };
+  journey?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+        intro?: T;
+        hint?: T;
+        moments?:
+          | T
+          | {
+              title?: T;
+              text?: T;
+              image?: T;
+              imageAlt?: T;
+              id?: T;
+            };
+      };
+  application?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+        intro?: T;
+        isOpen?: T;
+        applicationUrl?: T;
+        comingSoonLabel?: T;
+        steps?:
+          | T
+          | {
+              date?: T;
+              title?: T;
+              text?: T;
+              id?: T;
+            };
+      };
+  finalCta?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+        copy?: T;
         cta?:
           | T
           | {
@@ -2203,6 +2705,12 @@ export interface SiteSettingsSelect<T extends boolean = true> {
               id?: T;
             };
         lastReviewed?: T;
+      };
+  kickoff?:
+    | T
+    | {
+        pageEnabled?: T;
+        redirectRoot?: T;
       };
   lastEditedBy?: T;
   lastEditedAt?: T;

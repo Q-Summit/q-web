@@ -43,19 +43,45 @@ export const MEDIA_UPLOAD_FIELDS = [
 ] as const;
 
 /**
- * Globals holding media inside an array. Only page-whyq does today; the
- * `logos` arrays on page-home are name registries, not uploads.
+ * One upload (or array of uploads) inside a global. `fieldPath` is dotted,
+ * with `[]` marking an array walk (e.g. `audiences[].imageFile`).
+ * `titleField` reads the row label from that array item; `title` is a
+ * fixed label for a single upload.
+ */
+export type MediaGlobalRef = {
+  fieldPath: string;
+  titleField?: string;
+  title?: string;
+};
+
+/**
+ * Globals holding media. Fetch each slug once, then walk every ref.
+ * The `logos` arrays on page-home are name registries, not uploads.
  */
 export const MEDIA_GLOBAL_FIELDS = [
   {
     slug: "page-whyq",
     label: "Why Q?",
     path: "/whyq/",
-    array: "audiences",
-    field: "imageFile",
-    titleField: "heading",
+    refs: [{ fieldPath: "audiences[].imageFile", titleField: "heading" }],
   },
-] as const;
+  {
+    slug: "page-kickoff",
+    label: "Join Q / Kickoff",
+    path: "/kickoff/",
+    refs: [
+      { fieldPath: "hero.image", title: "Hero image" },
+      { fieldPath: "kickoff.company.logo", title: "Company logo" },
+      { fieldPath: "kickoff.speakers[].image", titleField: "name" },
+      { fieldPath: "journey.moments[].image", titleField: "title" },
+    ],
+  },
+] as const satisfies readonly {
+  slug: string;
+  label: string;
+  path: string;
+  refs: readonly MediaGlobalRef[];
+}[];
 
 export type MediaRef = {
   /** Where the reference lives, e.g. "Partners" or "Why Q?". */
@@ -78,6 +104,61 @@ function idOf(value: unknown): string | null {
 function titleOf(doc: Record<string, unknown>, field: string): string {
   const raw = doc[field];
   return typeof raw === "string" && raw.trim() ? raw : `Untitled (${doc.id})`;
+}
+
+type PathHit = {
+  value: unknown;
+  item: Record<string, unknown> | null;
+  index: number | null;
+};
+
+function collectPathHits(root: unknown, fieldPath: string): PathHit[] {
+  let nodes: PathHit[] = [
+    {
+      value: root,
+      item:
+        root != null && typeof root === "object"
+          ? (root as Record<string, unknown>)
+          : null,
+      index: null,
+    },
+  ];
+
+  for (const raw of fieldPath.split(".")) {
+    const array = raw.endsWith("[]");
+    const key = array ? raw.slice(0, -2) : raw;
+    const next: PathHit[] = [];
+
+    for (const node of nodes) {
+      if (node.value == null || typeof node.value !== "object") continue;
+      const child = (node.value as Record<string, unknown>)[key];
+      if (array) {
+        if (!Array.isArray(child)) continue;
+        child.forEach((entry, index) => {
+          next.push({
+            value: entry,
+            item:
+              entry != null && typeof entry === "object"
+                ? (entry as Record<string, unknown>)
+                : null,
+            index,
+          });
+        });
+        continue;
+      }
+      next.push({ value: child, item: node.item, index: node.index });
+    }
+
+    nodes = next;
+  }
+
+  return nodes;
+}
+
+function refTitle(ref: MediaGlobalRef, hit: PathHit): string {
+  if (ref.titleField && hit.item) return titleOf(hit.item, ref.titleField);
+  if (ref.title) return ref.title;
+  return "Untitled";
 }
 
 /** Every published-or-draft entry that points at `mediaID`. */
@@ -129,18 +210,20 @@ export async function findMediaReferences(
         overrideAccess: true,
       })) as unknown as Record<string, unknown>;
 
-      const rows = doc?.[entry.array];
-      if (!Array.isArray(rows)) return;
-
-      rows.forEach((row, index) => {
-        const item = row as Record<string, unknown>;
-        if (idOf(item[entry.field]) !== String(mediaID)) return;
-        refs.set(`${entry.slug}:${index}`, {
-          label: `${entry.label} (${entry.path})`,
-          title: titleOf(item, entry.titleField),
-          href: `/globals/${entry.slug}`,
-        });
-      });
+      for (const ref of entry.refs) {
+        for (const hit of collectPathHits(doc, ref.fieldPath)) {
+          if (idOf(hit.value) !== String(mediaID)) continue;
+          const key =
+            hit.index == null
+              ? `${entry.slug}:${ref.fieldPath}`
+              : `${entry.slug}:${ref.fieldPath}:${hit.index}`;
+          refs.set(key, {
+            label: `${entry.label} (${entry.path})`,
+            title: refTitle(ref, hit),
+            href: `/globals/${entry.slug}`,
+          });
+        }
+      }
     }),
   );
 

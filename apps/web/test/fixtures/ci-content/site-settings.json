@@ -96,5 +96,9 @@
       "Contact: contact-us@q-summit.com"
     ],
     "lastReviewed": "2026-07-20"
+  },
+  "kickoff": {
+    "pageEnabled": true,
+    "redirectRoot": false
   }
 }

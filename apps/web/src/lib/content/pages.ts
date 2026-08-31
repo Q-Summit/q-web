@@ -6,7 +6,11 @@
  */
 import { normalizeHrefsDeep } from "./hrefs";
 import { fetchGlobal, memoizeCms } from "./cms";
-import { resolveWhyqImageBase, type CmsMediaRef } from "./media";
+import {
+  resolveOptionalUploadFilename,
+  resolveWhyqImageBase,
+  type CmsMediaRef,
+} from "./media";
 import {
   fromTextRows,
   toPageLink,
@@ -300,6 +304,132 @@ export interface JobsPageContent {
   detailHowToContactHeading: string;
 }
 
+export type KickoffSocialIcon =
+  "linkedin" | "instagram" | "tiktok" | "whatsapp";
+
+export interface KickoffSpeakerCrop {
+  x: number;
+  y: number;
+  zoom: number;
+  shiftY: number;
+}
+
+export interface KickoffSpeaker {
+  name: string;
+  role: string;
+  bio: string;
+  linkedin: string;
+  image: string; // "/media/filename" or ""
+  imageAlt: string;
+  crop: KickoffSpeakerCrop;
+}
+
+export interface KickoffQuizAnswer {
+  id: string;
+  text: string;
+  tags: string[];
+}
+
+export interface KickoffQuizQuestion {
+  kicker: string;
+  question: string;
+  answers: KickoffQuizAnswer[];
+}
+
+export interface KickoffQuizResult {
+  team: string;
+  text: string;
+  notionHref: string;
+}
+
+export interface KickoffContent {
+  title: string;
+  metaDescription: string;
+  hero: {
+    eyebrow: string;
+    headline: string;
+    copy: string;
+    image: string;
+    imageAlt: string;
+    primaryCta: PageLink;
+    secondaryCta: PageLink;
+  };
+  kickoff: {
+    eyebrow: string;
+    heading: string;
+    intro: string;
+    date: string;
+    location: string;
+    panelTitle: string;
+    ui: {
+      speakerLabel: string;
+      linkedinLabel: string;
+      kickoffLabel: string;
+      panelLabel: string;
+      registerLabel: string;
+    };
+    company: { name: string; href: string; logo: string; logoAlt: string };
+    speakers: KickoffSpeaker[];
+  };
+  socials: {
+    eyebrow: string;
+    heading: string;
+    links: { label: string; href: string; icon: KickoffSocialIcon }[];
+  };
+  quiz: {
+    eyebrow: string;
+    heading: string;
+    intro: string;
+    ui: {
+      questionLabel: string;
+      ofLabel: string;
+      backLabel: string;
+      nextLabel: string;
+      showResultLabel: string;
+      placeLabel: string;
+      teamLinkLabel: string;
+    };
+    start: {
+      eyebrow: string;
+      heading: string;
+      copy: string;
+      buttonLabel: string;
+    };
+    questions: KickoffQuizQuestion[];
+    results: KickoffQuizResult[];
+    resultCopy: {
+      eyebrow: string;
+      heading: string;
+      copy: string;
+      restartLabel: string;
+      applicationCta: PageLink;
+      allTeamsCta: PageLink;
+    };
+  };
+  journey: {
+    eyebrow: string;
+    heading: string;
+    intro: string;
+    hint: string;
+    moments: { title: string; text: string; image: string; imageAlt: string }[];
+  };
+  application: {
+    eyebrow: string;
+    heading: string;
+    intro: string;
+    isOpen: boolean;
+    applicationUrl: string;
+    comingSoonLabel: string;
+    steps: { date: string; title: string; text: string }[];
+  };
+  finalCta: {
+    eyebrow: string;
+    heading: string;
+    copy: string;
+    cta: PageLink;
+  };
+}
+
 export interface PageContent {
   home: HomeContent;
   whyq: WhyqContent;
@@ -312,6 +442,7 @@ export interface PageContent {
   partner: PartnerPageContent;
   speaker: SpeakerPageContent;
   jobs: JobsPageContent;
+  kickoff: KickoffContent;
 }
 
 /**
@@ -816,6 +947,431 @@ async function cmsGetJobsPage(): Promise<JobsPageContent> {
   };
 }
 
+interface CmsKickoffDoc {
+  title: string;
+  metaDescription?: string | null;
+  hero: {
+    eyebrow: string;
+    headline: string;
+    copy: string;
+    image?: CmsMediaRef | number | string | null;
+    imageAlt?: string | null;
+    primaryCta: CmsPageLink;
+    secondaryCta: CmsPageLink;
+  };
+  kickoff: {
+    eyebrow: string;
+    heading: string;
+    intro: string;
+    date: string;
+    location: string;
+    panelTitle: string;
+    ui: {
+      speakerLabel: string;
+      linkedinLabel: string;
+      kickoffLabel: string;
+      panelLabel: string;
+      registerLabel?: string | null;
+    };
+    company: {
+      name: string;
+      href?: string | null;
+      logo?: CmsMediaRef | number | string | null;
+      logoAlt?: string | null;
+    };
+    speakers?:
+      | {
+          name: string;
+          role?: string | null;
+          bio?: string | null;
+          linkedin?: string | null;
+          image?: CmsMediaRef | number | string | null;
+          imageAlt?: string | null;
+          crop?: {
+            x?: number | null;
+            y?: number | null;
+            zoom?: number | null;
+            shiftY?: number | null;
+          } | null;
+        }[]
+      | null;
+  };
+  socials: {
+    eyebrow: string;
+    heading: string;
+    links?:
+      | {
+          label: string;
+          href?: string | null;
+          icon: KickoffSocialIcon;
+        }[]
+      | null;
+  };
+  quiz: {
+    eyebrow: string;
+    heading: string;
+    intro: string;
+    ui: {
+      questionLabel: string;
+      ofLabel: string;
+      backLabel: string;
+      nextLabel: string;
+      showResultLabel: string;
+      placeLabel: string;
+      teamLinkLabel: string;
+    };
+    start: {
+      eyebrow: string;
+      heading: string;
+      copy: string;
+      buttonLabel: string;
+    };
+    questions?:
+      | {
+          kicker: string;
+          question: string;
+          answers?:
+            | {
+                answerId: string;
+                text: string;
+                tags?: { text: string }[] | null;
+              }[]
+            | null;
+        }[]
+      | null;
+    results?:
+      | {
+          team: string;
+          text: string;
+          notionHref?: string | null;
+        }[]
+      | null;
+    resultCopy: {
+      eyebrow: string;
+      heading: string;
+      copy: string;
+      restartLabel: string;
+      applicationCta: CmsPageLink;
+      allTeamsCta: CmsPageLink;
+    };
+  };
+  journey: {
+    eyebrow: string;
+    heading: string;
+    intro: string;
+    hint: string;
+    moments?:
+      | {
+          title: string;
+          text: string;
+          image?: CmsMediaRef | number | string | null;
+          imageAlt?: string | null;
+        }[]
+      | null;
+  };
+  application: {
+    eyebrow: string;
+    heading: string;
+    intro: string;
+    isOpen?: boolean | null;
+    applicationUrl?: string | null;
+    comingSoonLabel?: string | null;
+    steps?: { date: string; title: string; text: string }[] | null;
+  };
+  finalCta: {
+    eyebrow: string;
+    heading: string;
+    copy: string;
+    cta: CmsPageLink;
+  };
+}
+
+const mediaHref = (filename: string): string =>
+  filename ? `/media/${filename.replace(/^\/+/, "")}` : "";
+
+function emptyPageLink(): PageLink {
+  return { label: "", href: "" };
+}
+
+function clampNumber(
+  value: number | null | undefined,
+  min: number,
+  max: number,
+  fallback: number,
+): number {
+  if (typeof value !== "number" || Number.isNaN(value)) return fallback;
+  return Math.min(max, Math.max(min, value));
+}
+
+function clampKickoffCrop(
+  crop?: {
+    x?: number | null;
+    y?: number | null;
+    zoom?: number | null;
+    shiftY?: number | null;
+  } | null,
+): KickoffSpeakerCrop {
+  return {
+    x: clampNumber(crop?.x, 0, 100, 50),
+    y: clampNumber(crop?.y, 0, 100, 24),
+    zoom: clampNumber(crop?.zoom, 100, 160, 100),
+    shiftY: clampNumber(crop?.shiftY, -40, 40, 0),
+  };
+}
+
+function normalizeKickoff(content: KickoffContent): KickoffContent {
+  return {
+    ...content,
+    kickoff: {
+      ...content.kickoff,
+      ui: {
+        ...content.kickoff.ui,
+        registerLabel: content.kickoff.ui.registerLabel ?? "",
+      },
+      speakers: (content.kickoff.speakers ?? []).map((speaker) => ({
+        ...speaker,
+        crop: clampKickoffCrop(speaker.crop),
+      })),
+    },
+  };
+}
+
+function emptyKickoff(): KickoffContent {
+  return {
+    title: "",
+    metaDescription: "",
+    hero: {
+      eyebrow: "",
+      headline: "",
+      copy: "",
+      image: "",
+      imageAlt: "",
+      primaryCta: emptyPageLink(),
+      secondaryCta: emptyPageLink(),
+    },
+    kickoff: {
+      eyebrow: "",
+      heading: "",
+      intro: "",
+      date: "",
+      location: "",
+      panelTitle: "",
+      ui: {
+        speakerLabel: "",
+        linkedinLabel: "",
+        kickoffLabel: "",
+        panelLabel: "",
+        registerLabel: "",
+      },
+      company: { name: "", href: "", logo: "", logoAlt: "" },
+      speakers: [],
+    },
+    socials: { eyebrow: "", heading: "", links: [] },
+    quiz: {
+      eyebrow: "",
+      heading: "",
+      intro: "",
+      ui: {
+        questionLabel: "",
+        ofLabel: "",
+        backLabel: "",
+        nextLabel: "",
+        showResultLabel: "",
+        placeLabel: "",
+        teamLinkLabel: "",
+      },
+      start: { eyebrow: "", heading: "", copy: "", buttonLabel: "" },
+      questions: [],
+      results: [],
+      resultCopy: {
+        eyebrow: "",
+        heading: "",
+        copy: "",
+        restartLabel: "",
+        applicationCta: emptyPageLink(),
+        allTeamsCta: emptyPageLink(),
+      },
+    },
+    journey: { eyebrow: "", heading: "", intro: "", hint: "", moments: [] },
+    application: {
+      eyebrow: "",
+      heading: "",
+      intro: "",
+      isOpen: false,
+      applicationUrl: "",
+      comingSoonLabel: "Coming Soon",
+      steps: [],
+    },
+    finalCta: {
+      eyebrow: "",
+      heading: "",
+      copy: "",
+      cta: emptyPageLink(),
+    },
+  };
+}
+
+async function cmsGetKickoff(): Promise<KickoffContent> {
+  const doc = await fetchGlobal<CmsKickoffDoc>("page-kickoff");
+  if (
+    !doc?.hero ||
+    !doc.kickoff ||
+    !doc.quiz ||
+    !doc.journey ||
+    !doc.application ||
+    !doc.finalCta
+  ) {
+    console.warn(
+      "[content:cms] page-kickoff is empty; seed it with pnpm seed:kickoff (local JSON) or edit the Join Q / Kickoff global.",
+    );
+    return emptyKickoff();
+  }
+
+  const heroImage = await resolveOptionalUploadFilename(
+    doc.hero.image,
+    "Join Q hero image",
+  );
+  const companyLogo = await resolveOptionalUploadFilename(
+    doc.kickoff.company.logo,
+    "Join Q kickoff company logo",
+  );
+
+  const speakers: KickoffSpeaker[] = [];
+  for (const speaker of doc.kickoff.speakers ?? []) {
+    const image = await resolveOptionalUploadFilename(
+      speaker.image,
+      `Join Q kickoff speaker ${speaker.name}`,
+    );
+    speakers.push({
+      name: speaker.name,
+      role: speaker.role ?? "",
+      bio: speaker.bio ?? "",
+      linkedin: speaker.linkedin ?? "",
+      image: mediaHref(image),
+      imageAlt: speaker.imageAlt ?? "",
+      crop: clampKickoffCrop(speaker.crop),
+    });
+  }
+
+  const moments: KickoffContent["journey"]["moments"] = [];
+  for (const moment of doc.journey.moments ?? []) {
+    const image = await resolveOptionalUploadFilename(
+      moment.image,
+      `Join Q journey ${moment.title}`,
+    );
+    moments.push({
+      title: moment.title,
+      text: moment.text,
+      image: mediaHref(image),
+      imageAlt: moment.imageAlt ?? "",
+    });
+  }
+
+  return {
+    title: doc.title,
+    metaDescription: doc.metaDescription ?? "",
+    hero: {
+      eyebrow: doc.hero.eyebrow,
+      headline: doc.hero.headline,
+      copy: doc.hero.copy,
+      image: mediaHref(heroImage),
+      imageAlt: doc.hero.imageAlt ?? "",
+      primaryCta: toPageLink(doc.hero.primaryCta),
+      secondaryCta: toPageLink(doc.hero.secondaryCta),
+    },
+    kickoff: {
+      eyebrow: doc.kickoff.eyebrow,
+      heading: doc.kickoff.heading,
+      intro: doc.kickoff.intro,
+      date: doc.kickoff.date,
+      location: doc.kickoff.location,
+      panelTitle: doc.kickoff.panelTitle,
+      ui: {
+        speakerLabel: doc.kickoff.ui.speakerLabel,
+        linkedinLabel: doc.kickoff.ui.linkedinLabel,
+        kickoffLabel: doc.kickoff.ui.kickoffLabel,
+        panelLabel: doc.kickoff.ui.panelLabel,
+        registerLabel: doc.kickoff.ui.registerLabel ?? "",
+      },
+      company: {
+        name: doc.kickoff.company.name,
+        href: doc.kickoff.company.href ?? "",
+        logo: mediaHref(companyLogo),
+        logoAlt: doc.kickoff.company.logoAlt ?? "",
+      },
+      speakers,
+    },
+    socials: {
+      eyebrow: doc.socials.eyebrow,
+      heading: doc.socials.heading,
+      links: (doc.socials.links ?? []).map((link) => ({
+        label: link.label,
+        icon: link.icon,
+        href: link.href ?? "",
+      })),
+    },
+    quiz: {
+      eyebrow: doc.quiz.eyebrow,
+      heading: doc.quiz.heading,
+      intro: doc.quiz.intro,
+      ui: {
+        questionLabel: doc.quiz.ui.questionLabel,
+        ofLabel: doc.quiz.ui.ofLabel,
+        backLabel: doc.quiz.ui.backLabel,
+        nextLabel: doc.quiz.ui.nextLabel,
+        showResultLabel: doc.quiz.ui.showResultLabel,
+        placeLabel: doc.quiz.ui.placeLabel,
+        teamLinkLabel: doc.quiz.ui.teamLinkLabel,
+      },
+      start: doc.quiz.start,
+      questions: (doc.quiz.questions ?? []).map((question) => ({
+        kicker: question.kicker,
+        question: question.question,
+        answers: (question.answers ?? []).map((answer) => ({
+          id: answer.answerId,
+          text: answer.text,
+          tags: fromTextRows(answer.tags),
+        })),
+      })),
+      results: (doc.quiz.results ?? []).map((result) => ({
+        team: result.team,
+        text: result.text,
+        notionHref: result.notionHref ?? "",
+      })),
+      resultCopy: {
+        eyebrow: doc.quiz.resultCopy.eyebrow,
+        heading: doc.quiz.resultCopy.heading,
+        copy: doc.quiz.resultCopy.copy,
+        restartLabel: doc.quiz.resultCopy.restartLabel,
+        applicationCta: toPageLink(doc.quiz.resultCopy.applicationCta),
+        allTeamsCta: toPageLink(doc.quiz.resultCopy.allTeamsCta),
+      },
+    },
+    journey: {
+      eyebrow: doc.journey.eyebrow,
+      heading: doc.journey.heading,
+      intro: doc.journey.intro,
+      hint: doc.journey.hint,
+      moments,
+    },
+    application: {
+      eyebrow: doc.application.eyebrow,
+      heading: doc.application.heading,
+      intro: doc.application.intro,
+      isOpen: Boolean(doc.application.isOpen),
+      applicationUrl: doc.application.applicationUrl ?? "",
+      comingSoonLabel: doc.application.comingSoonLabel?.trim() || "Coming Soon",
+      steps: doc.application.steps ?? [],
+    },
+    finalCta: {
+      eyebrow: doc.finalCta.eyebrow,
+      heading: doc.finalCta.heading,
+      copy: doc.finalCta.copy,
+      cta: toPageLink(doc.finalCta.cta),
+    },
+  };
+}
+
 async function cmsGetPageContent(): Promise<PageContent> {
   const [
     home,
@@ -829,6 +1385,7 @@ async function cmsGetPageContent(): Promise<PageContent> {
     partner,
     speaker,
     jobs,
+    kickoff,
   ] = await Promise.all([
     cmsGetHome(),
     cmsGetWhyq(),
@@ -841,6 +1398,7 @@ async function cmsGetPageContent(): Promise<PageContent> {
     cmsGetPartnerPage(),
     cmsGetSpeakerPage(),
     cmsGetJobsPage(),
+    cmsGetKickoff(),
   ]);
   return {
     home,
@@ -854,6 +1412,7 @@ async function cmsGetPageContent(): Promise<PageContent> {
     partner,
     speaker,
     jobs,
+    kickoff,
   };
 }
 
@@ -886,6 +1445,7 @@ export async function getPageContent(): Promise<PageContent> {
       ? memoizeCms("page-content", cmsGetPageContent)
       : readJson<PageContent>("page-content.json");
   const resolved = normalizeHrefsDeep(await content);
+  resolved.kickoff = normalizeKickoff(resolved.kickoff);
   assertTicketComparisonAligned(resolved.ticketCategories);
   assertEventDates(resolved.home?.event);
   return resolved;

@@ -1,0 +1,95 @@
+---
+// /kickoff: Join Q recruiting landing. Hero, spotlight, socials, team quiz,
+// journey, application timeline, closing CTA. Content loads at build time
+// from getPageContent().kickoff. Site Settings kickoff.pageEnabled gates
+// the public URL; Live Preview uses ?live-preview=1.
+import { existsSync } from "node:fs";
+
+import Base from "../layouts/Base.astro";
+import KickoffPage from "../components/kickoff/KickoffPage.astro";
+import KickoffHero from "../components/kickoff/KickoffHero.astro";
+import KickoffSpotlight from "../components/kickoff/KickoffSpotlight.astro";
+import KickoffSocials from "../components/kickoff/KickoffSocials.astro";
+// Team quiz is parked. Re-enable with KickoffQuiz + hero.primaryCta.
+// import KickoffQuiz from "../components/kickoff/KickoffQuiz.astro";
+import KickoffJourney from "../components/kickoff/KickoffJourney.astro";
+import KickoffApplication from "../components/kickoff/KickoffApplication.astro";
+import KickoffFinalCta from "../components/kickoff/KickoffFinalCta.astro";
+import KickoffPublicGate from "../components/kickoff/KickoffPublicGate.astro";
+import { getPageContent, getSiteSettings } from "../lib/content";
+import { MEDIA_DIR } from "../lib/media-filename";
+
+const [{ kickoff }, siteSettings] = await Promise.all([
+  getPageContent(),
+  getSiteSettings(),
+]);
+
+const pageEnabled = siteSettings.kickoff.pageEnabled;
+const livePreview = Astro.url.searchParams.has("live-preview");
+
+// Public visitors 404 when the page is off. `astro dev` sees the real
+// request URL, so redirect now. Static prerender has no query string: a
+// build-time redirect would also 404 the CMS Live Preview iframe. Emit
+// the HTML in that case and gate public visitors in the browser below.
+if (!pageEnabled && !livePreview && import.meta.env.DEV) {
+  return Astro.redirect("/404");
+}
+
+const ogFallback = existsSync(`${MEDIA_DIR}join-q-og.jpg`)
+  ? "/media/join-q-og.jpg"
+  : undefined;
+const ogImage = kickoff.hero.image || ogFallback;
+const preloadImage = kickoff.hero.image || undefined;
+---
+
+<Base
+  title={kickoff.title}
+  description={kickoff.metaDescription}
+  ogImage={ogImage}
+  ogImageAlt={kickoff.hero.imageAlt || kickoff.title}
+  preloadImage={preloadImage}
+  noindex={!pageEnabled}
+  livePreviewGlobal="page-kickoff"
+>
+  {!pageEnabled && <KickoffPublicGate />}
+  <KickoffPage>
+    <KickoffHero
+      eyebrow={kickoff.hero.eyebrow}
+      headline={kickoff.hero.headline}
+      copy={kickoff.hero.copy}
+      image={kickoff.hero.image}
+      imageAlt={kickoff.hero.imageAlt}
+      primaryCta={{ label: "", href: "" }}
+      secondaryCta={kickoff.hero.secondaryCta}
+    />
+
+    <KickoffSpotlight content={kickoff.kickoff} />
+
+    <KickoffSocials content={kickoff.socials} />
+
+    {
+      /*
+    <KickoffQuiz
+      quiz={kickoff.quiz}
+      isOpen={kickoff.application.isOpen}
+      applicationUrl={kickoff.application.applicationUrl}
+      comingSoonLabel={kickoff.application.comingSoonLabel}
+    />
+    */
+    }
+
+    <KickoffJourney content={kickoff.journey} />
+
+    <KickoffApplication content={kickoff.application} />
+
+    <KickoffFinalCta
+      eyebrow={kickoff.finalCta.eyebrow}
+      heading={kickoff.finalCta.heading}
+      copy={kickoff.finalCta.copy}
+      cta={kickoff.finalCta.cta}
+      isOpen={kickoff.application.isOpen}
+      applicationUrl={kickoff.application.applicationUrl}
+      comingSoonLabel={kickoff.application.comingSoonLabel}
+    />
+  </KickoffPage>
+</Base>

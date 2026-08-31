@@ -12,6 +12,7 @@
 export const PATH_BY_GLOBAL: Record<string, string> = {
   "page-home": "/",
   "page-whyq": "/whyq/",
+  "page-kickoff": "/kickoff/",
   "page-program": "/program/",
   "page-tickets": "/ticket-categories/",
   "page-contact": "/contact/",

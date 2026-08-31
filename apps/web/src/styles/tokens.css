@@ -46,6 +46,22 @@
   --color-primary: var(--color-navy);
   --color-accent: var(--color-orange);
 
+  /* Join Q / Kickoff recruiting page only (DESIGN.md KICKOFF-1). Ice,
+     mid-blue, and the deep navy ramp are the zip's glass palette; they
+     must not leak onto conference pages. */
+  --color-kickoff-ice: #bbe4ff;
+  --color-kickoff-ice-bright: #9fdcff;
+  --color-kickoff-mid: #3875df;
+  --color-kickoff-ground: #f7fbff;
+  --color-kickoff-deep: #1b2284;
+  --color-kickoff-midnight: #080759;
+  --color-kickoff-option: #1236b6;
+  --color-kickoff-option-hover: #1744d2;
+  --color-kickoff-option-deep: #0b2fa8;
+  --color-kickoff-option-ink: #08227f;
+  --color-kickoff-badge: #061a69;
+  --color-kickoff-cyan: #74ccff;
+
   /* Typography. Single family on the live site; self-hosted variable font
      (wght 100-900 declared, 300-900 used) via astro.config.mjs's `fonts`
      (Astro Fonts API, local() provider reading @fontsource-variable/
@@ -131,6 +147,20 @@
   --duration-hover: 150ms;
   --duration-reveal: 500ms;
   --duration-page: 220ms;
+  /* Kickoff glass motion (DESIGN.md KICKOFF-1). Longer than the
+     conference 500ms ceiling on purpose: the zip's blob pulse and
+     album card snap are the look of this page. */
+  --duration-kickoff-leave: 240ms;
+  --duration-kickoff-progress: 280ms;
+  --duration-kickoff-fold: 460ms;
+  --duration-kickoff-card: 420ms;
+  --duration-kickoff-reveal: 650ms;
+  --duration-kickoff-blob: 9s;
+  --duration-kickoff-blob-alt: 11s;
+  --duration-kickoff-pulse: 13s;
+  --duration-kickoff-pulse-alt: 17s;
+  --duration-kickoff-flow: 2.8s;
+  --ease-kickoff-fold: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* Elevation (DESIGN.md DEPTH-1). Five steps, not the twelve one-off values
      the Webflow port shipped. The five steps were chosen to sit ON those
@@ -164,6 +194,22 @@
   --radius-card-large: 20px;
   --radius-pill: 50px;
   --radius-circle: 50%;
+
+  /* Join Q / Kickoff glass radii (DESIGN.md KICKOFF-1). 999px is the
+     zip's pill; the conference --radius-pill is 50px and would clip
+     the quiz options and glass buttons. */
+  --radius-kickoff-card: 34px;
+  --radius-kickoff-card-compact: 30px;
+  --radius-kickoff-copy: 26px;
+  --radius-kickoff-copy-compact: 22px;
+  --radius-kickoff-frame: 46px;
+  --radius-kickoff-cta: 42px;
+  --radius-kickoff-result: 24px;
+  --radius-kickoff-pill: 999px;
+  --radius-kickoff-logo: 1.45rem;
+  --radius-kickoff-mark: 15px;
+  --radius-kickoff-quiz-compact: 28px;
+  --radius-kickoff-step-num: 1rem;
 }
 
 /* Breakpoints (from the Webflow stylesheet):

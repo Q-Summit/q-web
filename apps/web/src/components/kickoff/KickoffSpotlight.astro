@@ -1,0 +1,576 @@
+---
+// Panel-talk spotlight: portrait cards plus location / company glass
+// (DESIGN.md KICKOFF-1). Location is a maps search from the CMS string.
+import "./kickoff-theme.css";
+import type { KickoffContent } from "../../lib/content";
+import { hasMedia } from "./media-href";
+
+interface Props {
+  content: KickoffContent["kickoff"];
+}
+
+const { content } = Astro.props;
+
+const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(content.location)}`;
+const companyLogo = hasMedia(content.company.logo);
+const CompanyTag = content.company.href ? "a" : "div";
+const companyProps = content.company.href
+  ? {
+      href: content.company.href,
+      target: "_blank",
+      rel: "noreferrer",
+      "aria-label": `Open ${content.company.name}`,
+      "data-lp": "kickoff.company",
+      "data-lp-href": "kickoff.company.href",
+    }
+  : { "data-lp": "kickoff.company" };
+---
+
+<section
+  class="kickoff-section kickoff-spotlight kickoff-reveal"
+  aria-labelledby="kickoff-title"
+>
+  <div class="kickoff-header">
+    <p class="kickoff-eyebrow" data-lp="kickoff.eyebrow">{content.eyebrow}</p>
+    <h2
+      id="kickoff-title"
+      class="kickoff-section-title"
+      data-lp="kickoff.heading"
+    >
+      {content.heading}
+    </h2>
+    <p class="kickoff-section-copy" data-lp="kickoff.intro">{content.intro}</p>
+  </div>
+
+  <div class="speaker-grid">
+    {
+      content.speakers.map((speaker, index) => {
+        const CardTag = speaker.linkedin ? "a" : "article";
+        const cardProps = speaker.linkedin
+          ? {
+              href: speaker.linkedin,
+              target: "_blank",
+              rel: "noreferrer",
+              "aria-label": `${speaker.name} on LinkedIn`,
+            }
+          : {};
+
+        const crop = speaker.crop;
+        const cropStyle = `--kickoff-crop-x: ${crop.x}%; --kickoff-crop-y: ${crop.y}%; --kickoff-crop-zoom: ${crop.zoom}%; --kickoff-crop-shift-y: ${crop.shiftY}%;`;
+
+        return (
+          <CardTag class="speaker-card" {...cardProps}>
+            <div class="speaker-image" style={cropStyle}>
+              {hasMedia(speaker.image) ? (
+                <img
+                  src={speaker.image}
+                  alt={speaker.imageAlt || speaker.name}
+                  loading={index === 0 ? "eager" : "lazy"}
+                  decoding="async"
+                />
+              ) : (
+                <div class="speaker-placeholder" aria-hidden="true">
+                  <span>{speaker.name.charAt(0)}</span>
+                </div>
+              )}
+              <div class="speaker-image-shade" />
+            </div>
+
+            <div class="speaker-copy">
+              <p class="speaker-label">{content.ui.speakerLabel}</p>
+              <h3>{speaker.name}</h3>
+              {speaker.role && <p class="speaker-role">{speaker.role}</p>}
+              {speaker.bio && <p class="speaker-bio">{speaker.bio}</p>}
+              {speaker.linkedin && (
+                <span class="speaker-link">{content.ui.linkedinLabel}</span>
+              )}
+            </div>
+          </CardTag>
+        );
+      })
+    }
+  </div>
+
+  <div class="kickoff-details-wrap">
+    <div class="kickoff-details" aria-label="Kickoff location and partner">
+      <div class="kickoff-blob kickoff-blob--one"></div>
+      <div class="kickoff-blob kickoff-blob--two"></div>
+      {
+        content.location && (
+          <a
+            class="kickoff-detail-link kickoff-location"
+            href={mapsHref}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={`Open ${content.location} in Google Maps`}
+          >
+            <span class="location-pin" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 21s7-6.2 7-13a7 7 0 1 0-14 0c0 6.8 7 13 7 13Z" />
+                <circle cx="12" cy="8" r="2.4" />
+              </svg>
+            </span>
+            <span>
+              {content.date
+                ? `${content.date} · ${content.location}`
+                : content.location}
+            </span>
+          </a>
+        )
+      }
+
+      {
+        content.company.name && (
+          <CompanyTag class="kickoff-detail-link more-link" {...companyProps}>
+            {companyLogo ? (
+              <img
+                src={content.company.logo}
+                alt={content.company.logoAlt || content.company.name}
+                loading="lazy"
+                decoding="async"
+              />
+            ) : (
+              <span class="company-name">{content.company.name}</span>
+            )}
+          </CompanyTag>
+        )
+      }
+    </div>
+    {
+      content.ui.registerLabel && (
+        <button
+          type="button"
+          class="kickoff-register"
+          disabled
+          aria-label={content.ui.registerLabel}
+        >
+          {content.ui.registerLabel}
+        </button>
+      )
+    }
+  </div>
+</section>
+
+<style>
+  /* DESIGN.md KICKOFF-1: glass speaker cards and ice detail frame. */
+  .kickoff-spotlight {
+    position: relative;
+    z-index: 2;
+    margin-top: -2px;
+    text-align: center;
+  }
+
+  .kickoff-header {
+    margin-inline: auto;
+  }
+
+  .speaker-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(var(--space-sm), 2.5vw, var(--space-md));
+    width: min(900px, 100%);
+    margin: 2.6rem auto 0;
+  }
+
+  .speaker-card {
+    position: relative;
+    overflow: hidden;
+    min-height: 34rem;
+    border: 1px solid color-mix(in srgb, var(--color-navy) 13%, transparent);
+    border-radius: var(--radius-kickoff-card);
+    background: var(--color-navy);
+    color: var(--color-white);
+    text-align: left;
+    text-decoration: none;
+    box-shadow: 0 24px 70px
+      color-mix(in srgb, var(--color-navy) 14%, transparent);
+    transition:
+      transform var(--duration-page) var(--ease-snappy),
+      box-shadow var(--duration-page) var(--ease-snappy),
+      border-color var(--duration-page) var(--ease-snappy);
+  }
+
+  .speaker-card:is(a):hover,
+  .speaker-card:is(a):focus-visible {
+    transform: translateY(-6px) scale(1.012);
+    border-color: color-mix(in srgb, var(--color-kickoff-mid) 34%, transparent);
+    box-shadow: 0 34px 90px
+      color-mix(in srgb, var(--color-navy) 22%, transparent);
+  }
+
+  .speaker-image,
+  .speaker-image img,
+  .speaker-placeholder,
+  .speaker-image-shade {
+    position: absolute;
+    inset: 0;
+  }
+
+  .speaker-image {
+    overflow: hidden;
+    background:
+      radial-gradient(
+        circle at 25% 20%,
+        color-mix(in srgb, var(--color-kickoff-ice) 34%, transparent),
+        transparent 16rem
+      ),
+      linear-gradient(
+        135deg,
+        var(--color-kickoff-mid) 0%,
+        var(--color-kickoff-deep) 52%,
+        var(--color-kickoff-midnight) 100%
+      );
+  }
+
+  .speaker-image img {
+    top: var(--kickoff-crop-shift-y, 0%);
+    right: auto;
+    bottom: auto;
+    left: 50%;
+    width: var(--kickoff-crop-zoom, 100%);
+    height: var(--kickoff-crop-zoom, 100%);
+    object-fit: cover;
+    object-position: var(--kickoff-crop-x, 50%) var(--kickoff-crop-y, 24%);
+    transform: translateX(-50%);
+  }
+
+  .speaker-placeholder {
+    display: grid;
+    place-items: center;
+  }
+
+  .speaker-placeholder span {
+    color: color-mix(in srgb, var(--color-kickoff-ice) 24%, transparent);
+    font-size: clamp(10rem, 28vw, 18rem);
+    font-weight: var(--heading-weight-home);
+    line-height: 1;
+  }
+
+  .speaker-image-shade {
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-navy) 2%, transparent) 0%,
+      color-mix(in srgb, var(--color-navy) 4%, transparent) 48%,
+      color-mix(in srgb, var(--color-navy) 70%, transparent) 80%,
+      color-mix(in srgb, var(--color-navy) 92%, transparent) 100%
+    );
+  }
+
+  .speaker-copy {
+    position: absolute;
+    right: 1.2rem;
+    bottom: 1.2rem;
+    left: 1.2rem;
+    z-index: 2;
+    padding: var(--space-sm) 1.1rem 1.05rem;
+    border: 1px solid color-mix(in srgb, var(--color-white) 20%, transparent);
+    border-radius: var(--radius-kickoff-copy);
+    background: color-mix(in srgb, var(--color-navy) 34%, transparent);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: inset 0 1px 0
+      color-mix(in srgb, var(--color-white) 8%, transparent);
+  }
+
+  .speaker-label,
+  .speaker-role,
+  .speaker-bio {
+    margin: 0;
+  }
+
+  .speaker-label {
+    color: var(--color-kickoff-ice);
+    font-size: clamp(0.7rem, 0.7rem, 0.7rem);
+    font-weight: var(--heading-weight-home);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .speaker-copy h3 {
+    margin: 0.28rem 0 0;
+    color: var(--color-white);
+    font-size: clamp(1.8rem, 4vw, 2.55rem);
+    line-height: 0.96;
+    letter-spacing: -0.055em;
+  }
+
+  .speaker-role {
+    margin-top: 0.45rem;
+    color: color-mix(in srgb, var(--color-white) 92%, transparent);
+    font-size: clamp(0.86rem, 0.86rem, 0.86rem);
+    font-weight: var(--font-weight-extrabold);
+    line-height: 1.35;
+  }
+
+  .speaker-bio {
+    margin-top: 0.32rem;
+    max-width: 34rem;
+    color: color-mix(in srgb, var(--color-white) 72%, transparent);
+    font-size: clamp(0.74rem, 0.74rem, 0.74rem);
+    line-height: 1.38;
+  }
+
+  .speaker-link {
+    display: inline-flex;
+    margin-top: 0.62rem;
+    color: var(--color-kickoff-ice);
+    font-size: clamp(0.82rem, 0.82rem, 0.82rem);
+    font-weight: var(--heading-weight-home);
+  }
+
+  .kickoff-details-wrap {
+    position: relative;
+    width: min(760px, 100%);
+    margin: 1.35rem auto 1.6rem;
+  }
+
+  .kickoff-details {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(var(--space-sm), 4vw, 2.2rem);
+    width: 100%;
+    min-height: 190px;
+    overflow: hidden;
+    padding: var(--space-lg);
+    border: 1px solid color-mix(in srgb, var(--color-navy) 12%, transparent);
+    border-radius: var(--radius-kickoff-frame);
+    background:
+      radial-gradient(
+        circle at 18% 20%,
+        color-mix(in srgb, var(--color-kickoff-ice) 22%, transparent),
+        transparent 18rem
+      ),
+      radial-gradient(
+        circle at 82% 80%,
+        color-mix(in srgb, var(--color-kickoff-mid) 11%, transparent),
+        transparent 18rem
+      ),
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--color-white) 90%, transparent),
+        color-mix(in srgb, var(--color-kickoff-ground) 98%, transparent)
+      );
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, var(--color-white) 80%, transparent),
+      0 24px 70px color-mix(in srgb, var(--color-navy) 10%, transparent);
+  }
+
+  .kickoff-blob {
+    position: absolute;
+    width: 13rem;
+    height: 13rem;
+    border-radius: var(--radius-kickoff-pill);
+    pointer-events: none;
+    filter: blur(32px);
+    opacity: 0.45;
+  }
+
+  .kickoff-blob--one {
+    top: -5rem;
+    left: 5%;
+    background: var(--color-kickoff-ice);
+  }
+
+  .kickoff-blob--two {
+    right: 6%;
+    bottom: -5rem;
+    background: var(--color-kickoff-mid);
+  }
+
+  .kickoff-detail-link {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 6.8rem;
+    color: var(--color-navy);
+    text-decoration: none;
+    border: 1px solid color-mix(in srgb, var(--color-navy) 8%, transparent);
+    border-radius: var(--radius-kickoff-card);
+    background: color-mix(in srgb, var(--color-white) 18%, transparent);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, var(--color-white) 44%, transparent),
+      0 10px 30px color-mix(in srgb, var(--color-navy) 5%, transparent);
+    transition:
+      transform var(--duration-page) var(--ease-snappy),
+      border-color var(--duration-page) var(--ease-snappy),
+      background var(--duration-page) var(--ease-snappy),
+      filter var(--duration-page) var(--ease-snappy);
+  }
+
+  .kickoff-detail-link:hover,
+  .kickoff-detail-link:focus-visible {
+    transform: translateY(-3px) scale(1.04);
+    border-color: color-mix(in srgb, var(--color-navy) 18%, transparent);
+    background: color-mix(in srgb, var(--color-white) 36%, transparent);
+    filter: drop-shadow(
+      0 14px 24px color-mix(in srgb, var(--color-navy) 18%, transparent)
+    );
+  }
+
+  .kickoff-location {
+    gap: var(--space-xs);
+    flex: 1 1 62%;
+    padding: var(--space-sm) 1.35rem;
+    font-weight: var(--font-weight-extrabold);
+    line-height: 1.3;
+  }
+
+  .location-pin {
+    display: grid;
+    width: 3.1rem;
+    height: 3.1rem;
+    flex: 0 0 3.1rem;
+    place-items: center;
+    color: var(--color-kickoff-ice-bright);
+  }
+
+  .location-pin svg {
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+  }
+
+  .location-pin circle {
+    fill: currentColor;
+    stroke: none;
+  }
+
+  .more-link {
+    flex: 1 1 18rem;
+    padding: var(--space-sm) 1.25rem;
+    overflow: hidden;
+  }
+
+  .company-name {
+    color: var(--color-navy);
+    font-size: var(--text-size-large);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+  }
+
+  /* Source can be a tall plate; cover zooms the mark into the glass
+     instead of shrinking empty canvas (DESIGN.md KICKOFF-1). */
+  .more-link img {
+    display: block;
+    width: 100%;
+    height: 4.6rem;
+    object-fit: cover;
+    object-position: center 50.2%;
+  }
+
+  .kickoff-register {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.85rem;
+    padding: var(--space-2xs) var(--space-md);
+    border: 1px solid color-mix(in srgb, var(--color-navy) 16%, transparent);
+    border-radius: var(--radius-kickoff-pill);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-white) 94%, transparent),
+      color-mix(in srgb, var(--color-kickoff-ice) 38%, var(--color-white))
+    );
+    color: var(--color-navy);
+    font-size: var(--text-size-regular);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.04em;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: default;
+    transform: translate(-50%, 50%);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, var(--color-white) 80%, transparent),
+      0 10px 24px color-mix(in srgb, var(--color-navy) 12%, transparent);
+  }
+
+  .kickoff-register:disabled {
+    opacity: 1;
+    color: var(--color-navy);
+  }
+
+  @media (max-width: 700px) {
+    .speaker-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .speaker-card {
+      min-height: 31rem;
+      border-radius: var(--radius-kickoff-card-compact);
+    }
+
+    .speaker-copy {
+      right: 0.85rem;
+      bottom: 0.85rem;
+      left: 0.85rem;
+      padding: 0.9rem 0.95rem 0.95rem;
+      border-radius: var(--radius-kickoff-copy-compact);
+    }
+
+    .speaker-copy h3 {
+      font-size: clamp(2rem, 2rem, 2rem);
+    }
+
+    .speaker-bio {
+      font-size: clamp(0.72rem, 0.72rem, 0.72rem);
+    }
+
+    .kickoff-details {
+      flex-direction: column;
+      padding: 1.35rem;
+      border-radius: var(--radius-kickoff-card);
+    }
+
+    .kickoff-detail-link {
+      width: 100%;
+      min-height: 5.7rem;
+    }
+
+    .kickoff-location,
+    .more-link {
+      flex: none;
+    }
+
+    .more-link {
+      width: 100%;
+      min-height: 0;
+      padding: var(--space-sm);
+    }
+
+    .more-link img {
+      width: auto;
+      max-width: 100%;
+      height: 2.75rem;
+      object-fit: contain;
+      object-position: center;
+    }
+
+    .kickoff-register {
+      min-height: 2.65rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .speaker-card,
+    .kickoff-detail-link {
+      transition: none;
+    }
+
+    .speaker-card:is(a):hover,
+    .kickoff-detail-link:hover {
+      transform: none;
+    }
+  }
+</style>

@@ -28,6 +28,18 @@ colors:
   heading: "{colors.navy}"
   primary: "{colors.navy}"
   accent: "{colors.orange}"
+  kickoff-ice: "#bbe4ff"
+  kickoff-ice-bright: "#9fdcff"
+  kickoff-mid: "#3875df"
+  kickoff-ground: "#f7fbff"
+  kickoff-deep: "#1b2284"
+  kickoff-midnight: "#080759"
+  kickoff-option: "#1236b6"
+  kickoff-option-hover: "#1744d2"
+  kickoff-option-deep: "#0b2fa8"
+  kickoff-option-ink: "#08227f"
+  kickoff-badge: "#061a69"
+  kickoff-cyan: "#74ccff"
 typography:
   h1:
     fontFamily: Montserrat
@@ -90,6 +102,18 @@ rounded:
   card: 10px
   card-large: 20px
   pill: 50px
+  kickoff-card: 34px
+  kickoff-card-compact: 30px
+  kickoff-copy: 26px
+  kickoff-copy-compact: 22px
+  kickoff-frame: 46px
+  kickoff-cta: 42px
+  kickoff-result: 24px
+  kickoff-pill: 999px
+  kickoff-logo: 1.45rem
+  kickoff-mark: 15px
+  kickoff-quiz-compact: 28px
+  kickoff-step-num: 1rem
 spacing:
   section: 6rem
   section-small: 4rem
@@ -198,6 +222,7 @@ Every rule, with the token or class it is about. Cite these IDs verbatim in code
 | MOTION-3 | Animate transform and opacity only | `transform`, `opacity` |
 | MOTION-4 | No client-side animation runtime | `package.json` |
 | MOTION-5 | Page transitions and reveals have one implementation each | `@view-transition`, `ui/Timeline` |
+| KICKOFF-1 | Join Q is its own visual system | `components/kickoff/` |
 
 Astro implementation rules (`PRIM-1` to `PRIM-3`) live in [`AGENTS.md`](AGENTS.md).
 
@@ -362,6 +387,12 @@ Everything below is CSS. None of it ships an animation runtime, so none of it co
 A second component wanting a reveal extracts the shared utility at that point rather than copying Timeline's keyframes. `global.css` briefly carried a `.u-reveal` utility with no consumers while Timeline implemented its own; an extracted utility nothing extracts to is worse than no utility, so it was removed.
 
 Progressive enhancement is the rule, not an aspiration: the fallback for every one of these is the un-animated state, never hidden content. Never gate visibility on an animation that may not run.
+
+## Kickoff
+
+`/kickoff/` is a recruiting landing, not a conference page. Its glass cards, ice-to-navy gradients, oversized display type, floating blobs, and album rail are copied from the Join Q zip. They are scoped to `components/kickoff/` and must not appear on `/`, `/whyq`, or any other route.
+
+**KICKOFF-1 Join Q is its own visual system.** Components under `src/components/kickoff/` may skip `.section` / `.container` / `.button` / `.u-eyebrow` (LAYOUT-1, LAYOUT-3, COLOR-2, COMP-1, TYPE-1) and may use the `kickoff-*` tokens plus a page-local scroll reveal (MOTION-5). Conference pages may not import those classes or tokens. Cite this ID on every kickoff `<style>` block that would otherwise look like a silent deviation.
 
 ## Do's and Don'ts
 

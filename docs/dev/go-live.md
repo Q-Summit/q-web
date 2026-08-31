@@ -211,7 +211,7 @@ Production Payload starts empty; nothing else here documents how it gets seeded.
 
    Adjust the split to whatever grouping stays under the 200-doc cap for the actual edition size; every batch writes drafts only, same as day-to-day propose.
 
-3. **Approver publish session.** Work the admin **Review queue** (`/reviews`) as the single working surface: it lists every drafted collection doc and global in one place. An approver publishes Site Settings and the 11 page globals (12 globals total), then each partner, job, speaker, team member, past-teams entry, FAQ, and testimonial, one document at a time; there is no bulk-publish action. Budget a multi-hour session for a full edition.
+3. **Approver publish session.** Work the admin **Review queue** (`/reviews`) as the single working surface: it lists every drafted collection doc and global in one place. An approver publishes Site Settings and the 12 page globals (13 globals total; Legal is the 14th global and is signed off separately below), then each partner, job, speaker, team member, past-teams entry, FAQ, and testimonial, one document at a time; there is no bulk-publish action. Budget a multi-hour session for a full edition.
 4. Once every doc proposed in this pass is published, prod Payload is seeded. From this point, treat snapshot JSON edits as emergency-only: an edit made to the snapshot during the cutover window has to be reproduced in Payload too, or the parity diff below never converges. Re-run the parity diff only after this seeding pass is fully published.
 
 ```sh

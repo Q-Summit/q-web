@@ -28,6 +28,11 @@ import {
   type PartnerLogoMeta,
 } from "../lib/partner-logos";
 
+const { kickoff } = await getSiteSettings();
+if (kickoff.pageEnabled && kickoff.redirectRoot) {
+  return Astro.redirect("/kickoff/", 308);
+}
+
 const partnerLogoManifest = logoManifest as Record<string, PartnerLogoMeta>;
 
 const [pageContent, allSpeakers, allFaqs, allPartners, { siteTitle, footer }] =

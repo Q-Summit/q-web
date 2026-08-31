@@ -39,7 +39,10 @@ export function joinAnnouncement(lines: string[]): string {
     .join(" ");
 }
 
-export function buildRouteTable(content: PageContent): LlmsRouteTable {
+export function buildRouteTable(
+  content: PageContent,
+  settings?: SiteSettings,
+): LlmsRouteTable {
   const mainPages: LlmsLink[] = [
     { slug: "/", label: "Home", description: content.home.metaDescription },
     {
@@ -96,6 +99,15 @@ export function buildRouteTable(content: PageContent): LlmsRouteTable {
       label: "Past Teams",
       description: content.pastTeams.metaDescription,
     },
+    ...(settings?.kickoff?.pageEnabled && content.kickoff
+      ? [
+          {
+            slug: "/kickoff",
+            label: content.kickoff.title,
+            description: content.kickoff.metaDescription,
+          },
+        ]
+      : []),
     { slug: "/imprint", label: "Imprint", description: "" },
     { slug: "/privacy-policy", label: "Privacy Policy", description: "" },
     {
@@ -138,7 +150,7 @@ export function buildLlmsTxt(opts: {
   pageContent: PageContent;
 }): string {
   const { site, siteSettings, pageContent } = opts;
-  const { mainPages, optional } = buildRouteTable(pageContent);
+  const { mainPages, optional } = buildRouteTable(pageContent, siteSettings);
   const fullUrl = new URL("/llms-full.txt", site).href;
   const sitemapUrl = new URL("/sitemap-index.xml", site).href;
   const { home } = pageContent;
@@ -204,6 +216,7 @@ export function buildLlmsFullTxt(opts: {
     jobs,
     contact,
     pastTeams,
+    kickoff,
   } = pageContent;
 
   const blocks: string[][] = [
@@ -402,6 +415,17 @@ export function buildLlmsFullTxt(opts: {
       "",
     ],
   ];
+
+  if (siteSettings.kickoff?.pageEnabled && kickoff) {
+    blocks.push([
+      "---",
+      "",
+      ...pageHeader(site, "/kickoff", kickoff.title, kickoff.metaDescription),
+      ...section("Hero", [kickoff.hero.headline, kickoff.hero.copy]),
+      ...section(kickoff.kickoff.heading, [kickoff.kickoff.intro]),
+      ...section("Application", [kickoff.application.heading]),
+    ]);
+  }
 
   return blocks.flat().join("\n");
 }
