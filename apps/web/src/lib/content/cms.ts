@@ -103,6 +103,34 @@ export async function fetchGlobal<T>(slug: string): Promise<T> {
   return promise;
 }
 
+/**
+ * Same as fetchGlobal, but a 404 (unknown slug, CMS not yet migrated)
+ * returns null instead of failing the build. Other HTTP errors still throw.
+ */
+export async function fetchGlobalOptional<T>(slug: string): Promise<T | null> {
+  const cacheKey = `optional:${slug}`;
+  if (!import.meta.env.DEV) {
+    const cached = cmsGlobalCache.get(cacheKey);
+    if (cached) return cached as Promise<T | null>;
+  }
+
+  const promise = (async () => {
+    const url = new URL(`/api/globals/${slug}`, CMS_URL);
+    url.searchParams.set("depth", "1");
+    const res = await fetch(url);
+    if (res.status === 404) return null;
+    if (!res.ok) {
+      throw new Error(
+        `[content:cms] GET ${url.pathname}${url.search} failed: ${res.status} ${res.statusText}`,
+      );
+    }
+    return (await res.json()) as T;
+  })();
+
+  if (!import.meta.env.DEV) cmsGlobalCache.set(cacheKey, promise);
+  return promise;
+}
+
 // Memoizes the mapped (not just raw-fetched) result of a cmsGet* function,
 // so a getter called from more than one page (e.g. getSpeakers from both
 // index.astro and speaker.astro) resolves each media file and logs each

@@ -5,7 +5,7 @@
  * fields were seeded as named-subfield rows: fromTextRows / fromValueRows undo that.
  */
 import { normalizeHrefsDeep } from "./hrefs";
-import { fetchGlobal, memoizeCms } from "./cms";
+import { fetchGlobal, fetchGlobalOptional, memoizeCms } from "./cms";
 import {
   resolveOptionalUploadFilename,
   resolveWhyqImageBase,
@@ -1212,7 +1212,7 @@ function emptyKickoff(): KickoffContent {
 }
 
 async function cmsGetKickoff(): Promise<KickoffContent> {
-  const doc = await fetchGlobal<CmsKickoffDoc>("page-kickoff");
+  const doc = await fetchGlobalOptional<CmsKickoffDoc>("page-kickoff");
   if (
     !doc?.hero ||
     !doc.kickoff ||
@@ -1222,7 +1222,7 @@ async function cmsGetKickoff(): Promise<KickoffContent> {
     !doc.finalCta
   ) {
     console.warn(
-      "[content:cms] page-kickoff is empty; seed it with pnpm seed:kickoff (local JSON) or edit the Join Q / Kickoff global.",
+      "[content:cms] page-kickoff is empty or missing; seed it with pnpm seed:kickoff (local JSON) or edit the Join Q / Kickoff global.",
     );
     return emptyKickoff();
   }
