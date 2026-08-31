@@ -1,0 +1,209 @@
+/*
+ * Shared Join Q chrome (DESIGN.md KICKOFF-1). Glass buttons, ice
+ * eyebrows, display titles. Conference pages must not import this file.
+ * Deviates from LAYOUT-1, LAYOUT-3, COLOR-2, COMP-1, TYPE-1, MOTION-5:
+ * the zip's recruiting landing is a self-contained visual system.
+ */
+
+.kickoff-section {
+  width: min(1120px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: clamp(4rem, 8vw, 7rem) 0;
+}
+
+.kickoff-eyebrow {
+  display: inline-block;
+  margin: 0 0 var(--space-sm);
+  padding: 0.35rem 0.85rem;
+  border: 1px solid
+    color-mix(in srgb, var(--color-kickoff-mid) 22%, transparent);
+  border-radius: var(--radius-kickoff-pill);
+  background: color-mix(in srgb, var(--color-white) 62%, transparent);
+  color: var(--color-kickoff-mid);
+  font-size: clamp(0.95rem, 1.7vw, 1.08rem);
+  font-weight: var(--heading-weight-home);
+  letter-spacing: 0.12em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.kickoff-section-title {
+  margin: 0;
+  color: var(--color-navy);
+  font-size: clamp(2.35rem, 7vw, 5rem);
+  font-weight: var(--heading-weight-home);
+  line-height: 0.95;
+  letter-spacing: -0.07em;
+}
+
+.kickoff-section-copy {
+  max-width: 720px;
+  margin: 1.2rem auto 0;
+  color: color-mix(in srgb, var(--color-navy) 72%, transparent);
+  font-size: clamp(1rem, 2vw, 1.18rem);
+  line-height: 1.7;
+}
+
+.kickoff-glass {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0.85rem 1.35rem;
+  border: 1px solid color-mix(in srgb, var(--color-white) 50%, transparent);
+  border-radius: var(--radius-kickoff-pill);
+  background: color-mix(in srgb, var(--color-white) 13%, transparent);
+  color: var(--color-white);
+  font-weight: var(--font-weight-extrabold);
+  text-decoration: none;
+  backdrop-filter: blur(14px);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--color-white) 24%, transparent),
+    0 18px 48px color-mix(in srgb, var(--color-black) 14%, transparent);
+  transition:
+    transform var(--duration-icon) var(--ease-snappy),
+    background var(--duration-icon) var(--ease-snappy),
+    border-color var(--duration-icon) var(--ease-snappy),
+    color var(--duration-icon) var(--ease-snappy),
+    box-shadow var(--duration-icon) var(--ease-snappy);
+}
+
+.kickoff-glass:hover,
+.kickoff-glass:focus-visible,
+.kickoff-glass:active {
+  transform: translateY(-2px);
+  background: color-mix(in srgb, var(--color-white) 22%, transparent);
+  border-color: color-mix(in srgb, var(--color-white) 74%, transparent);
+}
+
+.kickoff-glass--dark {
+  color: var(--color-navy);
+  border-color: color-mix(in srgb, var(--color-navy) 20%, transparent);
+  background: color-mix(in srgb, var(--color-white) 42%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--color-white) 65%, transparent),
+    0 18px 48px color-mix(in srgb, var(--color-navy) 13%, transparent);
+}
+
+.kickoff-glass--dark:hover,
+.kickoff-glass--dark:focus-visible,
+.kickoff-glass--dark:active {
+  color: var(--color-navy);
+  background: color-mix(in srgb, var(--color-kickoff-ice) 34%, transparent);
+  border-color: color-mix(in srgb, var(--color-navy) 42%, transparent);
+}
+
+.kickoff-glass.is-coming-soon {
+  pointer-events: none;
+  opacity: 0.72;
+}
+
+@media (max-width: 700px) {
+  .kickoff-glass {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kickoff-glass {
+    transition: none;
+  }
+
+  .kickoff-glass:hover,
+  .kickoff-glass:focus-visible,
+  .kickoff-glass:active {
+    transform: none;
+  }
+}
+
+/*
+ * Hero type lives here, not in a scoped <style>, so it beats global.css
+ * `h1` / `p` (same element specificity; conference navy was winning and
+ * the headline vanished on the photo). DESIGN.md KICKOFF-1, TYPE-1.
+ */
+.kickoff-hero {
+  position: relative;
+  display: grid;
+  min-height: min(92svh, 58rem);
+  place-items: center;
+  overflow: hidden;
+  padding: 8rem var(--space-sm) 15rem;
+  color: var(--color-white);
+  background: var(--color-kickoff-ground);
+}
+
+.kickoff-hero.kickoff-reveal {
+  opacity: 1;
+  transform: none;
+}
+
+.kickoff-hero .hero-kicker {
+  display: inline-block;
+  margin: 0 0 var(--space-sm);
+  padding: 0.4rem 0.95rem;
+  border: 1px solid color-mix(in srgb, var(--color-white) 32%, transparent);
+  border-radius: var(--radius-kickoff-pill);
+  background: color-mix(in srgb, var(--color-white) 14%, transparent);
+  color: var(--color-kickoff-ice);
+  font-size: clamp(0.98rem, 2vw, 1.12rem);
+  font-weight: var(--heading-weight-home);
+  letter-spacing: 0.12em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  backdrop-filter: blur(10px);
+}
+
+.kickoff-hero .hero-headline {
+  margin: 0;
+  color: var(--color-white);
+  font-size: clamp(3.7rem, 13vw, 9.4rem);
+  font-weight: var(--heading-weight-home);
+  line-height: 0.86;
+  letter-spacing: -0.09em;
+  text-wrap: balance;
+}
+
+.kickoff-hero .hero-copy {
+  width: min(760px, 100%);
+  margin: 1.6rem auto 0;
+  color: color-mix(in srgb, var(--color-white) 88%, transparent);
+  font-size: clamp(1.06rem, 2.6vw, 1.42rem);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.55;
+}
+
+.kickoff-hero .hero-content {
+  position: relative;
+  z-index: 4;
+  width: min(980px, 100%);
+  text-align: center;
+}
+
+.kickoff-hero .hero-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.9rem;
+  margin-top: 2.1rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 700px) {
+  .kickoff-eyebrow,
+  .kickoff-hero .hero-kicker {
+    font-size: clamp(0.92rem, 3.6vw, 1.02rem);
+    letter-spacing: 0.1em;
+    padding: 0.38rem 0.8rem;
+  }
+
+  .kickoff-hero {
+    min-height: 86svh;
+    padding: 7rem var(--space-sm) 12rem;
+  }
+
+  .kickoff-hero .hero-actions {
+    flex-direction: column;
+    width: min(22rem, 100%);
+    margin-right: auto;
+    margin-left: auto;
+  }
+}

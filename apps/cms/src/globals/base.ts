@@ -107,7 +107,7 @@ export function reviewWorkflowGlobal(opts: {
 /*
  * Common shape every page-* global shares: published-only anonymous reads,
  * division-scoped updates, the head/admin publish gate, and bounded draft
- * history. Keeps the 11 page globals from repeating this boilerplate
+ * history. Keeps the 12 page globals from repeating this boilerplate
  * (docs/architecture/08-concepts.md).
  */
 export function pageGlobal(opts: {

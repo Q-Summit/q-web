@@ -21,7 +21,7 @@ The left sidebar is grouped so you can match the live website, in the order you 
 | Sidebar group | What it is |
 | --- | --- |
 | **Website pages** | One entry per public page, listed first because this is where most editing happens. The label shows the URL path (e.g. `Home · /`). Page headlines, intros, and CTAs live here. The preview pane opens automatically so you see your draft on the real layout as you type. |
-| **Site-wide** | Navigation, footer, and the short AI identity (`/llms.txt`). Changes here affect every page. |
+| **Site-wide** | Navigation, footer, the short AI identity (`/llms.txt`), and the Join Q / Kickoff public-page toggles. Changes here affect every page. |
 | **Lists & people** | Repeatable content: Partners, Speakers, Team, Past Teams, Jobs, FAQs, Testimonials. These fill grids and lists _on_ the pages above. |
 | **Shared assets** | Media library (upload photos and logos). |
 | **System** | Accounts and the legal pages, managed by Admins. |
@@ -73,10 +73,12 @@ There is deliberately no way to place an image inside this text. Images belong i
 | Division | Collections | Page / settings globals |
 | --- | --- | --- |
 | Partner | Partners, Jobs, Testimonials | Partners and Jobs pages |
-| PR | Speakers, Team and Past Teams (with Chair), FAQs (with Concept) | Navigation, footer & AI identity (PR only); Home, Why Q?, Program, Tickets, Contact, Hackathon, Our Team, Past Teams, Speakers (all with Concept) |
-| Concept | FAQs (with PR) | Home, Why Q?, Program, Tickets, Contact, Hackathon, Our Team, Past Teams, Speakers (all with PR); not Navigation, footer & AI identity |
+| PR | Speakers, Team and Past Teams (with Chair), FAQs (with Concept) | Navigation, footer & AI identity, including Join Q / Kickoff page-on and home-forward toggles (PR only); Home, Why Q?, Program, Tickets, Contact, Hackathon, Our Team, Past Teams, Speakers, Join Q / Kickoff (all with Concept) |
+| Concept | FAQs (with PR) | Home, Why Q?, Program, Tickets, Contact, Hackathon, Our Team, Past Teams, Speakers, Join Q / Kickoff (all with PR); not Navigation, footer & AI identity |
 | Chair | Team and Past Teams (with PR) | (none alone) |
 | Finance / Operations / IT | (no content collections today) | IT admins manage users and Legal |
+
+**Join Q / Kickoff.** Heads publish the Join Q / Kickoff Website page. Two toggles under **Site-wide → Navigation, footer & AI identity → Join Q / Kickoff** (PR only) control whether `/kickoff/` is public and whether `/` forwards there. On each speaker row, **Portrait crop** sets how the photo sits in the card. The **Register label** under Small UI labels is the small badge on the location card; leave it empty to hide the badge.
 
 Media: anyone can upload new files (straight from an image field or via **Media library**). Upload sharp originals up to 5 MB; the site generates the small versions itself, so never upload a pre-shrunk thumbnail. If an existing file needs replacing or deleting, ask an admin.
 

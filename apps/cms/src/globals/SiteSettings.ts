@@ -139,5 +139,34 @@ export const SiteSettings: GlobalConfig = reviewWorkflowGlobal({
         },
       ],
     },
+    {
+      name: "kickoff",
+      type: "group",
+      label: "Join Q / Kickoff",
+      admin: {
+        description:
+          "Whether the recruiting page is public and whether the homepage redirects to it.",
+      },
+      fields: [
+        {
+          name: "pageEnabled",
+          type: "checkbox",
+          defaultValue: false,
+          admin: {
+            description:
+              "The page is public at /kickoff/. Off means the public site 404s that path (Live Preview still works).",
+          },
+        },
+        {
+          name: "redirectRoot",
+          type: "checkbox",
+          defaultValue: false,
+          admin: {
+            description:
+              "When the page is public, send / to /kickoff/. Ignored while the page is off.",
+          },
+        },
+      ],
+    },
   ],
 });

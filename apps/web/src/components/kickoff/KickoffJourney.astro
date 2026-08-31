@@ -1,0 +1,478 @@
+---
+// Way through Q album rail (DESIGN.md KICKOFF-1). Full-bleed photo cards
+// with glass captions, not the conference snap strip.
+import "./kickoff-theme.css";
+import type { KickoffContent } from "../../lib/content";
+import { hasMedia } from "./media-href";
+
+interface Props {
+  content: KickoffContent["journey"];
+}
+
+const { content } = Astro.props;
+---
+
+<section
+  id="way-through-q"
+  class="way-section kickoff-reveal"
+  aria-labelledby="way-title"
+>
+  <div class="way-inner">
+    <div class="way-header">
+      <p class="kickoff-eyebrow" data-lp="journey.eyebrow">{content.eyebrow}</p>
+      <h2
+        id="way-title"
+        class="kickoff-section-title"
+        data-lp="journey.heading"
+      >
+        {content.heading}
+      </h2>
+      <p class="kickoff-section-copy" data-lp="journey.intro">
+        {content.intro}
+      </p>
+    </div>
+
+    <div class="album-shell" data-kickoff-journey>
+      <button
+        class="album-arrow album-arrow--prev"
+        type="button"
+        data-album-prev
+        aria-label="Previous Q-Journey moment"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m15 5-7 7 7 7"></path>
+        </svg>
+      </button>
+
+      <div class="album" data-album aria-label="Way through Q Album">
+        {
+          content.moments.map((moment, index) => (
+            <article class="album-card" data-album-card>
+              <div class="album-image">
+                {hasMedia(moment.image) ? (
+                  <img
+                    src={moment.image}
+                    alt={moment.imageAlt}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                ) : (
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                )}
+              </div>
+              <div class="album-copy">
+                <h3>{moment.title}</h3>
+                <span>{moment.text}</span>
+              </div>
+            </article>
+          ))
+        }
+      </div>
+
+      <button
+        class="album-arrow album-arrow--next"
+        type="button"
+        data-album-next
+        aria-label="Next Q-Journey moment"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m9 5 7 7-7 7"></path>
+        </svg>
+      </button>
+    </div>
+
+    <div class="album-mobile-control">
+      <input
+        type="range"
+        min="0"
+        max="100"
+        value="0"
+        step="0.1"
+        aria-label="Scroll through the Q-Journey"
+        data-album-range
+      />
+    </div>
+
+    <p class="album-hint" data-lp="journey.hint">{content.hint}</p>
+  </div>
+</section>
+
+<script>
+  import { initKickoffJourney } from "./kickoff-journey.client";
+  initKickoffJourney();
+</script>
+
+<style>
+  /* DESIGN.md KICKOFF-1: photo album with glass captions. */
+  .way-section {
+    padding: clamp(4rem, 8vw, 7rem) 0;
+    background:
+      radial-gradient(
+        circle at 75% 20%,
+        color-mix(in srgb, var(--color-kickoff-ice) 22%, transparent),
+        transparent 26rem
+      ),
+      linear-gradient(
+        180deg,
+        var(--color-white) 0%,
+        var(--color-kickoff-ground) 100%
+      );
+  }
+
+  .way-inner {
+    width: min(1120px, calc(100% - 2rem));
+    margin: 0 auto;
+  }
+
+  .way-header {
+    text-align: center;
+  }
+
+  .album-shell {
+    position: relative;
+    margin-top: 2.6rem;
+  }
+
+  .album {
+    display: grid;
+    grid-auto-columns: minmax(76%, 28rem);
+    grid-auto-flow: column;
+    gap: var(--space-sm);
+    overflow-x: auto;
+    padding: 0.4rem 0 1.4rem;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    overscroll-behavior-inline: contain;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .album.is-dragging {
+    cursor: grabbing;
+    scroll-snap-type: none;
+  }
+
+  .album img {
+    pointer-events: none;
+    -webkit-user-drag: none;
+  }
+
+  .album::-webkit-scrollbar {
+    display: none;
+  }
+
+  .album-card {
+    position: relative;
+    overflow: hidden;
+    min-height: 38rem;
+    border: 1px solid color-mix(in srgb, var(--color-navy) 13%, transparent);
+    border-radius: var(--radius-kickoff-card);
+    background: var(--color-navy);
+    color: var(--color-white);
+    scroll-snap-align: center;
+    opacity: 0.48;
+    transform: translateY(24px) scale(0.92);
+    box-shadow: 0 18px 54px
+      color-mix(in srgb, var(--color-navy) 12%, transparent);
+    transition:
+      opacity var(--duration-kickoff-card) var(--ease-snappy),
+      transform var(--duration-kickoff-card) var(--ease-emphasized),
+      box-shadow var(--duration-kickoff-card) var(--ease-snappy),
+      filter var(--duration-kickoff-card) var(--ease-snappy);
+    filter: saturate(0.82);
+  }
+
+  .album-card.is-active {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    box-shadow: 0 30px 84px
+      color-mix(in srgb, var(--color-navy) 20%, transparent);
+    filter: saturate(1);
+  }
+
+  .album-card:hover {
+    transform: translateY(-8px) scale(1.025);
+    box-shadow: 0 34px 90px
+      color-mix(in srgb, var(--color-navy) 24%, transparent);
+  }
+
+  .album-image {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(
+        circle at 25% 24%,
+        color-mix(in srgb, var(--color-kickoff-ice) 28%, transparent),
+        transparent 16rem
+      ),
+      radial-gradient(
+        circle at 78% 76%,
+        color-mix(in srgb, var(--color-white) 12%, transparent),
+        transparent 14rem
+      ),
+      linear-gradient(
+        135deg,
+        var(--color-kickoff-mid) 0%,
+        var(--color-kickoff-deep) 48%,
+        var(--color-kickoff-midnight) 100%
+      );
+  }
+
+  .album-image::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-navy) 1%, transparent) 0%,
+      color-mix(in srgb, var(--color-navy) 1.5%, transparent) 58%,
+      color-mix(in srgb, var(--color-navy) 50%, transparent) 79%,
+      color-mix(in srgb, var(--color-navy) 88%, transparent) 100%
+    );
+  }
+
+  .album-image span {
+    position: relative;
+    z-index: 1;
+    color: color-mix(in srgb, var(--color-kickoff-ice) 16%, transparent);
+    font-size: clamp(8rem, 22vw, 14rem);
+    font-weight: var(--heading-weight-home);
+    letter-spacing: -0.12em;
+  }
+
+  .album-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 38%;
+  }
+
+  .album-copy {
+    position: absolute;
+    right: 1.2rem;
+    bottom: 1.2rem;
+    left: 1.2rem;
+    z-index: 2;
+    padding: 0.82rem 0.95rem 0.88rem;
+    border: 1px solid color-mix(in srgb, var(--color-white) 20%, transparent);
+    border-radius: var(--radius-kickoff-copy);
+    background: color-mix(in srgb, var(--color-navy) 34%, transparent);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: inset 0 1px 0
+      color-mix(in srgb, var(--color-white) 8%, transparent);
+  }
+
+  .album-copy h3 {
+    margin: 0;
+    color: var(--color-white);
+    font-size: clamp(1.45rem, 3.6vw, 2.15rem);
+    line-height: 1;
+    letter-spacing: -0.055em;
+  }
+
+  .album-copy span {
+    display: block;
+    margin-top: 0.42rem;
+    color: color-mix(in srgb, var(--color-white) 86%, transparent);
+    font-size: clamp(0.84rem, 0.84rem, 0.84rem);
+    line-height: 1.34;
+  }
+
+  .album-arrow {
+    position: absolute;
+    top: 50%;
+    z-index: 5;
+    display: grid;
+    width: 5.2rem;
+    height: 5.2rem;
+    place-items: center;
+    margin: 0;
+    padding: 0;
+    border: 2px solid color-mix(in srgb, var(--color-navy) 22%, transparent);
+    border-radius: var(--radius-kickoff-pill);
+    background: color-mix(in srgb, var(--color-white) 92%, transparent);
+    color: var(--color-navy);
+    cursor: pointer;
+    box-shadow: 0 12px 34px
+      color-mix(in srgb, var(--color-navy) 19%, transparent);
+    transform: translateY(-50%);
+    transition:
+      transform var(--duration-icon) var(--ease-snappy),
+      background var(--duration-icon) var(--ease-snappy),
+      opacity var(--duration-icon) var(--ease-snappy);
+  }
+
+  .album-arrow svg {
+    width: 2.5rem;
+    height: 2.5rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 5.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .album-arrow--prev {
+    left: -1.7rem;
+  }
+
+  .album-arrow--next {
+    right: -1.7rem;
+  }
+
+  .album-arrow:hover:not(:disabled),
+  .album-arrow:focus-visible:not(:disabled) {
+    background: var(--color-kickoff-ice);
+    transform: translateY(-50%) scale(1.08);
+  }
+
+  .album-arrow:disabled {
+    opacity: 0.3;
+    cursor: default;
+  }
+
+  .album-mobile-control {
+    display: block;
+    width: min(34rem, 82%);
+    margin: 0.95rem auto 0.3rem;
+    padding: 0.4rem 0;
+  }
+
+  .album-mobile-control input[type="range"] {
+    width: 100%;
+    height: 3.4rem;
+    margin: 0;
+    appearance: none;
+    background: transparent;
+    cursor: ew-resize;
+    touch-action: pan-y;
+  }
+
+  .album-mobile-control input[type="range"]::-webkit-slider-runnable-track {
+    height: 0.9rem;
+    border-radius: var(--radius-kickoff-pill);
+    background: color-mix(in srgb, var(--color-navy) 12%, transparent);
+    box-shadow: inset 0 1px 2px
+      color-mix(in srgb, var(--color-navy) 13%, transparent);
+  }
+
+  .album-mobile-control input[type="range"]::-webkit-slider-thumb {
+    width: 5rem;
+    height: 1.8rem;
+    margin-top: -0.45rem;
+    appearance: none;
+    border: 3px solid color-mix(in srgb, var(--color-white) 96%, transparent);
+    border-radius: var(--radius-kickoff-pill);
+    background: linear-gradient(
+      90deg,
+      var(--color-kickoff-mid),
+      var(--color-navy)
+    );
+    box-shadow:
+      0 5px 14px color-mix(in srgb, var(--color-navy) 28%, transparent),
+      0 0 0 4px color-mix(in srgb, var(--color-kickoff-ice) 20%, transparent);
+  }
+
+  .album-mobile-control input[type="range"]::-moz-range-track {
+    height: 0.9rem;
+    border-radius: var(--radius-kickoff-pill);
+    background: color-mix(in srgb, var(--color-navy) 12%, transparent);
+  }
+
+  .album-mobile-control input[type="range"]::-moz-range-thumb {
+    width: 5rem;
+    height: 1.8rem;
+    border: 3px solid color-mix(in srgb, var(--color-white) 96%, transparent);
+    border-radius: var(--radius-kickoff-pill);
+    background: linear-gradient(
+      90deg,
+      var(--color-kickoff-mid),
+      var(--color-navy)
+    );
+    box-shadow:
+      0 5px 14px color-mix(in srgb, var(--color-navy) 28%, transparent),
+      0 0 0 4px color-mix(in srgb, var(--color-kickoff-ice) 20%, transparent);
+  }
+
+  .album-hint {
+    margin: 0.4rem 0 0;
+    color: color-mix(in srgb, var(--color-navy) 58%, transparent);
+    font-weight: var(--font-weight-extrabold);
+    text-align: center;
+  }
+
+  @media (min-width: 900px) {
+    .album {
+      grid-auto-columns: minmax(24rem, 32rem);
+    }
+  }
+
+  @media (max-width: 899px) {
+    .album-arrow {
+      display: none;
+    }
+  }
+
+  @media (max-width: 700px) {
+    .album-shell {
+      margin-top: 2.15rem;
+    }
+
+    .album {
+      grid-auto-columns: 86%;
+      padding-bottom: var(--space-2xs);
+    }
+
+    .album-card {
+      min-height: 34rem;
+      border-radius: var(--radius-kickoff-card-compact);
+    }
+
+    .album-image img {
+      object-position: center 35%;
+    }
+
+    .album-copy {
+      right: 0.85rem;
+      bottom: 0.85rem;
+      left: 0.85rem;
+      padding: 0.78rem 0.85rem 0.82rem;
+      border-radius: var(--radius-kickoff-copy-compact);
+    }
+
+    .album-copy h3 {
+      font-size: clamp(1.45rem, 6vw, 1.9rem);
+    }
+
+    .album-copy span {
+      font-size: clamp(0.8rem, 0.8rem, 0.8rem);
+      line-height: 1.32;
+    }
+
+    .album-mobile-control {
+      width: min(28rem, 92%);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .album-card,
+    .album-card.is-active,
+    .album-card:hover,
+    .album-arrow {
+      opacity: 1;
+      transform: none;
+      transition: none;
+      filter: none;
+    }
+
+    .album-arrow {
+      transform: translateY(-50%);
+    }
+  }
+</style>

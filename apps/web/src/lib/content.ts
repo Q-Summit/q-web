@@ -82,6 +82,13 @@ export type {
   SpeakerPanel,
   SpeakerPageContent,
   JobsPageContent,
+  KickoffSocialIcon,
+  KickoffSpeakerCrop,
+  KickoffSpeaker,
+  KickoffQuizAnswer,
+  KickoffQuizQuestion,
+  KickoffQuizResult,
+  KickoffContent,
   PageContent,
 } from "./content/pages";
 export { getPageContent } from "./content/pages";

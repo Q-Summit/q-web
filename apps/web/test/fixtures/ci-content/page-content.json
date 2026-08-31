@@ -768,5 +768,204 @@
     "heading": "Scroll through the Best Opportunities from our Partner Network",
     "intro": "Get to know the numerous job requisitions of our supporters and partners.",
     "detailHowToContactHeading": "How to get in touch:"
+  },
+  "kickoff": {
+    "title": "Join Q (fixture)",
+    "metaDescription": "Fake Join Q landing used by CI. Not a real recruiting page.",
+    "hero": {
+      "eyebrow": "Fixture recruiting",
+      "headline": "Find your fixture team",
+      "copy": "Sample copy for the Join Q landing used in CI builds.",
+      "image": "",
+      "imageAlt": "",
+      "primaryCta": {
+        "label": "Start the team quiz",
+        "href": "#quiz"
+      },
+      "secondaryCta": {
+        "label": "Way through Q",
+        "href": "#way-through-q"
+      }
+    },
+    "kickoff": {
+      "eyebrow": "Q Kickoff",
+      "heading": "Meet the sample panel.",
+      "intro": "Two fictional speakers stand in for the live panel so CI can render the page.",
+      "date": "1 September 2026",
+      "location": "Sample lecture hall",
+      "panelTitle": "Live Panel · Alex Example and Sam Sample",
+      "ui": {
+        "speakerLabel": "Panel guest",
+        "linkedinLabel": "LinkedIn",
+        "kickoffLabel": "Kickoff",
+        "panelLabel": "Live panel",
+        "registerLabel": "Register later"
+      },
+      "company": {
+        "name": "Example Nutrition",
+        "href": "https://example.com/nutrition",
+        "logo": "",
+        "logoAlt": "Example Nutrition"
+      },
+      "speakers": [
+        {
+          "name": "Alex Example",
+          "role": "Founder of Example Nutrition",
+          "bio": "Sample speaker biography for CI.",
+          "linkedin": "https://example.com/alex",
+          "image": "",
+          "imageAlt": "",
+          "crop": { "x": 50, "y": 24, "zoom": 100, "shiftY": 0 }
+        },
+        {
+          "name": "Sam Sample",
+          "role": "Head of Sample Office",
+          "bio": "Second sample speaker biography for CI.",
+          "linkedin": "https://example.com/sam",
+          "image": "",
+          "imageAlt": "",
+          "crop": { "x": 50, "y": 24, "zoom": 100, "shiftY": 0 }
+        }
+      ]
+    },
+    "socials": {
+      "eyebrow": "Socials",
+      "heading": "Stay Updated",
+      "links": [
+        {
+          "label": "WhatsApp",
+          "href": "https://example.com/whatsapp",
+          "icon": "whatsapp"
+        },
+        {
+          "label": "TikTok",
+          "href": "https://example.com/tiktok",
+          "icon": "tiktok"
+        },
+        {
+          "label": "Instagram",
+          "href": "https://example.com/instagram",
+          "icon": "instagram"
+        },
+        {
+          "label": "LinkedIn",
+          "href": "https://example.com/linkedin",
+          "icon": "linkedin"
+        }
+      ]
+    },
+    "quiz": {
+      "eyebrow": "Team Quiz",
+      "heading": "Which Q team fits you?",
+      "intro": "One sample question so CI can render the quiz.",
+      "ui": {
+        "questionLabel": "Question",
+        "ofLabel": "of",
+        "backLabel": "Back",
+        "nextLabel": "Next",
+        "showResultLabel": "Show result",
+        "placeLabel": "Place",
+        "teamLinkLabel": "Explore team"
+      },
+      "start": {
+        "eyebrow": "Your Q Match",
+        "heading": "Ready to find your team?",
+        "copy": "One question, then a sample match.",
+        "buttonLabel": "Start quiz"
+      },
+      "questions": [
+        {
+          "kicker": "New project",
+          "question": "How do you like to start a new project?",
+          "answers": [
+            {
+              "id": "A",
+              "text": "I start with the big picture.",
+              "tags": ["Corporate Relations"]
+            },
+            {
+              "id": "B",
+              "text": "I look at tools and systems first.",
+              "tags": ["IT"]
+            }
+          ]
+        }
+      ],
+      "results": [
+        {
+          "team": "Corporate Relations",
+          "text": "You like building partnerships.",
+          "notionHref": "#teams"
+        },
+        {
+          "team": "IT",
+          "text": "You like building systems.",
+          "notionHref": "#teams"
+        }
+      ],
+      "resultCopy": {
+        "eyebrow": "Your match",
+        "heading": "Your strengths fit Q.",
+        "copy": "Based on your answers, these are sample teams.",
+        "restartLabel": "Restart quiz",
+        "applicationCta": {
+          "label": "Apply now",
+          "href": "#application-flow"
+        },
+        "allTeamsCta": {
+          "label": "Explore all teams",
+          "href": "#teams"
+        }
+      }
+    },
+    "journey": {
+      "eyebrow": "Way through Q",
+      "heading": "This is what Q feels like.",
+      "intro": "Two sample moments so CI can render the journey.",
+      "hint": "Swipe through the Q journey",
+      "moments": [
+        {
+          "title": "Sample journey",
+          "text": "A fictional trip used only in CI.",
+          "image": "",
+          "imageAlt": ""
+        },
+        {
+          "title": "Sample dinner",
+          "text": "A fictional evening used only in CI.",
+          "image": "",
+          "imageAlt": ""
+        }
+      ]
+    },
+    "application": {
+      "eyebrow": "Application process",
+      "heading": "Your way into Q",
+      "intro": "Sample steps for the CI fixture.",
+      "isOpen": false,
+      "applicationUrl": "",
+      "comingSoonLabel": "Coming Soon",
+      "steps": [
+        {
+          "date": "1 September 2026",
+          "title": "Kickoff",
+          "text": "Sample first step."
+        },
+        {
+          "date": "2 September 2026",
+          "title": "Apply",
+          "text": "Sample second step."
+        }
+      ]
+    },
+    "finalCta": {
+      "eyebrow": "Ready for Q?",
+      "heading": "Become part of the Q family.",
+      "copy": "Sample closing copy for CI.",
+      "cta": {
+        "label": "Apply now",
+        "href": "#application-flow"
+      }
+    }
   }
 }

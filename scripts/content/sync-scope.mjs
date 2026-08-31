@@ -13,6 +13,7 @@ export const SYNC_GLOBALS = [
   "site-settings",
   "page-home",
   "page-whyq",
+  "page-kickoff",
   "page-program",
   "page-tickets",
   "page-contact",

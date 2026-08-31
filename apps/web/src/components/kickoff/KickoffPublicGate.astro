@@ -1,0 +1,14 @@
+---
+// Static-safe public 404 for a disabled /kickoff/. Live Preview from the
+// CMS iframe uses ?live-preview=1 and must still load this page. Included
+// only when Site Settings kickoff.pageEnabled is false.
+---
+
+<script is:inline>
+  (function () {
+    try {
+      if (new URLSearchParams(location.search).has("live-preview")) return;
+    } catch (e) {}
+    location.replace("/404");
+  })();
+</script>

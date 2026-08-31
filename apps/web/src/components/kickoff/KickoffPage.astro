@@ -1,0 +1,108 @@
+---
+// Join Q page shell (DESIGN.md KICKOFF-1): ice ground, glass chrome,
+// zip-faithful scroll reveal. Conference pages stay on .section.
+import "./kickoff-theme.css";
+
+interface Props {
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+---
+
+<div class:list={["kickoff-page", className]}>
+  <slot />
+</div>
+
+<script>
+  const revealItems = document.querySelectorAll(".kickoff-reveal");
+  let lastScrollY = window.scrollY;
+  let scrollDirection = "down";
+
+  window.addEventListener(
+    "scroll",
+    () => {
+      const currentScrollY = window.scrollY;
+      scrollDirection = currentScrollY > lastScrollY ? "down" : "up";
+      lastScrollY = currentScrollY;
+    },
+    { passive: true },
+  );
+
+  const revealObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        entry.target.classList.toggle("is-visible", entry.isIntersecting);
+        if (entry.isIntersecting) {
+          entry.target.classList.toggle(
+            "reveal-from-bottom",
+            scrollDirection === "down",
+          );
+          entry.target.classList.toggle(
+            "reveal-from-top",
+            scrollDirection === "up",
+          );
+        }
+      });
+    },
+    { threshold: 0.16, rootMargin: "0px 0px -8% 0px" },
+  );
+
+  revealItems.forEach((item) => revealObserver.observe(item));
+</script>
+
+<style>
+  /* DESIGN.md KICKOFF-1: ice page ground, not .section (COLOR-2, LAYOUT-1). */
+  :global(html) {
+    scroll-behavior: smooth;
+  }
+
+  :global(body:has(.kickoff-page)) {
+    background: var(--color-kickoff-ground);
+  }
+
+  .kickoff-page {
+    min-height: 100vh;
+    overflow: hidden;
+    background: linear-gradient(
+      180deg,
+      var(--color-kickoff-ground) 0%,
+      var(--color-white) 48%,
+      var(--color-kickoff-ground) 100%
+    );
+    color: var(--color-navy);
+  }
+
+  :global(.kickoff-reveal) {
+    opacity: 0;
+    transform: translateY(34px) scale(0.985);
+    transition:
+      opacity var(--duration-kickoff-reveal) var(--ease-snappy),
+      transform var(--duration-kickoff-reveal) var(--ease-emphasized);
+  }
+
+  :global(.kickoff-reveal.reveal-from-bottom:not(.is-visible)) {
+    transform: translateY(34px) scale(0.985);
+  }
+
+  :global(.kickoff-reveal.reveal-from-top:not(.is-visible)) {
+    transform: translateY(-34px) scale(0.985);
+  }
+
+  :global(.kickoff-reveal.is-visible) {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(html) {
+      scroll-behavior: auto;
+    }
+
+    :global(.kickoff-reveal) {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+  }
+</style>

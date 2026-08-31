@@ -9,7 +9,7 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 const extractedDir = resolveContentDir();
 const webMediaDir = path.resolve(dirname, "../../web/public/media");
 
-// Seeds the 11 per-page globals from page-content.json. Field shapes mirror
+// Seeds the 12 per-page globals from page-content.json. Field shapes mirror
 // apps/web/src/lib/content.ts's PageContent 1:1; the only reshaping done
 // here is wrapping plain string[]/boolean[] JSON arrays into Payload's
 // named-subfield array rows (see globals/shared-fields.ts + PageTickets.ts).
@@ -75,6 +75,44 @@ async function resolveWhyqImageId(
     filePath: sourcePath,
   });
   console.log(`  created media for ${uploadFilename} (id=${created.id})`);
+  return created.id as number;
+}
+
+function localMediaFilename(href: string | null | undefined): string {
+  const value = (href ?? "").trim();
+  if (!value.startsWith("/media/")) return "";
+  return value.slice("/media/".length);
+}
+
+async function ensureMedia(
+  payload: Payload,
+  href: string | null | undefined,
+  alt: string | null | undefined,
+): Promise<number | null> {
+  const filename = localMediaFilename(href);
+  if (!filename) return null;
+
+  const existing = await payload.find({
+    collection: "media",
+    where: { filename: { equals: path.basename(filename) } },
+    limit: 1,
+  });
+  if (existing.totalDocs > 0) return existing.docs[0]!.id as number;
+
+  const sourcePath = path.join(webMediaDir, filename);
+  if (!fs.existsSync(sourcePath)) {
+    console.warn(
+      `  kickoff media missing on disk (${filename}); leaving upload unset until the file is added through Payload`,
+    );
+    return null;
+  }
+
+  const created = await payload.create({
+    collection: "media",
+    data: { alt: alt?.trim() || path.basename(filename) },
+    filePath: sourcePath,
+  });
+  console.log(`  created media for ${filename} (id=${created.id})`);
   return created.id as number;
 }
 
@@ -372,7 +410,125 @@ async function run() {
     console.log("page-jobs: updated and published");
   }
 
-  console.log("All 11 page globals seeded from page-content.json.");
+  // page-kickoff (optional media from /media/...; soft-miss if the file is absent)
+  {
+    const k = content.kickoff;
+    if (!k) {
+      console.log("page-kickoff: skipped (no kickoff in fixture)");
+    } else {
+      const heroImage = await ensureMedia(
+        payload,
+        k.hero.image,
+        k.hero.imageAlt,
+      );
+      const companyLogo = await ensureMedia(
+        payload,
+        k.kickoff.company.logo,
+        k.kickoff.company.logoAlt,
+      );
+
+      const speakers = [];
+      for (const speaker of k.kickoff.speakers ?? []) {
+        const image = await ensureMedia(
+          payload,
+          speaker.image,
+          speaker.imageAlt,
+        );
+        speakers.push({
+          name: speaker.name,
+          role: speaker.role || null,
+          bio: speaker.bio || null,
+          linkedin: speaker.linkedin || null,
+          ...(image !== null ? { image } : {}),
+          imageAlt: speaker.imageAlt || null,
+          crop: {
+            x: speaker.crop?.x ?? 50,
+            y: speaker.crop?.y ?? 24,
+            zoom: speaker.crop?.zoom ?? 100,
+            shiftY: speaker.crop?.shiftY ?? 0,
+          },
+        });
+      }
+
+      const moments = [];
+      for (const moment of k.journey.moments ?? []) {
+        const image = await ensureMedia(payload, moment.image, moment.imageAlt);
+        moments.push({
+          title: moment.title,
+          text: moment.text,
+          ...(image !== null ? { image } : {}),
+          imageAlt: moment.imageAlt || null,
+        });
+      }
+
+      await payload.updateGlobal({
+        slug: "page-kickoff",
+        data: {
+          title: k.title,
+          metaDescription: k.metaDescription,
+          hero: {
+            eyebrow: k.hero.eyebrow,
+            headline: k.hero.headline,
+            copy: k.hero.copy,
+            ...(heroImage !== null ? { image: heroImage } : {}),
+            imageAlt: k.hero.imageAlt || null,
+            primaryCta: k.hero.primaryCta,
+            secondaryCta: k.hero.secondaryCta,
+          },
+          kickoff: {
+            eyebrow: k.kickoff.eyebrow,
+            heading: k.kickoff.heading,
+            intro: k.kickoff.intro,
+            date: k.kickoff.date,
+            location: k.kickoff.location,
+            panelTitle: k.kickoff.panelTitle,
+            ui: k.kickoff.ui,
+            company: {
+              name: k.kickoff.company.name,
+              href: k.kickoff.company.href || null,
+              ...(companyLogo !== null ? { logo: companyLogo } : {}),
+              logoAlt: k.kickoff.company.logoAlt || null,
+            },
+            speakers,
+          },
+          socials: k.socials,
+          quiz: {
+            eyebrow: k.quiz.eyebrow,
+            heading: k.quiz.heading,
+            intro: k.quiz.intro,
+            ui: k.quiz.ui,
+            start: k.quiz.start,
+            questions: (k.quiz.questions ?? []).map((question: any) => ({
+              kicker: question.kicker,
+              question: question.question,
+              answers: (question.answers ?? []).map((answer: any) => ({
+                answerId: answer.answerId ?? answer.id,
+                text: answer.text,
+                tags: toTextRows(answer.tags ?? []),
+              })),
+            })),
+            results: k.quiz.results,
+            resultCopy: k.quiz.resultCopy,
+          },
+          journey: {
+            eyebrow: k.journey.eyebrow,
+            heading: k.journey.heading,
+            intro: k.journey.intro,
+            hint: k.journey.hint,
+            moments,
+          },
+          application: k.application,
+          finalCta: k.finalCta,
+          _status: "published",
+        },
+        user: seedUser,
+        overrideAccess: true,
+      });
+      console.log("page-kickoff: updated and published");
+    }
+  }
+
+  console.log("All 12 page globals seeded from page-content.json.");
   process.exit(0);
 }
 

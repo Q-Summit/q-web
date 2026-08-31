@@ -31,6 +31,10 @@ interface SiteSettingsSource {
     keyFacts?: string[];
     lastReviewed?: string;
   };
+  kickoff?: {
+    pageEnabled?: boolean;
+    redirectRoot?: boolean;
+  };
 }
 
 function readJson(): SiteSettingsSource {
@@ -63,6 +67,10 @@ async function run() {
         keyFacts: (data.llms?.keyFacts ?? []).map((text) => ({ text })),
         lastReviewed: data.llms?.lastReviewed ?? "",
       },
+      kickoff: {
+        pageEnabled: data.kickoff?.pageEnabled ?? false,
+        redirectRoot: data.kickoff?.redirectRoot ?? false,
+      },
       _status: "published",
     },
     user: { id: "seed-admin", roles: ["admin", "approver"] } as any,
@@ -75,6 +83,9 @@ async function run() {
   console.log(` - footer links: ${data.footer.links.length}`);
   console.log(` - social links: ${data.footer.socialLinks.length}`);
   console.log(` - llms key facts: ${data.llms?.keyFacts?.length ?? 0}`);
+  console.log(
+    ` - kickoff: pageEnabled=${data.kickoff?.pageEnabled ?? false} redirectRoot=${data.kickoff?.redirectRoot ?? false}`,
+  );
 
   process.exit(0);
 }

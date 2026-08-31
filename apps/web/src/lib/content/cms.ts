@@ -82,8 +82,10 @@ export async function fetchPublishedDocs<T>(collection: string): Promise<T[]> {
 const cmsGlobalCache = new Map<string, Promise<unknown>>();
 
 export async function fetchGlobal<T>(slug: string): Promise<T> {
-  const cached = cmsGlobalCache.get(slug);
-  if (cached) return cached as Promise<T>;
+  if (!import.meta.env.DEV) {
+    const cached = cmsGlobalCache.get(slug);
+    if (cached) return cached as Promise<T>;
+  }
 
   const promise = (async () => {
     const url = new URL(`/api/globals/${slug}`, CMS_URL);
@@ -97,7 +99,35 @@ export async function fetchGlobal<T>(slug: string): Promise<T> {
     return (await res.json()) as T;
   })();
 
-  cmsGlobalCache.set(slug, promise);
+  if (!import.meta.env.DEV) cmsGlobalCache.set(slug, promise);
+  return promise;
+}
+
+/**
+ * Same as fetchGlobal, but a 404 (unknown slug, CMS not yet migrated)
+ * returns null instead of failing the build. Other HTTP errors still throw.
+ */
+export async function fetchGlobalOptional<T>(slug: string): Promise<T | null> {
+  const cacheKey = `optional:${slug}`;
+  if (!import.meta.env.DEV) {
+    const cached = cmsGlobalCache.get(cacheKey);
+    if (cached) return cached as Promise<T | null>;
+  }
+
+  const promise = (async () => {
+    const url = new URL(`/api/globals/${slug}`, CMS_URL);
+    url.searchParams.set("depth", "1");
+    const res = await fetch(url);
+    if (res.status === 404) return null;
+    if (!res.ok) {
+      throw new Error(
+        `[content:cms] GET ${url.pathname}${url.search} failed: ${res.status} ${res.statusText}`,
+      );
+    }
+    return (await res.json()) as T;
+  })();
+
+  if (!import.meta.env.DEV) cmsGlobalCache.set(cacheKey, promise);
   return promise;
 }
 
@@ -108,10 +138,14 @@ export async function fetchGlobal<T>(slug: string): Promise<T> {
 const cmsDerivedCache = new Map<string, Promise<unknown>>();
 
 export function memoizeCms<T>(key: string, load: () => Promise<T>): Promise<T> {
+  if (import.meta.env.DEV) return load();
   const cached = cmsDerivedCache.get(key);
   if (cached) return cached as Promise<T>;
   const promise = load();
   cmsDerivedCache.set(key, promise);
+  promise.catch(() => {
+    cmsDerivedCache.delete(key);
+  });
   return promise;
 }
 

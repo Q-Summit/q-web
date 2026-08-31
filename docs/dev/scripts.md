@@ -81,7 +81,7 @@ scripts/
 | `check-fast` | `check:fast` | `check/fast.mjs` |
 | `db-up` / `db-down` | `db:up` / `db:down` | docker compose |
 
-Also (pnpm only): `content:import`, `content:fixture`, `picture:sync`, `seed:local-r2`, `dev:web:remote` → `local/web-remote.mjs`, `check:docs`, `check:design`, `check:events` (analytics taxonomy gate, see [analytics.md](analytics.md)), `check:cms-styles`, `check:scripts`, `check:lint`, `check:md`, `check:spell`, `check:web` / `check:cms` (and their `:build` / `:test` / `:types` sub-gates), `test`, `format`, `format:check` (both cover `md,json,jsonc,yml,yaml,mjs,ts,tsx,astro,css`; generated files are exempt in `.prettierignore`).
+Also (pnpm only): `content:import`, `content:fixture`, `picture:sync`, `seed:kickoff` (local `page-kickoff` ingest from gitignored `scripts/content-packages/local/kickoff.json`), `seed:local-r2`, `dev:web:remote` → `local/web-remote.mjs`, `check:docs`, `check:design`, `check:events` (analytics taxonomy gate, see [analytics.md](analytics.md)), `check:cms-styles`, `check:scripts`, `check:lint`, `check:md`, `check:spell`, `check:web` / `check:cms` (and their `:build` / `:test` / `:types` sub-gates), `test`, `format`, `format:check` (both cover `md,json,jsonc,yml,yaml,mjs,ts,tsx,astro,css`; generated files are exempt in `.prettierignore`).
 
 ## Shared lib rules
 

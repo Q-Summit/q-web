@@ -22,6 +22,7 @@ import { PageContact } from "./globals/PageContact";
 import { PageHackathon } from "./globals/PageHackathon";
 import { PageHome } from "./globals/PageHome";
 import { PageJobs } from "./globals/PageJobs";
+import { PageKickoff } from "./globals/PageKickoff";
 import { PageOurTeam } from "./globals/PageOurTeam";
 import { PagePartner } from "./globals/PagePartner";
 import { PagePastTeams } from "./globals/PagePastTeams";
@@ -215,6 +216,7 @@ export default buildConfig({
   // Settings nav list). Legal stays last (System, fixed by Users above).
   globals: [
     PageHome,
+    PageKickoff,
     PageWhyq,
     PageSpeaker,
     PagePartner,

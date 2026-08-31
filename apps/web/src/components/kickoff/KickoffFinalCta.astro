@@ -1,0 +1,111 @@
+---
+// Closing glass card (DESIGN.md KICKOFF-1). Coming-soon matches the quiz.
+import "./kickoff-theme.css";
+import type { PageLink } from "../../lib/content";
+
+interface Props {
+  eyebrow: string;
+  heading: string;
+  copy: string;
+  cta: PageLink;
+  isOpen: boolean;
+  applicationUrl: string;
+  comingSoonLabel: string;
+}
+
+const { eyebrow, heading, copy, cta, isOpen, applicationUrl, comingSoonLabel } =
+  Astro.props;
+---
+
+<section class="final-cta kickoff-reveal">
+  <div class="final-card">
+    <p class="kickoff-eyebrow" data-lp="finalCta.eyebrow">{eyebrow}</p>
+    <h2 data-lp="finalCta.heading">{heading}</h2>
+    <p data-lp="finalCta.copy">{copy}</p>
+    <a
+      class="kickoff-glass"
+      href={isOpen && applicationUrl ? applicationUrl : "#"}
+      data-application-cta
+      data-application-open={isOpen ? "true" : "false"}
+      data-coming-soon-label={comingSoonLabel}
+      data-lp="finalCta.cta"
+      data-lp-href="finalCta.cta.href"
+    >
+      {isOpen && applicationUrl ? cta.label : comingSoonLabel}
+    </a>
+  </div>
+</section>
+
+<script>
+  document.querySelectorAll("[data-application-cta]").forEach((cta) => {
+    const el = cta as HTMLAnchorElement;
+    if (el.dataset.applicationBound === "true") return;
+    el.dataset.applicationBound = "true";
+    el.addEventListener("click", (event) => {
+      if (el.dataset.applicationOpen === "true") return;
+      event.preventDefault();
+      el.textContent = el.dataset.comingSoonLabel || "Coming Soon";
+      el.setAttribute("aria-disabled", "true");
+      el.classList.add("is-coming-soon");
+    });
+  });
+</script>
+
+<style>
+  /* DESIGN.md KICKOFF-1: navy glass closer, not the conference CTA row. */
+  .final-cta {
+    padding: clamp(4rem, 8vw, 7rem) var(--space-sm);
+    background: linear-gradient(
+      180deg,
+      var(--color-kickoff-ground) 0%,
+      var(--color-navy) 100%
+    );
+  }
+
+  .final-card {
+    width: min(980px, 100%);
+    margin: 0 auto;
+    padding: clamp(var(--space-lg), 7vw, 4.5rem);
+    border: 1px solid color-mix(in srgb, var(--color-white) 20%, transparent);
+    border-radius: var(--radius-kickoff-cta);
+    background:
+      radial-gradient(
+        circle at 20% 20%,
+        color-mix(in srgb, var(--color-kickoff-ice) 35%, transparent),
+        transparent 22rem
+      ),
+      linear-gradient(
+        135deg,
+        var(--color-kickoff-mid) 0%,
+        var(--color-kickoff-deep) 48%,
+        var(--color-kickoff-midnight) 100%
+      );
+    color: var(--color-white);
+    text-align: center;
+    box-shadow: 0 32px 90px
+      color-mix(in srgb, var(--color-navy) 24%, transparent);
+  }
+
+  .final-card :global(.kickoff-eyebrow) {
+    border-color: color-mix(in srgb, var(--color-white) 28%, transparent);
+    background: color-mix(in srgb, var(--color-white) 12%, transparent);
+    color: var(--color-kickoff-ice);
+  }
+
+  h2 {
+    margin: 0;
+    color: var(--color-white);
+    font-size: clamp(2.8rem, 9vw, 6.8rem);
+    font-weight: var(--heading-weight-home);
+    line-height: 0.88;
+    letter-spacing: -0.08em;
+  }
+
+  p:not(.kickoff-eyebrow) {
+    width: min(680px, 100%);
+    margin: 1.2rem auto var(--space-lg);
+    color: color-mix(in srgb, var(--color-white) 85%, transparent);
+    font-size: clamp(1.05rem, 2vw, 1.25rem);
+    line-height: 1.65;
+  }
+</style>
