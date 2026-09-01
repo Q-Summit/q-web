@@ -33,6 +33,7 @@ import {
   runCommandSync,
   runPnpmScriptsParallel,
 } from "../lib/run.mjs";
+import { collectMediaFiles, inferAlt } from "../content/media-files.mjs";
 import {
   DEFAULT_PACKAGE_DIR,
   SYNC_COLLECTIONS,
@@ -489,6 +490,48 @@ describe("CLI fail-closed smoke", () => {
     );
     assert.notEqual(r.status, 0);
     assert.match(`${r.stderr}${r.stdout}`, /example value "dev"/i);
+  });
+
+  it("collectMediaFiles prefers package media/ and uses manifest alt", () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "qweb-media-"));
+    const pkgMedia = path.join(tmp, "media");
+    const extra = path.join(tmp, "extra");
+    fs.mkdirSync(pkgMedia);
+    fs.mkdirSync(extra);
+    fs.writeFileSync(path.join(pkgMedia, "hero.webp"), "pkg");
+    fs.writeFileSync(path.join(extra, "hero.webp"), "extra");
+    fs.writeFileSync(path.join(extra, "side.webp"), "side");
+    const files = collectMediaFiles({
+      packageDir: tmp,
+      extraDirs: [extra],
+      manifest: [
+        { filename: "hero.webp", alt: "Palace" },
+        { filename: "side.webp" },
+      ],
+    });
+    assert.deepEqual(
+      files.map((f) => ({ filename: f.filename, alt: f.alt })),
+      [
+        { filename: "hero.webp", alt: "Palace" },
+        { filename: "side.webp", alt: inferAlt("side.webp") },
+      ],
+    );
+    assert.equal(fs.readFileSync(files[0].filePath, "utf8"), "pkg");
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
+
+  it("content:upload-media refuses when no local images exist", () => {
+    const r = runScript(
+      "scripts/content/upload-media.mjs",
+      ["--local", "--dir", "scripts/content-packages/__missing__"],
+      {
+        CONTENT_SYNC_TOKEN: "x",
+        CONTENT_SYNC_USER_EMAIL: "lukas",
+        CMS_SERVER_URL: "http://localhost:3000",
+      },
+    );
+    assert.notEqual(r.status, 0);
+    assert.match(`${r.stderr}${r.stdout}`, /no local image files/i);
   });
 
   it("content:propose refuses non-Workspace actor domain before network", () => {

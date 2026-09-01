@@ -5,12 +5,17 @@ import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { contentSyncEndpoint } from "../src/endpoints/content-sync";
+import { contentSyncMediaEndpoint } from "../src/endpoints/content-sync-media";
 import {
   CONTENT_SYNC_ACTOR_HEADER,
   verifyContentSyncToken,
   normalizeContentSyncUserEmail,
   contentSyncAuditEmail,
 } from "../src/content-sync/auth";
+import {
+  applyMediaUpload,
+  mediaUploadError,
+} from "../src/content-sync/media-upload";
 import { forceDraftData } from "../src/content-sync/force-draft";
 import { serializeDoc } from "../src/content-sync/serialize";
 import {
@@ -537,19 +542,18 @@ describe("package.version gate (source guardrail)", () => {
 
 describe("content-sync endpoint deploy boundary (source guardrail)", () => {
   it("does not import deploy helpers or site deploy tooling", () => {
-    const endpointPath = path.join(dirname, "../src/endpoints/content-sync.ts");
-    const applyPath = path.join(
-      dirname,
-      "../src/content-sync/apply-package.ts",
-    );
-    const endpointSrc = fs.readFileSync(endpointPath, "utf-8");
-    const applySrc = fs.readFileSync(applyPath, "utf-8");
-
-    expect(endpointSrc).not.toMatch(/from ["'].*trigger-deploy/);
-    expect(endpointSrc).not.toMatch(/from ["']wrangler["']/);
-    expect(endpointSrc).not.toMatch(/DEPLOY_HOOK|deployHook|CLOUDFLARE_DEPLOY/);
-    expect(applySrc).not.toMatch(/from ["'].*trigger-deploy/);
-    expect(applySrc).not.toMatch(/from ["']wrangler["']/);
+    const paths = [
+      path.join(dirname, "../src/endpoints/content-sync.ts"),
+      path.join(dirname, "../src/endpoints/content-sync-media.ts"),
+      path.join(dirname, "../src/content-sync/apply-package.ts"),
+      path.join(dirname, "../src/content-sync/media-upload.ts"),
+    ];
+    for (const filePath of paths) {
+      const src = fs.readFileSync(filePath, "utf-8");
+      expect(src).not.toMatch(/from ["'].*trigger-deploy/);
+      expect(src).not.toMatch(/from ["']wrangler["']/);
+      expect(src).not.toMatch(/DEPLOY_HOOK|deployHook|CLOUDFLARE_DEPLOY/);
+    }
   });
 
   it("keeps the apply-errors -> 422 / clean -> 200 mapping literal in source", () => {
@@ -1058,5 +1062,217 @@ describe("team and past-teams upsert keys", () => {
       overrideAccess: false,
     });
     expect((writes[0].data as { _status?: string })._status).toBe("draft");
+  });
+});
+
+describe("mediaUploadError", () => {
+  it("accepts a normal webp and rejects path, empty alt, bad mime, oversize", () => {
+    expect(
+      mediaUploadError({
+        filename: "more-logo.webp",
+        mimeType: "image/webp",
+        byteLength: 12,
+        alt: "More Nutrition",
+      }),
+    ).toBeNull();
+    expect(
+      mediaUploadError({
+        filename: "../secret.webp",
+        mimeType: "image/webp",
+        byteLength: 12,
+        alt: "x",
+      }),
+    ).toMatch(/basename/);
+    expect(
+      mediaUploadError({
+        filename: "more-logo.webp",
+        mimeType: "image/webp",
+        byteLength: 12,
+        alt: "  ",
+      }),
+    ).toMatch(/alt/);
+    expect(
+      mediaUploadError({
+        filename: "more-logo.webp",
+        mimeType: "application/pdf",
+        byteLength: 12,
+        alt: "x",
+      }),
+    ).toMatch(/mime/);
+    expect(
+      mediaUploadError({
+        filename: "more-logo.webp",
+        mimeType: "image/webp",
+        byteLength: 6 * 1024 * 1024,
+        alt: "x",
+      }),
+    ).toMatch(/exceeds/);
+  });
+});
+
+describe("applyMediaUpload", () => {
+  const user = {
+    id: 9,
+    email: "lukas.strickler@agent.q-summit.com",
+    roles: ["editor"],
+    divisions: ["pr"],
+  };
+  const input = {
+    filename: "more-logo.webp",
+    mimeType: "image/webp",
+    data: Buffer.from("webp-bytes"),
+    alt: "More Nutrition",
+  };
+
+  it("skips when the filename already exists (no overwrite)", async () => {
+    const creates: unknown[] = [];
+    const result = await applyMediaUpload({
+      payload: {
+        find: async () => ({ docs: [{ id: 3, filename: "more-logo.webp" }] }),
+        create: async (args: unknown) => {
+          creates.push(args);
+          return { id: 99 };
+        },
+      } as never,
+      user,
+      input,
+    });
+    expect(result.errors).toEqual([]);
+    expect(result.skipped).toEqual(["media:more-logo.webp (exists)"]);
+    expect(creates).toEqual([]);
+  });
+
+  it("creates with overrideAccess false and does not write on dry-run", async () => {
+    const creates: Array<Record<string, unknown>> = [];
+    const payload = {
+      find: async () => ({ docs: [] }),
+      create: async (args: Record<string, unknown>) => {
+        creates.push(args);
+        return { id: 7 };
+      },
+    };
+
+    const dry = await applyMediaUpload({
+      payload: payload as never,
+      user,
+      input,
+      dryRun: true,
+    });
+    expect(dry.created).toEqual(["media:more-logo.webp"]);
+    expect(creates).toEqual([]);
+
+    const written = await applyMediaUpload({
+      payload: payload as never,
+      user,
+      input,
+    });
+    expect(written.created).toEqual(["media:more-logo.webp"]);
+    expect(creates).toHaveLength(1);
+    expect(creates[0]).toMatchObject({
+      collection: "media",
+      overrideAccess: false,
+      data: { alt: "More Nutrition" },
+    });
+    expect((creates[0].file as { name?: string }).name).toBe("more-logo.webp");
+  });
+});
+
+describe("contentSyncMediaEndpoint handler", () => {
+  const TOKEN = "test-token-value-32chars-long!!";
+  const editorUserDoc = {
+    id: 9,
+    email: "lukas.strickler@q-summit.com",
+    roles: ["editor"],
+    divisions: ["pr"],
+  };
+
+  function makeMockReq(opts: {
+    authorization?: string | null;
+    actor?: string | null;
+    file?: File | null;
+    alt?: string;
+    filename?: string;
+    url?: string;
+    payload?: unknown;
+  }) {
+    const headers: Record<string, string | null> = {};
+    if (opts.authorization !== undefined)
+      headers.authorization = opts.authorization;
+    if (opts.actor !== undefined)
+      headers[CONTENT_SYNC_ACTOR_HEADER] = opts.actor;
+
+    const form = new FormData();
+    if (opts.file) form.set("file", opts.file);
+    if (opts.alt !== undefined) form.set("alt", opts.alt);
+    if (opts.filename !== undefined) form.set("filename", opts.filename);
+
+    return {
+      headers: {
+        get: (name: string) => {
+          const key = name.toLowerCase();
+          return key in headers ? headers[key] : null;
+        },
+      },
+      formData: async () => form,
+      url: opts.url ?? "http://localhost/api/content-sync/media",
+      payload:
+        opts.payload ??
+        ({
+          logger: { info: () => {} },
+          find: async (args: { collection?: string }) => {
+            if (args.collection === "users") return { docs: [editorUserDoc] };
+            return { docs: [] };
+          },
+          create: async () => ({ id: 1 }),
+        } as never),
+    };
+  }
+
+  async function callHandler(req: unknown): Promise<Response> {
+    return (await contentSyncMediaEndpoint.handler!(req as never)) as Response;
+  }
+
+  let prevToken: string | undefined;
+  beforeEach(() => {
+    prevToken = process.env.CONTENT_SYNC_TOKEN;
+    process.env.CONTENT_SYNC_TOKEN = TOKEN;
+  });
+  afterEach(() => {
+    if (prevToken === undefined) delete process.env.CONTENT_SYNC_TOKEN;
+    else process.env.CONTENT_SYNC_TOKEN = prevToken;
+  });
+
+  it("401 when the Bearer token is missing", async () => {
+    const res = await callHandler(makeMockReq({ actor: "lukas.strickler" }));
+    expect(res.status).toBe(401);
+  });
+
+  it("400 when file is missing", async () => {
+    const res = await callHandler(
+      makeMockReq({
+        authorization: `Bearer ${TOKEN}`,
+        actor: "lukas.strickler",
+        alt: "Logo",
+      }),
+    );
+    expect(res.status).toBe(400);
+    expect(await res.text()).toMatch(/file is required/);
+  });
+
+  it("creates a new file and returns 200", async () => {
+    const file = new File([new Uint8Array([1, 2, 3, 4])], "more-logo.webp", {
+      type: "image/webp",
+    });
+    const res = await callHandler(
+      makeMockReq({
+        authorization: `Bearer ${TOKEN}`,
+        actor: "lukas.strickler",
+        file,
+        alt: "More Nutrition",
+      }),
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { created: string[] };
+    expect(body.created).toEqual(["media:more-logo.webp"]);
   });
 });

@@ -16,12 +16,13 @@ make propose
 | `pull.mjs` | `make pull` / `content:pull` | Published REST → JSON package (no Neon) |
 | `export.mjs` | `make package` / `content:export` | Local CMS published state → JSON package (drafts ignored) |
 | `import.mjs` | `content:import` | Package → local drafts |
-| `propose.mjs` | `make propose` / `content:propose` | Package → remote/local drafts via API |
+| `propose.mjs` | `make propose` / `content:propose` | Package → remote/local drafts via API (uploads missing media first) |
+| `upload-media.mjs` | `content:upload-media` | Local images → create-if-missing Media rows |
 | `sync-scope.mjs` | (module) | Allowlist |
 
 **Not** Neon/R2 mirroring. That is `scripts/ops/` (`ops:mirror-db`, `ops:mirror-media`). Never `make package` after `make pull`.
 
-`bundle.json` is the only file `propose` reads. `pull.mjs` does not write the per-collection/global sidecar JSONs under `collections/` and `globals/` by default (editing them without also updating `bundle.json` has no effect on propose); pass `--sidecars` to opt in to browse per-slug files.
+`bundle.json` is the JSON `propose` sends. Image binaries stay in `media/` (or `--media-dir`) and are uploaded first unless `--skip-media`. `pull.mjs` does not write the per-collection/global sidecar JSONs under `collections/` and `globals/` by default (editing them without also updating `bundle.json` has no effect on propose); pass `--sidecars` to opt in to browse per-slug files.
 
 `make-fixture.mjs` (`pnpm content:fixture -- --from <snapshot dir>`) regenerates the committed fake CI fixture at `apps/web/test/fixtures/ci-content/` from a maintainer-held content snapshot; rerun it after content-schema changes.
 

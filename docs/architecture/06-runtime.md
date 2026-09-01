@@ -6,7 +6,7 @@
 
 **Today:** Production deploys through Cloudflare Workers Builds ([ADR-0004](../decisions/0004-cloudflare-workers-builds-deploy.md)). Merges to `main` build `apps/web` atomically. A Head/Admin **live-site change** in Payload (publish, single-doc or the list view's bulk Publish, unpublish, restore, live delete) POSTs `CLOUDFLARE_DEPLOY_HOOK_URL` (`apps/cms/src/lib/trigger-deploy.ts`). Cloudflare dedupes bursts while a build is queued. Manual override: **Rebuild site** (`.github/workflows/site-rebuild.yml`).
 
-**Content propose:** `POST /api/content-sync` upserts **drafts only**; it never publishes and never imports `trigger-deploy`. Procedure: [`../dev/content-sync.md`](../dev/content-sync.md).
+**Content propose:** `POST /api/content-sync` upserts **drafts only**; `POST /api/content-sync/media` creates missing Media files. Neither publishes nor imports `trigger-deploy`. Procedure: [`../dev/content-sync.md`](../dev/content-sync.md).
 
 ```mermaid
 sequenceDiagram

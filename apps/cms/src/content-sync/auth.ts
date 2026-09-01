@@ -167,8 +167,9 @@ export async function loadSyncUser(
   //
   // The security boundary here is the token, not the role: `CONTENT_SYNC_TOKEN`
   // is the thing that must stay secret. A holder can propose drafts in the
-  // named actor's scope; they cannot publish, deploy, reach `users`/`legal`,
-  // or pass off the result as a manual edit.
+  // named actor's scope and create new Media files (never overwrite or
+  // delete); they cannot publish, deploy, reach `users`/`legal`, or pass off
+  // the result as a manual edit.
   return {
     id: user.id,
     email: contentSyncAuditEmail(stored),

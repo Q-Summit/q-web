@@ -7,56 +7,17 @@
 import type { Endpoint } from "payload";
 
 import { applyContentPackage } from "../content-sync/apply-package";
-import {
-  CONTENT_SYNC_ACTOR_HEADER,
-  CONTENT_SYNC_USER_DOMAIN,
-  loadSyncUser,
-  normalizeContentSyncUserEmail,
-  verifyContentSyncToken,
-} from "../content-sync/auth";
+import { authenticateContentSync, json } from "../content-sync/http";
 import type { ContentPackage } from "../content-sync/package-types";
 
 const MAX_BODY_BYTES = 5 * 1024 * 1024;
-
-function json(data: unknown, status = 200): Response {
-  return Response.json(data, { status });
-}
 
 export const contentSyncEndpoint: Endpoint = {
   path: "/content-sync",
   method: "post",
   handler: async (req) => {
-    if (!verifyContentSyncToken(req.headers.get("authorization"))) {
-      return json({ error: "unauthorized" }, 401);
-    }
-
-    // Actor is a real Workspace user claim; domain forced here. User row must
-    // already exist (Google login once); this endpoint never creates users.
-    const actorHeader = req.headers.get(CONTENT_SYNC_ACTOR_HEADER);
-    if (!actorHeader?.trim()) {
-      return json(
-        {
-          error:
-            `missing ${CONTENT_SYNC_ACTOR_HEADER} header ` +
-            `(send your username or username@${CONTENT_SYNC_USER_DOMAIN}; ` +
-            `example value "dev" is rejected)`,
-        },
-        400,
-      );
-    }
-
-    let workspaceEmail: string;
-    try {
-      workspaceEmail = normalizeContentSyncUserEmail(actorHeader);
-    } catch (err) {
-      return json(
-        {
-          error:
-            err instanceof Error ? err.message : "content-sync actor rejected",
-        },
-        400,
-      );
-    }
+    const auth = await authenticateContentSync(req);
+    if (!auth.ok) return auth.response;
 
     let rawBody: ArrayBuffer;
     try {
@@ -97,46 +58,22 @@ export const contentSyncEndpoint: Endpoint = {
     const requestUrl = req.url ?? "http://localhost/api/content-sync";
     const dryRun = new URL(requestUrl).searchParams.get("dryRun") === "1";
 
-    let syncUser;
-    try {
-      syncUser = await loadSyncUser(req.payload, workspaceEmail);
-    } catch (err) {
-      return json(
-        {
-          error:
-            err instanceof Error ? err.message : "content-sync actor rejected",
-        },
-        400,
-      );
-    }
-    if (!syncUser) {
-      return json(
-        {
-          error:
-            `no Payload user for "${workspaceEmail}"; refused. ` +
-            `Sign in to the CMS once with Google as that address so the account exists. ` +
-            `Wrong or never-logged-in users cannot propose.`,
-        },
-        400,
-      );
-    }
-
     const result = await applyContentPackage({
       payload: req.payload,
-      user: syncUser,
+      user: auth.user,
       pkg,
       dryRun,
     });
 
     req.payload.logger.info(
-      `content-sync: actor=${syncUser.email} dryRun=${dryRun} created=${result.created.length} updated=${result.updated.length} skipped=${result.skipped.length} errors=${result.errors.length}`,
+      `content-sync: actor=${auth.user.email} dryRun=${dryRun} created=${result.created.length} updated=${result.updated.length} skipped=${result.skipped.length} errors=${result.errors.length}`,
     );
 
     const status = result.errors.length > 0 ? 422 : 200;
     return json(
       {
         ...result,
-        actor: syncUser.email,
+        actor: auth.user.email,
         message:
           "Proposed drafts only. Live published content unchanged. Approver must Publish. This did not deploy.",
       },

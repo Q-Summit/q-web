@@ -19,16 +19,16 @@ Never run `ops:mirror-db` because you meant `make pull`. Prefer this page over N
 
 | Control | Behavior |
 | --- | --- |
-| Auth | `Authorization: Bearer <CONTENT_SYNC_TOKEN>` on `POST /api/content-sync` |
+| Auth | `Authorization: Bearer <CONTENT_SYNC_TOKEN>` on `POST /api/content-sync` and `POST /api/content-sync/media` |
 | Identity | Lookup real `<you>@q-summit.com` user (must exist). Changelog stamps `<you>@agent.q-summit.com` / shows as `you (agent)` vs manual Workspace email |
 | Privilege | The actor keeps their real roles/divisions, which decide **which drafts** they may write. No role can publish here: `forceDraftData` + `draft: true` make every write a version |
-| Writes | Always `draft: true` + `_status: draft` (versions only; live row stays published) |
+| Writes | Package ingest is always `draft: true` + `_status: draft` (versions only; live row stays published) |
 | Access | Local API with `overrideAccess: false` (division rules still apply) |
 | Allowlist | Collections/globals in `apps/cms/src/content-sync/keys.ts` |
 | Deny | `users`, `legal` |
-| Media | Filename lookup only; no URL fetch; no overwrite-by-id |
-| Deploy | Endpoint never calls Cloudflare / wrangler |
-| Stolen token | Can spam/alter **drafts** in the named actor's scope; cannot Publish, deploy, reach `users`/`legal`, or pass the result off as a manual edit (the `(agent)` stamp survives). The token is the secret; guard it |
+| Media | Create-if-missing via `POST /api/content-sync/media` (multipart `file` + `alt`). Apply still looks up by filename; no URL fetch; no overwrite or delete |
+| Deploy | Endpoints never call Cloudflare / wrangler |
+| Stolen token | Can spam/alter **drafts** in the named actor's scope and create **new** Media files; cannot overwrite or delete media, Publish, deploy, reach `users`/`legal`, or pass the result off as a manual edit (the `(agent)` stamp survives). The token is the secret; guard it |
 
 Pull (`make pull` / `content:pull`) is read-only published REST (`REMOTE_CMS_URL` only). Propose needs the token. Neither talks to Neon.
 
@@ -37,7 +37,7 @@ Pull (`make pull` / `content:pull`) is read-only published REST (`REMOTE_CMS_URL
 | Variable | Where | Used by |
 | --- | --- | --- |
 | `REMOTE_CMS_URL` | `apps/cms/.env.remote` | `content:pull`; remote `content:propose` target |
-| `CONTENT_SYNC_TOKEN` | `.env.remote` (and Vercel / local `.env`) | `content:propose` only |
+| `CONTENT_SYNC_TOKEN` | `.env.remote` (and Vercel / local `.env`) | `content:propose` and `content:upload-media` |
 | `CONTENT_SYNC_USER_EMAIL` | local `.env` / `.env.remote` (client) | Your own `name.lastname`; sent as `X-Content-Sync-Actor`; CMS forces `@q-summit.com`; user must already be in Payload |
 | `REMOTE_DATABASE_URI` | Shell only, exported per use; never written to a file | Human `ops:mirror-db` / `ops:cms-remote` only (break-glass) |
 
@@ -47,9 +47,9 @@ A maintainer shares the `.env.remote` values out-of-band with every Q internal (
 
 ## Working directory
 
-Always edit **`scripts/content-packages/current/bundle.json`**. That is the only file `content:propose` sends.
+Always edit **`scripts/content-packages/current/bundle.json`**. That is the JSON `content:propose` sends. Image binaries stay **out** of the JSON (5 MiB cap); put them in `current/media/<filename>` or pass `--media-dir`. Propose uploads missing files first, then applies the package. `--skip-media` skips the upload step.
 
-Pull and export do not write per-collection sidecar files under `collections/` / `globals/` by default. Pass `--sidecars` (flags: [`scripts.md`](scripts.md)) to opt into writing them for browsing an export. `bundle.json` remains the only file `content:propose` reads; editing a sidecar, when one exists, never affects propose.
+Pull and export do not write per-collection sidecar files under `collections/` / `globals/` by default. Pass `--sidecars` (flags: [`scripts.md`](scripts.md)) to opt into writing them for browsing an export. Editing a sidecar, when one exists, never affects propose. Local export copies matching files from `apps/cms/media/` or `apps/web/public/media/` into `current/media/` when they exist on disk.
 
 ## Flag defaults
 
@@ -86,6 +86,7 @@ make pull ARGS='--collections faqs'
 # edit scripts/content-packages/current/bundle.json only
 make propose ARGS='--dry-run'
 make propose
+# images: put files in current/media/ or pass --media-dir; --skip-media skips upload
 
 # Equivalent pnpm:
 pnpm content:pull -- --collections faqs
@@ -128,7 +129,8 @@ Two behaviors to expect:
 | 422 | Apply errors (deny/unknown slug, missing keys, write failure); see `errors` |
 | 400 actor | Missing header, bad format / `dev` / wrong domain, **no Payload user**, or user has no CMS roles (never auto-creates) |
 | `denied collection/global` | Tried `users` / `legal` / unknown slug |
-| `missing media filename` | Target CMS has no media with that filename |
+| `missing media filename` | Target CMS has no media with that filename, and propose did not upload it (missing local file, `--skip-media`, or media endpoint error) |
+| media 400 / 422 | Bad filename, missing `alt`, disallowed mime, oversize, or create failed |
 | `missing upsert key fields` | FAQ without `question`+`page`, etc. |
 | Division / access error in `errors` | Sync user lacks that division |
 | Schema field error | Migration not deployed on target yet |
