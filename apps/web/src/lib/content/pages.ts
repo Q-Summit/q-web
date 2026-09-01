@@ -367,6 +367,7 @@ export interface KickoffContent {
       kickoffLabel: string;
       panelLabel: string;
       registerLabel: string;
+      registerHref: string;
     };
     company: { name: string; href: string; logo: string; logoAlt: string };
     speakers: KickoffSpeaker[];
@@ -972,6 +973,7 @@ interface CmsKickoffDoc {
       kickoffLabel: string;
       panelLabel: string;
       registerLabel?: string | null;
+      registerHref?: string | null;
     };
     company: {
       name: string;
@@ -1127,6 +1129,7 @@ function normalizeKickoff(content: KickoffContent): KickoffContent {
       ui: {
         ...content.kickoff.ui,
         registerLabel: content.kickoff.ui.registerLabel ?? "",
+        registerHref: content.kickoff.ui.registerHref ?? "",
       },
       speakers: (content.kickoff.speakers ?? []).map((speaker) => ({
         ...speaker,
@@ -1162,6 +1165,7 @@ function emptyKickoff(): KickoffContent {
         kickoffLabel: "",
         panelLabel: "",
         registerLabel: "",
+        registerHref: "",
       },
       company: { name: "", href: "", logo: "", logoAlt: "" },
       speakers: [],
@@ -1292,6 +1296,7 @@ async function cmsGetKickoff(): Promise<KickoffContent> {
         kickoffLabel: doc.kickoff.ui.kickoffLabel,
         panelLabel: doc.kickoff.ui.panelLabel,
         registerLabel: doc.kickoff.ui.registerLabel ?? "",
+        registerHref: doc.kickoff.ui.registerHref ?? "",
       },
       company: {
         name: doc.kickoff.company.name,

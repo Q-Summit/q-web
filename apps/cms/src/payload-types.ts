@@ -1035,6 +1035,10 @@ export interface PageKickoff {
        * Small badge on the location card. Leave empty to hide it.
        */
       registerLabel?: string | null;
+      /**
+       * Public signup page opened from the badge. Leave empty to keep the badge as a non-link label.
+       */
+      registerHref?: string | null;
     };
     company: {
       name: string;
@@ -2064,6 +2068,7 @@ export interface PageKickoffSelect<T extends boolean = true> {
               kickoffLabel?: T;
               panelLabel?: T;
               registerLabel?: T;
+              registerHref?: T;
             };
         company?:
           | T

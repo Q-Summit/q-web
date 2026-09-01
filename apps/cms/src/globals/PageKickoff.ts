@@ -132,6 +132,11 @@ export const PageKickoff: GlobalConfig = pageGlobal({
                   "Small badge on the location card. Leave empty to hide it.",
               },
             },
+            externalLinkField(
+              "registerHref",
+              "Register URL",
+              "Public signup page opened from the badge. Leave empty to keep the badge as a non-link label.",
+            ),
           ],
         },
         {
