@@ -25,6 +25,7 @@
     "content:fixture": "node scripts/content/make-fixture.mjs",
     "content:pull": "node scripts/content/pull.mjs",
     "content:propose": "node scripts/content/propose.mjs",
+    "content:upload-media": "node scripts/content/upload-media.mjs",
     "ops:mirror-db": "node scripts/ops/mirror-db.mjs",
     "ops:mirror-media": "node scripts/ops/mirror-media.mjs",
     "r2:sync": "node scripts/preview/r2-sync.mjs",

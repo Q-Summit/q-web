@@ -28,7 +28,7 @@ Full comparison table: [`content-sync.md`](content-sync.md#content-package-vs-op
 scripts/
   lib/                 paths, run, args, env, s3, human-confirm, …
   local/               setup, ensure-chrome, dev, assert-db, reset, web-remote
-  content/             pull, export, import, propose, sync-scope
+  content/             pull, export, import, propose, upload-media, sync-scope
   check/               fast, docs, design, events, cms-styles, build-web, budgets, lighthouse*, vrt-report, vrt-cleanup, run-parallel, scripts.test
   preview/             r2-sync, seed-local-r2, serve, cf, sync-picture-assets
   ops/                 mirror-db, mirror-media, cms-remote
@@ -75,13 +75,14 @@ scripts/
 | `package` | `content:export` | `content/export.mjs` |
 | `pull` | `content:pull` | `content/pull.mjs` |
 | `propose` | `content:propose` | `content/propose.mjs` |
+| (pnpm only) | `content:upload-media` | `content/upload-media.mjs` |
 | `preview` | `r2:sync` + `preview:cf` | `preview/r2-sync.mjs`, `preview/cf.mjs` |
 | `lighthouse` | `lighthouse` | `check/lighthouse.mjs` |
 | `check` | `check` | `check/fast.mjs` then `check/run-parallel.mjs` |
 | `check-fast` | `check:fast` | `check/fast.mjs` |
 | `db-up` / `db-down` | `db:up` / `db:down` | docker compose |
 
-Also (pnpm only): `content:import`, `content:fixture`, `picture:sync`, `seed:kickoff` (local `page-kickoff` ingest from gitignored `scripts/content-packages/local/kickoff.json`), `seed:local-r2`, `dev:web:remote` → `local/web-remote.mjs`, `check:docs`, `check:design`, `check:events` (analytics taxonomy gate, see [analytics.md](analytics.md)), `check:cms-styles`, `check:scripts`, `check:lint`, `check:md`, `check:spell`, `check:web` / `check:cms` (and their `:build` / `:test` / `:types` sub-gates), `test`, `format`, `format:check` (both cover `md,json,jsonc,yml,yaml,mjs,ts,tsx,astro,css`; generated files are exempt in `.prettierignore`).
+Also (pnpm only): `content:import`, `content:fixture`, `content:upload-media`, `picture:sync`, `seed:kickoff` (local `page-kickoff` ingest from gitignored `scripts/content-packages/local/kickoff.json`), `seed:local-r2`, `dev:web:remote` → `local/web-remote.mjs`, `check:docs`, `check:design`, `check:events` (analytics taxonomy gate, see [analytics.md](analytics.md)), `check:cms-styles`, `check:scripts`, `check:lint`, `check:md`, `check:spell`, `check:web` / `check:cms` (and their `:build` / `:test` / `:types` sub-gates), `test`, `format`, `format:check` (both cover `md,json,jsonc,yml,yaml,mjs,ts,tsx,astro,css`; generated files are exempt in `.prettierignore`).
 
 ## Shared lib rules
 
@@ -111,10 +112,13 @@ Also (pnpm only): `content:import`, `content:fixture`, `picture:sync`, `seed:kic
 | File | Role |
 | --- | --- |
 | `make-fixture.mjs` | Maintainer snapshot (`--from <dir>`) → committed fake CI fixture (`content:fixture`; rerun after content-schema changes) |
-| `pull.mjs` | Published REST → JSON package (`make pull`; not Neon). Sidecar files only with `--sidecars`; `bundle.json` is the only propose input |
+| `pull.mjs` | Published REST → JSON package (`make pull`; not Neon). Sidecar files only with `--sidecars`; `bundle.json` is the JSON propose sends |
 | `export.mjs` | Local CMS published state → package (drafts ignored). Sidecar files only with `--sidecars` |
 | `import.mjs` | Package → local drafts |
-| `propose.mjs` | Package → `/api/content-sync` drafts |
+| `propose.mjs` | Package → `/api/content-sync` drafts (uploads missing media first) |
+| `upload-media.mjs` | Local images → `/api/content-sync/media` (create-if-missing) |
+| `media-files.mjs` | Shared media file discovery for propose / upload-media |
+| `upload-media-run.mjs` | Shared upload loop |
 | `sync-scope.mjs` | Allowlist (parity with cms keys) |
 
 ### `check/`

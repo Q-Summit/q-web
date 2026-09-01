@@ -34,7 +34,7 @@ apps/web/vrt-results.json
 
 # Media binaries never live in git. Local copies seed CMS / CF preview;
 # production serves the same keys from R2 via the Worker `/media/*` route.
-# Content packages carry filenames only; agents propose drafts against CMS.
+# Content packages: JSON plus optional gitignored binaries for propose upload.
 apps/web/public/media/
 apps/web/src/assets/media/*
 !apps/web/src/assets/media/*.ts

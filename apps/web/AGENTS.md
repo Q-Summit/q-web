@@ -138,7 +138,7 @@ Matching rules for dynamic filenames: exact basename, then strip trailing `-p-<s
 ## NEVER
 
 - Add runtime requests to third-party hosts (fonts, scripts, embeds, analytics other than the decided PostHog EU setup); the cookieless/no-banner property depends on it.
-- Commit media binaries under `public/media/` or `src/assets/media/` (both gitignored). Seed CMS / R2 instead; content packages carry filenames only.
+- Commit media binaries under `public/media/` or `src/assets/media/` (both gitignored). Seed CMS / R2 instead; `bundle.json` carries filenames, and propose can upload gitignored package `media/` files.
 - Add an SSR adapter or server endpoints; output stays `static` per ADR-0001. Prerendered `*.txt.ts` endpoints (llms) are fine; they are not SSR.
 - Hand-author `/llms.txt` or `/llms-full.txt` under `public/`.
 - Hardcode machine-absolute content paths; defaults resolve relative to this package.

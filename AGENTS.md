@@ -30,7 +30,7 @@ Do not nest AGENTS under `scripts/` or `.github/`. Script folders by purpose: `l
 Default:   make setup && make dev ; make check before finish.
            Local Postgres + MinIO volumes persist; seed-if-empty only on empty DB.
            Astro reads local Payload (CONTENT_SOURCE=cms). Escape hatch: make dev-web (JSON).
-Content:   docs/dev/content-sync.md: pull (read-only down) / propose (drafts only up)
+Content:   docs/dev/content-sync.md: pull (read-only down) / propose (drafts + create-if-missing media)
 Scripts:   docs/dev/scripts.md (local/ content/ check/ preview/ ops/; update catalog same PR)
 Make flags: make propose ARGS='--local --dry-run'  or  pnpm content:* -- …
 After propose: tell human drafts await approver Publish. No Publish. No wrangler deploy.
@@ -62,7 +62,8 @@ Hooks (via `setup`): **pre-commit** → `check:fast` (docs structure, then markd
 
 ## Agents MAY
 
-- `make pull`, `make propose` (drafts only; propose is not TTY-gated)
+- `make pull`, `make propose` (drafts only; propose is not TTY-gated; uploads missing media from `current/media/` or `--media-dir`)
+- `pnpm content:upload-media` (create-if-missing Media rows only; no overwrite)
 - `make package` / `content:export` only for the **local CMS export** loop (never after a pull)
 - `make setup`, `make dev`, `make dev-web`, `make preview`, `make check`
 - `pnpm dev:web:remote` for read-only published text

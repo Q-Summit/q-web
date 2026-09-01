@@ -8,6 +8,15 @@ import { findMediaReferences } from "../lib/media-usage";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
+/** Allowlist shared with content-sync media create. Keep in one place. */
+export const MEDIA_MIME_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/avif",
+  "image/svg+xml",
+] as const;
+
 // Uploads land on local disk for development. At deploy time this switches
 // to Cloudflare R2 via the @payloadcms/storage-s3 plugin registered in
 // payload.config.ts (see ADR-0002); the collection itself stays unchanged.
@@ -65,13 +74,7 @@ export const Media: CollectionConfig = {
     // The upload size cap (5 MiB) is not a per-collection option in Payload;
     // it lives on the top-level `upload.limits.fileSize` in payload.config.ts
     // and applies to this collection (the only upload collection).
-    mimeTypes: [
-      "image/png",
-      "image/jpeg",
-      "image/webp",
-      "image/avif",
-      "image/svg+xml",
-    ],
+    mimeTypes: [...MEDIA_MIME_TYPES],
   },
   hooks: {
     // Refuse to delete a file that content still points at. deleteByID runs

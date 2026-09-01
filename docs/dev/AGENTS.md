@@ -27,7 +27,7 @@ Maintainer how-tos. Extends [`../AGENTS.md`](../AGENTS.md). Index: [`README.md`]
 ## NEVER
 
 - Duplicate arc42 diagrams or ADR rationale here.
-- Document a SQL/`pg_restore` / `data:push` write path to production. Draft-only `make propose` → `POST /api/content-sync` is the allowed automated remote content write.
+- Document a SQL/`pg_restore` / `data:push` write path to production. Draft-only `make propose` → `POST /api/content-sync` (and create-if-missing `POST /api/content-sync/media`) is the allowed automated remote content write.
 - Invent dashboard clicks not verified against `wrangler.jsonc` / `payload.config.ts`.
 - Run or document `ops:cms-remote`, `ops:mirror-db`, or `ops:mirror-media` as non-interactive (TTY human-confirm required; files under `scripts/ops/`).
 - Promote Neon/R2 mirror commands onto the Make front door; `make pull` means `content:pull` only.

@@ -13,6 +13,7 @@ pnpm --filter cms dev                      # local admin at localhost:3000/ (nee
 pnpm seed                                  # seed local DB from the fake fixture (local-DB guard)
 make pull / make package / make propose    # packages in scripts/content-packages/current/
 # flags: make propose ARGS='--dry-run'  or  pnpm content:propose -- --dry-run
+# media: propose uploads current/media/ (or --media-dir) via /api/content-sync/media
 # remote loop: pull → edit current/bundle.json → propose (do not export after pull)
 pnpm --filter cms check                    # tsc --noEmit; no database required
 pnpm --filter cms run generate:types       # refresh src/payload-types.ts after schema edits
@@ -58,9 +59,9 @@ For local propose, also `CONTENT_SYNC_TOKEN` + `CONTENT_SYNC_USER_EMAIL` (`<you>
 
 - Commit `.env`, `.env.remote`, or any real `DATABASE_URI`/`PAYLOAD_SECRET`/`CONTENT_SYNC_TOKEN`; credentials live in Vercel and Neon dashboards.
 - Weaken the division scoping or the approver publish gate; they are the reason Payload was chosen (ADR-0002).
-- Let content-sync publish, sync `users`/`legal`, overwrite media by id, or call deploy/wrangler from that endpoint. The actor is any real Workspace person (`<name.lastname>@q-summit.com`, resolved to their Payload user, stamped `@agent.q-summit.com` so the changelog reads "(agent)"); drafts-only is enforced by `forceDraftData` + `draft: true` on every write, not by the actor role, so never relax those two.
+- Let content-sync publish, sync `users`/`legal`, overwrite or delete media, or call deploy/wrangler from those endpoints. Media create is upload-if-missing only (`POST /api/content-sync/media`). The actor is any real Workspace person (`<name.lastname>@q-summit.com`, resolved to their Payload user, stamped `@agent.q-summit.com` so the changelog reads "(agent)"); drafts-only is enforced by `forceDraftData` + `draft: true` on every package write, not by the actor role, so never relax those two.
 - Use `overrideAccess: true` on content-sync **writes** (create/update/updateGlobal). Media filename lookup and sync-user load may use `overrideAccess: true`.
-- Commit media binaries (`apps/cms/media/`, `apps/web/public/media/`, `apps/web/src/assets/media/*` except `*.ts`). Seed/upload into MinIO/R2; content packages carry filenames only.
+- Commit media binaries (`apps/cms/media/`, `apps/web/public/media/`, `apps/web/src/assets/media/*` except `*.ts`). Seed/upload into MinIO/R2; `bundle.json` carries filenames; binaries may sit in gitignored `scripts/content-packages/current/media/` for propose.
 - Hand-edit generated files (`src/payload-types.ts`, `src/app/(payload)/importMap.js`); regenerate them. A stylesheet is not a registered component: adding CSS needs neither `generate:importmap` nor `generate:types`.
 - Style an admin surface with inline `style={{}}` objects. Compose from the classes in `src/app/(payload)/custom.css` ([`DESIGN.md`](DESIGN.md)); `pnpm run check:cms-styles` enforces it.
 - Schema-push against a remote database (`pnpm ops:cms-remote` in `scripts/ops/` sets `PAYLOAD_DB_PUSH=false` for a reason).

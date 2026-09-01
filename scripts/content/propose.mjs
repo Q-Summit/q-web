@@ -7,7 +7,9 @@ import path from "node:path";
 import { argValue, hasFlag } from "../lib/args.mjs";
 import { parseEnvFile, requireEnvKeys, resolveEnvValue } from "../lib/env.mjs";
 import { CMS_ENV, CMS_ENV_REMOTE, REPO_ROOT } from "../lib/paths.mjs";
+import { collectMediaFiles, readMediaManifest } from "./media-files.mjs";
 import { DEFAULT_PACKAGE_DIR } from "./sync-scope.mjs";
+import { uploadPackageMedia } from "./upload-media-run.mjs";
 
 const remoteEnv = parseEnvFile(CMS_ENV_REMOTE);
 const localEnv = parseEnvFile(CMS_ENV);
@@ -110,7 +112,7 @@ if (!fs.existsSync(bundlePath)) {
     `  Local CMS loop:   pnpm content:export (writes ${DEFAULT_PACKAGE_DIR}) then propose --local.`,
   );
   console.error(
-    "  Flags: pnpm content:propose -- --dir <path> [--dry-run] [--local]",
+    "  Flags: pnpm content:propose -- --dir <path> [--dry-run] [--local] [--skip-media] [--media-dir <path>]",
   );
   process.exit(1);
 }
@@ -122,6 +124,41 @@ if (Buffer.byteLength(body) > 5 * 1024 * 1024) {
 }
 
 const dryRun = hasFlag("--dry-run");
+const skipMedia = hasFlag("--skip-media");
+const extraRel = argValue("--media-dir");
+const extraDirs = extraRel
+  ? [path.isAbsolute(extraRel) ? extraRel : path.join(REPO_ROOT, extraRel)]
+  : [];
+
+if (!skipMedia) {
+  let manifest = [];
+  try {
+    manifest = readMediaManifest(JSON.parse(body));
+  } catch {
+    manifest = [];
+  }
+  const mediaFiles = collectMediaFiles({
+    packageDir: dir,
+    extraDirs,
+    manifest,
+  });
+  if (mediaFiles.length > 0) {
+    const mediaResult = await uploadPackageMedia({
+      cmsUrl,
+      token,
+      actor,
+      files: mediaFiles,
+      dryRun,
+    });
+    if (!mediaResult.ok) {
+      console.error(
+        "content:propose: media upload failed; package was not sent.",
+      );
+      process.exit(1);
+    }
+  }
+}
+
 const url = new URL("/api/content-sync", cmsUrl);
 if (dryRun) url.searchParams.set("dryRun", "1");
 

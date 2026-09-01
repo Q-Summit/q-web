@@ -186,6 +186,22 @@ const run = async () => {
     `${JSON.stringify(mediaManifest, null, 2)}\n`,
   );
 
+  const mediaSearchDirs = [
+    path.join(root, "apps/cms/media"),
+    path.join(root, "apps/web/public/media"),
+  ];
+  let mediaCopied = 0;
+  for (const ref of mediaManifest) {
+    const name = path.basename(ref.filename);
+    for (const dir of mediaSearchDirs) {
+      const src = path.join(dir, name);
+      if (!fs.existsSync(src) || !fs.statSync(src).isFile()) continue;
+      fs.copyFileSync(src, path.join(outDir, "media", name));
+      mediaCopied += 1;
+      break;
+    }
+  }
+
   const bundle = {
     package: meta,
     collections: packageCollections,
@@ -205,6 +221,7 @@ const run = async () => {
     `  globals: ${Object.keys(packageGlobals).join(", ") || "(none)"}`,
   );
   console.log(`  media refs: ${mediaManifest.length}`);
+  console.log(`  media files copied: ${mediaCopied}`);
   const exportedDocCount =
     Object.values(packageCollections).reduce((n, docs) => n + docs.length, 0) +
     Object.keys(packageGlobals).length;

@@ -32,6 +32,7 @@ import { PageTickets } from "./globals/PageTickets";
 import { PageWhyq } from "./globals/PageWhyq";
 import { SiteSettings } from "./globals/SiteSettings";
 import { contentSyncEndpoint } from "./endpoints/content-sync";
+import { contentSyncMediaEndpoint } from "./endpoints/content-sync-media";
 import {
   LIVE_PREVIEW_GLOBALS,
   livePreviewUrlForGlobal,
@@ -82,8 +83,8 @@ export default buildConfig({
   serverURL,
   cors: trustedOrigins,
   csrf: trustedOrigins,
-  // Draft-only package ingest for make propose (see endpoints/content-sync.ts).
-  endpoints: [contentSyncEndpoint],
+  // Draft-only package ingest + create-if-missing media (see endpoints/content-sync*.ts).
+  endpoints: [contentSyncEndpoint, contentSyncMediaEndpoint],
   // CMS is its own host (local :3000, prod cms.q-summit.de): mount the admin
   // at / so unauthenticated visitors land on /login, not /admin/login.
   // App router: app/(payload)/[[...segments]] (no admin/ folder).

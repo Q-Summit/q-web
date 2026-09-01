@@ -82,5 +82,5 @@ Summary only; steps live in [`../dev/go-live.md`](../dev/go-live.md). Local sche
 | --- | --- | --- | --- |
 | Local JSON | committed fake fixture | unused | optional gitignored `public/media` (same keys as R2) |
 | Local full | `CONTENT_SOURCE=cms` + local Payload | docker Postgres | MinIO + `pnpm r2:sync` into wrangler R2 |
-| Content propose | drafts via `POST /api/content-sync` | target CMS DB (local or Neon through CMS only) | media by filename lookup only; no deploy |
+| Content propose | drafts via `POST /api/content-sync` | target CMS DB (local or Neon through CMS only) | create-if-missing via `POST /api/content-sync/media`, then filename lookup; no deploy |
 | Production | `CONTENT_SOURCE=cms` at build | Neon | real R2 |
