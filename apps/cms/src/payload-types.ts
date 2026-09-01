@@ -1036,7 +1036,7 @@ export interface PageKickoff {
        */
       registerLabel?: string | null;
       /**
-       * Public signup page opened from the badge (for example a Luma event). Leave empty to keep the badge as a non-link label.
+       * Public signup page opened from the badge. Leave empty to keep the badge as a non-link label.
        */
       registerHref?: string | null;
     };

@@ -78,7 +78,7 @@ There is deliberately no way to place an image inside this text. Images belong i
 | Chair | Team and Past Teams (with PR) | (none alone) |
 | Finance / Operations / IT | (no content collections today) | IT admins manage users and Legal |
 
-**Join Q / Kickoff.** Heads publish the Join Q / Kickoff Website page. Two toggles under **Site-wide → Navigation, footer & AI identity → Join Q / Kickoff** (PR only) control whether `/kickoff/` is public and whether `/` forwards there. On each speaker row, **Portrait crop** sets how the photo sits in the card. The **Register label** under Small UI labels is the small badge on the location card; leave it empty to hide the badge. **Register URL** turns that badge into a signup link (for example a Luma event page). Leave the URL empty to keep a non-clickable label. Do not paste a Luma iframe; the site links out.
+**Join Q / Kickoff.** Heads publish the Join Q / Kickoff Website page. Two toggles under **Site-wide → Navigation, footer & AI identity → Join Q / Kickoff** (PR only) control whether `/kickoff/` is public and whether `/` forwards there. On each speaker row, **Portrait crop** sets how the photo sits in the card. The **Register label** under Small UI labels is the small badge on the location card; leave it empty to hide the badge. **Register URL** turns that badge into an outbound signup link. Leave the URL empty to keep a non-clickable label. Do not paste an embed snippet.
 
 Media: anyone can upload new files (straight from an image field or via **Media library**). Upload sharp originals up to 5 MB; the site generates the small versions itself, so never upload a pre-shrunk thumbnail. If an existing file needs replacing or deleting, ask an admin.
 
