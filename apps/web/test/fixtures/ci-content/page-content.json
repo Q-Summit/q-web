@@ -799,7 +799,8 @@
         "linkedinLabel": "LinkedIn",
         "kickoffLabel": "Kickoff",
         "panelLabel": "Live panel",
-        "registerLabel": "Register later"
+        "registerLabel": "Register later",
+        "registerHref": ""
       },
       "company": {
         "name": "Example Nutrition",

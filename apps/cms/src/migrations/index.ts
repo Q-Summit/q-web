@@ -3,6 +3,7 @@ import * as migration_20260728_190500_team_linkedin from './20260728_190500_team
 import * as migration_20260731_120000_team_email from './20260731_120000_team_email';
 import * as migration_20260830_212358_page_kickoff from './20260830_212358_page_kickoff';
 import * as migration_20260831_150932_kickoff_speaker_crop from './20260831_150932_kickoff_speaker_crop';
+import * as migration_20260901_182545_kickoff_register_href from './20260901_182545_kickoff_register_href';
 
 export const migrations = [
   {
@@ -28,6 +29,11 @@ export const migrations = [
   {
     up: migration_20260831_150932_kickoff_speaker_crop.up,
     down: migration_20260831_150932_kickoff_speaker_crop.down,
-    name: '20260831_150932_kickoff_speaker_crop'
+    name: '20260831_150932_kickoff_speaker_crop',
+  },
+  {
+    up: migration_20260901_182545_kickoff_register_href.up,
+    down: migration_20260901_182545_kickoff_register_href.down,
+    name: '20260901_182545_kickoff_register_href'
   },
 ];
