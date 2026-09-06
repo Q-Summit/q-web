@@ -813,7 +813,7 @@ const payload = {
     align-items: center;
     gap: 0.8rem;
     min-height: 4.15rem;
-    padding: 0.55rem 1rem;
+    padding: var(--space-2xs) var(--space-sm);
     border: 1px solid color-mix(in srgb, var(--color-navy) 18%, transparent);
     border-radius: var(--radius-kickoff-pill);
     background: color-mix(in srgb, var(--color-white) 88%, transparent);
@@ -841,7 +841,7 @@ const payload = {
     height: 2.5rem;
     place-items: center;
     color: var(--color-navy);
-    font-size: 1.7rem;
+    font-size: var(--heading-h5-size);
     line-height: 1;
   }
 
@@ -853,7 +853,7 @@ const payload = {
     background: transparent;
     color: var(--color-navy);
     font: inherit;
-    font-size: max(1rem, 16px);
+    font-size: var(--text-size-regular);
     font-weight: var(--font-weight-semibold);
   }
 
@@ -863,7 +863,7 @@ const payload = {
 
   :global([data-kickoff-quiz] .quiz-study-chevron) {
     color: color-mix(in srgb, var(--color-navy) 70%, transparent);
-    font-size: 1.35rem;
+    font-size: var(--text-size-large);
   }
 
   :global([data-kickoff-quiz] .quiz-study-results) {
@@ -888,7 +888,7 @@ const payload = {
     box-sizing: border-box;
     display: block;
     width: 100%;
-    padding: 0.9rem 1rem;
+    padding: var(--space-sm);
     border-bottom: 1px solid
       color-mix(in srgb, var(--color-navy) 8%, transparent);
     color: var(--color-navy);
@@ -912,7 +912,7 @@ const payload = {
 
   :global([data-kickoff-quiz] .quiz-study-empty) {
     margin: 0;
-    padding: 1rem;
+    padding: var(--space-sm);
     color: color-mix(in srgb, var(--color-navy) 60%, transparent);
     font-weight: var(--font-weight-semibold);
   }
@@ -933,13 +933,13 @@ const payload = {
   @media (max-width: 640px) {
     .quiz-question-context {
       margin-top: 0.45rem;
-      font-size: 0.92rem;
+      font-size: var(--text-size-small);
       line-height: 1.48;
     }
 
     :global([data-kickoff-quiz] .quiz-study-search) {
       min-height: 3.9rem;
-      padding-inline: 0.75rem;
+      padding-inline: var(--space-xs);
     }
 
     :global([data-kickoff-quiz] .quiz-study-results) {
