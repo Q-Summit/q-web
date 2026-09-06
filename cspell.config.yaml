@@ -1,4 +1,4 @@
-﻿# Spell check for the repo: prose and docs are part of the product, so typos
+# Spell check for the repo: prose and docs are part of the product, so typos
 # are defects. Runs as `pnpm run check:spell` (part of `pnpm run check`).
 # Unknown real words go into the project dictionary below, sorted.
 version: "0.2"
@@ -97,9 +97,6 @@ words:
   - dtcg
   - elevenlabs
   - EMEA
-  - ERSTI
-  - Ersti
-  - ersti
   - esbuild
   - eslint
   - Ewma
@@ -224,7 +221,7 @@ words:
   - ttfb
   - Typeform
   - typegen
-  - TÃ¤ubert
+  - Täubert
   - uncited
   - unhovered
   - unitless
@@ -250,7 +247,6 @@ words:
   - Webflow
   - wght
   - WhatsApp
-  - wifo
   - WHATWG
   - whyq
   - wordmark
