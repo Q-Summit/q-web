@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Frozen analytics event taxonomy -- the single source of truth for event
  * names. `scripts/check/events.mjs` fails the build on any captured name
  * outside EVENTS and on any PII-looking property key, so adding an event
@@ -35,6 +35,8 @@ export const EVENTS = {
   faq_opened: "faq_opened",
   /** CTA button in the homepage "Why Attend" section. Props: cta_href. */
   why_attend_cta_clicked: "why_attend_cta_clicked",
+  /** Ersti team-fit quiz completed. Props: study_program, match_1, match_2, match_3. */
+  ersti_quiz_completed: "ersti_quiz_completed",
 } as const;
 
 export type EventName = keyof typeof EVENTS;
