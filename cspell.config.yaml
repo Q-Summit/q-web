@@ -48,6 +48,10 @@ ignorePaths:
   - apps/cms/src/migrations/**
 useGitignore: true
 words:
+  - ERSTI
+  - Ersti
+  - ersti
+  - wifo
   - actuals
   - adrs
   - affordances

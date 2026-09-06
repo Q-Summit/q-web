@@ -1,8 +1,15 @@
----
+﻿---
 // Team-fit quiz: ice glass shell, navy option pills, glowing progress
 // (DESIGN.md KICKOFF-1).
 import "./kickoff-theme.css";
 import type { KickoffContent } from "../../lib/content";
+import {
+  ERSTI_QUIZ_QUESTIONS,
+  ERSTI_QUIZ_RESULTS,
+  STUDY_PROGRAMS,
+  STUDY_STEP,
+  TEAM_ORDER,
+} from "./ersti-quiz.config";
 
 interface Props {
   quiz: KickoffContent["quiz"];
@@ -13,9 +20,18 @@ interface Props {
 
 const { quiz, isOpen, applicationUrl, comingSoonLabel } = Astro.props;
 
+const teamLinks = new Map(
+  quiz.results.map((result) => [result.team, result.notionHref]),
+);
+
 const payload = {
-  questions: quiz.questions,
-  results: quiz.results,
+  questions: ERSTI_QUIZ_QUESTIONS,
+  results: ERSTI_QUIZ_RESULTS.map((result) => ({
+    ...result,
+    notionHref: teamLinks.get(result.team) ?? "",
+  })),
+  study: { ...STUDY_STEP, programs: STUDY_PROGRAMS },
+  teamOrder: TEAM_ORDER,
   ui: quiz.ui,
 };
 ---
@@ -69,10 +85,11 @@ const payload = {
       </div>
       <div class="quiz-progress" aria-hidden="true">
         <div class="quiz-progress-fill" data-progress-fill></div>
-        <span class="quiz-progress-rocket" data-progress-rocket>🚀</span>
+        <span class="quiz-progress-rocket" data-progress-rocket>ðŸš€</span>
       </div>
       <div class="quiz-question-wrap">
         <p class="quiz-question-kicker" data-question-kicker></p>
+        <p class="quiz-question-context" data-question-context hidden></p>
         <h3 class="quiz-question" data-question></h3>
       </div>
       <div class="quiz-options" data-options></div>
@@ -768,6 +785,165 @@ const payload = {
     :global([data-kickoff-quiz] .quiz-options.is-folding-in .quiz-option) {
       animation: none;
       transition: none;
+    }
+  }
+
+  .quiz-question-context {
+    width: min(820px, 100%);
+    margin: 0.55rem 0 0.9rem;
+    color: color-mix(in srgb, var(--color-navy) 70%, transparent);
+    font-size: clamp(0.95rem, 1.7vw, 1.05rem);
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.55;
+  }
+
+  .quiz-question-context[hidden] {
+    display: none;
+  }
+
+  :global([data-kickoff-quiz] .quiz-study-field) {
+    position: relative;
+    width: min(840px, 100%);
+    margin: 0 auto;
+  }
+
+  :global([data-kickoff-quiz] .quiz-study-search) {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.8rem;
+    min-height: 4.15rem;
+    padding: var(--space-2xs) var(--space-sm);
+    border: 1px solid color-mix(in srgb, var(--color-navy) 18%, transparent);
+    border-radius: var(--radius-kickoff-pill);
+    background: color-mix(in srgb, var(--color-white) 88%, transparent);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, var(--color-white) 92%, transparent),
+      0 14px 34px color-mix(in srgb, var(--color-navy) 10%, transparent);
+  }
+
+  :global([data-kickoff-quiz] .quiz-study-search:focus-within),
+  :global([data-kickoff-quiz] .quiz-study-search.is-selected) {
+    border-color: color-mix(in srgb, var(--color-kickoff-mid) 42%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--color-kickoff-ice) 28%,
+      var(--color-white)
+    );
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, var(--color-white) 92%, transparent),
+      0 16px 38px color-mix(in srgb, var(--color-kickoff-mid) 16%, transparent);
+  }
+
+  :global([data-kickoff-quiz] .quiz-study-icon) {
+    display: grid;
+    width: 2.5rem;
+    height: 2.5rem;
+    place-items: center;
+    color: var(--color-navy);
+    font-size: var(--heading-h5-size);
+    line-height: 1;
+  }
+
+  :global([data-kickoff-quiz] .quiz-study-input) {
+    min-width: 0;
+    width: 100%;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--color-navy);
+    font: inherit;
+    font-size: var(--text-size-regular);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  :global([data-kickoff-quiz] .quiz-study-input::placeholder) {
+    color: color-mix(in srgb, var(--color-navy) 52%, transparent);
+  }
+
+  :global([data-kickoff-quiz] .quiz-study-chevron) {
+    color: color-mix(in srgb, var(--color-navy) 70%, transparent);
+    font-size: var(--text-size-large);
+  }
+
+  :global([data-kickoff-quiz] .quiz-study-results) {
+    position: relative;
+    z-index: 4;
+    max-height: 20rem;
+    margin-top: 0.6rem;
+    overflow-y: auto;
+    border: 1px solid color-mix(in srgb, var(--color-navy) 13%, transparent);
+    border-radius: calc(var(--radius-kickoff-card) * 0.72);
+    background: color-mix(in srgb, var(--color-white) 96%, transparent);
+    box-shadow: 0 22px 54px
+      color-mix(in srgb, var(--color-navy) 16%, transparent);
+  }
+
+  :global([data-kickoff-quiz] .quiz-study-results[hidden]) {
+    display: none;
+  }
+
+  :global([data-kickoff-quiz] .quiz-study-option) {
+    all: unset;
+    box-sizing: border-box;
+    display: block;
+    width: 100%;
+    padding: var(--space-sm);
+    border-bottom: 1px solid
+      color-mix(in srgb, var(--color-navy) 8%, transparent);
+    color: var(--color-navy);
+    font: inherit;
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.35;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  :global([data-kickoff-quiz] .quiz-study-option:last-child) {
+    border-bottom: 0;
+  }
+
+  :global([data-kickoff-quiz] .quiz-study-option:hover),
+  :global([data-kickoff-quiz] .quiz-study-option:focus-visible),
+  :global([data-kickoff-quiz] .quiz-study-option[aria-selected="true"]) {
+    background: color-mix(in srgb, var(--color-kickoff-ice) 58%, transparent);
+    outline: none;
+  }
+
+  :global([data-kickoff-quiz] .quiz-study-empty) {
+    margin: 0;
+    padding: var(--space-sm);
+    color: color-mix(in srgb, var(--color-navy) 60%, transparent);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  :global([data-kickoff-quiz] .result-team-lead) {
+    margin: 0 0 0.35rem;
+    color: var(--color-navy);
+    font-weight: var(--font-weight-extrabold);
+    line-height: 1.45;
+  }
+
+  :global([data-kickoff-quiz] .result-team-description) {
+    margin: 0;
+    color: color-mix(in srgb, var(--color-navy) 72%, transparent);
+    line-height: 1.55;
+  }
+
+  @media (max-width: 640px) {
+    .quiz-question-context {
+      margin-top: 0.45rem;
+      font-size: var(--text-size-small);
+      line-height: 1.48;
+    }
+
+    :global([data-kickoff-quiz] .quiz-study-search) {
+      min-height: 3.9rem;
+      padding-inline: var(--space-xs);
+    }
+
+    :global([data-kickoff-quiz] .quiz-study-results) {
+      max-height: 17rem;
     }
   }
 </style>
