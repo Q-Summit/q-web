@@ -1,0 +1,17 @@
+---
+// /hunt/nice-try/: TikTok decoy QR-code landing for the Sticker Hunt. Public
+// code shown in short-form video content; communicates clearly that this
+// scan did not win a reward, without mocking the visitor. Shares
+// components/hunt/RewardPage.astro with the six real prize pages
+// (DESIGN.md COMP-3).
+import Base from "../../layouts/Base.astro";
+import RewardPage from "../../components/hunt/RewardPage.astro";
+---
+
+<Base
+  title="Sticker Hunt"
+  description="You found the Q-Summit Sticker Hunt TikTok decoy code. Catch the real sticker to claim a goodie."
+  noindex
+>
+  <RewardPage variant="decoy" />
+</Base>

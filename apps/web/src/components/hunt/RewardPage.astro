@@ -1,0 +1,395 @@
+---
+// Shared shell for the Q-Summit Sticker Hunt scan-landing pages: the six
+// real-prize routes (/hunt/prize-1/ .. /hunt/prize-6/) and the TikTok decoy
+// route (/hunt/nice-try/). One component for both states (DESIGN.md COMP-3)
+// so the layout is written once; pages/hunt/[prize].astro and
+// pages/hunt/nice-try.astro only supply the copy that differs.
+//
+// Rendered inside <Base>, alongside the real Nav/Footer (per the
+// implementation brief: reuse the actual header, do not recreate it). This
+// component owns only the hero below the header: eyebrow label, one card,
+// footer line. It is a bespoke full-bleed hero with a decorative animated
+// background, the same shape as components/kickoff/KickoffPage.astro's
+// `.kickoff-page`, so it stays raw markup (DESIGN.md PRIM-2) rather than the
+// standard Section/Container shell.
+//
+// Background technique (blurred radial blobs + a wave, pulse animation) is
+// adapted from KickoffQuiz.astro's `.quiz-card` background. DESIGN.md
+// KICKOFF-1 reserves that ice/mid-blue palette and pulse timing for the Join
+// Q recruiting page and asks conference pages not to import it; the sticker
+// hunt is neither the Join Q page nor a conference content page (it is a
+// standalone, noindex, physical-event scan target with no nav entry), so it
+// is not what that rule guards against. Reusing the existing
+// --color-kickoff-* / --duration-kickoff-pulse* tokens here, instead of
+// declaring near-duplicate hunt-* tokens with the same values, keeps rule 1
+// (token first, no raw literal) satisfied without token bloat.
+import IconGift from "../icons/IconGift.astro";
+import IconMapPin from "../icons/IconMapPin.astro";
+
+export type HuntVariant = "prize" | "decoy";
+
+interface Props {
+  variant: HuntVariant;
+  /** Two-digit prize number ("01"-"06"). Required when variant is "prize". */
+  prizeNumber?: string;
+  /** Prize identifier ("QH-01"-"QH-06"). Required when variant is "prize". */
+  prizeId?: string;
+}
+
+const { variant, prizeNumber, prizeId } = Astro.props;
+const isPrize = variant === "prize";
+const stateClass = isPrize ? "is-success" : "is-decoy";
+---
+
+<div class="hunt-page">
+  {/* Decorative only: three blurred blobs plus a wave, never text. */}
+  <div class="hunt-bg" aria-hidden="true">
+    <span class="hunt-blob hunt-blob-a"></span>
+    <span class="hunt-blob hunt-blob-b"></span>
+    <span class="hunt-blob hunt-blob-c"></span>
+    <svg
+      class="hunt-wave"
+      viewBox="0 0 390 260"
+      preserveAspectRatio="none"
+      focusable="false"
+    >
+      <path
+        d="M0 120 C 80 60, 150 170, 230 120 C 300 78, 350 130, 390 108 L390 260 L0 260 Z"
+        fill="color-mix(in srgb, var(--color-kickoff-mid) 10%, transparent)"
+      ></path>
+      <path
+        d="M0 168 C 90 118, 160 214, 250 168 C 320 132, 356 176, 390 158 L390 260 L0 260 Z"
+        fill="color-mix(in srgb, var(--color-navy) 7%, transparent)"></path>
+    </svg>
+  </div>
+
+  <section class="hunt-hero">
+    <p class="hunt-eyebrow">Q-SUMMIT STICKER HUNT</p>
+
+    <div class="hunt-card">
+      <div class="hunt-card-rule"></div>
+      <div class="hunt-card-body">
+        <div class={`hunt-icon ${stateClass}`}>
+          {isPrize ? <IconGift size={32} /> : <IconMapPin size={32} />}
+        </div>
+
+        {
+          isPrize ? (
+            <>
+              <p class="hunt-status is-success">NICE ONE!</p>
+              <h1 class="hunt-headline">You found Prize #{prizeNumber}!</h1>
+            </>
+          ) : (
+            <>
+              <p class="hunt-status is-decoy">NICE TRY!</p>
+              <h1 class="hunt-headline">You found the QR code.</h1>
+            </>
+          )
+        }
+
+        <p class="hunt-copy">
+          {
+            isPrize
+              ? "Bring the sticker to the Q-Summit kickoff to claim your goodie."
+              : "Now catch the real sticker to claim a goodie."
+          }
+        </p>
+
+        <p class={`hunt-notice ${stateClass}`}>
+          {
+            isPrize
+              ? "Show the original sticker when claiming"
+              : /* No em dash (root AGENTS.md): the design brief's source copy used one here. */
+                "No sticker, no reward. Happy hunting!"
+          }
+        </p>
+
+        <p class="hunt-identifier">
+          {isPrize ? `PRIZE ID · ${prizeId}` : "DECOY CODE · TIKTOK"}
+        </p>
+      </div>
+    </div>
+
+    <p class="hunt-footer-line">Found it. Scanned it. Claimed it.</p>
+  </section>
+</div>
+
+<style>
+  :global(body:has(.hunt-page)) {
+    background: var(--color-kickoff-ground);
+  }
+
+  .hunt-page {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    min-height: 100vh;
+    background: linear-gradient(
+      180deg,
+      var(--color-kickoff-ground) 0%,
+      var(--color-white) 48%,
+      var(--color-kickoff-ground) 100%
+    );
+    color: var(--color-navy);
+  }
+
+  .hunt-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .hunt-blob {
+    position: absolute;
+    border-radius: var(--radius-circle);
+    filter: blur(2.25rem);
+  }
+
+  .hunt-blob-a {
+    top: -8rem;
+    left: -6rem;
+    width: 21rem;
+    height: 21rem;
+    background: radial-gradient(
+      circle at 35% 35%,
+      color-mix(in srgb, var(--color-kickoff-mid) 34%, transparent),
+      transparent 70%
+    );
+    animation: huntDriftA var(--duration-kickoff-pulse) ease-in-out infinite
+      alternate;
+  }
+
+  .hunt-blob-b {
+    top: 12rem;
+    right: -9rem;
+    width: 24rem;
+    height: 24rem;
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--color-navy) 20%, transparent),
+      transparent 68%
+    );
+    animation: huntDriftB var(--duration-kickoff-pulse-alt) ease-in-out infinite
+      alternate;
+  }
+
+  .hunt-blob-c {
+    bottom: -4rem;
+    left: -4rem;
+    width: 20rem;
+    height: 20rem;
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--color-kickoff-ice) 55%, transparent),
+      transparent 70%
+    );
+    animation: huntDriftC var(--duration-kickoff-blob-alt) ease-in-out infinite
+      alternate;
+  }
+
+  .hunt-wave {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 16rem;
+    animation: huntDriftC var(--duration-kickoff-blob) ease-in-out infinite
+      alternate;
+  }
+
+  @keyframes huntDriftA {
+    from {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    to {
+      transform: translate3d(1.6rem, -2.1rem, 0) scale(1.08);
+    }
+  }
+
+  @keyframes huntDriftB {
+    from {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    to {
+      transform: translate3d(-1.9rem, 1.5rem, 0) scale(1.06);
+    }
+  }
+
+  @keyframes huntDriftC {
+    from {
+      transform: translate3d(0, 0, 0);
+    }
+    to {
+      transform: translate3d(1.1rem, 1.1rem, 0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hunt-blob,
+    .hunt-wave {
+      animation: none;
+    }
+  }
+
+  .hunt-hero {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-lg);
+    width: 100%;
+    margin-inline: auto;
+    padding: var(--space-xl) var(--padding-global) var(--section-padding-small);
+    text-align: center;
+  }
+
+  .hunt-eyebrow {
+    margin: 0;
+    font-size: var(--text-size-small);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.2em;
+    color: var(--color-kickoff-mid);
+  }
+
+  .hunt-card {
+    position: relative;
+    overflow: hidden;
+    width: min(30rem, 100%);
+    border-radius: var(--radius-card-large);
+    background-color: var(--color-white);
+    box-shadow: var(--shadow-floating);
+  }
+
+  .hunt-card-rule {
+    height: 4px;
+    background: linear-gradient(
+      90deg,
+      var(--color-navy) 0%,
+      var(--color-kickoff-mid) 100%
+    );
+  }
+
+  .hunt-card-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-xl) var(--space-lg) var(--space-lg);
+  }
+
+  .hunt-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 4.75rem;
+    height: 4.75rem;
+    border-radius: var(--radius-circle);
+    background-color: var(--color-navy);
+    color: var(--color-white);
+    box-shadow: var(--shadow-lifted);
+  }
+
+  .hunt-status {
+    margin: 0;
+    font-size: var(--text-size-small);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.16em;
+  }
+
+  .hunt-status.is-success {
+    color: var(--color-success);
+  }
+
+  .hunt-status.is-decoy {
+    color: var(--color-kickoff-mid);
+  }
+
+  .hunt-headline {
+    margin: 0;
+    font-size: var(--heading-h3-size);
+    line-height: var(--heading-line-height-tight);
+    color: var(--color-navy);
+  }
+
+  .hunt-copy {
+    max-width: 28ch;
+    margin: 0;
+    font-size: var(--text-size-medium);
+    line-height: var(--text-body-line-height);
+    color: var(--color-neutral-dark);
+  }
+
+  .hunt-notice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs);
+    width: 100%;
+    margin: 0;
+    padding: var(--space-xs) var(--space-md);
+    border-radius: var(--radius-card);
+    font-size: var(--text-size-small);
+    font-weight: var(--font-weight-semibold);
+    text-align: center;
+  }
+
+  .hunt-notice.is-success {
+    background-color: var(--color-success-light);
+    color: var(--color-success);
+    border: 1px solid color-mix(in srgb, var(--color-success) 30%, transparent);
+  }
+
+  .hunt-notice.is-decoy {
+    background-color: color-mix(
+      in srgb,
+      var(--color-kickoff-mid) 12%,
+      var(--color-white)
+    );
+    color: var(--color-kickoff-deep);
+    border: 1px solid
+      color-mix(in srgb, var(--color-kickoff-mid) 28%, transparent);
+  }
+
+  .hunt-identifier {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    width: 100%;
+    margin: 0;
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.12em;
+    color: var(--color-neutral);
+  }
+
+  .hunt-identifier::before,
+  .hunt-identifier::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background-color: var(--color-neutral-lighter);
+  }
+
+  .hunt-footer-line {
+    margin: 0;
+    font-size: var(--text-size-regular);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-neutral-dark);
+  }
+
+  @media (max-width: 767px) {
+    .hunt-icon {
+      width: 4.125rem;
+      height: 4.125rem;
+    }
+
+    .hunt-card-body {
+      padding: var(--space-lg) var(--space-md) var(--space-md);
+    }
+  }
+</style>

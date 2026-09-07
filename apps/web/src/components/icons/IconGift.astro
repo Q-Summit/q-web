@@ -1,0 +1,37 @@
+---
+// Gift-box glyph for the Sticker Hunt reward card (DESIGN.md COMP-3). Single
+// set of stroked paths, stroke="currentColor" so it inherits the icon
+// circle's color, decorative (aria-hidden): the "NICE ONE!" status label and
+// headline right next to it on the card carry the meaning, same convention
+// as IconMapPin/IconChevron.
+//
+// The svg is rendered by THIS component, so it carries this component's
+// scope, not the caller's: a caller that needs to style it selects
+// `:global(svg)` inside its own wrapper, same as job-listings/[slug].astro
+// does with IconMapPin.
+interface Props {
+  /** Rendered box in px. */
+  size?: number;
+}
+
+const { size = 24 } = Astro.props;
+---
+
+<svg
+  width={size}
+  height={size}
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.7"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+  focusable="false"
+>
+  <rect x="3" y="8.5" width="18" height="12.5" rx="1.6"></rect>
+  <path d="M3 13h18"></path>
+  <path d="M12 8.5V21"></path>
+  <path d="M12 8.5C12 8.5 10.6 4 8.2 4a2.2 2.2 0 0 0 0 4.5H12z"></path>
+  <path d="M12 8.5C12 8.5 13.4 4 15.8 4a2.2 2.2 0 0 1 0 4.5H12z"></path>
+</svg>
