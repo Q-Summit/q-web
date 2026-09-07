@@ -1,0 +1,42 @@
+---
+// /hunt/prize-1/ .. /hunt/prize-6/: Sticker Hunt scan-landing reward pages.
+// Six physical QR-code stickers each point at exactly one of these six URLs
+// (already printed; never rename or redirect). getStaticPaths enumerates
+// only prize-1..prize-6, so an unlisted value (e.g. /hunt/prize-7/) 404s at
+// build time instead of silently rendering. Shared markup lives in
+// components/hunt/RewardPage.astro (DESIGN.md COMP-3: one component for the
+// real-prize and TikTok-decoy states, not seven page-local copies).
+import Base from "../../layouts/Base.astro";
+import RewardPage from "../../components/hunt/RewardPage.astro";
+
+export function getStaticPaths() {
+  // Count stays inline: Astro extracts getStaticPaths into its own build
+  // chunk, and a module-scope const declared outside it is not guaranteed to
+  // be pulled into that chunk (observed as a ReferenceError only in the
+  // production static build, not in `astro check` or dev).
+  const PRIZE_COUNT = 6;
+  return Array.from({ length: PRIZE_COUNT }, (_, index) => {
+    const n = index + 1;
+    const display = String(n).padStart(2, "0");
+    return {
+      params: { prize: `prize-${n}` },
+      props: { prizeNumber: display, prizeId: `QH-${display}` },
+    };
+  });
+}
+
+interface Props {
+  prizeNumber: string;
+  prizeId: string;
+}
+
+const { prizeNumber, prizeId } = Astro.props;
+---
+
+<Base
+  title={`Sticker Hunt Prize #${prizeNumber}`}
+  description={`You found Sticker Hunt Prize #${prizeNumber}. Bring the sticker to the Q-Summit kickoff to claim your goodie.`}
+  noindex
+>
+  <RewardPage variant="prize" prizeNumber={prizeNumber} prizeId={prizeId} />
+</Base>
