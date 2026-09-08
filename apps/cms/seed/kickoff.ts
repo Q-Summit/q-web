@@ -126,6 +126,7 @@ async function run() {
         intro: content.kickoff.intro,
         date: content.kickoff.date,
         location: content.kickoff.location,
+        locationHref: content.kickoff.locationHref || null,
         panelTitle: content.kickoff.panelTitle,
         ui: content.kickoff.ui,
         company: {

@@ -10,7 +10,6 @@ import KickoffPage from "../components/kickoff/KickoffPage.astro";
 import KickoffHero from "../components/kickoff/KickoffHero.astro";
 import KickoffSpotlight from "../components/kickoff/KickoffSpotlight.astro";
 import KickoffSocials from "../components/kickoff/KickoffSocials.astro";
-// Team quiz is parked. Re-enable with KickoffQuiz + hero.primaryCta.
 import KickoffQuiz from "../components/kickoff/KickoffQuiz.astro";
 import KickoffJourney from "../components/kickoff/KickoffJourney.astro";
 import KickoffApplication from "../components/kickoff/KickoffApplication.astro";
@@ -60,7 +59,7 @@ const preloadImage = kickoff.hero.image || undefined;
       copy={kickoff.hero.copy}
       image={kickoff.hero.image}
       imageAlt={kickoff.hero.imageAlt}
-      primaryCta={{ label: "", href: "" }}
+      primaryCta={kickoff.hero.primaryCta}
       secondaryCta={kickoff.hero.secondaryCta}
     />
 

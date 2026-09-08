@@ -100,10 +100,32 @@ function setHidden(el: Element | null, hidden: boolean) {
   else el.removeAttribute("hidden");
 }
 
+function prefersReducedMotion(): boolean {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 function scrollQuizIntoView(target: Element) {
+  const behavior: ScrollBehavior = prefersReducedMotion() ? "auto" : "smooth";
   window.setTimeout(() => {
-    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    target.scrollIntoView({ behavior, block: "center" });
   }, 80);
+}
+
+// Keeps `anchor` (the step's kicker/heading) clear of the fixed site
+// header, correcting only when it is actually hidden so entering the
+// study step, focusing the search field, and picking a program never
+// fight an already-fine scroll position (no flicker).
+function keepStudyContextVisible(anchor: HTMLElement) {
+  const behavior: ScrollBehavior = prefersReducedMotion() ? "auto" : "smooth";
+  requestAnimationFrame(() => {
+    const header = document.querySelector<HTMLElement>(".site-header");
+    const headerHeight = header?.getBoundingClientRect().height ?? 0;
+    const margin = 16;
+    const rect = anchor.getBoundingClientRect();
+    if (rect.top < headerHeight + margin) {
+      window.scrollBy({ top: rect.top - headerHeight - margin, behavior });
+    }
+  });
 }
 
 function bindComingSoon(root: HTMLElement) {
@@ -232,7 +254,7 @@ function setUpQuiz(root: HTMLElement) {
     const chevron = document.createElement("span");
     chevron.className = "quiz-study-chevron";
     chevron.setAttribute("aria-hidden", "true");
-    chevron.textContent = "⌄";
+    chevron.textContent = "▾";
 
     const list = document.createElement("div");
     list.className = "quiz-study-results";
@@ -253,6 +275,7 @@ function setUpQuiz(root: HTMLElement) {
       nextButton!.disabled = false;
       input.focus();
       input.setSelectionRange(input.value.length, input.value.length);
+      keepStudyContextVisible(kickerEl!);
     };
 
     const renderList = (query: string) => {
@@ -301,6 +324,7 @@ function setUpQuiz(root: HTMLElement) {
 
       list.hidden = false;
       input.setAttribute("aria-expanded", "true");
+      keepStudyContextVisible(kickerEl!);
     };
 
     input.addEventListener("focus", () => renderList(input.value));
@@ -331,6 +355,7 @@ function setUpQuiz(root: HTMLElement) {
     nextButton!.disabled = !selectedStudyProgram;
     if (selectedStudyProgram) shell.classList.add("is-selected");
     if (animate) animateOptions();
+    keepStudyContextVisible(kickerEl!);
   }
 
   function renderQuestion(animate = true) {

@@ -1,6 +1,7 @@
 ---
 // Panel-talk spotlight: portrait cards plus location / company glass
-// (DESIGN.md KICKOFF-1). Location is a maps search from the CMS string.
+// (DESIGN.md KICKOFF-1). Location prefers the CMS's exact map link;
+// falls back to a maps search from the CMS string when that's empty.
 import "./kickoff-theme.css";
 import type { KickoffContent } from "../../lib/content";
 import { hasMedia } from "./media-href";
@@ -11,7 +12,9 @@ interface Props {
 
 const { content } = Astro.props;
 
-const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(content.location)}`;
+const mapsHref =
+  content.locationHref ||
+  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(content.location)}`;
 const companyLogo = hasMedia(content.company.logo);
 const CompanyTag = content.company.href ? "a" : "div";
 const companyProps = content.company.href

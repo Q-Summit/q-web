@@ -360,6 +360,7 @@ export interface KickoffContent {
     intro: string;
     date: string;
     location: string;
+    locationHref: string;
     panelTitle: string;
     ui: {
       speakerLabel: string;
@@ -966,6 +967,7 @@ interface CmsKickoffDoc {
     intro: string;
     date: string;
     location: string;
+    locationHref?: string | null;
     panelTitle: string;
     ui: {
       speakerLabel: string;
@@ -1126,6 +1128,7 @@ function normalizeKickoff(content: KickoffContent): KickoffContent {
     ...content,
     kickoff: {
       ...content.kickoff,
+      locationHref: content.kickoff.locationHref ?? "",
       ui: {
         ...content.kickoff.ui,
         registerLabel: content.kickoff.ui.registerLabel ?? "",
@@ -1158,6 +1161,7 @@ function emptyKickoff(): KickoffContent {
       intro: "",
       date: "",
       location: "",
+      locationHref: "",
       panelTitle: "",
       ui: {
         speakerLabel: "",
@@ -1289,6 +1293,7 @@ async function cmsGetKickoff(): Promise<KickoffContent> {
       intro: doc.kickoff.intro,
       date: doc.kickoff.date,
       location: doc.kickoff.location,
+      locationHref: doc.kickoff.locationHref ?? "",
       panelTitle: doc.kickoff.panelTitle,
       ui: {
         speakerLabel: doc.kickoff.ui.speakerLabel,
