@@ -1025,6 +1025,10 @@ export interface PageKickoff {
     intro: string;
     date: string;
     location: string;
+    /**
+     * Exact map link opened by the location button. Leave empty to fall back to a Google Maps search for the location text above.
+     */
+    locationHref?: string | null;
     panelTitle: string;
     ui: {
       speakerLabel: string;
@@ -2059,6 +2063,7 @@ export interface PageKickoffSelect<T extends boolean = true> {
         intro?: T;
         date?: T;
         location?: T;
+        locationHref?: T;
         panelTitle?: T;
         ui?:
           | T

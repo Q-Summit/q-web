@@ -114,6 +114,11 @@ export const PageKickoff: GlobalConfig = pageGlobal({
             },
           ],
         },
+        externalLinkField(
+          "locationHref",
+          "Location map link",
+          "Exact map link opened by the location button. Leave empty to fall back to a Google Maps search for the location text above.",
+        ),
         { name: "panelTitle", type: "text", required: true },
         {
           name: "ui",

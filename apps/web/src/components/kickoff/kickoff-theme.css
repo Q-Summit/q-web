@@ -181,10 +181,11 @@
 
 .kickoff-hero .hero-actions {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  width: min(22rem, 100%);
+  margin: 2.1rem auto 0;
   gap: 0.9rem;
-  margin-top: 2.1rem;
-  flex-wrap: wrap;
 }
 
 @media (max-width: 700px) {
@@ -198,12 +199,5 @@
   .kickoff-hero {
     min-height: 86svh;
     padding: 7rem var(--space-sm) 12rem;
-  }
-
-  .kickoff-hero .hero-actions {
-    flex-direction: column;
-    width: min(22rem, 100%);
-    margin-right: auto;
-    margin-left: auto;
   }
 }
