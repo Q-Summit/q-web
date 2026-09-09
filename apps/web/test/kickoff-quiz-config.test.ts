@@ -58,44 +58,33 @@ describe("attachQuizTeamLinks", () => {
     const linked = attachQuizTeamLinks(ERSTI_QUIZ_RESULTS, [
       {
         team: "Corporate Relations",
-        notionHref:
-          "https://app.notion.com/p/q-summit/Corporate-36a024b9b73b8079baebf35fcfd4071b",
+        notionHref: "https://example.com/corporate",
       },
-      {
-        team: "Startup & VC",
-        notionHref:
-          "https://app.notion.com/p/q-summit/Startup-Venture-Capital-36a024b9b73b80ffa241cb931865b90d",
-      },
+      { team: "Startup & VC", notionHref: "https://example.com/startup" },
       {
         team: "Speaker Relations",
-        notionHref:
-          "https://app.notion.com/p/q-summit/Speaker-36a024b9b73b8073a02ce26b50ff09c7",
+        notionHref: "https://example.com/speaker",
       },
       {
         team: "Growth and Partnerships",
-        notionHref:
-          "https://app.notion.com/p/q-summit/Growth-Partnerships-36a024b9b73b80adb258ec1572bd82b4",
+        notionHref: "https://example.com/growth",
       },
-      {
-        team: "IT",
-        notionHref:
-          "https://app.notion.com/p/q-summit/IT-36a024b9b73b80449e52fd505019d46c",
-      },
+      { team: "IT", notionHref: "https://example.com/it" },
     ]);
 
     const hrefByTeam = Object.fromEntries(
       linked.map((result) => [result.team, result.notionHref]),
     );
 
-    expect(hrefByTeam["Corporate"]).toContain("/Corporate-");
-    expect(hrefByTeam["Startup & Venture Capital"]).toContain(
-      "/Startup-Venture-Capital-",
+    expect(hrefByTeam["Corporate"]).toBe("https://example.com/corporate");
+    expect(hrefByTeam["Startup & Venture Capital"]).toBe(
+      "https://example.com/startup",
     );
-    expect(hrefByTeam["Speaker"]).toContain("/Speaker-");
-    expect(hrefByTeam["Growth & Partnerships"]).toContain(
-      "/Growth-Partnerships-",
+    expect(hrefByTeam["Speaker"]).toBe("https://example.com/speaker");
+    expect(hrefByTeam["Growth & Partnerships"]).toBe(
+      "https://example.com/growth",
     );
-    expect(hrefByTeam["IT"]).toContain("/IT-");
+    expect(hrefByTeam["IT"]).toBe("https://example.com/it");
     expect(hrefByTeam["Hackathon"]).toBe("");
   });
 
