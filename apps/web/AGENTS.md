@@ -49,7 +49,10 @@ and on a new raw literal.
 `/kickoff/` copies the Join Q zip glass design (DESIGN.md KICKOFF-1).
 Do not restyle those components onto conference primitives.
 Speaker crops and the location-card badge come from `page-kickoff`;
-never key CSS or copy to a speaker name.
+never key CSS or copy to a speaker name. Quiz result Notion URLs also
+come from `page-kickoff` (`quiz.results.notionHref`); attach them with
+`attachQuizTeamLinks` so CMS labels like Corporate Relations still match
+`TEAM_ORDER`.
 
 ### UI primitives (`components/ui/`)
 

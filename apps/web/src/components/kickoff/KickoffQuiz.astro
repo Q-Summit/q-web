@@ -10,6 +10,7 @@ import {
   STUDY_STEP,
   TEAM_ORDER,
 } from "./ersti-quiz.config";
+import { attachQuizTeamLinks } from "./quiz-team-links";
 
 interface Props {
   quiz: KickoffContent["quiz"];
@@ -20,16 +21,9 @@ interface Props {
 
 const { quiz, isOpen, applicationUrl, comingSoonLabel } = Astro.props;
 
-const teamLinks = new Map(
-  quiz.results.map((result) => [result.team, result.notionHref]),
-);
-
 const payload = {
   questions: ERSTI_QUIZ_QUESTIONS,
-  results: ERSTI_QUIZ_RESULTS.map((result) => ({
-    ...result,
-    notionHref: teamLinks.get(result.team) ?? "",
-  })),
+  results: attachQuizTeamLinks(ERSTI_QUIZ_RESULTS, quiz.results),
   study: { ...STUDY_STEP, programs: STUDY_PROGRAMS },
   teamOrder: TEAM_ORDER,
   ui: quiz.ui,

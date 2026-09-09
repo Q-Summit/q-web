@@ -1141,7 +1141,7 @@ export interface PageKickoff {
         answerId: string;
         text: string;
         /**
-         * Exact team names scored by this answer. They must match a Team result name below.
+         * Quiz team name for this answer. Use the same names as the Team results: Corporate, Startup & Venture Capital, Speaker, Growth & Partnerships, Marketing, Participant Relations, Concept, On Conference, Hackathon, Female Founders, IT, Human Capital & Foreign Relations.
          */
         tags: {
           text: string;
@@ -1152,13 +1152,16 @@ export interface PageKickoff {
       id?: string | null;
     }[];
     /**
-     * One definition per team used by the quiz. Team name must match question answer tags exactly.
+     * One definition per quiz team. The team name must match the site quiz names (Corporate, not Corporate Relations).
      */
     results: {
+      /**
+       * Name on the result card. Use Corporate, Startup & Venture Capital, Speaker, Growth & Partnerships, Marketing, Participant Relations, Concept, On Conference, Hackathon, Female Founders, IT, or Human Capital & Foreign Relations.
+       */
       team: string;
       text: string;
       /**
-       * Destination for the team result card.
+       * Notion page for this team. The result card links here when the name matches a quiz team.
        */
       notionHref?: string | null;
       id?: string | null;
