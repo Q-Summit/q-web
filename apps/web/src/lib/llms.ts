@@ -423,7 +423,12 @@ export function buildLlmsFullTxt(opts: {
       ...pageHeader(site, "/kickoff", kickoff.title, kickoff.metaDescription),
       ...section("Hero", [kickoff.hero.headline, kickoff.hero.copy]),
       ...section(kickoff.kickoff.heading, [kickoff.kickoff.intro]),
-      ...section("Application", [kickoff.application.heading]),
+      ...section("Application", [
+        kickoff.application.heading,
+        kickoff.application.applicationUrl
+          ? `Apply: ${kickoff.application.applicationUrl}`
+          : "",
+      ]),
     ]);
   }
 

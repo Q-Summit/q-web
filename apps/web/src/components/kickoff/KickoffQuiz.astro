@@ -3,6 +3,7 @@
 // (DESIGN.md KICKOFF-1).
 import "./kickoff-theme.css";
 import type { KickoffContent } from "../../lib/content";
+import KickoffApplyCta from "./KickoffApplyCta.astro";
 import {
   ERSTI_QUIZ_QUESTIONS,
   ERSTI_QUIZ_RESULTS,
@@ -109,15 +110,15 @@ const payload = {
       <p data-lp="quiz.resultCopy.copy">{quiz.resultCopy.copy}</p>
       <div class="result-list" data-result-list></div>
       <div class="result-actions">
-        <a
-          class="kickoff-glass kickoff-glass--dark"
-          href={isOpen && applicationUrl ? applicationUrl : "#"}
-          data-application-cta
-          data-application-open={isOpen ? "true" : "false"}
-          data-coming-soon-label={comingSoonLabel}
-        >
-          {quiz.resultCopy.applicationCta.label}
-        </a>
+        <KickoffApplyCta
+          label={quiz.resultCopy.applicationCta.label}
+          isOpen={isOpen}
+          applicationUrl={applicationUrl}
+          comingSoonLabel={comingSoonLabel}
+          placement="quiz"
+          variant="dark"
+          swapLabelWhenClosed={false}
+        />
         <button class="quiz-control" type="button" data-restart>
           {quiz.resultCopy.restartLabel}
         </button>

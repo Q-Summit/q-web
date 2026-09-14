@@ -1,8 +1,8 @@
 ﻿---
-// /kickoff: Join Q recruiting landing. Hero, spotlight, socials, team quiz,
-// journey, application timeline, closing CTA. Content loads at build time
-// from getPageContent().kickoff. Site Settings kickoff.pageEnabled gates
-// the public URL; Live Preview uses ?live-preview=1.
+// /kickoff: Join Q recruiting landing. Hero, Ready for Q apply CTA,
+// spotlight, socials, team quiz, journey, application timeline. Content loads at
+// build time from getPageContent().kickoff. Site Settings
+// kickoff.pageEnabled gates the public URL; Live Preview uses ?live-preview=1.
 import { existsSync } from "node:fs";
 
 import Base from "../layouts/Base.astro";
@@ -63,6 +63,16 @@ const preloadImage = kickoff.hero.image || undefined;
       secondaryCta={kickoff.hero.secondaryCta}
     />
 
+    <KickoffFinalCta
+      eyebrow={kickoff.finalCta.eyebrow}
+      heading={kickoff.finalCta.heading}
+      copy={kickoff.finalCta.copy}
+      cta={kickoff.finalCta.cta}
+      isOpen={kickoff.application.isOpen}
+      applicationUrl={kickoff.application.applicationUrl}
+      comingSoonLabel={kickoff.application.comingSoonLabel}
+    />
+
     <KickoffSpotlight content={kickoff.kickoff} />
 
     <KickoffSocials content={kickoff.socials} />
@@ -81,15 +91,5 @@ const preloadImage = kickoff.hero.image || undefined;
     <KickoffJourney content={kickoff.journey} />
 
     <KickoffApplication content={kickoff.application} />
-
-    <KickoffFinalCta
-      eyebrow={kickoff.finalCta.eyebrow}
-      heading={kickoff.finalCta.heading}
-      copy={kickoff.finalCta.copy}
-      cta={kickoff.finalCta.cta}
-      isOpen={kickoff.application.isOpen}
-      applicationUrl={kickoff.application.applicationUrl}
-      comingSoonLabel={kickoff.application.comingSoonLabel}
-    />
   </KickoffPage>
 </Base>

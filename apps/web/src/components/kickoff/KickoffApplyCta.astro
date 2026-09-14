@@ -1,0 +1,72 @@
+---
+// Outbound Join Q apply button (DESIGN.md KICKOFF-1). A filled
+// page-kickoff.application.applicationUrl always becomes the href;
+// Applications open only switches Coming Soon to Apply now. Empty
+// URL clicks stay on-page.
+import "./kickoff-theme.css";
+import { EVENTS } from "../../lib/analytics/events";
+
+interface Props {
+  label: string;
+  isOpen: boolean;
+  applicationUrl: string;
+  comingSoonLabel: string;
+  placement: "quiz" | "final";
+  variant?: "light" | "dark";
+  /** Quiz keeps "Apply now" until click; Ready for Q swaps the label in HTML. */
+  swapLabelWhenClosed?: boolean;
+  livePreview?: string;
+  livePreviewHref?: string;
+}
+
+const {
+  label,
+  isOpen,
+  applicationUrl,
+  comingSoonLabel,
+  placement,
+  variant = "light",
+  swapLabelWhenClosed = true,
+  livePreview,
+  livePreviewHref,
+} = Astro.props;
+
+const url = applicationUrl.trim();
+const outbound = url.length > 0;
+const applyLive = Boolean(isOpen && outbound);
+const href = outbound ? url : "#";
+const text = applyLive || !swapLabelWhenClosed ? label : comingSoonLabel;
+---
+
+<a
+  class:list={["kickoff-glass", variant === "dark" && "kickoff-glass--dark"]}
+  href={href}
+  target={outbound ? "_blank" : undefined}
+  rel={outbound ? "noopener noreferrer" : undefined}
+  aria-label={outbound ? `${text} (opens in a new tab)` : undefined}
+  data-application-cta
+  data-application-open={outbound ? "true" : "false"}
+  data-coming-soon-label={comingSoonLabel}
+  data-ph-event={outbound ? EVENTS.kickoff_apply_clicked : undefined}
+  data-ph-prop-cta-placement={placement}
+  data-ph-prop-cta-label={text}
+  data-lp={livePreview}
+  data-lp-href={livePreviewHref}
+>
+  {text}
+</a>
+
+<script>
+  document.querySelectorAll("[data-application-cta]").forEach((cta) => {
+    const el = cta as HTMLAnchorElement;
+    if (el.dataset.applicationBound === "true") return;
+    el.dataset.applicationBound = "true";
+    el.addEventListener("click", (event) => {
+      if (el.dataset.applicationOpen === "true") return;
+      event.preventDefault();
+      el.textContent = el.dataset.comingSoonLabel || "Coming Soon";
+      el.setAttribute("aria-disabled", "true");
+      el.classList.add("is-coming-soon");
+    });
+  });
+</script>

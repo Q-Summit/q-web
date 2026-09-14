@@ -37,6 +37,8 @@ export const EVENTS = {
   why_attend_cta_clicked: "why_attend_cta_clicked",
   /** Ersti team-fit quiz completed. Props: study_program, match_1, match_2, match_3. */
   ersti_quiz_completed: "ersti_quiz_completed",
+  /** Join Q apply CTA (quiz result or Ready for Q). Props: cta_placement, cta_label. */
+  kickoff_apply_clicked: "kickoff_apply_clicked",
 } as const;
 
 export type EventName = keyof typeof EVENTS;
