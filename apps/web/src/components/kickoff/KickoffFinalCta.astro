@@ -1,7 +1,9 @@
 ---
-// Closing glass card (DESIGN.md KICKOFF-1). Coming-soon matches the quiz.
+// Ready for Q apply band (DESIGN.md KICKOFF-1). Sits after the hero and
+// before the kickoff panel so Apply is the first thing after the fold.
 import "./kickoff-theme.css";
 import type { PageLink } from "../../lib/content";
+import KickoffApplyCta from "./KickoffApplyCta.astro";
 
 interface Props {
   eyebrow: string;
@@ -22,44 +24,25 @@ const { eyebrow, heading, copy, cta, isOpen, applicationUrl, comingSoonLabel } =
     <p class="kickoff-eyebrow" data-lp="finalCta.eyebrow">{eyebrow}</p>
     <h2 data-lp="finalCta.heading">{heading}</h2>
     <p data-lp="finalCta.copy">{copy}</p>
-    <a
-      class="kickoff-glass"
-      href={isOpen && applicationUrl ? applicationUrl : "#"}
-      data-application-cta
-      data-application-open={isOpen ? "true" : "false"}
-      data-coming-soon-label={comingSoonLabel}
-      data-lp="finalCta.cta"
-      data-lp-href="finalCta.cta.href"
-    >
-      {isOpen && applicationUrl ? cta.label : comingSoonLabel}
-    </a>
+    <KickoffApplyCta
+      label={cta.label}
+      isOpen={isOpen}
+      applicationUrl={applicationUrl}
+      comingSoonLabel={comingSoonLabel}
+      placement="final"
+      livePreview="finalCta.cta"
+      livePreviewHref="finalCta.cta.href"
+    />
   </div>
 </section>
 
-<script>
-  document.querySelectorAll("[data-application-cta]").forEach((cta) => {
-    const el = cta as HTMLAnchorElement;
-    if (el.dataset.applicationBound === "true") return;
-    el.dataset.applicationBound = "true";
-    el.addEventListener("click", (event) => {
-      if (el.dataset.applicationOpen === "true") return;
-      event.preventDefault();
-      el.textContent = el.dataset.comingSoonLabel || "Coming Soon";
-      el.setAttribute("aria-disabled", "true");
-      el.classList.add("is-coming-soon");
-    });
-  });
-</script>
-
 <style>
-  /* DESIGN.md KICKOFF-1: navy glass closer, not the conference CTA row. */
+  /* DESIGN.md KICKOFF-1: navy glass card on ice, not the conference CTA
+     row. Ice around the card because this band sits between the hero and
+     the kickoff panel, not as a navy closer into the footer. */
   .final-cta {
     padding: clamp(4rem, 8vw, 7rem) var(--space-sm);
-    background: linear-gradient(
-      180deg,
-      var(--color-kickoff-ground) 0%,
-      var(--color-navy) 100%
-    );
+    background: var(--color-kickoff-ground);
   }
 
   .final-card {

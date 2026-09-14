@@ -1211,11 +1211,11 @@ export interface PageKickoff {
     heading: string;
     intro: string;
     /**
-     * Enable only once the real application form is live. Until then, application buttons show the Coming Soon label.
+     * When on, application buttons say Apply now. When off they say Coming Soon. A filled Application URL still opens in a new tab either way.
      */
     isOpen?: boolean | null;
     /**
-     * Final Typeform / application link. Used only while Applications open is enabled.
+     * Final Typeform / application link. Buttons open this URL whenever it is filled. Leave empty to keep them on-page.
      */
     applicationUrl?: string | null;
     comingSoonLabel: string;

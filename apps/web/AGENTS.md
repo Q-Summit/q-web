@@ -52,7 +52,10 @@ Speaker crops and the location-card badge come from `page-kickoff`;
 never key CSS or copy to a speaker name. Quiz result Notion URLs also
 come from `page-kickoff` (`quiz.results.notionHref`); attach them with
 `attachQuizTeamLinks` so CMS labels like Corporate Relations still match
-`TEAM_ORDER`.
+`TEAM_ORDER`. Apply buttons (quiz result and Ready for Q, which sits
+after the hero and before the kickoff panel) open
+`application.applicationUrl` whenever it is filled;
+`application.isOpen` only switches Coming Soon to Apply now. Never embed the form.
 
 ### UI primitives (`components/ui/`)
 

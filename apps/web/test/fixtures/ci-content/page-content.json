@@ -943,8 +943,8 @@
       "eyebrow": "Application process",
       "heading": "Your way into Q",
       "intro": "Sample steps for the CI fixture.",
-      "isOpen": false,
-      "applicationUrl": "",
+      "isOpen": true,
+      "applicationUrl": "https://example.com/apply",
       "comingSoonLabel": "Coming Soon",
       "steps": [
         {
