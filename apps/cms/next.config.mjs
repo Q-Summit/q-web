@@ -26,7 +26,7 @@ const nextConfig = {
   // weaker headers than the public marketing site.
   //
   // HSTS IS set here, unlike on the site: Cloudflare owns the apex domain's
-  // HSTS via the dashboard (see apps/web/public/_headers), but cms.q-summit.de
+  // HSTS via the dashboard (see apps/web/public/_headers), but cms.q-summit.com
   // is a Vercel host with no such control, and the admin session cookie is
   // now Secure-only, so the redirect must not be downgradeable.
   //

@@ -7,7 +7,7 @@
  *
  * The site client checks PUBLIC_CMS_URL (CMS origin) for postMessage:
  * Local:  http://localhost:3000
- * Prod:   https://cms.q-summit.de
+ * Prod:   https://cms.q-summit.com
  */
 export const PATH_BY_GLOBAL: Record<string, string> = {
   "page-home": "/",

@@ -72,6 +72,7 @@ describe("shouldCollect -- fail-safe apex allowlist", () => {
       "[::1]",
       "192.168.1.42",
       "q-summit.com.evil.test",
+      "cms.q-summit.com",
       "cms.q-summit.de",
       "",
       undefined,

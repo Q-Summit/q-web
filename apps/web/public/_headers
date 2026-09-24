@@ -38,7 +38,7 @@
 #   - nosniff: stop MIME-type guessing (blocks a class of injection).
 #   - Referrer-Policy: send origin only on cross-origin nav, matching the
 #     cookieless/privacy posture (ADR-0003).
-#   - frame-ancestors: allow the Payload CMS admin (local + cms.q-summit.de)
+#   - frame-ancestors: allow the Payload CMS admin (local + cms.q-summit.com)
 #     to iframe pages for Live Preview; deny everyone else (clickjacking).
 #     X-Frame-Options is omitted on purpose: DENY would block the CMS iframe
 #     and override/conflict with CSP frame-ancestors.
@@ -50,7 +50,7 @@
 /*
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
-  Content-Security-Policy: frame-ancestors 'self' http://localhost:3000 https://cms.q-summit.de
+  Content-Security-Policy: frame-ancestors 'self' http://localhost:3000 https://cms.q-summit.com
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
   Cache-Control: public, max-age=0, must-revalidate
 
