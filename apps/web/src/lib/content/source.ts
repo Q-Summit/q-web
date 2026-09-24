@@ -73,7 +73,7 @@ export const CONTENT_SOURCE = resolveContentSource();
 if (CONTENT_SOURCE === "cms" && !process.env.CMS_URL?.trim()) {
   throw new Error(
     "[content] CONTENT_SOURCE=cms requires CMS_URL (the published CMS origin used to fetch content at build time). " +
-      "Example: https://cms.q-summit.de. Local: http://localhost:3000 (see apps/web package.json build:cms / go-live.md).",
+      "Example: https://cms.q-summit.com. Local: http://localhost:3000 (see apps/web package.json build:cms / go-live.md).",
   );
 }
 export const CMS_URL = (process.env.CMS_URL ?? "http://localhost:3000").replace(
@@ -87,7 +87,7 @@ export const CMS_URL = (process.env.CMS_URL ?? "http://localhost:3000").replace(
 // build fails here instead (see components/live-preview/LivePreviewBoot.astro).
 if (CONTENT_SOURCE === "cms" && !process.env.PUBLIC_CMS_URL?.trim()) {
   throw new Error(
-    "[content] CONTENT_SOURCE=cms requires PUBLIC_CMS_URL (the CMS origin, e.g. https://cms.q-summit.de). " +
+    "[content] CONTENT_SOURCE=cms requires PUBLIC_CMS_URL (the CMS origin, e.g. https://cms.q-summit.com). " +
       "It is the origin the Live Preview client checks postMessage events against; without it the client " +
       "would fall back to http://localhost:3000 in production HTML.",
   );

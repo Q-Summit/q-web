@@ -85,7 +85,7 @@ export default buildConfig({
   csrf: trustedOrigins,
   // Draft-only package ingest + create-if-missing media (see endpoints/content-sync*.ts).
   endpoints: [contentSyncEndpoint, contentSyncMediaEndpoint],
-  // CMS is its own host (local :3000, prod cms.q-summit.de): mount the admin
+  // CMS is its own host (local :3000, prod cms.q-summit.com): mount the admin
   // at / so unauthenticated visitors land on /login, not /admin/login.
   // App router: app/(payload)/[[...segments]] (no admin/ folder).
   // https://payloadcms.com/docs/admin/overview#root-level-routes

@@ -175,7 +175,7 @@ To spot-check group membership without logging in, use the Admin console (the gr
 
 ## CMS admin bootstrap
 
-Once the Vercel deploy is up, migrations have run, and [Google SSO setup](#google-sso-setup) is complete, the first admin bootstraps through Google. Production has no create-first-user password screen: the email/password strategy is disabled in production, so `/` (and `/login`) show only **Continue with Google**. The admin is mounted at the CMS host root (`routes.admin: '/'`), e.g. `https://cms.q-summit.de/`.
+Once the Vercel deploy is up, migrations have run, and [Google SSO setup](#google-sso-setup) is complete, the first admin bootstraps through Google. Production has no create-first-user password screen: the email/password strategy is disabled in production, so `/` (and `/login`) show only **Continue with Google**. The admin is mounted at the CMS host root (`routes.admin: '/'`), e.g. `https://cms.q-summit.com/`.
 
 1. Add yourself to `it@q-summit.com` (or `cms-admins@…`) first. On first sign-in, JIT provisioning creates your account with role `admin` derived from that group ([ADR-0005](../decisions/0005-google-sso-group-roles.md)); there is no password to set. If you already ran the [smoke test](#f-smoke-test) above, this step is done: that sign-in was the bootstrap.
 2. Grant everyone else by Workspace group membership, not in the admin UI: put approvers in `board@` (or `cms-approvers@`), and editors in `ct-2027@` (or their `cms-<division>@` group). Roles and divisions re-sync from the groups on every login, so edits to the `roles`/`divisions` fields in the admin UI are overwritten at next sign-in.
@@ -250,7 +250,7 @@ None live in git; `.env.example` files document local values only.
 | `PAYLOAD_SECRET` | random string | Vercel | Payload token signing |
 | `CMS_SERVER_URL` | CMS domain | Vercel | serverURL, cors, csrf |
 | `SITE_URL` | site domain (`https://q-summit.com`) | Vercel | cors/csrf origins **and** Live Preview iframe target |
-| `PUBLIC_CMS_URL` | CMS domain (`https://cms.q-summit.de`) | Workers Builds (site) | Live Preview `postMessage` origin check in the site client |
+| `PUBLIC_CMS_URL` | CMS domain (`https://cms.q-summit.com`) | Workers Builds (site) | Live Preview `postMessage` origin check in the site client |
 | `S3_*` (bucket, endpoint, keys, region) | R2 token | Vercel | storage-s3 |
 | `CONTENT_SYNC_TOKEN` | random string | Vercel + gitignored `.env.remote` | `POST /api/content-sync` (drafts only) |
 | `CLOUDFLARE_DEPLOY_HOOK_URL` | Workers Builds deploy hook | Vercel CMS **and** GitHub repository secret | Publish → rebuild (CMS); **Rebuild site** workflow (manual) |
