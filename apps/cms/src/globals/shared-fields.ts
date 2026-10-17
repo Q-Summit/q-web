@@ -173,8 +173,14 @@ export function pageStatArrayField(name: string, description?: string): Field {
   };
 }
 
-/** AgendaItem = { date, title, description } (program/hackathon schedule rows). */
-export function agendaItemsField(name: string, description?: string): Field {
+/** AgendaItem = { date, title, description } (program/hackathon schedule rows).
+ * `descriptionRequired: false` lets a row be just a time and a title (the
+ * hackathon day plan); the program agenda keeps it required. */
+export function agendaItemsField(
+  name: string,
+  description?: string,
+  { descriptionRequired = true }: { descriptionRequired?: boolean } = {},
+): Field {
   return {
     name,
     type: "array",
@@ -182,7 +188,19 @@ export function agendaItemsField(name: string, description?: string): Field {
     fields: [
       { name: "date", type: "text", required: true },
       { name: "title", type: "text", required: true },
-      { name: "description", type: "textarea", required: true },
+      {
+        name: "description",
+        type: "textarea",
+        required: descriptionRequired,
+        ...(descriptionRequired
+          ? {}
+          : {
+              admin: {
+                description:
+                  "Optional. Leave empty for a time and a title only.",
+              },
+            }),
+      },
     ],
   };
 }

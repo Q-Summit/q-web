@@ -5,6 +5,7 @@ import * as migration_20260830_212358_page_kickoff from './20260830_212358_page_
 import * as migration_20260831_150932_kickoff_speaker_crop from './20260831_150932_kickoff_speaker_crop';
 import * as migration_20260901_182545_kickoff_register_href from './20260901_182545_kickoff_register_href';
 import * as migration_20260907_185943_kickoff_location_href from './20260907_185943_kickoff_location_href';
+import * as migration_20261016_222725_hackathon_2026_partner_logos from './20261016_222725_hackathon_2026_partner_logos';
 
 export const migrations = [
   {
@@ -35,11 +36,16 @@ export const migrations = [
   {
     up: migration_20260901_182545_kickoff_register_href.up,
     down: migration_20260901_182545_kickoff_register_href.down,
-    name: '20260901_182545_kickoff_register_href'
+    name: '20260901_182545_kickoff_register_href',
   },
   {
     up: migration_20260907_185943_kickoff_location_href.up,
     down: migration_20260907_185943_kickoff_location_href.down,
-    name: '20260907_185943_kickoff_location_href'
+    name: '20260907_185943_kickoff_location_href',
+  },
+  {
+    up: migration_20261016_222725_hackathon_2026_partner_logos.up,
+    down: migration_20261016_222725_hackathon_2026_partner_logos.down,
+    name: '20261016_222725_hackathon_2026_partner_logos'
   },
 ];
