@@ -1482,7 +1482,10 @@ export interface PageHackathon {
           | '69d40a60aa0c813fdc6344eb_featherlessai-transparent.webp'
           | '69d675fef0b853cb5df97e4e_liveavatar_logo_vertical_dark.webp'
           | '69b458c74be9d2023714bcbf_itmx_logo.webp'
-          | '69d00453416ddd4a45dad964_mlh-logo-color-dark.svg';
+          | '69d00453416ddd4a45dad964_mlh-logo-color-dark.svg'
+          | 'digitalocean-logo-horizontal-blue.svg'
+          | 'dev-logo-black.svg'
+          | 'elevenlabs-logo-black.svg';
         /**
          * Optional footnote, e.g. "Challenge to be announced".
          */
@@ -1512,7 +1515,10 @@ export interface PageHackathon {
       | {
           date: string;
           title: string;
-          description: string;
+          /**
+           * Optional. Leave empty for a time and a title only.
+           */
+          description?: string | null;
           id?: string | null;
         }[]
       | null;

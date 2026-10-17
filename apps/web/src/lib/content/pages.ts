@@ -481,10 +481,12 @@ const toPageStat = (stat: CmsPageStat): PageStat => ({
   logos: fromTextRows(stat.logos),
 });
 
+// Hackathon rows may have no description in the CMS (null); the program
+// agenda always has one.
 const toAgendaItem = (item: AgendaItem): AgendaItem => ({
   date: item.date,
   title: item.title,
-  description: item.description,
+  description: item.description ?? "",
 });
 
 const toBoardMember = (member: BoardMember): BoardMember => ({

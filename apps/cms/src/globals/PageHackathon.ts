@@ -46,6 +46,13 @@ const HACKATHON_LOGO_FILE_OPTIONS = [
   },
   { label: "ITMX", value: "69b458c74be9d2023714bcbf_itmx_logo.webp" },
   { label: "MLH", value: "69d00453416ddd4a45dad964_mlh-logo-color-dark.svg" },
+  // Q-Hack x Hacktoberfest 2026: official brand-kit files, unmodified.
+  {
+    label: "DigitalOcean",
+    value: "digitalocean-logo-horizontal-blue.svg",
+  },
+  { label: "DEV", value: "dev-logo-black.svg" },
+  { label: "ElevenLabs (SVG)", value: "elevenlabs-logo-black.svg" },
 ];
 
 const hackathonPartnerFields: Field[] = [
@@ -152,7 +159,7 @@ export const PageHackathon: GlobalConfig = pageGlobal({
       fields: [
         { name: "heading", type: "text", required: true },
         { name: "intro", type: "textarea", required: true },
-        agendaItemsField("items"),
+        agendaItemsField("items", undefined, { descriptionRequired: false }),
       ],
     }),
     groupSection({
