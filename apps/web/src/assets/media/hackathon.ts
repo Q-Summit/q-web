@@ -1,8 +1,9 @@
 /**
  * Fixed `/media/*` assets of the Q-Hack x Hacktoberfest page. Like every
  * other `/media/*` file they live on R2 (local: gitignored public/media),
- * never in git. Each key below must be uploaded to R2 under exactly this
- * name before the page ships; see the comments for the source of each.
+ * never in git. Each one is a Media library upload in the CMS under exactly
+ * this filename (Payload stores uploads at the bucket root, so the keys are
+ * flat); see the comments for the source of each.
  */
 
 /**
@@ -11,7 +12,7 @@
  * official Hack-Logo-weiss.pdf (Q-Hack CI package).
  */
 export const qHackLogoWhite = {
-  src: "/media/hackathon/q-hack-logo-white.webp",
+  src: "/media/q-hack-logo-white.webp",
   width: 960,
   height: 312,
 } as const;
@@ -23,7 +24,7 @@ export const qHackLogoWhite = {
  * recoloring or effects, clear space of at least the H height.
  */
 export const hacktoberfestLogoWhite = {
-  src: "/media/hackathon/hacktoberfest-2026-horizontal-white.svg",
+  src: "/media/hacktoberfest-2026-horizontal-white.svg",
   width: 2243,
   height: 215,
 } as const;
@@ -68,7 +69,7 @@ const photo = (
   focus: string,
   tint: readonly [string, string],
 ): PastPhoto => ({
-  key: `hackathon/past/${name}`,
+  key: name,
   width: 1536,
   height: 1024,
   alt,

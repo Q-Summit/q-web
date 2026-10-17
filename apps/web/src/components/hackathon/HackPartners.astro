@@ -27,7 +27,8 @@ const { heading, groups } = Astro.props;
 
 // Build-time lookup from the CMS logoFile key to the R2 media copy and its
 // intrinsic size (avoids layout shift). Webflow-era keys are the extracted
-// Webflow filenames; the 2026 keys name the official brand-kit file.
+// Webflow filenames; the 2026 keys name the official brand-kit file, which
+// is uploaded to the CMS Media library under that same filename.
 // `mark` is the optical display height in rem (logos differ wildly in
 // aspect ratio) and `space` the clear space each brand guide asks for, as a
 // multiple of that height. Keep the keys in sync with
@@ -116,7 +117,7 @@ const logoAssets: Record<string, LogoAsset> = {
   // DigitalOcean horizontal logo, blue, from "DO Logo Assets.zip" on
   // digitalocean.com/press. Safe space: half the icon height.
   "digitalocean-logo-horizontal-blue.svg": {
-    src: "/media/hackathon/partners/digitalocean.svg",
+    src: "/media/digitalocean-logo-horizontal-blue.svg",
     width: 603,
     height: 103,
     mark: 2.5,
@@ -124,7 +125,7 @@ const logoAssets: Record<string, LogoAsset> = {
   },
   // DEV badge, black, from hacktoberfest.com/brand (partners/dev-logo-black.svg).
   "dev-logo-black.svg": {
-    src: "/media/hackathon/partners/dev.svg",
+    src: "/media/dev-logo-black.svg",
     width: 448,
     height: 512,
     mark: 4.25,
@@ -133,7 +134,7 @@ const logoAssets: Record<string, LogoAsset> = {
   // ElevenLabs logo, black, from elevenlabs.io/brand. Clear space: at least
   // the logo height on every side.
   "elevenlabs-logo-black.svg": {
-    src: "/media/hackathon/partners/elevenlabs.svg",
+    src: "/media/elevenlabs-logo-black.svg",
     width: 694,
     height: 90,
     mark: 1.7,
