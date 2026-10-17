@@ -186,6 +186,18 @@ const ALLOWED_WARNINGS = new Map([
   ["warning colors.kickoff-option-ink", UNREFERENCED],
   ["warning colors.kickoff-badge", UNREFERENCED],
   ["warning colors.kickoff-cyan", UNREFERENCED],
+  ["warning colors.hack-ink", UNREFERENCED],
+  ["warning colors.hack-deep", UNREFERENCED],
+  ["warning colors.hack-violet", UNREFERENCED],
+  ["warning colors.hack-mid", UNREFERENCED],
+  ["warning colors.hack-glow", UNREFERENCED],
+  ["warning colors.hack-yellow", UNREFERENCED],
+  ["warning colors.hack-red", UNREFERENCED],
+  ["warning colors.hack-coral", UNREFERENCED],
+  ["warning colors.hack-sky", UNREFERENCED],
+  ["warning colors.hack-ember", UNREFERENCED],
+  ["warning colors.hack-haze", UNREFERENCED],
+  ["warning colors.hack-mist", UNREFERENCED],
 ]);
 
 function designCli(args) {
@@ -283,6 +295,12 @@ const UNMAPPED_TOKENS = new Map([
   ["--text-body-line-height", "see --heading-line-height-tight"],
   ["--radius-circle", "50%, not a spec Dimension (number + px/em/rem)"],
   [
+    "--radius-hack-lid",
+    "elliptical percentage radius of the drawn laptop, not a spec Dimension (DESIGN.md HACK-1)",
+  ],
+  ["--radius-hack-bezel", "see --radius-hack-lid"],
+  ["--radius-hack-base", "see --radius-hack-lid"],
+  [
     "--ease-snappy",
     "the spec has no motion token group; governed by the Motion prose (MOTION-1)",
   ],
@@ -324,6 +342,19 @@ const UNMAPPED_TOKENS = new Map([
   ["--duration-kickoff-pulse-alt", "see --duration-kickoff-leave"],
   ["--duration-kickoff-flow", "see --duration-kickoff-leave"],
   ["--ease-kickoff-fold", "see --duration-kickoff-leave"],
+  [
+    "--duration-hack-fall",
+    "see --ease-snappy; Q-Hack campaign only (DESIGN.md HACK-1)",
+  ],
+  ["--duration-hack-sway", "see --duration-hack-fall"],
+  ["--duration-hack-light", "see --duration-hack-fall"],
+  ["--duration-hack-shimmer", "see --duration-hack-fall"],
+  ["--duration-hack-sweep", "see --duration-hack-fall"],
+  ["--duration-hack-reveal", "see --duration-hack-fall"],
+  ["--ease-hack-fall", "see --duration-hack-fall"],
+  ["--ease-hack-sway", "see --duration-hack-fall"],
+  ["--duration-hack-turn", "see --duration-hack-fall"],
+  ["--ease-hack-turn", "see --duration-hack-fall"],
 ]);
 
 /** DESIGN.md front matter path -> tokens.css custom property. */

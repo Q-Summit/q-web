@@ -40,6 +40,18 @@ colors:
   kickoff-option-ink: "#08227f"
   kickoff-badge: "#061a69"
   kickoff-cyan: "#74ccff"
+  hack-ink: "#22004d"
+  hack-deep: "#36026e"
+  hack-violet: "#5c1cae"
+  hack-mid: "#6923c1"
+  hack-glow: "#843ce6"
+  hack-yellow: "#f5b726"
+  hack-red: "#e53927"
+  hack-coral: "#e97b77"
+  hack-sky: "#8bb2de"
+  hack-ember: "#671912"
+  hack-haze: "#b58af0"
+  hack-mist: "#f0e8fc"
 typography:
   h1:
     fontFamily: Montserrat
@@ -114,6 +126,7 @@ rounded:
   kickoff-mark: 15px
   kickoff-quiz-compact: 28px
   kickoff-step-num: 1rem
+  hack-cta: 16px
 spacing:
   section: 6rem
   section-small: 4rem
@@ -223,6 +236,7 @@ Every rule, with the token or class it is about. Cite these IDs verbatim in code
 | MOTION-4 | No client-side animation runtime | `package.json` |
 | MOTION-5 | Page transitions and reveals have one implementation each | `@view-transition`, `ui/Timeline` |
 | KICKOFF-1 | Join Q is its own visual system | `components/kickoff/` |
+| HACK-1 | Q-Hack x Hacktoberfest is its own campaign system | `components/hackathon/` |
 
 Astro implementation rules (`PRIM-1` to `PRIM-3`) live in [`AGENTS.md`](AGENTS.md).
 
@@ -259,7 +273,7 @@ The scale is fluid by breakpoint rather than by `clamp()`, because custom proper
 
 **TYPE-3 Montserrat is the only family.** No second face, no icon font, no `@import` from a third-party host.
 
-The site ships three eyebrow voices, and that is declared rather than unresolved: a small bold navy label (`.u-eyebrow`), a light widely tracked kicker over the speaker page hero (`.is-kicker`), and a neutral, heavier, tightly tracked kicker on the hackathon schedule (`.is-quiet`). Two contact-page labels are sentence case (`.is-sentence`). One shared rule defines the treatment and each variant declares its difference, so the drift is visible in one file instead of spread across five components. Whether three voices should be fewer is a design decision for a designer, not a refactor.
+The site ships two eyebrow voices, and that is declared rather than unresolved: a small bold navy label (`.u-eyebrow`) and a light widely tracked kicker over the speaker page hero (`.is-kicker`). Two contact-page labels are sentence case (`.is-sentence`). One shared rule defines the treatment and each variant declares its difference, so the drift is visible in one file instead of spread across several components. Whether two voices should be one is a design decision for a designer, not a refactor. (The hackathon schedule's `.is-quiet` kicker left with the HACK-1 campaign page.)
 
 **TYPE-4 Weights come from tokens.** The scale is complete, so there is no reason to write a number: `--font-weight-light` (300), `--font-weight-regular` (400), `--font-weight-medium` (500), `--font-weight-semibold` (600), `--font-weight-extrabold` (800), plus `--heading-weight` (700) and `--heading-weight-home` (900), which keep their heading-role names and are borrowed by the few non-heading elements that need that weight. Machine-enforced: a bare numeric weight fails `check:design`.
 
@@ -283,7 +297,7 @@ Spacing _inside_ a section comes from a six-step scale: `--space-2xs` (0.5rem), 
 
 ## Elevation & Depth
 
-Separation is carried by background bands (`.is-alternate`, `.is-dark`) and hairline borders. Shadows are the fallback, not the default: two components document having removed one in favour of a hairline (`src/components/hackathon/BenefitCards.astro`, `src/components/home/SpeakerGrid.astro`), and that is the direction of travel.
+Separation is carried by background bands (`.is-alternate`, `.is-dark`) and hairline borders. Shadows are the fallback, not the default: `src/components/home/SpeakerGrid.astro` documents having removed one in favour of a hairline, and that is the direction of travel.
 
 Where depth is genuinely needed there are five steps, not the twelve one-off values the Webflow port shipped:
 
@@ -295,7 +309,7 @@ Where depth is genuinely needed there are five steps, not the twelve one-off val
 | `--shadow-lifted` | `0 8px 18px rgb(0 0 0 / 0.14)` | A card sitting above the page rather than on it |
 | `--shadow-floating` | `0 12px 26px rgb(0 0 0 / 0.12)` | The deepest step, for the few cards that genuinely float |
 
-The five steps were chosen to sit on the twelve shipping values, not to look tidy. Every card landed within a couple of pixels of blur and about 0.02 of alpha, except the hackathon partner cards, whose unusually light resting float (`0 10px 25px / 0.08`) is now `--shadow-lifted`: slightly tighter and slightly darker. A scale that merely renames every existing value is not a scale, but one that redesigns the page is worse.
+The five steps were chosen to sit on the twelve shipping values, not to look tidy. Every card landed within a couple of pixels of blur and about 0.02 of alpha, except the hackathon logo cards (`ui/LogoGrid`'s `hack` skin), whose unusually light resting float (`0 10px 25px / 0.08`) is now `--shadow-lifted`: slightly tighter and slightly darker. A scale that merely renames every existing value is not a scale, but one that redesigns the page is worse.
 
 The DESIGN.md spec has no shadow token group, so these live in `tokens.css` and are governed by this prose. `scripts/check/design.mjs` allow-lists them by name.
 
@@ -324,7 +338,7 @@ Shared utilities carry a `u-` prefix, so a class name says at a glance whether i
 | Class | What it is | Local override |
 | --- | --- | --- |
 | `.u-visually-hidden` | Present for assistive technology, not painted. The standard clip-rect block, next to `.skip-link` because both are the same accessibility family | None |
-| `.u-eyebrow` (+ `.is-kicker`, `.is-sentence`, `.is-quiet`) | The small uppercase label above a heading: `--text-size-small`, `--font-weight-semibold`, `0.15em` tracking, `--color-primary` | Color, where the ground demands it (a dark section), and the gap to the heading |
+| `.u-eyebrow` (+ `.is-kicker`, `.is-sentence`) | The small uppercase label above a heading: `--text-size-small`, `--font-weight-semibold`, `0.15em` tracking, `--color-primary` | Color, where the ground demands it (a dark section), and the gap to the heading |
 | `.u-section-cta` | Centered button row closing a section: `--section-gap` above, `text-align: center` | `margin-top`, where the live spacing differs |
 | `.u-accordion-summary` | The clickable row of a `<details>` accordion (COMP-4): label left, chevron right, native marker removed | The hairline, the label's type, the gap, the mobile padding, and the `[open]` chevron rotation |
 
@@ -393,6 +407,16 @@ Progressive enhancement is the rule, not an aspiration: the fallback for every o
 `/kickoff/` is a recruiting landing, not a conference page. Its glass cards, ice-to-navy gradients, oversized display type, floating blobs, and album rail are copied from the Join Q zip. They are scoped to `components/kickoff/` and must not appear on `/`, `/whyq`, or any other route.
 
 **KICKOFF-1 Join Q is its own visual system.** Components under `src/components/kickoff/` may skip `.section` / `.container` / `.button` / `.u-eyebrow` (LAYOUT-1, LAYOUT-3, COLOR-2, COMP-1, TYPE-1) and may use the `kickoff-*` tokens plus a page-local scroll reveal (MOTION-5). Conference pages may not import those classes or tokens. Cite this ID on every kickoff `<style>` block that would otherwise look like a silent deviation.
+
+## Hackathon
+
+`/hackathon/` is the Q-Hack x Hacktoberfest 2026 campaign landing, and it is deliberately not the conference look. One living violet ground runs behind the whole page; pixel fragments in the campaign accents fall in front of it; a full-width white surface grows out of the violet through a long, eased seam and carries partners and schedule; inside that white, the giant headings, the schedule times and the schedule strip are cut out, so the violet light shows through as if the surface were backlit. A neutral laptop then zooms into a curved film band of photos from earlier Q-Hacks, which visitors browse with buttons, swipe, keys or a tap on a photo, before the closing call to action.
+
+Each seam between white and violet is two halves that meet at the surface edge in one light lilac: the violet half lays light over the moving ground (first a violet glow that keeps the ground's brightness, then the lilac rising to opaque), the light half is the surface's own background carrying that lilac on into white. Both leave the edge at the same rate and every ramp starts and ends flat, so no line reads; they overlap the neighbors' existing room instead of adding scroll length, and the facts above stay on top of the light. The schedule strip, its halo and the pulse fade out inside the track at both ends; nothing that glows reaches past it. On phones the strip runs down the left edge with every entry and its photo to its right; wide screens keep the centered, alternating layout. The photo band is cut into narrow facets so it bends as one continuous strip, lit from the front (darkening towards the sides, a soft pool of light beneath), its receding ends fading out; its backdrop is the same light-centered violet on the display and on the stage, melting into the ground at the stage's top and bottom.
+
+The violet ramp is sampled from the Hack CI background artwork, which ships no written palette; `hack-haze` and `hack-mist` are that ring glow tinted toward white for crests, LED edges and glows. The accents are the Hacktoberfest 2026 brand-kit accents. All are documented as derived values in `tokens.css`. Partner and campaign logos are the official files, unmodified, with each brand's clear space; light may pass behind a logo, never over it, and logos never join the fragment animation.
+
+**HACK-1 Q-Hack x Hacktoberfest is its own campaign system.** Components under `src/components/hackathon/` and the `/hackathon` page shell may skip `.section` / `.container` padding rhythm / `.button` (LAYOUT-1, LAYOUT-3, COLOR-2, COMP-1, TYPE-1), may use the `hack-*` tokens, display type above the heading scale, the shared cut-out material in `hackathon/hack-light.css`, a page-local reveal (MOTION-5), and glows that are light, not elevation (DEPTH-1). Three motion exceptions are sanctioned here and nowhere else: the ground is a small first-party WebGL fragment shader (`ground-gl.ts`, started by `HackGround.astro`; no library; drawn in a worker on an OffscreenCanvas where the browser allows it, so its frames never wake the main thread; about 24 frames a second at half resolution, at most 1.5x device pixels and about one megapixel; paused off screen and in hidden tabs; its noise uses no sine, so every GPU draws the same field and a still WebP poster of its start frame (rendered by `pnpm ground:poster`, a tiny copy inlined into the CSS) shows from the first paint, without WebGL and without JavaScript, and the shader fades in over the identical frame; on portrait screens the field is scaled down so as many folds show across as on a wide screen; not a runtime under MOTION-4), the ambient loops (ground, falling fragments, and the light in the cut-outs, which `HackReveal.astro` drifts by background-position about twelve times a second, a paint-only property on small areas, and only for cut-outs on screen) run longer than 500ms and continuously, and the one pause button on the page stops all of them. Everything else stays inside MOTION-2 and MOTION-3: transform and opacity for movement, the schedule pulse and the laptop zoom driven by one scroll-progress value each, the photo band a CSS 3D cylinder (perspective and rotateY, no library) that turns only when the visitor picks a photo, along its own path on `--ease-hack-turn`, laid out at its final pixel size and scaled down (layers under a perspective rasterize at one pixel per CSS pixel, so a scaled-up band would blur), with its slight blur limited to the outer ends on wide screens, no wheel capture and no long pin on phones, and reduced motion renders a still frame, resting fragments, a fully lit schedule and the band without zoom or transitions. Without JavaScript the band is a plain photo grid. Conference pages may not import the `hack-*` tokens or `hack-light.css`. Cite this ID on every hackathon `<style>` block that would otherwise look like a silent deviation.
 
 ## Do's and Don'ts
 

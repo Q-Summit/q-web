@@ -51,7 +51,7 @@ Two limits worth knowing:
 - The panel checks live entries and pending drafts. An older saved version of a document can still point at a file, so deleting a file that looks unused can still break restoring one of those versions. If in doubt, ask IT.
 - If you try to delete a file something still uses, the admin refuses and tells you what is using it. Point those entries at a different file first.
 
-The background videos on the home and hackathon pages are not in the media library: they are far too large for it. Ask IT to replace those.
+The background video on the home page is not in the media library: it is far too large for it. Ask IT to replace it.
 
 ## Text formatting
 

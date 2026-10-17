@@ -1,19 +1,23 @@
 ---
-// Q-Hackathon hero, ported from the Webflow "section_header7" header.
-// The live site runs a background video; this now does too (the untranscoded
-// 1080p60 Webflow original re-encoded to a 480/1080 ladder). Same poster-first
-// / pick-once-by-viewport pattern as the home hero. This clip is a short,
-// non-adaptive 20.7s loop, so it does not need HLS: poster shows instantly
-// via the `poster` attribute (zero CLS, no JS dependency), JS then picks one
-// rendition once by viewport width, and never swaps mid-playback.
+// Q-Hack x Hacktoberfest 2026 hero, on the living violet ground
+// (HackGround). Balanced around one action: the official co-brand logos,
+// a compact display headline, the event facts line, and the apply link,
+// sized from the viewport height so the button sits above the fold on
+// common laptop screens (1280x720 and up).
 //
-// The live page also pins an MLH "OFFICIAL 2026 SEASON" trust badge at the
-// top of the viewport (position: fixed, loaded from mlh.io's own CDN via
-// the navbar embed). That asset isn't in the site mirror (external, non
-// Webflow-CDN host) and this repo never adds third-party requests, so the
-// badge is recreated locally with the tokens below and scoped to this
-// section (not the shared Nav) rather than fixed page-wide.
+// Logos are the official files, unmodified (Q-Hack lockup from the CI
+// package, Hacktoberfest 2026 from hacktoberfest.com/brand), with clear
+// space of at least the Hacktoberfest H height around them. On load a short
+// pass of light runs behind them; the marks themselves never change.
+//
+// The MLH trust badge stays, recreated locally (no third-party request).
 import type { PageLink } from "../../lib/content";
+import {
+  hacktoberfestLogoWhite,
+  qHackLogoWhite,
+} from "../../assets/media/hackathon";
+import HackApply from "./HackApply.astro";
+import "./hack-light.css";
 
 interface Props {
   headline: string;
@@ -27,25 +31,7 @@ const mlhHref =
   "https://mlh.io/na?utm_source=na-hackathon&utm_medium=TrustBadge&utm_campaign=2026-season&utm_content=blue";
 ---
 
-<header class="section is-dark hero">
-  <div class="hero-media" aria-hidden="true">
-    <video
-      id="hack-hero-video"
-      autoplay
-      loop
-      muted
-      playsinline
-      preload="metadata"
-      poster="/media/hack-poster.jpg"
-      width="1920"
-      height="1080"
-    >
-      <noscript>
-        <source src="/media/hack-480.mp4" type="video/mp4" />
-      </noscript>
-    </video>
-    <div class="hero-overlay"></div>
-  </div>
+<header class="hero" data-hack-ground-zone>
   <a
     class="mlh-badge"
     href={mlhHref}
@@ -56,20 +42,34 @@ const mlhHref =
     <span class="mlh-badge-mark">MLH</span>
     <span class="mlh-badge-caption">Official<br />2026 Season</span>
   </a>
-  <div class="container hero-content">
+
+  <div class="container hero-content" data-reveal="rise" data-reveal-now>
+    <p class="co-brand">
+      <span class="co-brand-logo is-qhack" data-reveal="logo">
+        <img
+          src={qHackLogoWhite.src}
+          width={qHackLogoWhite.width}
+          height={qHackLogoWhite.height}
+          alt="Q-Hack, University of Mannheim"
+          fetchpriority="high"
+          decoding="async"
+        />
+      </span>
+      <span class="co-brand-x" aria-hidden="true">×</span>
+      <span class="u-visually-hidden">and</span>
+      <span class="co-brand-logo is-hacktoberfest" data-reveal="logo">
+        <img
+          src={hacktoberfestLogoWhite.src}
+          width={hacktoberfestLogoWhite.width}
+          height={hacktoberfestLogoWhite.height}
+          alt="Hacktoberfest 2026"
+          decoding="async"
+        />
+      </span>
+    </p>
+
     <h1 data-lp="hero.headline">{headline}</h1>
-    {
-      cta && (
-        <a
-          class="button is-alternate hero-cta"
-          href={cta.href}
-          data-lp="hero.cta"
-          data-lp-href="hero.cta.href"
-        >
-          {cta.label}
-        </a>
-      )
-    }
+
     {
       tagline && (
         <p class="hero-tagline" data-lp="hero.tagline">
@@ -77,83 +77,110 @@ const mlhHref =
         </p>
       )
     }
+
+    {
+      cta && (
+        <div class="hero-apply">
+          <HackApply cta={cta} placement="hero" />
+        </div>
+      )
+    }
   </div>
 </header>
 
 <style>
-  /* .section.is-dark supplies the navy background, the inverse text color,
-     and the standard section padding; this adds only what a video masthead
-     needs on top (centering, min-height, layered video/overlay). */
+  /* Campaign masthead (DESIGN.md HACK-1): transparent over the ground, no
+     .section rhythm, a display headline above the h1 scale. Height and
+     type scale with the viewport height so the apply link stays above
+     the fold. */
   .hero {
     position: relative;
     display: flex;
     align-items: center;
-    min-height: min(85svh, 48rem);
-    overflow: hidden;
-  }
-
-  .hero-media,
-  .hero-media video {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-  }
-
-  .hero-media video {
-    object-fit: cover;
-    object-position: center 30%;
-  }
-
-  .hero-overlay {
-    position: absolute;
-    inset: 0;
-    /* Navy-to-black scrim over the video, in tokens (DESIGN.md COLOR-3):
-       the top stop is the brand navy at 55% and the bottom is black, one
-       notch darker than --color-overlay's 50%. Both stops stay on brand
-       tokens rather than role tokens: the scrim tints the brand colors
-       themselves, it is not a heading or an interactive fill. */
-    background: linear-gradient(
-      to bottom,
-      color-mix(in srgb, var(--color-navy) 55%, transparent),
-      color-mix(in srgb, var(--color-black) 60%, transparent)
-    );
+    min-height: calc(100svh - var(--hack-nav, 4rem));
+    padding-block: clamp(2.5rem, 7svh, 5rem)
+      clamp(var(--space-lg), 6svh, 4.5rem);
+    color: var(--color-text-inverse);
   }
 
   .hero-content {
     position: relative;
-    z-index: 1;
+    display: grid;
+    justify-items: center;
+    text-align: center;
   }
 
-  /* Color is inherited from .section.is-dark, not restated here
-     (DESIGN.md TYPE-1). */
+  /* Co-brand row. Gaps are at least the Hacktoberfest H height (the
+     logo's cap height is nearly its full height), per its brand kit. */
+  .co-brand {
+    --mark-h: clamp(1.45rem, min(2.4vw, 3.6svh), 2.35rem);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--mark-h) calc(var(--mark-h) * 1.15);
+    margin: 0 0 clamp(var(--space-md), 5svh, var(--space-xl));
+  }
+
+  .co-brand-logo {
+    display: block;
+    padding: calc(var(--mark-h) * 0.25);
+    --hack-sweep-color: var(--color-hack-haze);
+  }
+
+  .co-brand-logo img {
+    display: block;
+    width: auto;
+  }
+
+  .co-brand-logo.is-qhack img {
+    height: calc(var(--mark-h) * 1.75);
+  }
+
+  .co-brand-logo.is-hacktoberfest img {
+    height: var(--mark-h);
+  }
+
+  .co-brand-x {
+    font-size: var(--text-size-large);
+    font-weight: var(--font-weight-light);
+    opacity: 0.85;
+  }
+
+  /* The campaign's compact display headline (DESIGN.md HACK-1 deviating
+     from TYPE-1), sized by width and height so two lines always fit. */
   .hero h1 {
-    max-width: 42rem;
+    max-width: 16ch;
+    margin: 0;
+    color: var(--color-text-inverse);
+    font-size: clamp(2.4rem, min(7.2vw, 10.5svh), 6.5rem);
+    font-weight: var(--heading-weight-home);
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
     text-wrap: balance;
   }
 
   .hero-tagline {
-    max-width: 36rem;
-    margin: var(--space-md) 0 0;
-    font-size: var(--text-size-medium);
+    max-width: 46rem;
+    margin: clamp(var(--space-sm), 2.6svh, var(--space-md)) 0 0;
+    font-size: var(--text-size-large);
     font-weight: var(--font-weight-medium);
+    color: color-mix(in srgb, var(--color-white) 90%, transparent);
+    text-wrap: balance;
   }
 
-  /* Solid navy button (the live page's "Learn more" is filled, not
-     outlined): the base .button is already navy-on-white, and the smaller
-     radius the live button uses over the photo is the documented
-     .is-alternate variant (DESIGN.md COMP-1), so this only adds spacing. */
-  .hero-cta {
-    margin-top: var(--space-lg);
+  .hero-apply {
+    width: 100%;
+    margin-top: clamp(var(--space-md), 4.5svh, var(--space-xl));
   }
 
-  /* MLH trust badge: pinned to the hero's top-right corner (see the
-     component comment on why it isn't a viewport-fixed, shared-Nav badge). */
+  /* MLH trust badge, white on the violet ground. */
   .mlh-badge {
     position: absolute;
     top: 0;
     right: var(--padding-global);
-    z-index: 2;
+    z-index: 3;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -161,19 +188,14 @@ const mlhHref =
     width: clamp(3.75rem, 7vw, 4.75rem);
     aspect-ratio: 5 / 6;
     padding: var(--space-2xs) 0.4rem var(--space-xs);
-    background-color: var(--color-primary);
-    color: var(--color-text-inverse);
+    background-color: var(--color-white);
+    color: var(--color-hack-ink);
     text-align: center;
     text-decoration: none;
     clip-path: polygon(0 0, 100% 0, 100% 78%, 50% 100%, 0 78%);
-    /* The badge hangs over the video, so it keeps a shadow: nearest step of
-       the five-step scale to the old 0 4px 12px / 0.25 (DESIGN.md DEPTH-1). */
-    box-shadow: var(--shadow-card-hover);
   }
 
   .mlh-badge-mark {
-    /* Was 1.05rem; the nearest scale step is the regular body size
-       (DESIGN.md TYPE-2), 0.05rem smaller. */
     font-size: var(--text-size-regular);
     font-weight: var(--font-weight-extrabold);
     letter-spacing: 0.03em;
@@ -194,52 +216,26 @@ const mlhHref =
 
   @media (max-width: 767px) {
     .hero {
-      min-height: min(75svh, 40rem);
+      min-height: auto;
+      padding-block: 5.5rem 3.5rem;
+    }
+
+    .co-brand {
+      --mark-h: clamp(1.15rem, 5.2vw, 1.6rem);
+      flex-direction: column;
+      gap: calc(var(--mark-h) * 0.45);
+    }
+
+    .co-brand-x {
+      font-size: var(--text-size-regular);
+    }
+
+    .hero h1 {
+      font-size: clamp(2.3rem, 11.5vw, 3.6rem);
+    }
+
+    .hero-tagline {
+      font-size: var(--text-size-medium);
     }
   }
 </style>
-
-<script is:inline>
-  // Poster-first, pick-one-rendition-and-run background video.
-  // Short fully-known-at-build-time 20.7s loop: no adaptive bitrate.
-  // No video source is server-rendered, so no video bytes are fetched at
-  // all for prefers-reduced-motion/Save-Data users or with JS off (only
-  // the noscript 480p fallback loads then). Worker serves /media/* from R2.
-  (function () {
-    var video = document.getElementById("hack-hero-video");
-    if (!video) return;
-
-    var reducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-    var conn = navigator.connection || navigator.webkitConnection;
-    // Only restrict when a signal explicitly says so; an unsupported API
-    // (Safari/Firefox today) must not be treated as "data saver on".
-    var saveData = !!(conn && conn.saveData);
-    var slowConn = !!(
-      conn && /^(slow-2g|2g|3g)$/.test(conn.effectiveType || "")
-    );
-    var reducedData = window.matchMedia(
-      "(prefers-reduced-data: reduce)",
-    ).matches;
-
-    if (reducedMotion || saveData || slowConn || reducedData) {
-      // Poster-only: remove the element so it can never start fetching or
-      // autoplaying.
-      video.remove();
-      return;
-    }
-
-    var wantsHiRes = window.innerWidth >= 810; // matches HackHero's own breakpoint
-    var src = wantsHiRes ? "/media/hack-1080.mp4" : "/media/hack-480.mp4";
-
-    var source = document.createElement("source");
-    source.src = src;
-    source.type = "video/mp4";
-    video.appendChild(source);
-    video.load();
-    video.play().catch(function () {
-      /* autoplay can still be blocked by the browser; poster remains visible, not an error state */
-    });
-  })();
-</script>

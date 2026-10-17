@@ -1,38 +1,56 @@
 ---
-// /hackathon: Q-Hackathon landing. Hero, partner tiers, six benefit cards,
-// two-day schedule timeline, hackathon FAQs, closing contact CTA. All
-// content loads at build time from page-content.json via
-// src/lib/content.ts. Photos are `/media/...` keys on R2 (local:
-// gitignored public/media), not committed binaries.
+// /hackathon: Q-Hack x Hacktoberfest 2026 landing (DESIGN.md HACK-1).
+//
+// One continuous, living violet ground (HackGround) runs behind the whole
+// page, with pixel fragments falling in front of it (HackFragments). Over
+// it: the hero and the event facts, then a full-width white surface that
+// grows out of the violet through a long, eased seam and carries the
+// partners and the schedule, then dissolves back into the violet the same
+// way, where the look-back laptop film and the closing call to action
+// follow. Inside the white, the big headings, the times and the schedule
+// strip are cut out, so the violet light shows through.
+//
+// All copy, the apply link, partners, logos and the schedule load at build
+// time from the page-hackathon global via src/lib/content.ts. After the
+// event, editors switch the block over in the CMS (clear the hero CTA to
+// drop both apply links, rewrite the copy as a recap); nothing here is
+// dated. Photos and campaign logos are fixed `/media/...` keys, uploaded
+// through the CMS Media library (src/assets/media/hackathon.ts; local:
+// gitignored public/media).
 import Base from "../layouts/Base.astro";
+import HackGround from "../components/hackathon/HackGround.astro";
+import HackFragments from "../components/hackathon/HackFragments.astro";
+import HackReveal from "../components/hackathon/HackReveal.astro";
 import HackHero from "../components/hackathon/HackHero.astro";
-import HackPartners from "../components/hackathon/HackPartners.astro";
 import BenefitCards from "../components/hackathon/BenefitCards.astro";
+import HackPartners from "../components/hackathon/HackPartners.astro";
 import HackSchedule from "../components/hackathon/HackSchedule.astro";
+import HackFilm from "../components/hackathon/HackFilm.astro";
 import PageFaqAccordion from "../components/ui/PageFaqAccordion.astro";
 import HackCta from "../components/hackathon/HackCta.astro";
-import { hackathonScheduleImages } from "../assets/media/hackathon";
+import { pastPhotos } from "../assets/media/hackathon";
 import { getFaqs, getPageContent } from "../lib/content";
 
 const { hackathon } = await getPageContent();
 
 const faqs = (await getFaqs()).filter((faq) => faq.page === "hackathon");
 
-// The hero CTA anchors to the benefit cards, like the live page.
+// Kept so an older CTA pointing at "#join-hack" still lands on the facts.
 const benefitsAnchor = "join-hack";
 
-// Matched to schedule items by index, same order as the live page.
-const scheduleAlts = [
-  "Participants at the Q-Hackathon opening session",
-  "Teams starting to hack in the university aula",
-  "A team refining their solution before submission",
-  "A team pitching their prototype to the judges",
-  "Finalists on the Q-Summit main stage pitch battle",
-] as const;
-const scheduleImages = hackathonScheduleImages.map((src, i) => ({
-  src,
-  alt: scheduleAlts[i] ?? "",
-}));
+// Look-back photos beside schedule rows (by row index) and in the film.
+const schedulePhotos = {
+  0: pastPhotos.hallProjection,
+  2: pastPhotos.laptopWork,
+  7: pastPhotos.prizeConfetti,
+};
+const filmPhotos = [
+  pastPhotos.hallOverview,
+  pastPhotos.laptopWork,
+  pastPhotos.hallProjection,
+  pastPhotos.audience,
+  pastPhotos.prizeConfetti,
+];
 ---
 
 <Base
@@ -40,49 +58,226 @@ const scheduleImages = hackathonScheduleImages.map((src, i) => ({
   description={hackathon.metaDescription}
   ogImage="/media/hack-poster.jpg"
   ogImageAlt="Q-Summit Hackathon"
-  preloadImage="/media/hack-poster.jpg"
   livePreviewGlobal="page-hackathon"
 >
-  <HackHero
-    headline={hackathon.hero.headline}
-    tagline={hackathon.hero.tagline}
-    cta={hackathon.hero.cta}
-  />
+  <div class="hack-world" data-hack-world>
+    <HackGround />
+    <HackFragments />
 
-  <HackPartners
-    heading={hackathon.partners.heading}
-    groups={hackathon.partners.groups}
-  />
+    <HackHero
+      headline={hackathon.hero.headline}
+      tagline={hackathon.hero.tagline}
+      cta={hackathon.hero.cta}
+    />
 
-  <BenefitCards
-    id={benefitsAnchor}
-    heading={hackathon.benefits.heading}
-    cards={hackathon.benefits.cards}
-  />
+    <BenefitCards
+      id={benefitsAnchor}
+      heading={hackathon.benefits.heading}
+      cards={hackathon.benefits.cards}
+    />
 
-  <HackSchedule
-    heading={hackathon.schedule.heading}
-    intro={hackathon.schedule.intro}
-    items={hackathon.schedule.items}
-    images={scheduleImages}
-  />
-
-  {
-    faqs.length > 0 && (
-      <PageFaqAccordion
-        heading={hackathon.faqSection.heading}
-        intro={hackathon.faqSection.intro}
-        faqs={faqs}
-        headerAlign="center"
-        headingId="hack-faq-heading"
+    <div class="hack-surface">
+      <HackPartners
+        heading={hackathon.partners.heading}
+        groups={hackathon.partners.groups}
       />
-    )
+
+      <HackSchedule
+        heading={hackathon.schedule.heading}
+        intro={hackathon.schedule.intro}
+        items={hackathon.schedule.items}
+        photos={schedulePhotos}
+      />
+
+      {
+        faqs.length > 0 && (
+          <PageFaqAccordion
+            heading={hackathon.faqSection.heading}
+            intro={hackathon.faqSection.intro}
+            faqs={faqs}
+            headerAlign="center"
+            headingId="hack-faq-heading"
+          />
+        )
+      }
+    </div>
+
+    <HackFilm heading="A glimpse into past Q-Hack events" photos={filmPhotos} />
+
+    <HackCta
+      heading={hackathon.closingCta.heading}
+      text={hackathon.closingCta.text}
+      applyCta={hackathon.hero.cta}
+      ctaLabel={hackathon.closingCta.mailtoLabel}
+      ctaHref={`mailto:${hackathon.closingCta.mailtoEmail}`}
+    />
+
+    <HackReveal />
+  </div>
+</Base>
+
+<style>
+  /* Campaign page shell (DESIGN.md HACK-1). clip-path confines the fixed
+     ground, fragments and pause control to this wrapper (they never paint
+     over the nav or footer) and makes it the one stacking context for the
+     page layers: ground (z -3), fragments (z -2), then all content. */
+  .hack-world {
+    /* Room the neighbors of the white surface keep free for its seams
+       (the facts' bottom and the film's top padding). */
+    --hack-seam: clamp(12rem, 36svh, 22rem);
+    /* The seams themselves run longer than that room, overlaid on what is
+       already there instead of adding scroll length: the violet half
+       reaches faintly under the facts and the film heading (both stay on
+       top of it), and the light half runs on into the surface's own white. */
+    --hack-seam-out: calc(var(--hack-seam) * 1.35);
+    --hack-seam-in: clamp(10rem, 32svh, 18rem);
+    /* Where the two halves meet: the light lilac both reach at the
+       surface edge. */
+    --hack-seam-join: color-mix(
+      in srgb,
+      var(--color-hack-haze) 42%,
+      var(--color-white)
+    );
+    /* Height of the fixed site header (components/layout/Nav.astro). */
+    --hack-nav: calc(4rem + 1px);
+    position: relative;
+    clip-path: inset(0);
+    /* Light passes and glows may reach past the edge; clip (not hidden)
+       keeps them out of the page width without breaking the sticky film
+       stage. */
+    overflow-x: clip;
+    background-color: var(--color-hack-violet);
   }
 
-  <HackCta
-    heading={hackathon.closingCta.heading}
-    text={hackathon.closingCta.text}
-    ctaLabel={hackathon.closingCta.mailtoLabel}
-    ctaHref={`mailto:${hackathon.closingCta.mailtoEmail}`}
-  />
-</Base>
+  /* Full-width white surface. It grows out of the moving violet and
+     dissolves back into it through two long seams, each in two halves
+     that meet at the surface edge in --hack-seam-join:
+     - the violet half (the pseudo-elements, outside the surface) lays the
+       light over the moving ground: first only a violet glow that keeps
+       the ground's brightness, then the lilac rising to fully opaque at
+       the edge, on an eased curve;
+     - the light half (the surface's own background, so it sits under the
+       partners and schedule content) carries that lilac on into white.
+     Both halves leave the edge at the same rate and every ramp starts and
+     ends flat, so there is no step and no kink to read as a line. */
+  .hack-surface {
+    position: relative;
+    background:
+      linear-gradient(
+          to bottom,
+          var(--hack-seam-join),
+          color-mix(in srgb, var(--hack-seam-join) 79%, var(--color-white)) 10%,
+          color-mix(in srgb, var(--hack-seam-join) 61%, var(--color-white)) 20%,
+          color-mix(in srgb, var(--hack-seam-join) 46%, var(--color-white)) 30%,
+          color-mix(in srgb, var(--hack-seam-join) 33%, var(--color-white)) 40%,
+          color-mix(in srgb, var(--hack-seam-join) 22%, var(--color-white)) 50%,
+          color-mix(in srgb, var(--hack-seam-join) 13%, var(--color-white)) 60%,
+          color-mix(in srgb, var(--hack-seam-join) 7%, var(--color-white)) 70%,
+          color-mix(in srgb, var(--hack-seam-join) 3%, var(--color-white)) 80%,
+          color-mix(in srgb, var(--hack-seam-join) 0.6%, var(--color-white)) 90%,
+          var(--color-white)
+        )
+        top / 100% var(--hack-seam-in) no-repeat,
+      linear-gradient(
+          to top,
+          var(--hack-seam-join),
+          color-mix(in srgb, var(--hack-seam-join) 79%, var(--color-white)) 10%,
+          color-mix(in srgb, var(--hack-seam-join) 61%, var(--color-white)) 20%,
+          color-mix(in srgb, var(--hack-seam-join) 46%, var(--color-white)) 30%,
+          color-mix(in srgb, var(--hack-seam-join) 33%, var(--color-white)) 40%,
+          color-mix(in srgb, var(--hack-seam-join) 22%, var(--color-white)) 50%,
+          color-mix(in srgb, var(--hack-seam-join) 13%, var(--color-white)) 60%,
+          color-mix(in srgb, var(--hack-seam-join) 7%, var(--color-white)) 70%,
+          color-mix(in srgb, var(--hack-seam-join) 3%, var(--color-white)) 80%,
+          color-mix(in srgb, var(--hack-seam-join) 0.6%, var(--color-white)) 90%,
+          var(--color-white)
+        )
+        bottom / 100% var(--hack-seam-in) no-repeat,
+      var(--color-white);
+  }
+
+  .hack-surface::before,
+  .hack-surface::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: var(--hack-seam-out);
+    pointer-events: none;
+  }
+
+  /* Layers, top to bottom: a faint bloom of light at the middle that
+     fades to nothing before the edge; the lilac ramp (eased in, opaque at
+     the edge); the violet glow underneath it. */
+  .hack-surface::before {
+    bottom: 100%;
+    background:
+      radial-gradient(
+        closest-side at 50% 82%,
+        color-mix(in srgb, var(--color-hack-haze) 14%, transparent),
+        color-mix(in srgb, var(--color-hack-haze) 9%, transparent) 35%,
+        color-mix(in srgb, var(--color-hack-haze) 4%, transparent) 65%,
+        color-mix(in srgb, var(--color-hack-haze) 1%, transparent) 85%,
+        transparent
+      ),
+      linear-gradient(
+        to bottom,
+        transparent 40%,
+        color-mix(in srgb, var(--hack-seam-join) 2.2%, transparent) 46%,
+        color-mix(in srgb, var(--hack-seam-join) 8.3%, transparent) 52%,
+        color-mix(in srgb, var(--hack-seam-join) 17.4%, transparent) 58%,
+        color-mix(in srgb, var(--hack-seam-join) 28.9%, transparent) 64%,
+        color-mix(in srgb, var(--hack-seam-join) 41.8%, transparent) 70%,
+        color-mix(in srgb, var(--hack-seam-join) 55.3%, transparent) 76%,
+        color-mix(in srgb, var(--hack-seam-join) 68.7%, transparent) 82%,
+        color-mix(in srgb, var(--hack-seam-join) 81.2%, transparent) 88%,
+        color-mix(in srgb, var(--hack-seam-join) 91.9%, transparent) 94%,
+        var(--hack-seam-join)
+      ),
+      linear-gradient(
+        to bottom,
+        transparent,
+        color-mix(in srgb, var(--color-hack-glow) 4%, transparent) 12%,
+        color-mix(in srgb, var(--color-hack-glow) 10%, transparent) 24%,
+        color-mix(in srgb, var(--color-hack-glow) 15%, transparent) 34%,
+        color-mix(in srgb, var(--color-hack-glow) 18%, transparent) 44%,
+        color-mix(in srgb, var(--color-hack-glow) 20%, transparent) 56%
+      );
+  }
+
+  .hack-surface::after {
+    top: 100%;
+    background:
+      radial-gradient(
+        closest-side at 50% 18%,
+        color-mix(in srgb, var(--color-hack-haze) 14%, transparent),
+        color-mix(in srgb, var(--color-hack-haze) 9%, transparent) 35%,
+        color-mix(in srgb, var(--color-hack-haze) 4%, transparent) 65%,
+        color-mix(in srgb, var(--color-hack-haze) 1%, transparent) 85%,
+        transparent
+      ),
+      linear-gradient(
+        to top,
+        transparent 40%,
+        color-mix(in srgb, var(--hack-seam-join) 2.2%, transparent) 46%,
+        color-mix(in srgb, var(--hack-seam-join) 8.3%, transparent) 52%,
+        color-mix(in srgb, var(--hack-seam-join) 17.4%, transparent) 58%,
+        color-mix(in srgb, var(--hack-seam-join) 28.9%, transparent) 64%,
+        color-mix(in srgb, var(--hack-seam-join) 41.8%, transparent) 70%,
+        color-mix(in srgb, var(--hack-seam-join) 55.3%, transparent) 76%,
+        color-mix(in srgb, var(--hack-seam-join) 68.7%, transparent) 82%,
+        color-mix(in srgb, var(--hack-seam-join) 81.2%, transparent) 88%,
+        color-mix(in srgb, var(--hack-seam-join) 91.9%, transparent) 94%,
+        var(--hack-seam-join)
+      ),
+      linear-gradient(
+        to top,
+        transparent,
+        color-mix(in srgb, var(--color-hack-glow) 4%, transparent) 12%,
+        color-mix(in srgb, var(--color-hack-glow) 10%, transparent) 24%,
+        color-mix(in srgb, var(--color-hack-glow) 15%, transparent) 34%,
+        color-mix(in srgb, var(--color-hack-glow) 18%, transparent) 44%,
+        color-mix(in srgb, var(--color-hack-glow) 20%, transparent) 56%
+      );
+  }
+</style>

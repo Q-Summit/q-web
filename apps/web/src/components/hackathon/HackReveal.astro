@@ -1,0 +1,155 @@
+---
+// Page-local motion helpers for /hackathon (DESIGN.md HACK-1, MOTION-5).
+//
+// Reveals: one IntersectionObserver for every [data-reveal] element on the
+// page. It marks the page shell [data-reveal-ready] first, and only that
+// turns the hidden start states in hack-light.css on, so without this
+// script (or with reduced motion) nothing is ever hidden (DESIGN.md
+// MOTION-2). Each element reveals once and is then left alone.
+//
+// Light in the cut-outs: the slow drift of the violet light behind the
+// cut-out headings, times and strip. It is moved here, about twelve times a
+// second and only for cut-outs on screen, instead of by a CSS animation,
+// which would cost a main-thread frame at the full display rate whenever a
+// cut-out is visible. It eases back and forth along the same three anchor
+// positions the static light starts from (hack-light.css), stops while the
+// page is paused or hidden, and never runs with reduced motion. Off-screen
+// cut-outs are also marked [data-offscreen], which pauses the strip's
+// shimmer.
+---
+
+<script>
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const shell = document.querySelector<HTMLElement>("[data-hack-world]");
+  const targets = document.querySelectorAll<HTMLElement>("[data-reveal]");
+
+  if (
+    shell &&
+    targets.length &&
+    !reduceMotion.matches &&
+    "IntersectionObserver" in window
+  ) {
+    shell.setAttribute("data-reveal-ready", "");
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          entry.target.classList.add("is-revealed");
+          io.unobserve(entry.target);
+        }
+      },
+      { rootMargin: "0px 0px -12% 0px", threshold: 0.15 },
+    );
+    targets.forEach((target) => io.observe(target));
+  }
+
+  // ---- Light drift in the cut-outs.
+  // Anchor positions (vw, vh) of the three light layers; the fourth layer
+  // (the base gradient) never moves. Must match .hack-cut in hack-light.css.
+  const ANCHORS: [number, number][][] = [
+    [
+      [-10, 5],
+      [40, 40],
+      [35, -5],
+    ],
+    [
+      [25, 30],
+      [5, 15],
+      [60, 45],
+    ],
+    [
+      [45, -5],
+      [20, 50],
+      [10, 25],
+    ],
+  ];
+  const UPDATE_MS = 83;
+  const ease = (x: number) => 0.5 - 0.5 * Math.cos(Math.PI * x);
+
+  const cuts = document.querySelectorAll<HTMLElement>(".hack-cut");
+  if (cuts.length && "IntersectionObserver" in window) {
+    const onScreen = new Set<HTMLElement>();
+    // One way of the drift (anchor 1 to 3), from the motion token.
+    const span =
+      (parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue(
+          "--duration-hack-light",
+        ),
+      ) || 22) * 1000;
+    let elapsed = 0;
+    let last = 0;
+    let frame = 0;
+
+    const positionAt = (time: number) => {
+      // Ping-pong over the three anchors, eased into and out of each one.
+      const phase = (time % (span * 2)) / span;
+      const u = phase <= 1 ? phase : 2 - phase;
+      const [from, to, local] =
+        u < 0.5
+          ? [ANCHORS[0], ANCHORS[1], u * 2]
+          : [ANCHORS[1], ANCHORS[2], u * 2 - 1];
+      const e = ease(local);
+      return (
+        from
+          .map(([x, y], i) => {
+            const [tx, ty] = to[i];
+            return `${(x + (tx - x) * e).toFixed(2)}vw ${(y + (ty - y) * e).toFixed(2)}vh`;
+          })
+          .join(", ") + ", 0 0"
+      );
+    };
+
+    const running = () =>
+      !reduceMotion.matches &&
+      onScreen.size > 0 &&
+      shell?.dataset.motion !== "paused" &&
+      document.visibilityState === "visible";
+
+    // A timer paces the updates and each update is written in one animation
+    // frame: polling every display frame would wake the main thread (and
+    // every running animation with it) at the full display rate.
+    const tick = (now: number) => {
+      frame = 0;
+      if (!running()) return;
+      if (last) elapsed += Math.min(now - last, 250);
+      last = now;
+      const position = positionAt(elapsed);
+      for (const cut of onScreen) cut.style.backgroundPosition = position;
+      frame = window.setTimeout(() => {
+        frame = requestAnimationFrame(tick);
+      }, UPDATE_MS);
+    };
+
+    const sync = () => {
+      if (running() && !frame) {
+        last = 0;
+        frame = requestAnimationFrame(tick);
+      }
+    };
+
+    const visibility = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        const cut = entry.target as HTMLElement;
+        cut.toggleAttribute("data-offscreen", !entry.isIntersecting);
+        if (entry.isIntersecting) {
+          onScreen.add(cut);
+          // Pick up the current drift position before it is seen.
+          if (elapsed) cut.style.backgroundPosition = positionAt(elapsed);
+        } else {
+          onScreen.delete(cut);
+        }
+      }
+      sync();
+    });
+    cuts.forEach((cut) => visibility.observe(cut));
+
+    document.addEventListener("visibilitychange", sync);
+    reduceMotion.addEventListener("change", sync);
+    if (shell) {
+      new MutationObserver(sync).observe(shell, {
+        attributes: true,
+        attributeFilter: ["data-motion"],
+      });
+    }
+  }
+</script>

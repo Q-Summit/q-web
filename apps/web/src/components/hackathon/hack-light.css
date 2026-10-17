@@ -1,0 +1,264 @@
+/*
+ * Shared campaign material for /hackathon (DESIGN.md HACK-1), imported by
+ * the hackathon components that need it, so it only ships on that page.
+ *
+ * 1. Backlit cutouts. The white surface looks cut open where `.hack-cut`
+ *    sits: the element paints violet light with background-attachment:
+ *    fixed, so like a real hole it shows a viewport-fixed light field that
+ *    slides past as the page scrolls. `.hack-cut-text` clips that light to
+ *    the glyphs (large headings, schedule times); a soft lilac drop-shadow
+ *    is the light seam around the cut. The light drifts slowly in the same
+ *    palette and tempo as the WebGL ground (moved by HackReveal). Darkest stops stay deep violet
+ *    so cut text keeps well over 3:1 against white at heading sizes.
+ *    Browsers that ignore fixed attachment (iOS Safari) still show the
+ *    moving light, just anchored to the element.
+ *
+ * 2. Reveals. One small IntersectionObserver (HackReveal.astro) adds
+ *    .is-revealed; nothing is hidden unless that script is running
+ *    ([data-reveal-ready] on the page shell), so content never depends on
+ *    an animation (DESIGN.md MOTION-2, MOTION-5 page-local reveal).
+ */
+
+.hack-cut {
+  background-color: var(--color-hack-deep);
+  background-image:
+    radial-gradient(
+      closest-side,
+      var(--color-hack-glow),
+      color-mix(in srgb, var(--color-hack-glow) 40%, transparent) 55%,
+      transparent
+    ),
+    radial-gradient(
+      closest-side,
+      var(--color-hack-mid),
+      color-mix(in srgb, var(--color-hack-mid) 35%, transparent) 60%,
+      transparent
+    ),
+    radial-gradient(
+      closest-side,
+      color-mix(in srgb, var(--color-hack-glow) 80%, var(--color-hack-haze)),
+      transparent
+    ),
+    linear-gradient(
+      160deg,
+      var(--color-hack-ink),
+      var(--color-hack-violet) 45%,
+      var(--color-hack-deep) 75%,
+      var(--color-hack-ink)
+    );
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-size:
+    70vw 55vh,
+    80vw 70vh,
+    45vw 35vh,
+    100vw 100vh;
+  background-position:
+    -10vw 5vh,
+    40vw 40vh,
+    35vw -5vh,
+    0 0;
+}
+
+.hack-cut-text {
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  /* A narrow seam, capped so giant headings do not grow a halo. */
+  filter: drop-shadow(
+      0 0 min(0.05em, 0.2rem)
+        color-mix(in srgb, var(--color-hack-haze) 85%, transparent)
+    )
+    drop-shadow(
+      0 0 min(0.3em, 0.9rem)
+        color-mix(in srgb, var(--color-hack-haze) 40%, transparent)
+    );
+}
+
+/* The light drifts slowly through the cut-outs. HackReveal moves it (about
+   twelve updates a second, only for cut-outs on screen, never with reduced
+   motion or while the page is paused): a CSS animation here would cost a
+   main-thread frame at the full display rate for as long as a cut-out is
+   visible. Without the script the light simply rests. */
+
+/* The giant cut-out headings ("Partners", "Schedule"): the boldest type on
+   the page, set so the light has room to show through the strokes. */
+.hack-giant {
+  margin: 0 0 clamp(var(--space-md), 4vh, var(--space-xl));
+  font-size: clamp(3.4rem, 13.5vw, 11rem);
+  font-weight: var(--heading-weight-home);
+  line-height: 0.86;
+  letter-spacing: -0.035em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* Reveals ------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Text reveals, after the Air reference: a short rise with a soft fade
+     and an almost imperceptible scale, once, as the text enters. Whole
+     elements move, never single letters, so text stays real text.
+     "text" reveals one element; "rise" staggers its direct children. */
+  [data-reveal-ready] [data-reveal="text"],
+  [data-reveal-ready] [data-reveal="rise"] > * {
+    opacity: 0;
+    transform: translateY(min(0.5em, 1.25rem)) scale(0.985);
+    transform-origin: 50% 100%;
+    transition:
+      opacity var(--duration-hack-reveal) var(--ease-emphasized),
+      transform var(--duration-hack-reveal) var(--ease-emphasized);
+    transition-delay: calc(var(--stagger, 0) * var(--duration-hover) * 0.6);
+  }
+
+  [data-reveal-ready] [data-reveal="text"].is-revealed {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Cut-outs reveal without any transform: a transform would detach their
+     fixed light from the viewport. Instead the letters are uncovered from
+     the baseline up by a soft mask, then left alone. */
+  [data-reveal-ready] .hack-cut[data-reveal="text"],
+  [data-reveal-ready] [data-reveal="rise"] > .hack-cut {
+    transform: none;
+    -webkit-mask-image: linear-gradient(
+      to top,
+      var(--color-black) 45%,
+      transparent 55%
+    );
+    mask-image: linear-gradient(
+      to top,
+      var(--color-black) 45%,
+      transparent 55%
+    );
+    -webkit-mask-size: 100% 220%;
+    mask-size: 100% 220%;
+    -webkit-mask-position: 0 0;
+    mask-position: 0 0;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    transition:
+      opacity var(--duration-hack-reveal) var(--ease-emphasized),
+      -webkit-mask-position var(--duration-hack-reveal) var(--ease-emphasized),
+      mask-position var(--duration-hack-reveal) var(--ease-emphasized);
+  }
+
+  /* Once uncovered, the mask is dropped altogether (after the sweep), so
+     it can never trim the light seam at the edge of the box. */
+  [data-reveal-ready] .hack-cut[data-reveal="text"].is-revealed,
+  [data-reveal-ready] [data-reveal="rise"].is-revealed > .hack-cut {
+    -webkit-mask-position: 0 100%;
+    mask-position: 0 100%;
+    -webkit-mask-image: none;
+    mask-image: none;
+    transition:
+      opacity var(--duration-hack-reveal) var(--ease-emphasized),
+      -webkit-mask-position var(--duration-hack-reveal) var(--ease-emphasized),
+      mask-position var(--duration-hack-reveal) var(--ease-emphasized),
+      -webkit-mask-image calc(var(--duration-hover) * 0) linear
+        var(--duration-hack-reveal),
+      mask-image calc(var(--duration-hover) * 0) linear
+        var(--duration-hack-reveal);
+    transition-behavior: allow-discrete;
+  }
+
+  [data-reveal-ready] [data-reveal="rise"] > :nth-child(2) {
+    --stagger: 1;
+  }
+
+  [data-reveal-ready] [data-reveal="rise"] > :nth-child(3) {
+    --stagger: 2;
+  }
+
+  [data-reveal-ready] [data-reveal="rise"] > :nth-child(4) {
+    --stagger: 3;
+  }
+
+  [data-reveal-ready] [data-reveal="rise"] > :nth-child(n + 5) {
+    --stagger: 4;
+  }
+
+  [data-reveal-ready] [data-reveal="rise"].is-revealed > * {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Photos uncover from a soft inset while settling from a slight zoom. */
+  [data-reveal-ready] [data-reveal="photo"] {
+    clip-path: inset(8% 6% 8% 6% round var(--radius-card-large));
+    transition: clip-path var(--duration-hack-reveal) var(--ease-emphasized);
+  }
+
+  [data-reveal-ready] [data-reveal="photo"] img {
+    transform: scale(1.08);
+    transition: transform var(--duration-hack-reveal) var(--ease-emphasized);
+  }
+
+  [data-reveal-ready] [data-reveal="photo"].is-revealed {
+    clip-path: inset(0 0 0 0 round var(--radius-card-large));
+  }
+
+  [data-reveal-ready] [data-reveal="photo"].is-revealed img {
+    transform: none;
+  }
+
+  /* Logos: a short pass of light behind the mark, then the mark itself
+     fades in. The light never touches the logo: it sits under it, and the
+     logo keeps its own shape and colors (brand guides forbid effects). */
+  [data-reveal-ready] [data-reveal="logo"] {
+    position: relative;
+    isolation: isolate;
+  }
+
+  [data-reveal-ready] [data-reveal="logo"]::before {
+    content: "";
+    position: absolute;
+    inset: -20% -30%;
+    z-index: -1;
+    background: radial-gradient(
+      closest-side,
+      color-mix(
+        in srgb,
+        var(--hack-sweep-color, var(--color-hack-haze)) 75%,
+        transparent
+      ),
+      transparent
+    );
+    opacity: 0;
+    transform: translateX(-60%) scaleX(0.4);
+    pointer-events: none;
+  }
+
+  [data-reveal-ready] [data-reveal="logo"] :is(img, svg) {
+    opacity: 0;
+    transition: opacity var(--duration-hack-reveal) var(--ease-emphasized)
+      calc(var(--duration-hack-sweep) * 0.35);
+  }
+
+  [data-reveal-ready] [data-reveal="logo"].is-revealed::before {
+    animation: hack-logo-sweep var(--duration-hack-sweep) var(--ease-emphasized)
+      both;
+  }
+
+  [data-reveal-ready] [data-reveal="logo"].is-revealed :is(img, svg) {
+    opacity: 1;
+  }
+}
+
+@keyframes hack-logo-sweep {
+  0% {
+    opacity: 0;
+    transform: translateX(-60%) scaleX(0.4);
+  }
+
+  45% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(60%) scaleX(0.4);
+  }
+}

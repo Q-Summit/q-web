@@ -1,19 +1,22 @@
 ---
-// Hackathon partners, ported from the Webflow "section_hackathon_partners"
-// section that sits between the hero and the benefit cards on the live
-// page. Three tiers (Challenge / Infrastructure / Ecosystem); Challenge
-// Partners use the live page's flip-card interaction (Webflow's
-// "flip_interaction_stage": hover/focus flips the logo to a short note),
-// done in pure CSS (3D transform on hover/focus, no client JS).
-// The wall of logo cards is the shared ui/LogoGrid pattern (COMP-3,
-// PRIM-3) that the partner page's tier walls render too, in its `hack`
-// skin and with the flip opted in; only the tier heading rules are local.
+// Partners on the white surface. The section opens with a giant cut-out
+// "Partners": the white looks cut open and the violet light of the page
+// shines through the letters (hack-light.css). Below it the three roles from
+// the CMS ("Presented by", "Powered by", "Local Tool Partner") sit side by
+// side like the poster's partner strip, stacked on phones.
+//
+// Logos are the official files, unmodified: no recoloring, no effects, no
+// part in the fragment animation. Each gets its optical height and the
+// clear space its own brand guide asks for (registry below). When the strip
+// scrolls in, a short pass of light runs behind each mark; the mark itself
+// only fades in.
+//
+// Logos come from the code-side registry keyed by the CMS `logoFile`
+// select. An unregistered key renders a clearly marked placeholder in local
+// dev builds and is skipped in production builds (every partner of the
+// 2026 event is registered).
 import type { PartnerGroup } from "../../lib/content";
-import Section from "../ui/Section.astro";
-import Container from "../ui/Container.astro";
-import SectionHeader from "../ui/SectionHeader.astro";
-import LogoGrid from "../ui/LogoGrid.astro";
-import type { LogoGridItem } from "../ui/LogoGrid.astro";
+import "./hack-light.css";
 
 interface Props {
   heading: string;
@@ -22,13 +25,23 @@ interface Props {
 
 const { heading, groups } = Astro.props;
 
-// Build-time lookup from the extracted Webflow filename to the local media
-// copy + intrinsic dimensions (avoids layout shift). Assets copied from the
-// site mirror into public/media/hackathon/partners.
-const logoAssets: Record<
-  string,
-  { src: string; width: number; height: number }
-> = {
+// Build-time lookup from the CMS logoFile key to the R2 media copy and its
+// intrinsic size (avoids layout shift). Webflow-era keys are the extracted
+// Webflow filenames; the 2026 keys name the official brand-kit file, which
+// is uploaded to the CMS Media library under that same filename.
+// `mark` is the optical display height in rem (logos differ wildly in
+// aspect ratio) and `space` the clear space each brand guide asks for, as a
+// multiple of that height. Keep the keys in sync with
+// HACKATHON_LOGO_FILE_OPTIONS in apps/cms/src/globals/PageHackathon.ts.
+interface LogoAsset {
+  src: string;
+  width: number;
+  height: number;
+  mark?: number;
+  space?: number;
+}
+
+const logoAssets: Record<string, LogoAsset> = {
   "69bfc230ceecbebceff708fc_new-logo.webp": {
     src: "/media/hackathon/partners/spherecast.webp",
     width: 1436,
@@ -98,78 +111,244 @@ const logoAssets: Record<
     src: "/media/hackathon/partners/mlh.svg",
     width: 311,
     height: 131,
+    mark: 3.4,
+    space: 0.35,
+  },
+  // DigitalOcean horizontal logo, blue, from "DO Logo Assets.zip" on
+  // digitalocean.com/press. Safe space: half the icon height.
+  "digitalocean-logo-horizontal-blue.svg": {
+    src: "/media/digitalocean-logo-horizontal-blue.svg",
+    width: 603,
+    height: 103,
+    mark: 2.5,
+    space: 0.5,
+  },
+  // DEV badge, black, from hacktoberfest.com/brand (partners/dev-logo-black.svg).
+  "dev-logo-black.svg": {
+    src: "/media/dev-logo-black.svg",
+    width: 448,
+    height: 512,
+    mark: 4.25,
+    space: 0.25,
+  },
+  // ElevenLabs logo, black, from elevenlabs.io/brand. Clear space: at least
+  // the logo height on every side.
+  "elevenlabs-logo-black.svg": {
+    src: "/media/elevenlabs-logo-black.svg",
+    width: 694,
+    height: 90,
+    mark: 1.7,
+    space: 1,
   },
 };
 
-// A partner without a local asset is skipped. The logo is decorative here:
-// the accessible name comes from the link's aria-label, which LogoGrid
-// builds from the partner name and note.
-const tiers = groups.map((group) => ({
-  heading: group.group,
-  logos: group.partners.flatMap((partner): LogoGridItem[] => {
-    const asset = logoAssets[partner.logoFile];
-    if (!asset) return [];
-    return [
-      {
-        name: partner.name,
-        href: partner.href,
-        alt: "",
-        note: partner.note ?? undefined,
-        ...asset,
-      },
-    ];
-  }),
-}));
+const showPlaceholders = import.meta.env.DEV;
+
+type RoleLogo =
+  | ({ kind: "logo"; name: string; href: string } & LogoAsset)
+  | { kind: "missing"; name: string; href: string };
+
+const roles = groups
+  .map((group) => ({
+    heading: group.group,
+    logos: group.partners.flatMap((partner): RoleLogo[] => {
+      const asset = logoAssets[partner.logoFile];
+      if (asset) {
+        return [
+          { kind: "logo", name: partner.name, href: partner.href, ...asset },
+        ];
+      }
+      return showPlaceholders
+        ? [{ kind: "missing", name: partner.name, href: partner.href }]
+        : [];
+    }),
+  }))
+  .filter((role) => role.logos.length > 0);
+
+// Partner footnotes (e.g. DigitalOcean's trademark line) come from the
+// optional CMS `note` field and are listed once under the strip.
+const notes = groups
+  .flatMap((group) => group.partners.map((partner) => partner.note))
+  .filter((note): note is string => Boolean(note));
 ---
 
 {
-  groups.length > 0 && (
-    <Section aria-labelledby="partners-heading">
-      <Container>
-        <SectionHeader>
-          <h2 id="partners-heading">{heading}</h2>
-        </SectionHeader>
-        {tiers.map((tier) => (
-          <div class="partner-tier">
-            <div class="partner-tier-heading">
-              <span class="dash" aria-hidden="true" />
-              <h3>{tier.heading}</h3>
-              <span class="dash" aria-hidden="true" />
-            </div>
-            <LogoGrid logos={tier.logos} variant="hack" flip />
+  roles.length > 0 && (
+    <section class="partners" aria-labelledby="partners-heading">
+      <div class="container">
+        <h2
+          id="partners-heading"
+          class="hack-giant hack-cut hack-cut-text"
+          data-reveal="text"
+        >
+          {heading}
+        </h2>
+        <ul class="roles">
+          {roles.map((role) => (
+            <li class="role">
+              <h3 class="role-heading">{role.heading}</h3>
+              <ul class="role-logos">
+                {role.logos.map((logo) => (
+                  <li>
+                    {logo.kind === "logo" ? (
+                      <a
+                        class="role-logo"
+                        href={logo.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`${logo.name} (opens in a new tab)`}
+                        data-reveal="logo"
+                        style={[
+                          `--mark:${logo.mark ?? 3}rem`,
+                          `--space:${logo.space ?? 0.4}`,
+                        ].join(";")}
+                      >
+                        <img
+                          src={logo.src}
+                          alt=""
+                          width={logo.width}
+                          height={logo.height}
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      </a>
+                    ) : (
+                      <span class="role-missing">
+                        <strong>{logo.name}</strong>
+                        <span>Logo not registered</span>
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ul>
+        {notes.length > 0 && (
+          <div class="notes">
+            {notes.map((note) => (
+              <p>{note}</p>
+            ))}
           </div>
-        ))}
-      </Container>
-    </Section>
+        )}
+      </div>
+    </section>
   )
 }
 
 <style>
-  /* Sibling-relative, not :first-of-type: the .section-header div is the
-     first div among these siblings, so :first-of-type never matched a tier
-     and the first tier kept a full --section-gap it was not meant to have. */
-  .partner-tier + .partner-tier {
-    margin-top: var(--section-gap);
+  /* Partner strip in the campaign system (DESIGN.md HACK-1 deviating from
+     LAYOUT-3 and TYPE-1): its own rhythm on the white surface, a giant
+     cut-out heading instead of the navy h2. */
+  .partners {
+    padding-block: clamp(var(--space-xl), 8vh, 5.5rem)
+      clamp(var(--space-xl), 7vh, 5rem);
   }
 
-  .partner-tier-heading {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-sm);
-    margin-bottom: 1.75rem;
+  .roles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    margin: 0 auto;
+    padding: 0;
+    max-width: var(--container-medium);
+    list-style: none;
   }
 
-  .partner-tier-heading h3 {
+  .role {
+    display: grid;
+    justify-items: center;
+    align-content: start;
+    gap: var(--space-xs);
+    padding: var(--space-sm) var(--space-lg);
+  }
+
+  .role + .role {
+    border-left: 1px solid var(--color-hack-mist);
+  }
+
+  .role-heading {
     margin: 0;
-    font-size: var(--heading-h5-size);
-    white-space: nowrap;
+    color: var(--color-hack-mid);
+    font-size: var(--text-size-small);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.02em;
   }
 
-  .dash {
-    flex: 1;
-    max-width: 6rem;
-    height: 1px;
-    background-color: var(--color-neutral-lighter);
+  .role-logos {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Height-normalized marks with their brand's clear space as padding. */
+  .role-logo {
+    display: grid;
+    place-items: center;
+    height: calc(var(--mark) * (1 + 2 * var(--space)));
+    padding: calc(var(--mark) * var(--space));
+    border-radius: var(--radius-card);
+    --hack-sweep-color: var(--color-hack-haze);
+  }
+
+  .role-logo img {
+    display: block;
+    width: auto;
+    height: var(--mark);
+    max-width: 100%;
+  }
+
+  .role-logo:focus-visible {
+    outline-offset: -2px;
+  }
+
+  /* Local preview only (never rendered in a production build). */
+  .role-missing {
+    display: grid;
+    place-items: center;
+    gap: 0.25rem;
+    min-width: 10rem;
+    padding: var(--space-xs) var(--space-sm);
+    border: 2px dashed var(--color-hack-red);
+    border-radius: var(--radius-card);
+    color: var(--color-hack-ink);
+    font-size: var(--text-size-small);
+  }
+
+  .role-missing span {
+    color: var(--color-hack-red);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .notes {
+    max-width: var(--container-small);
+    margin: var(--space-lg) auto 0;
+    color: var(--color-neutral);
+    font-size: var(--text-size-tiny);
+    text-align: center;
+  }
+
+  .notes p {
+    margin: 0;
+  }
+
+  @media (max-width: 767px) {
+    .roles {
+      grid-template-columns: 1fr;
+    }
+
+    .role {
+      padding-inline: 0;
+      padding-block: var(--space-md);
+    }
+
+    .role + .role {
+      border-left: 0;
+      border-top: 1px solid var(--color-hack-mist);
+    }
   }
 </style>
