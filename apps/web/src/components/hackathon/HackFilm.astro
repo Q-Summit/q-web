@@ -1,0 +1,1511 @@
+---
+// "A glimpse into past Q-Hack events": a neutral, logo-free laptop on the
+// violet ground. Its display already shows the gallery: a curved film band
+// wound around a tilted cylinder (after the Shader studio's film carousel),
+// with the active photo in front and its neighbors bending away in
+// perspective. Scrolling in, the view closes in on the display and the
+// same band grows into the large view; it is the one gallery throughout,
+// never swapped for another.
+//
+// The band is plain CSS 3D (perspective, rotateY, translateZ): no 3D
+// library, no canvas (DESIGN.md MOTION-4). It is pointer, touch and
+// keyboard operable: click or tap a frame to bring it forward, use the
+// arrow buttons, the dots, the arrow keys, or a horizontal swipe. Swipes
+// use touch-action: pan-y, so vertical page scrolling is never captured.
+// Scrolling only drives the short intro (zoom, a slight turn and tilt);
+// once a photo is chosen, nothing moves it again.
+//
+// One continuous band: every frame is cut into a few narrow facets on the
+// cylinder, so the band bends in small steps instead of folding at each
+// frame, and frames meet edge to edge. Light comes from the front: each
+// facet darkens with its angle away from the viewer, the receding ends
+// fade out (and, on wide screens, soften slightly), and a soft pool of
+// light lies under the band. A change of photo only turns the cylinder.
+//
+// Sharpness: Chrome rasterizes layers under a perspective at one pixel per
+// CSS pixel, ignoring the zoom and the screen's pixel density, and then
+// stretches them (measured: half the sharpness of the same file shown
+// flat). So the band is laid out K times larger than it appears (K = the
+// zoom times the device pixel ratio plus a little, at most 4) and scaled down by 1/K:
+// its layers then rasterize at the pixel size they reach in the large
+// view.
+//
+// Images: the band starts with color placeholders (no image data in git).
+// When the section approaches, the script loads the active photo at the
+// width it will really be shown at, the direct neighbors at a medium
+// width, and the outer frames small; every other variant only on demand.
+// Without the script there is a still photo in the display and a plain
+// grid of all photos below (DESIGN.md MOTION-2). Reduced motion keeps the
+// gallery operable, without the zoom or any transition.
+import {
+  photoSrcset,
+  photoUrl,
+  PHOTO_WIDTHS,
+  type PastPhoto,
+} from "../../assets/media/hackathon";
+import "./hack-light.css";
+
+interface Props {
+  heading: string;
+  photos: PastPhoto[];
+}
+
+const { heading, photos } = Astro.props;
+const [first] = photos;
+
+// A closed band needs a few frames; with few photos the band carries each
+// photo twice, so the cylinder is full and the neighbors stay close.
+const hasBand = photos.length >= 3;
+const repeat = photos.length <= 6 ? 2 : 1;
+const slots = hasBand
+  ? Array.from({ length: photos.length * repeat }, (_, i) => ({
+      i,
+      photo: photos[i % photos.length],
+    }))
+  : [];
+// Facets per frame: four keep the bend at 9 degrees per step with ten
+// frames, which reads as a curve, at 80 small layers in all.
+const FACETS = 4;
+const facets = Array.from({ length: FACETS }, (_, j) => j);
+
+// Everything the script needs to pick a variant, as data on the view.
+const galleryData = JSON.stringify({
+  widths: PHOTO_WIDTHS,
+  photos: photos.map((p) => ({
+    urls: PHOTO_WIDTHS.map((w) => photoUrl(p, w)),
+    caption: p.caption,
+    alt: p.alt,
+  })),
+});
+---
+
+{
+  first && (
+    <section
+      class="film"
+      aria-labelledby="film-heading"
+      data-hack-film
+      data-hack-ground-zone
+    >
+      <div class="film-track">
+        <div class="film-stage">
+          <div class="film-head" data-reveal="rise">
+            <h2 id="film-heading">{heading}</h2>
+            <p>
+              Photos from earlier Q-Hack events, not from the Hack Day itself.
+            </p>
+          </div>
+
+          <div class="laptop" data-film-laptop>
+            <div class="laptop-lid">
+              <div class="laptop-bezel">
+                <span class="laptop-camera" aria-hidden="true" />
+                <div class="laptop-screen" data-film-screen>
+                  {/* Still photo and grid exist for the no-script case only;
+                    in <noscript> a browser with scripts never fetches them. */}
+                  <noscript>
+                    <img
+                      class="screen-poster"
+                      src={photoUrl(first, 768)}
+                      srcset={photoSrcset(first)}
+                      sizes="(max-width: 767px) 90vw, 56rem"
+                      width={first.width}
+                      height={first.height}
+                      alt={first.alt}
+                      loading="lazy"
+                      decoding="async"
+                      style={`object-position:${first.focus}`}
+                      data-film-poster
+                    />
+                  </noscript>
+                  {hasBand && (
+                    <div
+                      class="band-view"
+                      role="group"
+                      aria-roledescription="carousel"
+                      aria-label="Photos from earlier Q-Hack events"
+                      aria-describedby="film-help"
+                      tabindex="0"
+                      data-film-view
+                      data-gallery={galleryData}
+                      style={`--n:${slots.length};--facets:${FACETS}`}
+                      hidden
+                    >
+                      <div class="band-mask">
+                        <span class="band-floor" aria-hidden="true" />
+                        <div class="band-space">
+                          <div class="band-tilt">
+                            <div class="band" data-film-band>
+                              {slots.map(({ i, photo }) => (
+                                <div
+                                  class:list={[
+                                    "slot",
+                                    { "is-active": i === 0 },
+                                  ]}
+                                  data-slot={i}
+                                  aria-hidden="true"
+                                  style={[
+                                    `--i:${i}`,
+                                    `--tint-a:${photo.tint[0]}`,
+                                    `--tint-b:${photo.tint[1]}`,
+                                  ].join(";")}
+                                >
+                                  {facets.map((j) => (
+                                    <div class="facet" style={`--j:${j}`}>
+                                      <div class="facet-face">
+                                        <div class="facet-frame">
+                                          <div class="slot-photo">
+                                            <img
+                                              alt=""
+                                              width={photo.width}
+                                              height={photo.height}
+                                              decoding="async"
+                                              style={`object-position:${photo.focus}`}
+                                            />
+                                          </div>
+                                          <p class="slot-caption">
+                                            <span class="slot-badge">
+                                              Previous Q-Hack
+                                            </span>
+                                            {photo.caption}
+                                          </p>
+                                        </div>
+                                      </div>
+                                      <div class="facet-back" />
+                                    </div>
+                                  ))}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                        <span class="band-shade" aria-hidden="true" />
+                        <span class="band-soft is-start" aria-hidden="true" />
+                        <span class="band-soft is-end" aria-hidden="true" />
+                      </div>
+                      <p id="film-help" class="u-visually-hidden">
+                        Use the arrow keys, the buttons or swipe to switch
+                        photos.
+                      </p>
+                      <p
+                        class="u-visually-hidden"
+                        aria-live="polite"
+                        data-film-status
+                      />
+                    </div>
+                  )}
+                </div>
+                <span class="screen-glare" aria-hidden="true" />
+              </div>
+            </div>
+            <div class="laptop-hinge" aria-hidden="true" />
+            <div class="laptop-base" aria-hidden="true" />
+            <div class="laptop-shadow" aria-hidden="true" />
+          </div>
+
+          {hasBand && (
+            <div class="film-controls" data-film-controls hidden>
+              <button
+                type="button"
+                class="film-arrow"
+                aria-label="Previous photo"
+                data-film-prev
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="22"
+                  height="22"
+                  aria-hidden="true"
+                >
+                  <path d="M15 5l-7 7 7 7" />
+                </svg>
+              </button>
+              <ol class="film-dots">
+                {photos.map((photo, index) => (
+                  <li>
+                    <button
+                      type="button"
+                      class="film-dot"
+                      aria-label={`Photo ${index + 1} of ${photos.length}: ${photo.caption}`}
+                      aria-current={index === 0 ? "true" : undefined}
+                      data-film-dot={index}
+                    />
+                  </li>
+                ))}
+              </ol>
+              <button
+                type="button"
+                class="film-arrow"
+                aria-label="Next photo"
+                data-film-next
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="22"
+                  height="22"
+                  aria-hidden="true"
+                >
+                  <path d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <noscript>
+        <ul class="film-grid">
+          {photos.slice(1).map((photo) => (
+            <li data-reveal="photo">
+              <img
+                src={photoUrl(photo, 768)}
+                srcset={photoSrcset(photo)}
+                sizes="(max-width: 767px) 90vw, 29rem"
+                width={photo.width}
+                height={photo.height}
+                alt={photo.alt}
+                loading="lazy"
+                decoding="async"
+                style={`object-position:${photo.focus}`}
+              />
+              <p class="grid-caption">
+                <span class="slot-badge">Previous Q-Hack</span>
+                {photo.caption}
+              </p>
+            </li>
+          ))}
+        </ul>
+      </noscript>
+    </section>
+  )
+}
+
+<style>
+  /* Campaign sequence on the violet ground (DESIGN.md HACK-1 deviating
+     from LAYOUT-3 and TYPE-1). The laptop is drawn from neutral tokens with
+     no brand; its shadow and reflections are light and material, not
+     elevation (DEPTH-1). Top padding leaves room for the seam out of the
+     white surface (--hack-seam, set on the page shell). */
+  .film {
+    --z: 0;
+    /* Backdrop of the gallery, on the display and on the stage. */
+    --film-backdrop:
+      radial-gradient(
+        ellipse 46% 40% at 50% 47%,
+        color-mix(in srgb, var(--color-hack-haze) 26%, transparent),
+        color-mix(in srgb, var(--color-hack-haze) 10%, transparent) 50%,
+        transparent
+      ),
+      radial-gradient(
+        farthest-corner at 50% 47%,
+        var(--color-hack-mid),
+        var(--color-hack-violet) 26%,
+        var(--color-hack-deep) 62%,
+        var(--color-hack-ink)
+      );
+    position: relative;
+    padding-block: calc(var(--hack-seam, 14rem) * 0.55)
+      clamp(var(--space-lg), 6vh, 4rem);
+    color: var(--color-text-inverse);
+  }
+
+  .film-stage {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: clamp(var(--space-sm), 3vh, var(--space-lg));
+    padding-inline: var(--padding-global);
+  }
+
+  .film-head {
+    display: grid;
+    gap: var(--space-2xs);
+    max-width: 44rem;
+    text-align: center;
+  }
+
+  .film-head h2 {
+    margin: 0;
+    color: var(--color-text-inverse);
+    font-size: clamp(1.9rem, 4.2vw, 3.25rem);
+    font-weight: var(--heading-weight-home);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  .film-head p {
+    margin: 0;
+    color: color-mix(in srgb, var(--color-white) 82%, transparent);
+  }
+
+  /* ---- The laptop. Proportions after a current 14 to 16 inch notebook:
+     16:10 display, thin even bezels, a slim aluminum rim, a thin base that
+     is a little wider than the lid. Sized by width and height so the whole
+     device, the heading and the controls fit one screen. */
+  .laptop {
+    position: relative;
+    width: min(
+      58rem,
+      100%,
+      calc((100svh - var(--hack-nav, 4rem) - 16rem) * 1.45)
+    );
+    transform-origin: var(--ox, 50%) var(--oy, 40%);
+    transform: translate(
+        calc(var(--dx, 0px) * var(--z)),
+        calc(var(--dy, 0px) * var(--z))
+      )
+      scale(calc(1 + (var(--s, 1) - 1) * var(--z)));
+  }
+
+  .laptop-lid {
+    position: relative;
+    padding: 0.38%;
+    border-radius: var(--radius-hack-lid);
+  }
+
+  /* Rim and bezel are painted on pseudo layers, so they can dissolve as
+     the display takes over without fading the photos with them. */
+  .laptop-lid::before,
+  .laptop-bezel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    opacity: calc(1 - var(--z) * 1.5);
+    pointer-events: none;
+  }
+
+  /* Aluminum rim: cool silver with a lilac cast from the room light and
+     a fine specular line along the top edge. */
+  .laptop-lid::before {
+    background:
+      linear-gradient(
+        to bottom,
+        color-mix(in srgb, var(--color-white) 80%, transparent),
+        transparent 1.4%
+      ),
+      linear-gradient(
+        160deg,
+        color-mix(in srgb, var(--color-hack-haze) 35%, transparent),
+        transparent 40%
+      ),
+      linear-gradient(
+        to bottom,
+        var(--color-neutral-lighter),
+        var(--color-neutral-light) 12%,
+        var(--color-neutral) 60%,
+        var(--color-neutral-dark)
+      );
+  }
+
+  .laptop-bezel {
+    position: relative;
+    padding: 1.9% 1.55% 2.3%;
+    border-radius: var(--radius-hack-bezel);
+  }
+
+  .laptop-bezel::before {
+    background: linear-gradient(
+      to bottom,
+      var(--color-neutral-darker),
+      var(--color-black) 30%
+    );
+  }
+
+  .laptop-camera {
+    position: absolute;
+    top: 0.75%;
+    left: 50%;
+    z-index: 1;
+    width: 0.42%;
+    aspect-ratio: 1;
+    translate: -50% 0;
+    border-radius: var(--radius-circle);
+    background-color: var(--color-neutral-dark);
+    opacity: calc(1 - var(--z) * 1.6);
+  }
+
+  .laptop-screen {
+    position: relative;
+    isolation: isolate;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    border-radius: calc(var(--radius-button) * (1 - var(--z)));
+  }
+
+  /* The display lights the band from behind: a soft light center behind
+     the gallery in the lighter Hack violet, deepening to ink at the
+     edges. As the view closes in it hands over to the same light on the
+     stage (below), so the large view has no display edge. */
+  .laptop-screen::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--film-backdrop);
+    opacity: min(1, calc((1 - var(--z)) / 0.4));
+    pointer-events: none;
+  }
+
+  /* Glass reflection over the whole cover glass (bezel and display): a
+     faint diagonal sheen that fades as the view closes in, so the photos
+     stay clean in the large view. */
+  .screen-glare {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    border-radius: inherit;
+    background:
+      linear-gradient(
+        118deg,
+        color-mix(in srgb, var(--color-white) 13%, transparent) 0%,
+        color-mix(in srgb, var(--color-white) 4%, transparent) 26%,
+        transparent 42%
+      ),
+      linear-gradient(
+        to bottom,
+        color-mix(in srgb, var(--color-white) 6%, transparent),
+        transparent 8%
+      );
+    opacity: calc(1 - var(--z));
+    pointer-events: none;
+  }
+
+  .laptop-hinge {
+    position: relative;
+    width: 94%;
+    height: 0;
+    margin-inline: auto;
+    padding-bottom: 0.85%;
+    border-radius: 0 0 var(--radius-button) var(--radius-button);
+    background: linear-gradient(
+      to bottom,
+      var(--color-black),
+      var(--color-neutral-darker)
+    );
+    opacity: calc(1 - var(--z) * 1.6);
+  }
+
+  .laptop-base {
+    position: relative;
+    width: 107%;
+    height: 0;
+    margin-left: -3.5%;
+    padding-bottom: 1.5%;
+    border-radius: var(--radius-hack-base);
+    background: linear-gradient(
+      to bottom,
+      var(--color-neutral-lightest),
+      var(--color-neutral-lighter) 22%,
+      var(--color-neutral-light) 60%,
+      var(--color-neutral)
+    );
+    opacity: calc(1 - var(--z) * 1.6);
+  }
+
+  /* Front thumb scoop. */
+  .laptop-base::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 13%;
+    height: 45%;
+    translate: -50% 0;
+    border-radius: 0 0 var(--radius-button) var(--radius-button);
+    background: linear-gradient(
+      to bottom,
+      var(--color-neutral),
+      var(--color-neutral-light)
+    );
+  }
+
+  /* Soft contact shadow on the ground. */
+  .laptop-shadow {
+    position: absolute;
+    left: 2%;
+    right: 2%;
+    bottom: -2.4%;
+    height: 4.5%;
+    z-index: -1;
+    border-radius: var(--radius-circle);
+    background: radial-gradient(
+      closest-side,
+      color-mix(in srgb, var(--color-hack-ink) 80%, transparent),
+      color-mix(in srgb, var(--color-hack-ink) 30%, transparent) 60%,
+      transparent
+    );
+    opacity: calc(1 - var(--z) * 1.6);
+    pointer-events: none;
+  }
+
+  /* Still photo for the no-script case; the script removes it. */
+  .screen-poster {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* ---- The curved band (CSS 3D). Sizes come from the script in band
+     space (--fw, --fh, --r, --perspective in px, K times the visible size,
+     see the component comment); the fallbacks only keep a static render
+     sane. --fw-css and --fh-css are the visible sizes. */
+  .band-view {
+    position: absolute;
+    inset: 0;
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    cursor: grab;
+    --step: calc(360deg / var(--n));
+    --tilt-x: calc(-9deg - (1 - var(--zi, 1)) * 8deg);
+    --tilt-z: -5deg;
+    --intro: calc((1 - var(--zi, 1)) * 14deg);
+    --band-top: calc(47% + (1 - var(--zi, 1)) * 6%);
+  }
+
+  .band-view[hidden] {
+    display: none;
+  }
+
+  .band-view:focus-visible {
+    outline-offset: -6px;
+  }
+
+  /* The receding ends fade out towards both sides on an eased ramp, so
+     the band never meets the edge of the display, and the far side of
+     the cylinder fades before the top edge. On its own layer below the
+     focus ring, which must not fade. */
+  .band-mask {
+    position: absolute;
+    inset: 0;
+    /* A clip a hair inside the edge: the mask alone leaves the last,
+       partly covered pixel column of the 3D layers unmasked. */
+    clip-path: inset(0 2px);
+    -webkit-mask-image:
+      linear-gradient(
+        to right,
+        transparent 1.5%,
+        color-mix(in srgb, var(--color-black) 16%, transparent) 6%,
+        color-mix(in srgb, var(--color-black) 50%, transparent) 10.5%,
+        color-mix(in srgb, var(--color-black) 84%, transparent) 15%,
+        var(--color-black) 20%,
+        var(--color-black) 80%,
+        color-mix(in srgb, var(--color-black) 84%, transparent) 85%,
+        color-mix(in srgb, var(--color-black) 50%, transparent) 89.5%,
+        color-mix(in srgb, var(--color-black) 16%, transparent) 94%,
+        transparent 98.5%
+      ),
+      linear-gradient(
+        to bottom,
+        transparent,
+        color-mix(in srgb, var(--color-black) 50%, transparent) 5%,
+        var(--color-black) 12%,
+        var(--color-black) 92%,
+        transparent
+      );
+    -webkit-mask-composite: source-in;
+    mask-image:
+      linear-gradient(
+        to right,
+        transparent 1.5%,
+        color-mix(in srgb, var(--color-black) 16%, transparent) 6%,
+        color-mix(in srgb, var(--color-black) 50%, transparent) 10.5%,
+        color-mix(in srgb, var(--color-black) 84%, transparent) 15%,
+        var(--color-black) 20%,
+        var(--color-black) 80%,
+        color-mix(in srgb, var(--color-black) 84%, transparent) 85%,
+        color-mix(in srgb, var(--color-black) 50%, transparent) 89.5%,
+        color-mix(in srgb, var(--color-black) 16%, transparent) 94%,
+        transparent 98.5%
+      ),
+      linear-gradient(
+        to bottom,
+        transparent,
+        color-mix(in srgb, var(--color-black) 50%, transparent) 5%,
+        var(--color-black) 12%,
+        var(--color-black) 92%,
+        transparent
+      );
+    mask-composite: intersect;
+  }
+
+  /* Soft pool of light under the band, so it floats over a lit floor. A
+     still gradient (no filter), following the band's tilt. */
+  .band-floor {
+    position: absolute;
+    left: 50%;
+    top: calc(var(--band-top) + var(--fh-css, 14rem) * 0.62);
+    width: min(78%, calc(var(--fw-css, 18rem) * 2.6));
+    height: calc(var(--fh-css, 14rem) * 0.55);
+    transform: translate(-50%, -50%) rotate(var(--tilt-z));
+    border-radius: var(--radius-circle);
+    background: radial-gradient(
+      closest-side,
+      color-mix(in srgb, var(--color-hack-haze) 30%, transparent),
+      color-mix(in srgb, var(--color-hack-haze) 16%, transparent) 35%,
+      color-mix(in srgb, var(--color-hack-glow) 7%, transparent) 65%,
+      transparent
+    );
+    pointer-events: none;
+  }
+
+  /* The band turn, set on .band only. Not inherited: as an inherited
+     property every change would restyle every element of the band. */
+  @property --active {
+    syntax: "<number>";
+    inherits: false;
+    initial-value: 0;
+  }
+
+  /* Band space: laid out K times larger, shown at 1/K (sharpness, see the
+     component comment). It takes no pointer events: hit-testing 80 3D
+     layers on every mouse move is costly, so the script finds the frame
+     under a click from the band geometry instead. */
+  .band-space {
+    pointer-events: none;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: calc(100% * var(--k, 1));
+    height: calc(100% * var(--k, 1));
+    transform: scale(calc(1 / var(--k, 1)));
+    transform-origin: 0 0;
+    perspective: var(--perspective, 70rem);
+    perspective-origin: 50% 45%;
+  }
+
+  .band-tilt,
+  .band {
+    position: absolute;
+    left: 50%;
+    top: var(--band-top);
+    width: 0;
+    height: 0;
+    transform-style: preserve-3d;
+  }
+
+  /* The first translate lifts the cylinder by what the tilt lowers the
+     front frame (r * sin(tilt)), so the active photo stays just above the
+     middle of the display at every tilt during the intro. */
+  .band-tilt {
+    transform: translateY(calc(var(--r, 30rem) * sin(var(--tilt-x))))
+      translateZ(calc(var(--r, 30rem) * -1)) rotateX(var(--tilt-x))
+      rotateZ(var(--tilt-z)) rotateY(var(--intro));
+  }
+
+  .band {
+    left: 0;
+    top: 0;
+    transform: rotateY(calc(var(--active, 0) * var(--step) * -1));
+  }
+
+  /* A frame: a turn of the cylinder, holding its facets. */
+  .slot {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0;
+    transform-style: preserve-3d;
+    transform: rotateY(calc(var(--i) * var(--step)));
+  }
+
+  /* A facet: one narrow, flat slice of the frame on the cylinder wall.
+     It is a hair wider than its slice so neighbors overlap instead of
+     leaving an anti-aliased seam. */
+  .facet {
+    --slice: calc(var(--fw, 18rem) / var(--facets));
+    --seam: calc(var(--k, 1) * 0.75px);
+    --phi: calc(
+      (var(--j) - (var(--facets) - 1) / 2) * var(--step) / var(--facets)
+    );
+    position: absolute;
+    left: calc(var(--slice) * -0.5 - var(--seam));
+    top: calc(var(--fh, 14rem) * -0.5);
+    width: calc(var(--slice) + var(--seam) * 2);
+    height: var(--fh, 14rem);
+    transform-style: preserve-3d;
+    transform: rotateY(var(--phi)) translateZ(var(--r, 30rem));
+  }
+
+  .facet-face,
+  .facet-back {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  /* The whole frame, shifted so this facet shows its own slice: the photo
+     between two sprocket bands on dark film, with a thin film line
+     between neighboring photos. */
+  .facet-frame {
+    position: absolute;
+    top: 0;
+    left: calc(var(--slice) * var(--j) * -1 + var(--seam));
+    width: var(--fw, 18rem);
+    height: 100%;
+    padding: calc(var(--fw, 18rem) * 0.075) calc(var(--fw, 18rem) * 0.008);
+    background:
+      repeating-linear-gradient(
+          90deg,
+          transparent 0 calc(var(--fw, 18rem) * 0.03),
+          color-mix(in srgb, var(--color-white) 78%, transparent)
+            calc(var(--fw, 18rem) * 0.03) calc(var(--fw, 18rem) * 0.058),
+          transparent calc(var(--fw, 18rem) * 0.058)
+            calc(var(--fw, 18rem) * 0.088)
+        )
+        0 calc(var(--fw, 18rem) * 0.026) / 100% calc(var(--fw, 18rem) * 0.024)
+        repeat-x,
+      repeating-linear-gradient(
+          90deg,
+          transparent 0 calc(var(--fw, 18rem) * 0.03),
+          color-mix(in srgb, var(--color-white) 78%, transparent)
+            calc(var(--fw, 18rem) * 0.03) calc(var(--fw, 18rem) * 0.058),
+          transparent calc(var(--fw, 18rem) * 0.058)
+            calc(var(--fw, 18rem) * 0.088)
+        )
+        0 calc(100% - var(--fw, 18rem) * 0.026) / 100%
+        calc(var(--fw, 18rem) * 0.024) repeat-x,
+      var(--color-hack-ink);
+  }
+
+  .slot-photo {
+    position: relative;
+    height: 100%;
+    overflow: hidden;
+    background: linear-gradient(
+      to bottom,
+      var(--tint-a, var(--color-hack-deep)),
+      var(--tint-b, var(--color-hack-ink))
+    );
+  }
+
+  /* Faint sheen from a light above the front. */
+  .slot-photo::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--color-white) 6%, transparent),
+      transparent 35%
+    );
+    pointer-events: none;
+  }
+
+  .slot-photo img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+  }
+
+  .slot-photo img.is-loaded {
+    opacity: 1;
+  }
+
+  .slot-caption,
+  .grid-caption {
+    position: absolute;
+    left: 0;
+    right: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2xs);
+    margin: 0;
+    color: var(--color-white);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  /* Sized in band space, so rem-based values scale with K. */
+  .slot-caption {
+    bottom: calc(var(--fw, 18rem) * 0.075);
+    gap: calc(var(--space-2xs) * var(--k, 1));
+    padding: calc(var(--fw, 18rem) * 0.09) calc(var(--fw, 18rem) * 0.04)
+      calc(var(--fw, 18rem) * 0.03);
+    background: linear-gradient(
+      to top,
+      color-mix(in srgb, var(--color-hack-ink) 82%, transparent),
+      transparent
+    );
+    font-size: clamp(
+      calc(0.7rem * var(--k, 1)),
+      calc(var(--fw, 18rem) * 0.042),
+      calc(1.05rem * var(--k, 1))
+    );
+  }
+
+  .slot-badge {
+    padding: 0.15rem var(--space-2xs);
+    border-radius: var(--radius-pill);
+    background-color: color-mix(in srgb, var(--color-white) 18%, transparent);
+    font-size: smaller;
+  }
+
+  .slot-caption .slot-badge {
+    padding: calc(0.15rem * var(--k, 1)) calc(var(--space-2xs) * var(--k, 1));
+  }
+
+  /* Light from the front: the band darkens smoothly towards the sides,
+     where its facets turn away from the viewer. One still overlay
+     instead of a shade per facet: it follows the curve without marking
+     the facet steps, and a turn of the band costs no restyling. */
+  .band-shade {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to right,
+      color-mix(in srgb, var(--color-hack-ink) 62%, transparent),
+      color-mix(in srgb, var(--color-hack-ink) 44%, transparent) 9%,
+      color-mix(in srgb, var(--color-hack-ink) 22%, transparent) 18%,
+      color-mix(in srgb, var(--color-hack-ink) 6%, transparent) 26%,
+      transparent 32%,
+      transparent 68%,
+      color-mix(in srgb, var(--color-hack-ink) 6%, transparent) 74%,
+      color-mix(in srgb, var(--color-hack-ink) 22%, transparent) 82%,
+      color-mix(in srgb, var(--color-hack-ink) 44%, transparent) 91%,
+      color-mix(in srgb, var(--color-hack-ink) 62%, transparent)
+    );
+    pointer-events: none;
+  }
+
+  /* The band's back, seen through the open cylinder: dark film. Laid out
+     at 1/K and scaled back up, so the plain back costs no more raster than
+     it shows. */
+  .facet-back {
+    inset: auto;
+    left: 0;
+    top: 0;
+    width: calc(100% / var(--k, 1));
+    height: calc(100% / var(--k, 1));
+    transform-origin: 0 0;
+    transform: translateX(calc(100% * var(--k, 1))) scale(var(--k, 1))
+      rotateY(180deg);
+    background:
+      repeating-linear-gradient(
+          90deg,
+          transparent 0 calc(var(--fw, 18rem) * 0.03 / var(--k, 1)),
+          color-mix(in srgb, var(--color-hack-haze) 35%, transparent)
+            calc(var(--fw, 18rem) * 0.03 / var(--k, 1))
+            calc(var(--fw, 18rem) * 0.058 / var(--k, 1)),
+          transparent calc(var(--fw, 18rem) * 0.058 / var(--k, 1))
+            calc(var(--fw, 18rem) * 0.088 / var(--k, 1))
+        )
+        0 calc(var(--fw, 18rem) * 0.026 / var(--k, 1)) / 100%
+        calc(var(--fw, 18rem) * 0.024 / var(--k, 1)) repeat-x,
+      linear-gradient(to bottom, var(--color-hack-deep), var(--color-hack-ink));
+    opacity: 0.85;
+  }
+
+  /* The outer ends soften slightly (blur on the backdrop, ramped in by a
+     mask), and only there: the active photo and the controls stay crisp.
+     Wide screens only; phones keep the fade alone. */
+  .band-soft {
+    display: none;
+  }
+
+  @media (min-width: 768px) {
+    .band-soft {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      display: block;
+      width: 22%;
+      -webkit-backdrop-filter: blur(1.5px);
+      backdrop-filter: blur(1.5px);
+      pointer-events: none;
+    }
+
+    .band-soft.is-start {
+      left: 0;
+      -webkit-mask-image: linear-gradient(
+        to right,
+        var(--color-black) 30%,
+        transparent
+      );
+      mask-image: linear-gradient(
+        to right,
+        var(--color-black) 30%,
+        transparent
+      );
+    }
+
+    .band-soft.is-end {
+      right: 0;
+      -webkit-mask-image: linear-gradient(
+        to left,
+        var(--color-black) 30%,
+        transparent
+      );
+      mask-image: linear-gradient(to left, var(--color-black) 30%, transparent);
+    }
+  }
+
+  /* ---- Controls. */
+  .film-controls {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-2xs);
+    border-radius: var(--radius-pill);
+    background-color: color-mix(
+      in srgb,
+      var(--color-hack-ink) 82%,
+      transparent
+    );
+  }
+
+  .film-controls[hidden] {
+    display: none;
+  }
+
+  .film-arrow {
+    display: grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-circle);
+    background-color: var(--color-white);
+    color: var(--color-hack-ink);
+    cursor: pointer;
+    transition: background-color var(--duration-hover) var(--ease-snappy);
+  }
+
+  .film-arrow:hover {
+    background-color: var(--color-hack-mist);
+  }
+
+  .film-arrow path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .film-dots {
+    display: flex;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Large hit area, small visual dot. */
+  .film-dot {
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.75rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+  }
+
+  .film-dot::before {
+    content: "";
+    width: var(--space-2xs);
+    height: var(--space-2xs);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-white);
+    opacity: 0.45;
+  }
+
+  .film-dot[aria-current="true"]::before {
+    width: 1.4rem;
+    opacity: 1;
+  }
+
+  /* ---- Static grid: only without the script. */
+  .film-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-md);
+    max-width: 60rem;
+    margin: clamp(var(--space-lg), 5vh, var(--space-xl)) auto 0;
+    padding: 0 var(--padding-global);
+    list-style: none;
+  }
+
+  .film[data-enhanced] .film-grid {
+    display: none;
+  }
+
+  .film-grid li {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-card-large);
+  }
+
+  .film-grid img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 3 / 2;
+    object-fit: cover;
+  }
+
+  .grid-caption {
+    bottom: 0;
+    padding: var(--space-xl) var(--space-sm) var(--space-sm);
+    background: linear-gradient(
+      to top,
+      color-mix(in srgb, var(--color-hack-ink) 82%, transparent),
+      transparent
+    );
+    font-size: var(--text-size-small);
+  }
+
+  @media (max-width: 767px) {
+    .film-grid {
+      grid-template-columns: 1fr;
+    }
+
+    /* Phones: flatter band (less tilt, a longer lens set by the script). */
+    .band-view {
+      --tilt-x: calc(-6deg - (1 - var(--zi, 1)) * 5deg);
+      --tilt-z: -3deg;
+      --intro: calc((1 - var(--zi, 1)) * 10deg);
+    }
+  }
+
+  /* ---- Pinned zoom (wide screens, motion allowed): a short sticky
+     stretch. The stage dims to the darkest violet like a screening room
+     while the display takes over. */
+  .film[data-zoom="pinned"] {
+    padding-bottom: 0;
+  }
+
+  .film[data-zoom="pinned"] .film-track {
+    height: 170svh;
+  }
+
+  .film[data-zoom="pinned"] .film-stage {
+    position: sticky;
+    top: var(--hack-nav, 4rem);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    height: calc(100svh - var(--hack-nav, 4rem));
+    padding-block: var(--space-md);
+    overflow: hidden;
+  }
+
+  /* The large view: the gallery backdrop fills the stage as the display
+     takes over, and melts into the violet ground at its top and bottom,
+     so the stage never ends in an edge when it scrolls on. */
+  .film[data-enhanced] .film-stage::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--film-backdrop);
+    opacity: min(1, calc(var(--z) / 0.6));
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      color-mix(in srgb, var(--color-black) 50%, transparent) 6%,
+      var(--color-black) 14%,
+      var(--color-black) 86%,
+      color-mix(in srgb, var(--color-black) 50%, transparent) 94%,
+      transparent
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      color-mix(in srgb, var(--color-black) 50%, transparent) 6%,
+      var(--color-black) 14%,
+      var(--color-black) 86%,
+      color-mix(in srgb, var(--color-black) 50%, transparent) 94%,
+      transparent
+    );
+    will-change: opacity;
+    pointer-events: none;
+  }
+
+  .film[data-zoom="pinned"] .film-head {
+    opacity: calc(1 - var(--z) * 2.2);
+    transform: translateY(calc(var(--z) * -3rem));
+  }
+
+  /* ---- Transitions (motion allowed only, DESIGN.md MOTION-2). */
+  @media (prefers-reduced-motion: no-preference) {
+    /* A change of photo only turns the cylinder. */
+    .band {
+      transition: transform var(--duration-hack-turn) var(--ease-hack-turn);
+    }
+
+    .slot-photo img {
+      transition: opacity var(--duration-reveal) var(--ease-emphasized);
+    }
+
+    /* Opacity only: it runs on the compositor (a width transition would
+       need the main thread every frame while the band turns). */
+    .film-dot::before {
+      transition: opacity var(--duration-hover) var(--ease-snappy);
+    }
+  }
+</style>
+
+<script>
+  // Gallery and zoom for HackFilm (see the component comment). Geometry is
+  // measured, not guessed; images are chosen by the size they will really
+  // be shown at; scroll only drives the intro.
+  interface GalleryData {
+    widths: number[];
+    photos: { urls: string[]; caption: string; alt: string }[];
+  }
+
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const ease = (x: number) => x * x * (3 - 2 * x);
+  const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
+  const mod = (a: number, n: number) => ((a % n) + n) % n;
+
+  for (const film of document.querySelectorAll<HTMLElement>(
+    "[data-hack-film]",
+  )) {
+    const track = film.querySelector<HTMLElement>(".film-track");
+    const stage = film.querySelector<HTMLElement>(".film-stage");
+    const laptop = film.querySelector<HTMLElement>("[data-film-laptop]");
+    const screen = film.querySelector<HTMLElement>("[data-film-screen]");
+    const view = film.querySelector<HTMLElement>("[data-film-view]");
+    const space = film.querySelector<HTMLElement>(".band-space");
+    const band = film.querySelector<HTMLElement>("[data-film-band]");
+    const controls = film.querySelector<HTMLElement>("[data-film-controls]");
+    const status = film.querySelector<HTMLElement>("[data-film-status]");
+    if (!track || !stage || !laptop || !screen || !view || !space || !band) {
+      continue;
+    }
+
+    const data = JSON.parse(view.dataset.gallery ?? "{}") as GalleryData;
+    const slots = [...band.querySelectorAll<HTMLElement>("[data-slot]")];
+    const dots = [
+      ...film.querySelectorAll<HTMLButtonElement>("[data-film-dot]"),
+    ];
+    const N = slots.length;
+    const P = data.photos.length;
+    const S = Number(getComputedStyle(view).getPropertyValue("--facets")) || 1;
+    if (!N || !P) continue;
+
+    // Enhance: the band takes over the display (the still photo and the
+    // grid sit in <noscript>, so they were never fetched).
+    film.setAttribute("data-enhanced", "");
+    view.hidden = false;
+    if (controls) controls.hidden = false;
+
+    const narrow = () => window.innerWidth < 768;
+    const motion = () => !reduceMotion.matches;
+    let active = 0;
+    let zoomScale = 1;
+    let fwCss = 0;
+
+    // ---- Band geometry, in band space (K times the visible size, see the
+    // component comment): frame width, cylinder radius, perspective. The
+    // facets of all frames close the cylinder edge to edge.
+    const layoutBand = () => {
+      // A little above 1:1, which keeps the bend from softening the photo.
+      const k = Math.min(
+        4,
+        Math.max(1, zoomScale * (window.devicePixelRatio || 1) * 1.15),
+      );
+      fwCss = view.clientWidth * (narrow() ? 0.72 : 0.44);
+      const fw = fwCss * k;
+      const fh = fw * (2 / 3) + fw * 0.15;
+      const r = fw / S / (2 * Math.sin(Math.PI / (N * S)));
+      view.style.setProperty("--fw-css", `${fwCss.toFixed(1)}px`);
+      view.style.setProperty("--fh-css", `${(fh / k).toFixed(1)}px`);
+      space.style.setProperty("--k", k.toFixed(3));
+      space.style.setProperty("--fw", `${fw.toFixed(1)}px`);
+      space.style.setProperty("--fh", `${fh.toFixed(1)}px`);
+      space.style.setProperty("--r", `${r.toFixed(1)}px`);
+      space.style.setProperty(
+        "--perspective",
+        `${(r * (narrow() ? 3.6 : 2.4)).toFixed(0)}px`,
+      );
+    };
+
+    // ---- Images: the width each frame will really be shown at.
+    const loadedWidth = new Map<number, number>();
+    // The active photo never shows a file smaller than its pixel size in
+    // the large view; neighbors may be a little smaller (they turn away).
+    const pick = (needPx: number, slack = 1) =>
+      data.widths.find((w) => w >= needPx * slack) ??
+      data.widths[data.widths.length - 1];
+    const needFor = (factor: number) =>
+      (fwCss || 300) * zoomScale * (window.devicePixelRatio || 1) * factor;
+    const ensure = (photo: number, width: number) => {
+      if ((loadedWidth.get(photo) ?? 0) >= width) return;
+      loadedWidth.set(photo, width);
+      const url = data.photos[photo].urls[data.widths.indexOf(width)];
+      for (const slot of slots) {
+        if (Number(slot.dataset.slot) % P !== photo) continue;
+        // One image per facet, all the same file (fetched and decoded once).
+        for (const img of slot.querySelectorAll("img")) {
+          img.addEventListener("load", () => img.classList.add("is-loaded"), {
+            once: true,
+          });
+          img.src = url;
+        }
+      }
+    };
+    let primed = false;
+    const loadAround = () => {
+      if (!primed) return;
+      const photoAt = (k: number) => mod(k, N) % P;
+      ensure(photoAt(active), pick(needFor(1)));
+      ensure(photoAt(active - 1), pick(needFor(0.75), 0.85));
+      ensure(photoAt(active + 1), pick(needFor(0.75), 0.85));
+      // The outer frames are visible but small and angled: smallest width.
+      ensure(photoAt(active - 2), data.widths[0]);
+      ensure(photoAt(active + 2), data.widths[0]);
+    };
+
+    // ---- Selection.
+    const select = (k: number, announce = true) => {
+      active = k;
+      band.style.setProperty("--active", String(k));
+      for (const slot of slots) {
+        slot.classList.toggle(
+          "is-active",
+          mod(Number(slot.dataset.slot) - k, N) === 0,
+        );
+      }
+      const photo = mod(k, N) % P;
+      dots.forEach((dot, i) =>
+        dot.setAttribute("aria-current", String(i === photo)),
+      );
+      if (announce && status) {
+        const p = data.photos[photo];
+        status.textContent = `Photo ${photo + 1} of ${P}: ${p.caption}. ${p.alt}`;
+      }
+      loadAround();
+    };
+    const step = (delta: number) => select(active + delta);
+    const toPhoto = (photo: number) => {
+      // The nearest slot that shows this photo, the short way round.
+      let best = active;
+      let bestDist = Infinity;
+      for (let delta = -N + 1; delta < N; delta++) {
+        if (mod(active + delta, N) % P !== photo) continue;
+        if (Math.abs(delta) < bestDist) {
+          bestDist = Math.abs(delta);
+          best = active + delta;
+        }
+      }
+      select(best);
+    };
+
+    film
+      .querySelector("[data-film-prev]")
+      ?.addEventListener("click", () => step(-1));
+    film
+      .querySelector("[data-film-next]")
+      ?.addEventListener("click", () => step(1));
+    dots.forEach((dot) =>
+      dot.addEventListener("click", () => toPhoto(Number(dot.dataset.filmDot))),
+    );
+
+    view.addEventListener("keydown", (event) => {
+      const keys: Record<string, () => void> = {
+        ArrowLeft: () => step(-1),
+        ArrowRight: () => step(1),
+        Home: () => toPhoto(0),
+        End: () => toPhoto(P - 1),
+      };
+      const run = keys[event.key];
+      if (run) {
+        event.preventDefault();
+        run();
+      }
+    });
+
+    // Tap or click a frame; a horizontal swipe switches. Vertical moves stay
+    // with the browser (touch-action: pan-y), so page scrolling is free.
+    let down: { x: number; y: number } | null = null;
+    let swiped = false;
+    view.addEventListener("pointerdown", (event) => {
+      down = { x: event.clientX, y: event.clientY };
+      swiped = false;
+    });
+    view.addEventListener("pointerup", (event) => {
+      if (!down) return;
+      const dx = event.clientX - down.x;
+      const dy = event.clientY - down.y;
+      down = null;
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.3) {
+        swiped = true;
+        step(dx < 0 ? 1 : -1);
+      }
+    });
+    view.addEventListener("pointercancel", () => {
+      down = null;
+    });
+    // The frame under a click, from the band geometry: each frame's
+    // projected center across the view (cylinder radius and lens in band
+    // space, divided by K); the nearest one facing the viewer wins.
+    const frameAt = (clientX: number) => {
+      const rect = view.getBoundingClientRect();
+      const visual = rect.width / Math.max(view.clientWidth, 1);
+      const x = (clientX - rect.left) / visual - view.clientWidth / 2;
+      const k = parseFloat(space.style.getPropertyValue("--k")) || 1;
+      const r = (parseFloat(space.style.getPropertyValue("--r")) || 0) / k;
+      const lens =
+        (parseFloat(space.style.getPropertyValue("--perspective")) || 1) / k;
+      const zi = parseFloat(view.style.getPropertyValue("--zi")) || 1;
+      const intro = ((1 - zi) * (narrow() ? 10 : 14) * Math.PI) / 180;
+      let best = 0;
+      let bestGap = Infinity;
+      for (let d = -Math.floor(N / 2); d <= Math.floor(N / 2); d++) {
+        const angle = (d * 2 * Math.PI) / N + intro;
+        if (Math.cos(angle) < 0.15) continue;
+        const depth = r * (Math.cos(angle) - 1);
+        const center = (r * Math.sin(angle) * lens) / (lens - depth);
+        const gap = Math.abs(center - x);
+        if (gap < bestGap) {
+          bestGap = gap;
+          best = d;
+        }
+      }
+      return best;
+    };
+
+    view.addEventListener("click", (event) => {
+      if (swiped) {
+        swiped = false;
+        return;
+      }
+      const delta = frameAt(event.clientX);
+      if (delta !== 0) select(active + delta);
+    });
+
+    // ---- Zoom into the display.
+    // Phones (flow mode): the laptop's own geometry at rest, relative to
+    // the stage top, so the zoom can wait until the whole laptop is in view.
+    const flow = { center: 0, bottom: 0 };
+    const measure = () => {
+      film.style.setProperty("--z", "0");
+      const s = stage.getBoundingClientRect();
+      const l = laptop.getBoundingClientRect();
+      const sc = screen.getBoundingClientRect();
+      const pinned = film.dataset.zoom === "pinned";
+      const scale = pinned
+        ? Math.min(s.width / sc.width, s.height / sc.height)
+        : Math.min(s.width / sc.width, 1.18);
+      zoomScale = scale;
+      film.style.setProperty("--ox", `${sc.left + sc.width / 2 - l.left}px`);
+      film.style.setProperty("--oy", `${sc.top + sc.height / 2 - l.top}px`);
+      film.style.setProperty(
+        "--dx",
+        pinned ? `${s.left + s.width / 2 - (sc.left + sc.width / 2)}px` : "0px",
+      );
+      film.style.setProperty(
+        "--dy",
+        pinned ? `${s.top + s.height / 2 - (sc.top + sc.height / 2)}px` : "0px",
+      );
+      film.style.setProperty("--s", scale.toFixed(4));
+      flow.center = sc.top + sc.height / 2 - s.top;
+      flow.bottom = l.bottom - s.top;
+    };
+
+    const applyZ = (z: number) => {
+      film.style.setProperty("--z", z.toFixed(4));
+      view.style.setProperty("--zi", (motion() ? z : 1).toFixed(4));
+    };
+
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      if (!motion()) return;
+      if (film.dataset.zoom === "pinned") {
+        const rect = track.getBoundingClientRect();
+        const pinTop = parseFloat(getComputedStyle(stage).top) || 0;
+        const range = Math.max(1, rect.height - stage.offsetHeight);
+        applyZ(ease(clamp01((pinTop - rect.top) / range / 0.8)));
+      } else {
+        // Phones: no pinning, three stretches of plain scrolling. The whole
+        // laptop first comes into the usable view (below the fixed header,
+        // above the browser bars: the visual viewport), stays whole for a
+        // short stretch with the band in its display, then the zoom runs
+        // and ends with the gallery a little above the middle. Positions
+        // are the display's center, from the stage (never transformed).
+        const view0 =
+          document.getElementById("site-header")?.getBoundingClientRect()
+            .bottom ?? 0;
+        const view1 = window.visualViewport?.height ?? window.innerHeight;
+        const usable = Math.max(1, view1 - Math.max(0, view0));
+        const center = stage.getBoundingClientRect().top + flow.center;
+        // Display center when the laptop's bottom edge is just in view.
+        const whole = view1 - 16 - (flow.bottom - flow.center);
+        const end = Math.max(0, view0) + usable * 0.36;
+        const minZoom = usable * 0.25;
+        const hold = Math.min(
+          usable * 0.14,
+          Math.max(0, whole - end - minZoom),
+        );
+        const start = whole - hold;
+        const stop = Math.min(end, start - minZoom);
+        applyZ(ease(clamp01((start - center) / (start - stop))));
+      }
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+
+    const setup = () => {
+      if (motion()) {
+        film.dataset.zoom = narrow() ? "flow" : "pinned";
+      } else {
+        delete film.dataset.zoom;
+      }
+      // Measure first: the band space scale depends on the zoom.
+      measure();
+      layoutBand();
+      if (motion()) {
+        update();
+      } else {
+        // Still layouts: the laptop at rest on wide screens; on phones the
+        // display already fills the width, so photos are large enough.
+        applyZ(narrow() ? 1 : 0);
+      }
+      loadAround();
+    };
+
+    let listening = false;
+    new IntersectionObserver(
+      (entries) => {
+        const near = entries.some((entry) => entry.isIntersecting);
+        if (near && !primed) {
+          primed = true;
+          loadAround();
+        }
+        if (near && !listening) {
+          window.addEventListener("scroll", schedule, { passive: true });
+          listening = true;
+        } else if (!near && listening) {
+          window.removeEventListener("scroll", schedule);
+          listening = false;
+        }
+        schedule();
+      },
+      { rootMargin: "800px 0px 800px 0px" },
+    ).observe(film);
+
+    window.addEventListener("resize", setup);
+    window.addEventListener("load", setup, { once: true });
+    reduceMotion.addEventListener("change", setup);
+    select(0, false);
+    setup();
+  }
+</script>

@@ -9,5 +9,6 @@ Day-to-day local workbench CLIs. Agents MAY: `setup`, `dev`, `web-remote`. Human
 | `assert-db.mjs` | used by `seed`, cms `predev`, content export/import |
 | `reset.mjs` | `make reset-local` (TTY) |
 | `web-remote.mjs` | `pnpm dev:web:remote` (read-only published REST; not a content package) |
+| `ground-poster.mjs` | `pnpm ground:poster` (re-render the `/hackathon` ground posters; needs `make dev-web`) |
 
 Catalog: [`docs/dev/scripts.md`](../../docs/dev/scripts.md). Content drafts: [`docs/dev/content-sync.md`](../../docs/dev/content-sync.md).

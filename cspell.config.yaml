@@ -112,6 +112,7 @@ words:
   - Fielhauer
   - fontsource
   - fonttools
+  - fract
   - frontmatter
   - gapless
   - gaxios
@@ -125,7 +126,9 @@ words:
   - hardlinks
   - headshots
   - healthcheck
+  - highp
   - horizontalrule
+  - Hoskins
   - hostnames
   - hrefs
   - HSTS
@@ -152,11 +155,13 @@ words:
   - llmstxt
   - localdev
   - lockfile
+  - lqip
   - lukas
   - mailtos
   - Mannheim
   - maximalism
   - Mbps
+  - mediump
   - metacharacter
   - miniflare
   - misalign
@@ -165,11 +170,13 @@ words:
   - navigations
   - neighbour
   - neondb
+  - networkidle
   - Neue
   - noopener
   - noreferrer
   - norole
   - nosniff
+  - nums
   - oauth
   - oklab
   - oklch
@@ -196,6 +203,7 @@ words:
   - qube
   - qweb
   - rageclick
+  - rasterizes
   - recentre
   - refetches
   - reimplementation
@@ -209,12 +217,14 @@ words:
   - Schneckenhof
   - scroller
   - scrollmaps
+  - smoothstep
   - Speedinvest
   - spherecast
   - sslmode
   - Strickler
   - stylesheet
   - subrequest
+  - subsampling
   - syncable
   - tacto
   - Taubert
@@ -246,9 +256,11 @@ words:
   - Vite
   - vitest
   - vivenu
+  - vmax
   - vulns
   - WCAG
   - Webflow
+  - webglcontextlost
   - wght
   - WhatsApp
   - WHATWG

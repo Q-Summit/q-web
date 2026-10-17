@@ -39,6 +39,8 @@ export const EVENTS = {
   ersti_quiz_completed: "ersti_quiz_completed",
   /** Join Q apply CTA (quiz result or Ready for Q). Props: cta_placement, cta_label. */
   kickoff_apply_clicked: "kickoff_apply_clicked",
+  /** Hackathon apply CTA to the external event page (hero or closing band). Props: cta_placement, cta_href. */
+  hackathon_apply_clicked: "hackathon_apply_clicked",
 } as const;
 
 export type EventName = keyof typeof EVENTS;

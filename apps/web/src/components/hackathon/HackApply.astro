@@ -1,0 +1,141 @@
+---
+// Poster-style apply link for the Q-Hack x Hacktoberfest page: coral slab,
+// dark ink label, a hard ember "shadow" slab underneath that the button
+// presses into on hover. Used by the hero and the closing band, so the one
+// action keeps one look. The destination host is shown under the button,
+// derived from the CMS href, so people know they are leaving the site.
+import type { PageLink } from "../../lib/content";
+import { EVENTS } from "../../lib/analytics/events";
+
+interface Props {
+  cta: PageLink;
+  /** Analytics placement, e.g. "hero" or "closing". */
+  placement: string;
+  /** Hero size (default) or a slightly smaller closing size. */
+  size?: "large" | "medium";
+}
+
+const { cta, placement, size = "large" } = Astro.props;
+
+let host: string | undefined;
+try {
+  const url = new URL(cta.href);
+  if (url.protocol === "https:" || url.protocol === "http:") {
+    host = url.hostname.replace(/^www\./, "");
+  }
+} catch {
+  // Relative or anchor href: nothing to announce.
+}
+---
+
+<div class:list={["apply", { "is-medium": size === "medium" }]}>
+  <a
+    class="apply-link"
+    href={cta.href}
+    data-lp={placement === "hero" ? "hero.cta" : undefined}
+    data-lp-href={placement === "hero" ? "hero.cta.href" : undefined}
+    data-ph-event={EVENTS.hackathon_apply_clicked}
+    data-ph-prop-cta-placement={placement}
+    data-ph-prop-cta-href={cta.href}
+  >
+    <span class="apply-label">{cta.label}</span>
+  </a>
+  {host && <p class="apply-host">Continues on {host}</p>}
+</div>
+
+<style>
+  /* Campaign button, not .button (DESIGN.md HACK-1 deviating from COMP-1
+     and COLOR-1): the poster's coral slab with an ember base. Coral is the
+     Hacktoberfest accent, not the conference orange token. */
+  .apply {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-sm);
+  }
+
+  .apply-link {
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: min(100%, 22rem);
+    padding: 1.35rem 3.25rem;
+    border-radius: var(--radius-hack-cta);
+    color: var(--color-hack-ink);
+    font-size: var(--text-size-large);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.02em;
+    text-decoration: none;
+  }
+
+  /* Face and base are two painted layers under the label: the coral face
+     on top, the hard ember base underneath, offset down. A translated
+     layer instead of a box-shadow keeps it a shape, not elevation
+     (DESIGN.md DEPTH-1). Pressing moves face and label toward the base. */
+  .apply-link::before,
+  .apply-link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+
+  .apply-link::before {
+    z-index: -1;
+    background-color: var(--color-hack-coral);
+  }
+
+  .apply-link::after {
+    z-index: -2;
+    background-color: var(--color-hack-ember);
+    transform: translateY(0.45rem);
+  }
+
+  .apply-link::before,
+  .apply-label {
+    transition: transform var(--duration-hover) var(--ease-snappy);
+  }
+
+  .apply-link:hover::before,
+  .apply-link:hover .apply-label,
+  .apply-link:focus-visible::before,
+  .apply-link:focus-visible .apply-label {
+    transform: translateY(0.2rem);
+  }
+
+  .apply-link:active::before,
+  .apply-link:active .apply-label {
+    transform: translateY(0.4rem);
+  }
+
+  .apply-label {
+    display: block;
+  }
+
+  .apply-host {
+    margin: 0;
+    font-size: var(--text-size-small);
+    color: color-mix(in srgb, var(--color-white) 78%, transparent);
+  }
+
+  .is-medium .apply-link {
+    min-width: min(100%, 18rem);
+    padding: 1.1rem 2.5rem;
+    font-size: var(--text-size-medium);
+  }
+
+  @media (max-width: 479px) {
+    .apply-link {
+      width: 100%;
+      padding-inline: var(--space-md);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .apply-link::before,
+    .apply-label {
+      transition: none;
+    }
+  }
+</style>

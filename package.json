@@ -18,6 +18,7 @@
     "dev": "node scripts/local/dev.mjs",
     "dev:web": "CONTENT_SOURCE=json pnpm --filter web run dev",
     "dev:web:remote": "node scripts/local/web-remote.mjs",
+    "ground:poster": "node scripts/local/ground-poster.mjs",
     "ops:cms-remote": "node scripts/ops/cms-remote.mjs",
     "seed": "node scripts/local/assert-db.mjs && pnpm --filter cms exec payload run seed/preflight.ts && pnpm --filter cms exec payload run seed/users.ts && pnpm --filter cms exec payload run seed/media.ts && pnpm --filter cms exec payload run seed/site-settings.ts && pnpm --filter cms exec payload run seed/page-content.ts && pnpm --filter cms exec payload run seed/legal.ts && pnpm --filter cms exec payload run seed/partners.ts && pnpm --filter cms exec payload run seed/testimonials.ts && pnpm --filter cms exec payload run seed/jobs.ts && pnpm --filter cms exec payload run seed/speakers.ts && pnpm --filter cms exec payload run seed/team.ts && pnpm --filter cms exec payload run seed/past-teams.ts && pnpm --filter cms exec payload run seed/faqs.ts",
     "content:export": "node scripts/content/export.mjs",

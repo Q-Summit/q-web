@@ -1,61 +1,105 @@
 ---
-// Closing CTA, ported from the Webflow "section_hackathon_cta": heading and
-// tagline on the left, contact button on the right, stacked on mobile. Plain
-// section on the page background (the live page has no card treatment here;
-// DESIGN.md COLOR-2 forbids hand-set navy backgrounds anyway). is-small keeps
-// this closing banner tight against the FAQ section above it, matching the
-// live page's short gap. The button is navy like every other button on
-// the site, never orange (DESIGN.md COLOR-1, COMP-1).
-import Section from "../ui/Section.astro";
-import Button from "../ui/Button.astro";
-import Container from "../ui/Container.astro";
+// Closing band back on the violet ground: heading, one line, the same apply
+// link as the hero, and the team contact as a quiet text link underneath.
+// The apply action reuses the hero CTA from the CMS, so there is one place
+// to change (or remove) the link after the event; without a CTA the band
+// still offers the contact.
+import type { PageLink } from "../../lib/content";
 import { EVENTS } from "../../lib/analytics/events";
+import HackApply from "./HackApply.astro";
+import "./hack-light.css";
 
 interface Props {
   heading: string;
   text?: string;
+  applyCta?: PageLink;
   ctaLabel: string;
   ctaHref: string;
 }
 
-const { heading, text, ctaLabel, ctaHref } = Astro.props;
+const { heading, text, applyCta, ctaLabel, ctaHref } = Astro.props;
 ---
 
-<Section small aria-labelledby="hack-cta-heading">
-  <Container>
-    <div class="cta-row">
-      <div class="content">
-        <h2 id="hack-cta-heading">{heading}</h2>
-        {text && <p class="cta-text">{text}</p>}
-      </div>
-      <Button
-        href={ctaHref}
-        data-ph-event={EVENTS.hackathon_contact_clicked}
-        data-ph-prop-cta-href={ctaHref}
-      >
-        {ctaLabel}
-      </Button>
-    </div>
-  </Container>
-</Section>
+<section
+  class="closing"
+  aria-labelledby="hack-cta-heading"
+  data-hack-ground-zone
+>
+  <div class="container closing-content" data-reveal="rise">
+    <h2 id="hack-cta-heading">{heading}</h2>
+    {text && <p class="closing-text">{text}</p>}
+    {
+      applyCta && (
+        <div class="closing-apply">
+          <HackApply cta={applyCta} placement="closing" size="medium" />
+        </div>
+      )
+    }
+    <a
+      class="closing-contact"
+      href={ctaHref}
+      data-ph-event={EVENTS.hackathon_contact_clicked}
+      data-ph-prop-cta-href={ctaHref}
+    >
+      {ctaLabel}
+    </a>
+  </div>
+</section>
 
 <style>
-  .cta-row {
-    display: grid;
-    grid-template-columns: 1fr max-content;
-    gap: var(--space-md) var(--space-xl);
-    align-items: center;
+  /* On the campaign ground, not a .section band (DESIGN.md HACK-1 deviating
+     from LAYOUT-3, COLOR-2 and TYPE-1). */
+  .closing {
+    position: relative;
+    padding-block: clamp(var(--space-xl), 8vh, 5rem) 7rem;
+    color: var(--color-text-inverse);
+    text-align: center;
   }
 
-  .cta-text {
-    margin: var(--space-2xs) 0 0;
+  .closing-content {
+    display: grid;
+    justify-items: center;
+  }
+
+  .closing h2 {
+    max-width: 16ch;
+    margin: 0;
+    color: var(--color-text-inverse);
+    font-size: clamp(2.4rem, 6vw, 4.75rem);
+    font-weight: var(--heading-weight-home);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    text-wrap: balance;
+  }
+
+  .closing-text {
+    max-width: 34rem;
+    margin: var(--space-sm) 0 0;
     font-size: var(--text-size-medium);
+    color: color-mix(in srgb, var(--color-white) 85%, transparent);
+  }
+
+  .closing-apply {
+    width: 100%;
+    margin-top: var(--space-xl);
+  }
+
+  .closing-contact {
+    margin-top: var(--space-lg);
+    color: var(--color-text-inverse);
+    font-weight: var(--font-weight-semibold);
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+  }
+
+  .closing-contact:hover {
+    text-decoration-thickness: 2px;
   }
 
   @media (max-width: 767px) {
-    .cta-row {
-      grid-template-columns: 1fr;
-      justify-items: start;
+    .closing {
+      padding-bottom: 5rem;
     }
   }
 </style>

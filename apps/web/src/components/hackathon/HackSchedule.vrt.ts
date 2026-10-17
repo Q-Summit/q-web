@@ -1,6 +1,8 @@
 // VRT variants for HackSchedule. Covers the default four-item schedule,
-// long descriptions that must wrap, and an empty schedule.
+// long descriptions that must wrap, an empty schedule, and look-back photos
+// beside rows (static render: the LED strip shows fully lit).
 import HackSchedule from "./HackSchedule.astro";
+import { pastPhotos } from "../../assets/media/hackathon";
 
 export default {
   component: HackSchedule,
@@ -30,7 +32,6 @@ export default {
           description: "Top teams present on the main stage.",
         },
       ],
-      images: [undefined, undefined, undefined, undefined],
     },
     "long-descriptions": {
       heading: "Full schedule",
@@ -50,13 +51,22 @@ export default {
             "Partner companies take the stage one after another to present their challenge tracks and prize categories, and the full rules document goes live in the hacker portal immediately afterward.",
         },
       ],
-      images: [undefined, undefined],
     },
     empty: {
       heading: "Schedule",
       intro: "The detailed agenda will be published closer to the event.",
       items: [],
-      images: [],
+    },
+    "with-photos": {
+      heading: "Schedule",
+      intro: "One day, from check-in to the prize ceremony.",
+      items: [
+        { date: "10:00", title: "Check-in", description: "" },
+        { date: "10:30", title: "Welcome and orientation", description: "" },
+        { date: "11:00", title: "Hacking starts", description: "" },
+        { date: "13:00", title: "Lunch break", description: "" },
+      ],
+      photos: { 0: pastPhotos.hallProjection, 2: pastPhotos.laptopWork },
     },
   },
 };

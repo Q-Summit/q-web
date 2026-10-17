@@ -1,5 +1,5 @@
 // VRT variants for HackCta. Covers the optional tagline text and the
-// two-column-to-stacked layout under long copy. See
+// apply link (shared with the hero) with and without the contact fallback. See
 // docs/dev/visual-testing.md for the variant conventions.
 import HackCta from "./HackCta.astro";
 
@@ -9,7 +9,8 @@ export default {
     default: {
       heading: "Ready to build something in 24 hours?",
       text: "Applications close two weeks before the event.",
-      ctaLabel: "Apply now",
+      applyCta: { label: "Apply now", href: "https://events.mlh.com/" },
+      ctaLabel: "Contact the team",
       ctaHref: "#",
     },
     "no-text": {

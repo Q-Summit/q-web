@@ -1,0 +1,406 @@
+---
+// Loose pixel fragments in the campaign accents, like the blocks on the
+// Q-Hack x Hacktoberfest poster, falling continuously behind the page.
+//
+// Motion is time-based, never tied to the scrollbar: each fragment falls on
+// its own clock with a soft acceleration, sways sideways and turns a little,
+// so no two move in step. Fall (translate) and sway with turn (transform)
+// run on one childless element and stay on the compositor (DESIGN.md
+// MOTION-3). The layer sits behind all content
+// (negative z in the page shell), so text, logos, buttons and photos always
+// cover it and the white surface hides it; a horizontal mask keeps the
+// centre column calm, so nothing drifts through the letter gaps of the hero
+// or the closing copy. Purely decorative: aria-hidden, no pointer events.
+//
+// Counts stay low on purpose (10 on wide screens, 4 on phones). With
+// reduced motion the fragments rest at fixed spots; the page pause button
+// stops them with the rest of the ambient motion.
+
+type Tone = "yellow" | "red" | "coral" | "sky" | "white";
+type Rect = { x: number; y: number; w?: number; h?: number; tone?: Tone };
+
+interface Fragment {
+  cols: number;
+  rows: number;
+  rects: Rect[];
+  tone: Tone;
+  /** Cell edge in rem. */
+  cell: number;
+  /** Which page margin the fragment falls in. */
+  side: "left" | "right";
+  /** Distance from that edge in % of the viewport width (wide screens). */
+  inset: number;
+  /** Fall time as a multiple of --duration-hack-fall. */
+  speed: number;
+  /** Start offset within the cycle, 0 to 1, so they do not fall in sync. */
+  phase: number;
+  /** Sideways sway in rem (signed). */
+  sway: number;
+  /** Turn in degrees over one sway (signed, small). */
+  turn: number;
+  /** Resting spot for reduced motion, in vh. */
+  rest: number;
+  /** Also shown on phones. */
+  compact?: boolean;
+}
+
+const fragments: Fragment[] = [
+  {
+    cols: 3,
+    rows: 3,
+    rects: [
+      { x: 0, y: 0 },
+      { x: 1, y: 1 },
+      { x: 2, y: 2 },
+    ],
+    tone: "yellow",
+    cell: 1.5,
+    side: "left",
+    inset: 2,
+    speed: 1,
+    phase: 0.15,
+    sway: 1.25,
+    turn: 14,
+    rest: 18,
+    compact: true,
+  },
+  {
+    cols: 2,
+    rows: 3,
+    rects: [
+      { x: 0, y: 0, h: 3, tone: "red" },
+      { x: 1, y: 0, h: 3, tone: "yellow" },
+    ],
+    tone: "red",
+    cell: 1.2,
+    side: "right",
+    inset: 2.5,
+    speed: 1.25,
+    phase: 0.55,
+    sway: -1,
+    turn: -10,
+    rest: 24,
+    compact: true,
+  },
+  {
+    cols: 1,
+    rows: 1,
+    rects: [{ x: 0, y: 0 }],
+    tone: "white",
+    cell: 1,
+    side: "left",
+    inset: 6,
+    speed: 0.8,
+    phase: 0.7,
+    sway: 1.5,
+    turn: 30,
+    rest: 46,
+  },
+  {
+    cols: 1,
+    rows: 1,
+    rects: [{ x: 0, y: 0 }],
+    tone: "white",
+    cell: 0.9,
+    side: "right",
+    inset: 6,
+    speed: 0.9,
+    phase: 0.25,
+    sway: -1.5,
+    turn: -26,
+    rest: 58,
+  },
+  {
+    cols: 3,
+    rows: 3,
+    rects: [
+      { x: 2, y: 0 },
+      { x: 1, y: 1 },
+      { x: 0, y: 2 },
+    ],
+    tone: "yellow",
+    cell: 1.3,
+    side: "right",
+    inset: 2,
+    speed: 1.1,
+    phase: 0.9,
+    sway: -1.25,
+    turn: 12,
+    rest: 64,
+    compact: true,
+  },
+  {
+    cols: 3,
+    rows: 3,
+    rects: [
+      { x: 0, y: 0, w: 2 },
+      { x: 2, y: 0, h: 3 },
+    ],
+    tone: "sky",
+    cell: 1.5,
+    side: "left",
+    inset: 1.5,
+    speed: 1.4,
+    phase: 0.45,
+    sway: 1,
+    turn: -8,
+    rest: 74,
+  },
+  {
+    cols: 3,
+    rows: 3,
+    rects: [
+      { x: 0, y: 1, h: 2, tone: "red" },
+      { x: 1, y: 0, h: 2, tone: "coral" },
+      { x: 2, y: 1, h: 2, tone: "red" },
+    ],
+    tone: "coral",
+    cell: 1.1,
+    side: "left",
+    inset: 4,
+    speed: 1.2,
+    phase: 0.8,
+    sway: 1.25,
+    turn: 10,
+    rest: 86,
+    compact: true,
+  },
+  {
+    cols: 3,
+    rows: 2,
+    rects: [
+      { x: 0, y: 0, w: 3 },
+      { x: 1, y: 1 },
+    ],
+    tone: "coral",
+    cell: 1,
+    side: "right",
+    inset: 3,
+    speed: 0.95,
+    phase: 0.05,
+    sway: -1,
+    turn: 18,
+    rest: 46,
+  },
+  {
+    cols: 1,
+    rows: 1,
+    rects: [{ x: 0, y: 0 }],
+    tone: "sky",
+    cell: 1.1,
+    side: "left",
+    inset: 7,
+    speed: 1.05,
+    phase: 0.35,
+    sway: -1,
+    turn: -20,
+    rest: 92,
+  },
+  {
+    cols: 2,
+    rows: 2,
+    rects: [
+      { x: 0, y: 0 },
+      { x: 1, y: 1 },
+    ],
+    tone: "white",
+    cell: 0.8,
+    side: "right",
+    inset: 7,
+    speed: 0.85,
+    phase: 0.62,
+    sway: 1.25,
+    turn: 24,
+    rest: 80,
+  },
+];
+
+// One element per fragment, with no children: the pixel shape is a mask
+// (black cells in an SVG data URI) and the color comes from the campaign
+// tokens. Fewer and simpler animated elements keep the per-frame work low
+// while the ground redraws behind them.
+const toneVar: Record<Tone, string> = {
+  yellow: "var(--color-hack-yellow)",
+  red: "var(--color-hack-red)",
+  coral: "var(--color-hack-coral)",
+  sky: "var(--color-hack-sky)",
+  white: "var(--color-white)",
+};
+const maskFor = (frag: Fragment) => {
+  const cells = frag.rects
+    .map(
+      (r) =>
+        `<rect x="${r.x}" y="${r.y}" width="${r.w ?? 1}" height="${r.h ?? 1}"/>`,
+    )
+    .join("");
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${frag.cols} ${frag.rows}" shape-rendering="crispEdges">${cells}</svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+};
+// Two-tone fragments change color by column.
+const paintFor = (frag: Fragment) => {
+  const columns = Array.from(
+    { length: frag.cols },
+    (_, c) =>
+      frag.rects.find((r) => c >= r.x && c < r.x + (r.w ?? 1))?.tone ??
+      frag.tone,
+  );
+  if (columns.every((tone) => tone === columns[0])) return toneVar[columns[0]];
+  const share = 100 / frag.cols;
+  return `linear-gradient(90deg, ${columns
+    .map(
+      (tone, c) =>
+        `${toneVar[tone]} ${(c * share).toFixed(2)}% ${((c + 1) * share).toFixed(2)}%`,
+    )
+    .join(", ")})`;
+};
+---
+
+<div class="fragments" aria-hidden="true">
+  {
+    fragments.map((frag) => (
+      <span
+        class:list={["frag", `is-${frag.side}`, { "is-wide": !frag.compact }]}
+        style={[
+          `--inset:${frag.inset}%`,
+          `--speed:${frag.speed}`,
+          `--phase:${frag.phase}`,
+          `--sway:${frag.sway}rem`,
+          `--turn:${frag.turn}deg`,
+          `--rest:${frag.rest}vh`,
+          `--w:${frag.cols * frag.cell}rem`,
+          `--h:${frag.rows * frag.cell}rem`,
+          `--shape:${maskFor(frag)}`,
+          `--paint:${paintFor(frag)}`,
+        ].join(";")}
+      />
+    ))
+  }
+</div>
+
+<style>
+  /* Campaign decoration (DESIGN.md HACK-1). Fixed, behind the content;
+     the page shell's clip-path confines it to the campaign area. */
+  .fragments {
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    overflow: hidden;
+    pointer-events: none;
+    /* Only the page margins are live: fragments fade out before the text
+       column (at 1280px and up the container starts at about 10%). */
+    -webkit-mask-image: linear-gradient(
+      90deg,
+      var(--color-black) 0 9%,
+      transparent 12% 88%,
+      var(--color-black) 91%
+    );
+    mask-image: linear-gradient(
+      90deg,
+      var(--color-black) 0 9%,
+      transparent 12% 88%,
+      var(--color-black) 91%
+    );
+  }
+
+  /* Anchored to its page margin, so it never drifts into the text
+     column; narrower screens pull it further out (--lane-k). */
+  .frag {
+    position: absolute;
+    top: var(--rest);
+    width: calc(var(--w) * var(--frag-k, 1));
+    height: calc(var(--h) * var(--frag-k, 1));
+    background: var(--paint);
+    -webkit-mask: var(--shape) center / 100% 100% no-repeat;
+    mask: var(--shape) center / 100% 100% no-repeat;
+  }
+
+  .frag.is-left {
+    left: calc(var(--inset) * var(--lane-k, 1));
+  }
+
+  .frag.is-right {
+    right: calc(var(--inset) * var(--lane-k, 1));
+  }
+
+  /* Below 1280px the text column starts at the 5% page padding, so
+     fragments shrink and hug the very edge, and only that gutter stays
+     live. Phones show the compact subset. */
+  @media (max-width: 1279px) {
+    .fragments {
+      --lane-k: 0.25;
+      --frag-k: 0.5;
+      --sway-scale: 0.3;
+      -webkit-mask-image: linear-gradient(
+        90deg,
+        var(--color-black) 0 4.5%,
+        transparent 6% 94%,
+        var(--color-black) 95.5%
+      );
+      mask-image: linear-gradient(
+        90deg,
+        var(--color-black) 0 4.5%,
+        transparent 6% 94%,
+        var(--color-black) 95.5%
+      );
+    }
+  }
+
+  @media (max-width: 767px) {
+    .frag.is-wide {
+      display: none;
+    }
+
+    .fragments {
+      --frag-k: 0.42;
+    }
+  }
+
+  /* Continuous fall (DESIGN.md MOTION-2: never starts with reduced
+     motion; MOTION-3: transform only). Negative delays spread the
+     fragments over their cycles so the sky is never empty or crowded. */
+  @media (prefers-reduced-motion: no-preference) {
+    /* Fall on translate, sway and turn on transform: the individual
+       transform properties compose, so both run on one element and both
+       stay on the compositor. */
+    .frag {
+      top: 0;
+      animation:
+        hack-fall calc(var(--duration-hack-fall) * var(--speed))
+          var(--ease-hack-fall)
+          calc(var(--duration-hack-fall) * var(--speed) * var(--phase) * -1)
+          infinite,
+        hack-sway calc(var(--duration-hack-sway) * var(--speed))
+          var(--ease-hack-sway)
+          calc(var(--duration-hack-sway) * var(--phase) * -1) infinite alternate;
+    }
+
+    /* The pause state lives on the page shell, outside this component. */
+    :global([data-motion="paused"]) .frag,
+    :global([data-ground="hidden"]) .frag {
+      animation-play-state: paused;
+    }
+  }
+
+  @keyframes hack-fall {
+    from {
+      translate: 0 -20vh;
+    }
+
+    to {
+      translate: 0 115vh;
+    }
+  }
+
+  /* Sideways sway and the small turn share one animation (fewer running
+     animations to service on every frame the ground draws). */
+  @keyframes hack-sway {
+    from {
+      transform: translateX(0) rotate(calc(var(--turn) * -0.5));
+    }
+
+    to {
+      transform: translateX(calc(var(--sway) * var(--sway-scale, 1)))
+        rotate(var(--turn));
+    }
+  }
+</style>

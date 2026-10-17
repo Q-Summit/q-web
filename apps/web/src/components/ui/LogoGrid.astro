@@ -1,7 +1,6 @@
 ---
 // Shared pattern component (COMP-3, PRIM-3): the centered flex-wrap wall of
-// logo cards that the partner tier walls (partner/LogoWall) and the hackathon
-// partner tiers (hackathon/HackPartners) both render, capped at
+// logo cards that the partner tier walls (partner/LogoWall) render, capped at
 // --container-medium with fixed-size cards, a hover lift and contained logos.
 //
 // Like Timeline, and unlike the style-less shells next to it, this primitive
@@ -11,9 +10,12 @@
 //
 // The two walls differ in card skin and card size, not in structure, so the
 // layout is written once and the `hack` variant re-points a handful of local
-// custom properties. `flip` is opt-in and only HackPartners uses it: a logo
-// that carries a note turns into a flip card, matching the live page's
-// "flip_interaction_stage".
+// custom properties. `flip` is opt-in: a logo that carries a note turns into
+// a flip card, matching the old hackathon page's "flip_interaction_stage".
+// Since the Q-Hack x Hacktoberfest page (DESIGN.md HACK-1) moved
+// HackPartners to a role strip, the `hack` skin and `flip` have no page
+// consumer; they stay covered by LogoGrid.vrt.ts until a cleanup removes
+// them or a later Q-Hack page reuses them.
 export interface LogoGridItem {
   name: string;
   href: string;

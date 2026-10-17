@@ -130,7 +130,7 @@ listed in `design-baseline.json`.
 | `public/media/` | Gitignored local seed / CF preview source. Feed CMS seed and `r2:sync`; never commit. |
 | `src/assets/media/*` (binaries) | Optional gitignored local copies for `<Picture>` via `src/lib/images.ts`. Empty in CI/prod is fine (callers fall back to `/media/...` `<img>`). Keep `*.ts` path barrels in git. Local: `pnpm picture:sync` hardlinks from `public/media/`. |
 
-Matching rules for dynamic filenames: exact basename, then strip trailing `-p-<size>`, then fuzzy normalize (same as `content.ts` `resolveMediaFilename`). Misses warn at build and fall back to a plain `/media/...` `<img>`. Hero/hack video is R2-only (not in Payload Media mimeTypes).
+Matching rules for dynamic filenames: exact basename, then strip trailing `-p-<size>`, then fuzzy normalize (same as `content.ts` `resolveMediaFilename`). Misses warn at build and fall back to a plain `/media/...` `<img>`. The home hero video is R2-only (not in Payload Media mimeTypes).
 
 ## ALWAYS
 

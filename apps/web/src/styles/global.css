@@ -203,14 +203,6 @@ a {
   font-weight: var(--font-weight-light);
 }
 
-/* The hackathon schedule kicker: neutral, heavier and tightly tracked. The
-   third voice, declared rather than left as three ad hoc overrides. */
-.u-eyebrow.is-quiet {
-  font-weight: var(--heading-weight);
-  letter-spacing: 0.04em;
-  color: var(--color-neutral-dark);
-}
-
 /* Two contact-page labels read as sentence case on the live site. */
 .u-eyebrow.is-sentence {
   text-transform: none;

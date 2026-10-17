@@ -9,7 +9,7 @@ Agent MAY/NEVER: root [`AGENTS.md`](../../AGENTS.md). Maintainer scars: [`docs/d
 | Folder | Purpose | pnpm prefix / examples |
 | --- | --- | --- |
 | `lib/` | Shared helpers only (not CLIs) | imported by other scripts |
-| `local/` | Day-to-day workbench | `setup`, `setup:chrome`, `dev`, `reset:local`, `dev:web:remote` |
+| `local/` | Day-to-day workbench | `setup`, `setup:chrome`, `dev`, `reset:local`, `dev:web:remote`, `ground:poster` |
 | `content/` | Content package transfer | `content:*` |
 | `check/` | Quality gates | `check:*`, `lighthouse` |
 | `preview/` | Local Cloudflare-shaped preview | `r2:sync`, `preview:cf`, `picture:sync` |
@@ -27,7 +27,7 @@ Full comparison table: [`content-sync.md`](content-sync.md#content-package-vs-op
 ```text
 scripts/
   lib/                 paths, run, args, env, s3, human-confirm, …
-  local/               setup, ensure-chrome, dev, assert-db, reset, web-remote
+  local/               setup, ensure-chrome, dev, assert-db, reset, web-remote, ground-poster
   content/             pull, export, import, propose, upload-media, sync-scope
   check/               fast, docs, design, events, cms-styles, build-web, budgets, lighthouse*, vrt-report, vrt-cleanup, run-parallel, scripts.test
   preview/             r2-sync, seed-local-r2, serve, cf, sync-picture-assets
@@ -57,7 +57,7 @@ scripts/
 
 | Band | Commands | Notes |
 | --- | --- | --- |
-| Agent OK | `make setup`, `setup-chrome`, `dev`, `dev-web`, `preview`, `lighthouse`, `check`, `pull`, `propose`, `package` (local export only) | Finish with full `make check`. Propose = drafts only. |
+| Agent OK | `make setup`, `setup-chrome`, `dev`, `dev-web`, `preview`, `lighthouse`, `check`, `pull`, `propose`, `package` (local export only), `pnpm ground:poster` | Finish with full `make check`. Propose = drafts only. |
 | Agent OK (read-only remote text) | `pnpm dev:web:remote` | Published REST; no Neon. |
 | Humans only (TTY) | `make reset-local`; `pnpm ops:mirror-db`, `ops:mirror-media`, `ops:cms-remote` | Prefer `make pull` over Neon. |
 | Never from agents | Publish, `wrangler deploy`, Neon day-to-day, `data:push` | See root AGENTS NEVER. |
@@ -82,7 +82,7 @@ scripts/
 | `check-fast` | `check:fast` | `check/fast.mjs` |
 | `db-up` / `db-down` | `db:up` / `db:down` | docker compose |
 
-Also (pnpm only): `content:import`, `content:fixture`, `content:upload-media`, `picture:sync`, `seed:kickoff` (local `page-kickoff` ingest from gitignored `scripts/content-packages/local/kickoff.json`), `seed:local-r2`, `dev:web:remote` → `local/web-remote.mjs`, `check:docs`, `check:design`, `check:events` (analytics taxonomy gate, see [analytics.md](analytics.md)), `check:cms-styles`, `check:scripts`, `check:lint`, `check:md`, `check:spell`, `check:web` / `check:cms` (and their `:build` / `:test` / `:types` sub-gates), `test`, `format`, `format:check` (both cover `md,json,jsonc,yml,yaml,mjs,ts,tsx,astro,css`; generated files are exempt in `.prettierignore`).
+Also (pnpm only): `content:import`, `content:fixture`, `content:upload-media`, `picture:sync`, `seed:kickoff` (local `page-kickoff` ingest from gitignored `scripts/content-packages/local/kickoff.json`), `seed:local-r2`, `dev:web:remote` → `local/web-remote.mjs`, `ground:poster` → `local/ground-poster.mjs` (re-render the `/hackathon` ground posters after a shader or color change; needs `make dev-web`), `check:docs`, `check:design`, `check:events` (analytics taxonomy gate, see [analytics.md](analytics.md)), `check:cms-styles`, `check:scripts`, `check:lint`, `check:md`, `check:spell`, `check:web` / `check:cms` (and their `:build` / `:test` / `:types` sub-gates), `test`, `format`, `format:check` (both cover `md,json,jsonc,yml,yaml,mjs,ts,tsx,astro,css`; generated files are exempt in `.prettierignore`).
 
 ## Shared lib rules
 
@@ -106,6 +106,7 @@ Also (pnpm only): `content:import`, `content:fixture`, `content:upload-media`, `
 | `assert-db.mjs` | Refuse non-local `DATABASE_URI` |
 | `reset.mjs` | Human TTY: wipe volumes + reseed |
 | `web-remote.mjs` | Astro against remote published REST (read-only) |
+| `ground-poster.mjs` | Render the `/hackathon` ground shader start frame into its still WebP posters (`ground:poster`; needs `make dev-web`) |
 
 ### `content/`
 

@@ -1,51 +1,591 @@
 ---
-// Hackathon schedule section (8th and 9th April): the shared ui/Timeline
-// pattern (COMP-3, PRIM-3) inside this page's section shell. Same timeline
-// as /program, ported from the Webflow "section_program_timeline-1-2" the
-// two pages share, but without the scroll-driven reveal: no `reveal` prop
-// here means pure CSS and no client JS, exactly as before.
+// Event-day schedule on the white surface. A giant cut-out "Schedule"
+// opens it; below, a narrow LED strip is let into the white: along the
+// centre axis on wide screens, down the left edge on phones. The strip shows the page's violet light
+// (hack-light.css) with a bright lit edge and a soft glow; a pulse of light
+// travels down it with the reader's scroll position inside this section
+// only. There are no dots: the times themselves are cut out of the white,
+// large, so they read from across the room and light up as the pulse
+// passes them.
+//
+// On wide screens entries alternate left and right of the axis, and
+// selected photos from earlier Q-Hacks fill the free side of a row; on
+// phones every entry sits right of the strip with its photo below it.
+// Every photo is labelled as a look back.
+//
+// Progressive enhancement (DESIGN.md MOTION-2): without the script, or with
+// reduced motion, the strip is fully lit and every entry is in its lit
+// state. The script writes one custom property and toggles one class, and
+// only listens while the section is on screen (not a runtime, MOTION-4).
 import type { AgendaItem } from "../../lib/content";
-import Section from "../ui/Section.astro";
-import Container from "../ui/Container.astro";
-import SectionHeader from "../ui/SectionHeader.astro";
-import Timeline, { type TimelineImage } from "../ui/Timeline.astro";
+import {
+  photoSrcset,
+  photoUrl,
+  type PastPhoto,
+} from "../../assets/media/hackathon";
+import "./hack-light.css";
 
 interface Props {
   heading: string;
   intro?: string;
   items: AgendaItem[];
-  /** `/media/...` image per schedule item, matched by index. */
-  images: (TimelineImage | undefined)[];
+  /** Look-back photos keyed by schedule row index. */
+  photos?: Record<number, PastPhoto>;
 }
 
-const { heading, intro, items, images } = Astro.props;
+const { heading, intro, items, photos = {} } = Astro.props;
 ---
 
-<Section aria-labelledby="schedule-heading">
-  <Container>
-    <SectionHeader>
-      {
-        /* Small uppercase kicker above the heading, matching the live
-          section's "Agenda" tagline (not present in the extracted copy,
-          so kept as a static label rather than invented CMS content). */
-      }
-      <p class="u-eyebrow is-quiet schedule-eyebrow">Agenda</p>
-      <h2 id="schedule-heading">{heading}</h2>
-      {
-        /* .timeline-intro is Timeline's own class (DESIGN.md COMP-3); the
-          rule lives there, next to the pattern both timeline pages share. */
-      }
-      {intro && <p class="timeline-intro">{intro}</p>}
-    </SectionHeader>
+<section class="schedule" aria-labelledby="schedule-heading">
+  <div class="container">
+    <div class="schedule-head" data-reveal="rise">
+      <h2 id="schedule-heading" class="hack-giant hack-cut hack-cut-text">
+        {heading}
+      </h2>
+      {intro && <p class="schedule-intro">{intro}</p>}
+    </div>
 
-    <Timeline items={items} images={images} />
-  </Container>
-</Section>
+    {
+      items.length > 0 && (
+        <div class="track" data-hack-track>
+          <span class="track-halo" aria-hidden="true" />
+          <div class="track-led hack-cut" aria-hidden="true">
+            <span class="track-light" />
+          </div>
+          <span class="track-tip" aria-hidden="true" />
+          <ol class="rows">
+            {items.map((item, index) => {
+              const photo = photos[index];
+              return (
+                <li
+                  class:list={[
+                    "row",
+                    index % 2 === 0 ? "is-left" : "is-right",
+                    { "has-photo": photo },
+                  ]}
+                  data-hack-milestone
+                >
+                  <div class="entry">
+                    <p class="time hack-cut hack-cut-text">{item.date}</p>
+                    <h3 class="title">{item.title}</h3>
+                    {item.description && <p class="text">{item.description}</p>}
+                  </div>
+                  {photo && (
+                    <figure class="photo" data-reveal="photo">
+                      <img
+                        src={photoUrl(photo, 768)}
+                        srcset={photoSrcset(photo)}
+                        sizes="(max-width: 479px) 86vw, (max-width: 767px) 90vw, min(31rem, 44vw)"
+                        width={photo.width}
+                        height={photo.height}
+                        alt={photo.alt}
+                        loading="lazy"
+                        decoding="async"
+                        style={`object-position:${photo.focus}`}
+                      />
+                      <figcaption>
+                        <span class="photo-badge">Previous Q-Hack</span>
+                        {photo.caption}
+                      </figcaption>
+                    </figure>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      )
+    }
+  </div>
+</section>
 
 <style>
-  /* Only the gap to the heading stays local; the voice itself is the
-     declared .u-eyebrow.is-quiet variant (DESIGN.md COMP-3). */
-  .schedule-eyebrow {
-    margin-bottom: 0.25rem;
+  /* Campaign timeline (DESIGN.md HACK-1 deviating from LAYOUT-3 and
+     TYPE-1): own rhythm on the white surface, hack ink type, and an LED
+     strip whose glow is light, not elevation (DEPTH-1). */
+  .schedule {
+    padding-block: clamp(var(--space-lg), 6vh, 4rem)
+      clamp(var(--space-xl), 8vh, 5rem);
+  }
+
+  .schedule-intro {
+    max-width: 40rem;
+    margin: 0 auto clamp(2.5rem, 6vh, 4rem);
+    color: var(--color-neutral-dark);
+    font-size: var(--text-size-medium);
+    text-align: center;
+    text-wrap: balance;
+  }
+
+  .track {
+    /* 0 to 1, written by the script; fully lit without it. */
+    --progress: 1;
+    --axis: 4.5rem;
+    --led: 0.75rem;
+    /* How far in from each end strip and glow take to fade from nothing
+       to full. Everything that glows stays inside the track. */
+    --track-fade: clamp(4.5rem, 10vh, 6.5rem);
+    position: relative;
+    max-width: 68rem;
+    margin-inline: auto;
+  }
+
+  /* Soft light on the white around the strip: its own layer (not a
+     box-shadow), faded out over both ends by a still mask, so it never
+     reaches past the track and has no edge where it stops. The surface
+     behind the ends is tinted by the seams, so the ends fade by alpha, not
+     under white covers. */
+  .track-halo {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 4.5rem;
+    translate: -50% 0;
+    pointer-events: none;
+    background: linear-gradient(
+      to right,
+      transparent,
+      color-mix(in srgb, var(--color-hack-haze) 7%, transparent) 22%,
+      color-mix(in srgb, var(--color-hack-haze) 22%, transparent) 40%,
+      color-mix(in srgb, var(--color-hack-haze) 32%, transparent) 50%,
+      color-mix(in srgb, var(--color-hack-haze) 22%, transparent) 60%,
+      color-mix(in srgb, var(--color-hack-haze) 7%, transparent) 78%,
+      transparent
+    );
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      color-mix(in srgb, var(--color-black) 16%, transparent)
+        calc(var(--track-fade) * 0.35),
+      color-mix(in srgb, var(--color-black) 50%, transparent)
+        calc(var(--track-fade) * 0.7),
+      color-mix(in srgb, var(--color-black) 84%, transparent)
+        calc(var(--track-fade) * 1.05),
+      var(--color-black) calc(var(--track-fade) * 1.4),
+      var(--color-black) calc(100% - var(--track-fade) * 1.4),
+      color-mix(in srgb, var(--color-black) 84%, transparent)
+        calc(100% - var(--track-fade) * 1.05),
+      color-mix(in srgb, var(--color-black) 50%, transparent)
+        calc(100% - var(--track-fade) * 0.7),
+      color-mix(in srgb, var(--color-black) 16%, transparent)
+        calc(100% - var(--track-fade) * 0.35),
+      transparent
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      color-mix(in srgb, var(--color-black) 16%, transparent)
+        calc(var(--track-fade) * 0.35),
+      color-mix(in srgb, var(--color-black) 50%, transparent)
+        calc(var(--track-fade) * 0.7),
+      color-mix(in srgb, var(--color-black) 84%, transparent)
+        calc(var(--track-fade) * 1.05),
+      var(--color-black) calc(var(--track-fade) * 1.4),
+      var(--color-black) calc(100% - var(--track-fade) * 1.4),
+      color-mix(in srgb, var(--color-black) 84%, transparent)
+        calc(100% - var(--track-fade) * 1.05),
+      color-mix(in srgb, var(--color-black) 50%, transparent)
+        calc(100% - var(--track-fade) * 0.7),
+      color-mix(in srgb, var(--color-black) 16%, transparent)
+        calc(100% - var(--track-fade) * 0.35),
+      transparent
+    );
+  }
+
+  /* The LED strip: a precise slot cut into the white (hack-cut light) with
+     a bright inner edge. Both ends dissolve to nothing through an eased
+     mask (cheap: the strip is a few pixels wide; a mask, unlike a
+     transform, keeps the fixed light intact). Centred with left, never
+     with a transform: a transform makes its fixed light behave like a
+     scrolling background that ends after one screen height (CSS Transforms
+     spec), which was the hard edge in the strip. */
+  .track-led {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(50% - var(--led) / 2);
+    width: var(--led);
+    overflow: hidden;
+    border-radius: var(--radius-pill);
+    box-shadow:
+      inset 0 0 0 1px
+        color-mix(in srgb, var(--color-hack-haze) 90%, transparent),
+      inset 0 0 0.3rem color-mix(in srgb, var(--color-white) 45%, transparent);
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      color-mix(in srgb, var(--color-black) 16%, transparent)
+        calc(var(--track-fade) * 0.25),
+      color-mix(in srgb, var(--color-black) 50%, transparent)
+        calc(var(--track-fade) * 0.5),
+      color-mix(in srgb, var(--color-black) 84%, transparent)
+        calc(var(--track-fade) * 0.75),
+      var(--color-black) var(--track-fade),
+      var(--color-black) calc(100% - var(--track-fade)),
+      color-mix(in srgb, var(--color-black) 84%, transparent)
+        calc(100% - var(--track-fade) * 0.75),
+      color-mix(in srgb, var(--color-black) 50%, transparent)
+        calc(100% - var(--track-fade) * 0.5),
+      color-mix(in srgb, var(--color-black) 16%, transparent)
+        calc(100% - var(--track-fade) * 0.25),
+      transparent
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      color-mix(in srgb, var(--color-black) 16%, transparent)
+        calc(var(--track-fade) * 0.25),
+      color-mix(in srgb, var(--color-black) 50%, transparent)
+        calc(var(--track-fade) * 0.5),
+      color-mix(in srgb, var(--color-black) 84%, transparent)
+        calc(var(--track-fade) * 0.75),
+      var(--color-black) var(--track-fade),
+      var(--color-black) calc(100% - var(--track-fade)),
+      color-mix(in srgb, var(--color-black) 84%, transparent)
+        calc(100% - var(--track-fade) * 0.75),
+      color-mix(in srgb, var(--color-black) 50%, transparent)
+        calc(100% - var(--track-fade) * 0.5),
+      color-mix(in srgb, var(--color-black) 16%, transparent)
+        calc(100% - var(--track-fade) * 0.25),
+      transparent
+    );
+  }
+
+  /* The traveled stretch glows softly and the pulse head is bright, then
+     falls off over the last stretch instead of stopping abruptly. */
+  .track-light {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      color-mix(in srgb, var(--color-hack-haze) 22%, transparent) 15%,
+      color-mix(in srgb, var(--color-hack-haze) 45%, transparent) 55%,
+      color-mix(in srgb, var(--color-hack-haze) 70%, transparent) 80%,
+      color-mix(in srgb, var(--color-hack-mist) 92%, transparent) 91%,
+      color-mix(in srgb, var(--color-white) 90%, transparent) 95.5%,
+      color-mix(in srgb, var(--color-hack-mist) 50%, transparent) 98.5%,
+      transparent
+    );
+    transform: translateY(calc((var(--progress) - 1) * 100%));
+  }
+
+  /* Bloom around the pulse head, outside the slot: a stretched glow
+     along the strip, not a dot, with a long, even falloff. Only once the
+     script drives it; the script also fades it out (--tip-fade) before
+     its center reaches either end, so no part of it shows past the
+     track at 0 or 100 percent. */
+  .track-tip {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 2.75rem;
+    height: 9rem;
+    border-radius: var(--radius-circle);
+    background: radial-gradient(
+      closest-side,
+      color-mix(in srgb, var(--color-white) 80%, transparent),
+      color-mix(in srgb, var(--color-hack-mist) 55%, transparent) 25%,
+      color-mix(in srgb, var(--color-hack-haze) 30%, transparent) 50%,
+      color-mix(in srgb, var(--color-hack-haze) 10%, transparent) 75%,
+      transparent
+    );
+    opacity: 0;
+    transform: translate(
+      -50%,
+      calc(var(--progress) * var(--track-h, 0px) - 50%)
+    );
+    pointer-events: none;
+  }
+
+  .track[data-ready] .track-tip {
+    opacity: calc(0.85 * var(--tip-fade, 1));
+  }
+
+  .rows {
+    position: relative;
+    display: grid;
+    gap: clamp(2.25rem, 5vh, 3.5rem);
+    margin: 0;
+    padding: var(--space-lg) 0;
+    list-style: none;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--axis) minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .entry {
+    grid-row: 1;
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .row.is-left .entry {
+    grid-column: 1;
+    justify-items: end;
+    text-align: right;
+  }
+
+  .row.is-right .entry {
+    grid-column: 3;
+    justify-items: start;
+  }
+
+  .time {
+    margin: 0;
+    font-size: clamp(2.25rem, 4.6vw, 3.6rem);
+    font-weight: var(--heading-weight-home);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+
+  .title {
+    margin: 0;
+    color: var(--color-hack-ink);
+    font-size: var(--heading-h6-size);
+    line-height: var(--heading-line-height-normal);
+    text-wrap: balance;
+  }
+
+  .text {
+    max-width: 26rem;
+    margin: 0;
+    color: var(--color-neutral-dark);
+  }
+
+  /* Desktop zipper: consecutive rows without a photo sit on opposite
+     sides, so they can interlock instead of each claiming a full band of
+     empty space. */
+  @media (min-width: 768px) {
+    .row:not(.has-photo) + .row:not(.has-photo) {
+      margin-top: calc(clamp(var(--space-md), 4vh, 2.75rem) * -1);
+    }
+  }
+
+  .photo {
+    grid-row: 1;
+    position: relative;
+    margin: 0;
+    overflow: hidden;
+    border-radius: var(--radius-card-large);
+  }
+
+  .row.is-left .photo {
+    grid-column: 3;
+  }
+
+  .row.is-right .photo {
+    grid-column: 1;
+  }
+
+  .photo img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+  }
+
+  /* Look-back label on every photo, so none reads as this event. */
+  .photo figcaption {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2xs);
+    padding: 2.5rem var(--space-sm) var(--space-sm);
+    background: linear-gradient(
+      to top,
+      color-mix(in srgb, var(--color-hack-ink) 80%, transparent),
+      transparent
+    );
+    color: var(--color-white);
+    font-size: var(--text-size-small);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .photo-badge {
+    padding: 0.2rem var(--space-2xs);
+    border-radius: var(--radius-pill);
+    background-color: color-mix(in srgb, var(--color-white) 18%, transparent);
+    font-size: var(--text-size-tiny);
+  }
+
+  /* Phones: the strip runs down the left edge and every entry, with its
+     photo below it, sits in one column to its right, so nothing crosses
+     the strip. Wide screens keep the centered, alternating layout. */
+  @media (max-width: 767px) {
+    .track {
+      --axis: 2.5rem;
+      --led: 0.6rem;
+    }
+
+    .track-halo {
+      left: calc(var(--axis) / 2);
+    }
+
+    .track-led {
+      left: calc(var(--axis) / 2 - var(--led) / 2);
+    }
+
+    .track-tip {
+      left: calc(var(--axis) / 2);
+    }
+
+    .row {
+      grid-template-columns: var(--axis) minmax(0, 1fr);
+      column-gap: var(--space-sm);
+    }
+
+    .row.is-left .entry,
+    .row.is-right .entry {
+      grid-column: 2;
+      justify-items: start;
+      text-align: left;
+    }
+
+    .time {
+      font-size: clamp(1.75rem, 8.6vw, 2.4rem);
+    }
+
+    .title {
+      font-size: var(--text-size-medium);
+    }
+
+    .row.is-left .photo,
+    .row.is-right .photo {
+      grid-column: 2;
+      grid-row: 2;
+      margin-top: var(--space-sm);
+    }
+  }
+
+  /* Scroll coupling, only once the script has taken over (DESIGN.md
+     MOTION-2: never with reduced motion). Rows ahead of the pulse rest
+     dimmed; passed ones are lit. */
+  @media (prefers-reduced-motion: no-preference) {
+    .track[data-ready] .time {
+      transition: opacity var(--duration-hack-reveal) var(--ease-emphasized);
+    }
+
+    /* Ahead of the pulse: still clearly readable, just unlit (no seam). */
+    .track[data-ready] .row:not(.is-lit) .time {
+      opacity: 0.72;
+      filter: none;
+    }
+
+    /* A soft shimmer flows down the lit stretch: one band moved by
+       transform (MOTION-3), clipped to the lit part. */
+    .track[data-ready] .track-light::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 18%;
+      background: linear-gradient(
+        to bottom,
+        transparent,
+        color-mix(in srgb, var(--color-white) 45%, transparent),
+        transparent
+      );
+      transform: translateY(-100%);
+      animation: hack-led-shimmer var(--duration-hack-shimmer) linear infinite;
+    }
+
+    .hack-cut[data-offscreen] .track-light::after {
+      animation-play-state: paused;
+    }
+
+    :global([data-motion="paused"]) .track-light::after {
+      animation-play-state: paused;
+    }
+  }
+
+  @keyframes hack-led-shimmer {
+    from {
+      transform: translateY(-100%);
+    }
+
+    to {
+      transform: translateY(560%);
+    }
   }
 </style>
+
+<script>
+  // Scroll-coupled pulse for the LED strip (see the component comment).
+  // Progress is local to the track: 0 when its top reaches the middle of
+  // the viewport, 1 when its bottom does. Rows light up on the same middle
+  // line, so the pulse head and the lit time never disagree.
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  for (const track of document.querySelectorAll<HTMLElement>(
+    "[data-hack-track]",
+  )) {
+    if (reduceMotion.matches) continue;
+    const rows = [
+      ...track.querySelectorAll<HTMLElement>("[data-hack-milestone]"),
+    ];
+    const tip = track.querySelector<HTMLElement>(".track-tip");
+    let frame = 0;
+
+    const update = () => {
+      frame = 0;
+      const rect = track.getBoundingClientRect();
+      const middle = window.innerHeight / 2;
+      const progress = Math.min(
+        1,
+        Math.max(0, (middle - rect.top) / Math.max(rect.height, 1)),
+      );
+      // The bloom is dark until its center is a quarter of its height in
+      // from an end, then eases up over one height: by the time any of it
+      // could reach past the track, it is invisible.
+      const reach = tip?.offsetHeight ?? 0;
+      const inside = Math.min(progress, 1 - progress) * rect.height;
+      const x = Math.min(
+        1,
+        Math.max(0, (inside - reach * 0.25) / Math.max(reach, 1)),
+      );
+      track.style.setProperty("--progress", progress.toFixed(4));
+      track.style.setProperty("--track-h", `${rect.height}px`);
+      track.style.setProperty("--tip-fade", (x * x * (3 - 2 * x)).toFixed(3));
+      for (const row of rows) {
+        const time = row.querySelector(".time") ?? row;
+        const box = time.getBoundingClientRect();
+        row.classList.toggle("is-lit", box.top + box.height / 2 <= middle);
+      }
+    };
+
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+
+    let listening = false;
+    new IntersectionObserver((entries) => {
+      const visible = entries.some((entry) => entry.isIntersecting);
+      if (visible && !listening) {
+        window.addEventListener("scroll", schedule, { passive: true });
+        window.addEventListener("resize", schedule);
+        listening = true;
+      } else if (!visible && listening) {
+        window.removeEventListener("scroll", schedule);
+        window.removeEventListener("resize", schedule);
+        listening = false;
+      }
+      schedule();
+    }).observe(track);
+
+    update();
+    track.setAttribute("data-ready", "");
+  }
+</script>
