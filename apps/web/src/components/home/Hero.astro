@@ -204,7 +204,9 @@ const { headline, tagline, announcement, cta } = Astro.props;
             data-ph-event={EVENTS.hero_cta_clicked}
             data-ph-prop-cta-label={cta.label}
             data-ph-prop-cta-href={cta.href}
+            data-glass-press
           >
+            <span class="glass-light" aria-hidden="true" />
             <span data-lp-label>{cta.label}</span>
             <span class="button-arrow" aria-hidden="true">
               <IconArrowRight />

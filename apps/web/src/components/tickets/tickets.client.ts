@@ -9,6 +9,7 @@ import {
   statusOf,
   type TicketClientData,
 } from "./ticket-model";
+import { typeWords } from "../../lib/motion/typewriter";
 
 const reducedMotion = (): boolean =>
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -266,6 +267,115 @@ function initTabs(section: HTMLElement): (key: string) => void {
     replay(meter, "is-filling");
   };
 
+  /*
+   * The new ticket's panel unfolds out of the tab just picked (MOTION-6):
+   * the summary card and, a beat later, the benefit sheet start squeezed
+   * into the tab's box and spring open from it; a light runs across the
+   * summary; the summary's contents follow a few frames apart (they are
+   * invisible while squeezed, so no text is ever seen distorted) and its
+   * description writes itself in. Web Animations, so a quick next pick
+   * cancels whatever is still running and starts from the new tab.
+   */
+  const root = document.documentElement;
+  const cssMs = (name: string, fallback: number) =>
+    parseFloat(getComputedStyle(root).getPropertyValue(name)) || fallback;
+  const running: Animation[] = [];
+
+  const unfold = (tab: HTMLElement, panel: HTMLElement) => {
+    running.splice(0).forEach((a) => a.cancel());
+    panels.forEach((p) => p.removeAttribute("data-unfold"));
+    if (reducedMotion()) return;
+    panel.setAttribute("data-unfold", "");
+    const unfoldMs = cssMs("--duration-glass-unfold", 380);
+    const stagger = cssMs("--duration-glass-stagger", 28);
+    const ease = (name: string) =>
+      getComputedStyle(root).getPropertyValue(name).trim() || "ease-out";
+    const spring = ease("--ease-glass-spring");
+    const emphasized = ease("--ease-emphasized");
+    const t = tab.getBoundingClientRect();
+    const parts = [
+      panel.querySelector<HTMLElement>(".t-summary"),
+      panel.querySelector<HTMLElement>(".t-benefits"),
+    ];
+    parts.forEach((el, n) => {
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      // The card grows out of the tab; the sheet then unrolls in its own
+      // place from its top edge (it never travels over the card).
+      const from =
+        n === 0
+          ? `translate(${t.left + t.width / 2 - (r.left + r.width / 2)}px, ${
+              t.top + t.height / 2 - r.top
+            }px) scale(${Math.max(0.2, Math.min(1, t.width / r.width))}, ${Math.max(
+              0.05,
+              Math.min(1, t.height / r.height),
+            )})`
+          : "translateY(-0.5rem) scale(0.98, 0.08)";
+      running.push(
+        el.animate(
+          [
+            { transform: from, opacity: 0 },
+            { opacity: 1, offset: 0.2 },
+            { transform: "none", opacity: 1 },
+          ],
+          {
+            duration: unfoldMs,
+            delay: n * unfoldMs * 0.35,
+            easing: spring,
+            fill: "backwards",
+          },
+        ),
+      );
+      el.style.transformOrigin = "50% 0";
+    });
+
+    const summary = parts[0];
+    if (!summary) return;
+    // Contents come in once the card has mostly opened.
+    [...summary.children]
+      .filter((c) => !c.classList.contains("t-liquid"))
+      .forEach((child, i) =>
+        running.push(
+          child.animate(
+            [
+              { opacity: 0, transform: "translateY(0.4rem)" },
+              { opacity: 1, transform: "none" },
+            ],
+            {
+              duration: unfoldMs * 0.7,
+              delay: unfoldMs * 0.45 + i * stagger,
+              easing: emphasized,
+              fill: "backwards",
+            },
+          ),
+        ),
+      );
+    // The light runs in from the side of the tab.
+    const light = summary.querySelector<HTMLElement>("[data-unfold-light]");
+    if (light) {
+      const s = summary.getBoundingClientRect();
+      light.style.setProperty(
+        "--press-x",
+        `${Math.max(0, Math.min(100, ((t.left + t.width / 2 - s.left) / s.width) * 100))}%`,
+      );
+      light.style.setProperty("--press-y", "0%");
+      light.classList.remove("is-lit");
+      void light.offsetWidth;
+      light.classList.add("is-lit");
+    }
+    const desc = summary.querySelector<HTMLElement>(".t-summary-desc");
+    const text = descriptions.get(panel.dataset.panel ?? "");
+    if (desc && text) typeWords(desc, text, { delay: unfoldMs * 0.55 });
+  };
+
+  // Each summary's description as authored, read once before any typing.
+  const descriptions = new Map(
+    panels.map((p) => [
+      p.dataset.panel ?? "",
+      p.querySelector(".t-summary-desc")?.textContent?.trim() ?? "",
+    ]),
+  );
+
   const select = (key: string, focusTab = false) => {
     const previous = current;
     current = key;
@@ -279,7 +389,12 @@ function initTabs(section: HTMLElement): (key: string) => void {
       panel.hidden = panel.dataset.panel !== key;
     });
     placeLens(previous !== "" && previous !== key);
-    if (previous && previous !== key) runMeter(key, fillOf(previous));
+    if (previous && previous !== key) {
+      runMeter(key, fillOf(previous));
+      const tab = tabs.find((t) => t.dataset.tab === key);
+      const panel = panels.find((p) => p.dataset.panel === key);
+      if (tab && panel) unfold(tab, panel);
+    }
   };
 
   // Tabs can wrap onto a second row; keep the lens under its tab.
@@ -433,13 +548,13 @@ function createPicker(root: HTMLElement, onPick: () => void): Picker | null {
     field.setAttribute("aria-expanded", "false");
     list.dataset.state = "closed";
     list.removeAttribute("aria-activedescendant");
+    // Hide only once the fold has played back into the field (the fade
+    // sits in the second half of --duration-glass-fold).
     const ms = reducedMotion()
       ? 0
-      : parseFloat(
-          getComputedStyle(list).getPropertyValue(
-            "--duration-ticket-picker-close",
-          ),
-        ) || 240;
+      : (parseFloat(
+          getComputedStyle(list).getPropertyValue("--duration-glass-fold"),
+        ) || 220) + 40;
     hideTimer = window.setTimeout(() => {
       if (!open) list.hidden = true;
     }, ms);
@@ -596,7 +711,10 @@ function initCompare(section: HTMLElement): void {
     };
     set("price", euro(ticket.price));
     set("regular", euro(ticket.regularPrice));
-    set("description", ticket.description);
+    // The one line that writes itself in (MOTION-6); prices, names and
+    // every status cell change at once.
+    const desc = box?.querySelector<HTMLElement>('[data-f="description"]');
+    if (desc) typeWords(desc, ticket.description, { delay: 60 });
     set("buy-name", `: ${ticket.name}`);
     const buy = box?.querySelector<HTMLAnchorElement>('[data-f="buy"]');
     if (buy) {

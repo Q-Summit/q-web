@@ -63,7 +63,9 @@ const isCurrent = (href: string): boolean =>
       aria-expanded="false"
       aria-controls="site-nav"
       aria-label="Open menu"
+      data-glass-press
     >
+      <span class="glass-light" aria-hidden="true"></span>
       <span class="nav-toggle__icon nav-toggle__icon--menu">
         <IconMenu />
       </span>
@@ -72,10 +74,11 @@ const isCurrent = (href: string): boolean =>
       </span>
     </button>
     <nav id="site-nav" aria-label="Main">
+      <span class="nav-sheen" aria-hidden="true"></span>
       <ul>
         {
-          nav.map((link) => (
-            <li>
+          nav.map((link, i) => (
+            <li style={`--i: ${i}`}>
               <a
                 href={link.href}
                 aria-current={isCurrent(link.href) ? "page" : undefined}
@@ -338,11 +341,17 @@ const isCurrent = (href: string): boolean =>
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
-    transition: background-color var(--duration-hover) var(--ease-snappy);
+    position: relative;
+    transition:
+      background-color var(--duration-hover) var(--ease-snappy),
+      transform var(--duration-glass-release) var(--ease-glass-spring);
   }
 
-  .nav-toggle:active {
+  .nav-toggle:active,
+  .nav-toggle.is-pressed {
     background-color: color-mix(in srgb, var(--color-black) 9%, transparent);
+    transform: scale(0.92);
+    transition-duration: var(--duration-hover), var(--duration-glass-press);
   }
 
   .nav-toggle__icon {
@@ -464,7 +473,7 @@ const isCurrent = (href: string): boolean =>
       flex-wrap: nowrap;
     }
 
-    .site-header[data-js]:not([data-open]) #site-nav[hidden] {
+    .site-header[data-js] #site-nav[hidden] {
       display: none;
     }
 
@@ -475,7 +484,7 @@ const isCurrent = (href: string): boolean =>
      * pools of ice, cyan and Q27 blue light turn and stretch (transform
      * only), lit by a glass rim and a cyan glow along the lower edge.
      */
-    .site-header[data-js][data-open] #site-nav {
+    .site-header[data-js] #site-nav:not([hidden]) {
       display: block;
       position: absolute;
       top: calc(100% + var(--space-2xs));
@@ -507,19 +516,88 @@ const isCurrent = (href: string): boolean =>
         0 0 0 1px color-mix(in srgb, var(--color-navy) 6%, transparent),
         0 22px 44px -20px color-mix(in srgb, var(--color-navy) 40%, transparent);
       pointer-events: auto;
-      animation: nav-sheet-in var(--duration-open) var(--ease-emphasized);
+      /*
+       * Folded: clipped to a button-sized box at its top right corner,
+       * right under the menu button, a little lifted and squeezed, and
+       * clear. data-sheet="open" unfolds it from there (MOTION-6): the clip
+       * opens on the emphasized curve while the sheet itself springs to
+       * size with a small overshoot, and a light sweeps across it. Folding
+       * plays the same way back, faster, and fades only at the end. Both
+       * are transitions, so a quick second tap reverses mid-way.
+       */
+      transform-origin: calc(100% - 1.4rem) -0.75rem;
+      clip-path: inset(
+        0 0 calc(100% - 3rem) calc(100% - 3.25rem) round
+          var(--radius-ticket-panel)
+      );
+      opacity: 0;
+      transform: translateY(-0.6rem) scale(0.94, 0.88);
+      transition:
+        clip-path var(--duration-glass-fold) var(--ease-emphasized),
+        transform var(--duration-glass-fold) var(--ease-emphasized),
+        opacity calc(var(--duration-glass-fold) * 0.6) var(--ease-snappy)
+          calc(var(--duration-glass-fold) * 0.4);
+    }
+
+    .site-header[data-js] #site-nav[data-sheet="open"] {
+      clip-path: inset(0 round var(--radius-ticket-panel));
+      opacity: 1;
+      transform: none;
+      transition:
+        clip-path var(--duration-glass-unfold) var(--ease-emphasized),
+        transform var(--duration-glass-unfold) var(--ease-glass-spring),
+        opacity var(--duration-hover) var(--ease-snappy);
+    }
+
+    /* The light that runs across the glass as it unfolds. */
+    .site-header[data-js] #site-nav:not([hidden]) .nav-sheen {
+      display: block;
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background: linear-gradient(
+        172deg,
+        transparent 0% 30%,
+        color-mix(in srgb, var(--color-white) 80%, transparent) 50%,
+        transparent 70% 100%
+      );
+      opacity: 0;
+      transform: translateY(-70%);
+      pointer-events: none;
+    }
+
+    .site-header[data-js] #site-nav[data-sheet="open"] .nav-sheen {
+      animation: nav-sheen var(--duration-glass-light) var(--ease-emphasized)
+        var(--duration-glass-stagger) both;
+    }
+
+    /* Links follow the glass in, a few frames apart, and leave together. */
+    .site-header[data-js] #site-nav li {
+      opacity: 0;
+      transform: translateY(-0.4rem);
+      transition:
+        opacity var(--duration-glass-fold) var(--ease-snappy),
+        transform var(--duration-glass-fold) var(--ease-snappy);
+    }
+
+    .site-header[data-js] #site-nav[data-sheet="open"] li {
+      opacity: 1;
+      transform: none;
+      transition-duration: var(--duration-glass-unfold);
+      transition-timing-function: var(--ease-emphasized);
+      transition-delay: calc(var(--duration-glass-stagger) * (var(--i, 0) + 3));
     }
 
     /* The moving light: two oversized layers behind the links. */
-    .site-header[data-js][data-open] #site-nav::before,
-    .site-header[data-js][data-open] #site-nav::after {
+    .site-header[data-js] #site-nav:not([hidden])::before,
+    .site-header[data-js] #site-nav:not([hidden])::after {
       content: "";
       position: absolute;
       z-index: -1;
       pointer-events: none;
     }
 
-    .site-header[data-js][data-open] #site-nav::before {
+    .site-header[data-js] #site-nav:not([hidden])::before {
       inset: -45%;
       background:
         radial-gradient(
@@ -539,7 +617,7 @@ const isCurrent = (href: string): boolean =>
         );
     }
 
-    .site-header[data-js][data-open] #site-nav::after {
+    .site-header[data-js] #site-nav:not([hidden])::after {
       inset: -40%;
       background:
         radial-gradient(
@@ -556,7 +634,7 @@ const isCurrent = (href: string): boolean =>
 
     /* The sheet clips the moving light; the link list scrolls instead,
        so a short landscape screen still reaches every link. */
-    .site-header[data-js][data-open] #site-nav ul {
+    .site-header[data-js] #site-nav:not([hidden]) ul {
       position: relative;
       z-index: 1;
       max-height: calc(
@@ -585,21 +663,30 @@ const isCurrent = (href: string): boolean =>
   }
 
   @media (max-width: 767px) and (prefers-reduced-motion: no-preference) {
-    .site-header[data-js][data-open] #site-nav::before {
+    .site-header[data-js] #site-nav:not([hidden])::before {
       animation: nav-liquid var(--duration-ticket-drift) ease-in-out infinite
         alternate;
     }
 
-    .site-header[data-js][data-open] #site-nav::after {
+    .site-header[data-js] #site-nav:not([hidden])::after {
       animation: nav-liquid-alt var(--duration-ticket-drift-alt) ease-in-out
         infinite alternate;
     }
   }
 
-  @keyframes nav-sheet-in {
-    from {
+  .nav-sheen {
+    display: none;
+  }
+
+  @keyframes nav-sheen {
+    0% {
+      opacity: 0.9;
+      transform: translateY(-70%);
+    }
+
+    100% {
       opacity: 0;
-      transform: translateY(-6px) scale(0.98);
+      transform: translateY(70%);
     }
   }
 
@@ -638,8 +725,20 @@ const isCurrent = (href: string): boolean =>
       transition: none;
     }
 
-    .site-header[data-js][data-open] #site-nav {
+    .site-header[data-js] #site-nav:not([hidden]),
+    .site-header[data-js] #site-nav[data-sheet="open"],
+    .site-header[data-js] #site-nav li,
+    .site-header[data-js] #site-nav[data-sheet="open"] li {
+      transition: none;
+    }
+
+    .site-header[data-js] #site-nav[data-sheet="open"] .nav-sheen {
       animation: none;
+    }
+
+    .nav-toggle:active,
+    .nav-toggle.is-pressed {
+      transform: none;
     }
   }
 </style>

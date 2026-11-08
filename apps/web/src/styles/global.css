@@ -400,7 +400,8 @@ a {
   touch-action: manipulation;
   -webkit-backdrop-filter: blur(10px) saturate(150%) brightness(0.8);
   backdrop-filter: blur(10px) saturate(150%) brightness(0.8);
-  transition: transform var(--duration-ticket-press) var(--ease-snappy);
+  /* Release: springs back past its size and settles (MOTION-6). */
+  transition: transform var(--duration-glass-release) var(--ease-glass-spring);
 }
 
 /* The specular rim: one pixel, bright where light meets the edge. */
@@ -476,12 +477,20 @@ a {
 }
 
 .button.is-glass:focus-visible::before,
-.button.is-glass:active::before {
+.button.is-glass:active::before,
+.button.is-glass.is-pressed::before {
   opacity: 1;
 }
 
-.button.is-glass:active {
-  transform: scale(0.98);
+/* Press: the glass gives a little under the finger at once (the press is
+   a transform on the first frame), the light pulse (.glass-light) runs
+   from the touch point, and on release the transition above springs it
+   back. Navigation is never held for it. */
+.button.is-glass:active,
+.button.is-glass.is-pressed {
+  transform: scale(0.955, 0.94);
+  transition-duration: var(--duration-glass-press);
+  transition-timing-function: var(--ease-snappy);
 }
 
 /* Without backdrop blur, a dark tint keeps the label on a calm surface. */
@@ -501,8 +510,96 @@ a {
   }
 
   .button.is-glass:active,
+  .button.is-glass.is-pressed,
   .button.is-glass:hover .button-arrow {
     transform: none;
+  }
+}
+
+/*
+  Glass motion helpers (DESIGN.md MOTION-6), shared by every liquid glass
+  part: the press light and dynamic type.
+
+  .glass-light: a layer inside any [data-glass-press] element (it needs
+  position: relative and a radius). On a press, lib/motion/glass-press.ts
+  sets --press-x / --press-y and .is-lit, and a soft white flood grows from
+  that point and fades: the light that runs through glass when it is
+  touched. Opacity and transform only.
+*/
+.glass-light {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.glass-light::before {
+  content: "";
+  position: absolute;
+  top: var(--press-y, 50%);
+  left: var(--press-x, 50%);
+  width: 220%;
+  aspect-ratio: 1;
+  border-radius: var(--radius-circle);
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--color-white) 70%, transparent),
+    color-mix(in srgb, var(--color-ticket-ice) 30%, transparent) 45%,
+    transparent 72%
+  );
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.15);
+}
+
+.is-lit > .glass-light::before {
+  animation: glass-light var(--duration-glass-light) var(--ease-emphasized);
+}
+
+@keyframes glass-light {
+  0% {
+    opacity: 0.95;
+    transform: translate(-50%, -50%) scale(0.15);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/*
+  Dynamic type (lib/motion/typewriter.ts): words are laid out at full size
+  from the start and only fade up in turn, so nothing reflows. Inline-block
+  lets each word rise a touch; the spaces between stay real text so lines
+  break exactly as the plain text would.
+*/
+.type-word {
+  display: inline-block;
+  opacity: 0;
+  animation: type-word-in var(--duration-type-fade) var(--ease-snappy) forwards;
+}
+
+@keyframes type-word-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.2em);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-lit > .glass-light::before {
+    animation: none;
+  }
+
+  .type-word {
+    opacity: 1;
+    animation: none;
   }
 }
 

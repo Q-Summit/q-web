@@ -44,6 +44,24 @@ function unlockScroll() {
   window.scrollTo(0, lockedScrollY);
 }
 
+/*
+ * The sheet unfolds out of the menu button and folds back into it
+ * (DESIGN.md MOTION-6). Both directions are CSS transitions keyed on
+ * data-sheet, so toggling mid-way reverses from wherever the sheet is.
+ * Closing keeps the sheet rendered until the fold has played, but makes it
+ * inert at once, so nothing in it can be focused or read while it goes.
+ */
+let foldTimer = 0;
+
+function foldMs(panel: HTMLElement): number {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return 0;
+  const v = parseFloat(
+    getComputedStyle(panel).getPropertyValue("--duration-glass-fold"),
+  );
+  // The links fold with a short stagger after the sheet starts.
+  return (Number.isFinite(v) ? v : 220) + 120;
+}
+
 function setOpen(header: HTMLElement, open: boolean) {
   const toggle = header.querySelector<HTMLButtonElement>(".nav-toggle");
   const panel = header.querySelector<HTMLElement>("#site-nav");
@@ -53,8 +71,21 @@ function setOpen(header: HTMLElement, open: boolean) {
   header.toggleAttribute("data-open", open);
   toggle.setAttribute("aria-expanded", open ? "true" : "false");
   toggle.setAttribute("aria-label", open ? LABEL_CLOSE : LABEL_OPEN);
-  // hidden keeps the a11y tree in sync with aria-expanded (APG disclosure).
-  panel.hidden = !open;
+  window.clearTimeout(foldTimer);
+  panel.inert = !open;
+  if (open) {
+    panel.hidden = false;
+    // Paint the folded state once so the unfold transition runs.
+    void panel.offsetHeight;
+    panel.dataset.sheet = "open";
+  } else {
+    panel.dataset.sheet = "folded";
+    // hidden keeps the a11y tree in sync with aria-expanded (APG
+    // disclosure) once the fold has played.
+    foldTimer = window.setTimeout(() => {
+      if (!header.hasAttribute("data-open")) panel.hidden = true;
+    }, foldMs(panel));
+  }
 
   if (open && !wasOpen) lockScroll(header);
   else if (!open && wasOpen) unlockScroll();
@@ -70,10 +101,13 @@ function clearMobileState(header: HTMLElement) {
   if (!toggle || !panel) return;
 
   if (isOpen(header)) unlockScroll();
+  window.clearTimeout(foldTimer);
   header.removeAttribute("data-open");
   toggle.setAttribute("aria-expanded", "false");
   toggle.setAttribute("aria-label", LABEL_OPEN);
   panel.hidden = false;
+  panel.inert = false;
+  delete panel.dataset.sheet;
 }
 
 export function initNavMenu(header: HTMLElement) {

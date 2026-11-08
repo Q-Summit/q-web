@@ -178,6 +178,12 @@ const pageEventAttrs = pageEvent
     <script>
       import "../lib/analytics/boot";
     </script>
+    {/* Press light and compression for [data-glass-press] (MOTION-6). */}
+    <script>
+      import { initGlassPress } from "../lib/motion/glass-press";
+
+      initGlassPress();
+    </script>
   </head>
   <body>
     {
