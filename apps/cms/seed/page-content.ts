@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { resolveContentDir } from "./content-dir";
 import { getPayload, type Payload } from "payload";
+import { TICKET_ROW_FIELDS } from "../src/globals/PageTickets";
 import config from "../src/payload.config";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -11,7 +12,7 @@ const webMediaDir = path.resolve(dirname, "../../web/public/media");
 
 // Seeds the 12 per-page globals from page-content.json. Field shapes mirror
 // apps/web/src/lib/content.ts's PageContent 1:1; the only reshaping done
-// here is wrapping plain string[] JSON arrays into Payload's
+// here is wrapping plain string[]/boolean[] JSON arrays into Payload's
 // named-subfield array rows (see globals/shared-fields.ts + PageTickets.ts).
 // Idempotent: updateGlobal always overwrites the single document per slug.
 
@@ -24,6 +25,7 @@ function readJson(name: string): any {
 const seedUser = { id: "seed-admin", roles: ["admin", "approver"] } as any;
 
 const toTextRows = (values: string[]) => values.map((text) => ({ text }));
+const toValueRows = (values: boolean[]) => values.map((value) => ({ value }));
 
 // whyq audience photos are the only images referenced by page copy; the
 // component (FeatureSection.astro, off-limits here) derives its srcset from
@@ -238,45 +240,94 @@ async function run() {
     console.log("page-program: updated and published");
   }
 
-  // page-tickets (2027 model; the 2026 archive groups are not seeded)
+  // page-tickets: the 2027 model (hero / offer / included / compare) and,
+  // when the fixture still carries it, the 2026 archive (tiers / comparison /
+  // categories). Mapping both lets a fresh local database seed on either
+  // side of the website change: the 2026 site reads the archive, the 2027
+  // site reads the new groups, and the 2027 groups are required to publish.
   {
     const t = content.ticketCategories;
+    const data: Record<string, unknown> = {
+      title: t.title,
+      metaDescription: t.metaDescription,
+    };
+    if (t.hero && t.offer && t.included && t.compare) {
+      data.hero = t.hero;
+      data.offer = {
+        purchaseHref: t.offer.purchaseHref,
+        buyLabel: t.offer.buyLabel,
+        detailsLabel: t.offer.detailsLabel,
+        saveLabel: t.offer.saveLabel,
+        footnote: t.offer.footnote,
+        tickets: t.offer.tickets.map((ticket: any) => ({
+          key: ticket.key,
+          name: ticket.name,
+          description: ticket.description,
+          regularPrice: ticket.regularPrice,
+          price: ticket.price,
+          highlights: toTextRows(ticket.highlights),
+          note: ticket.note ?? null,
+        })),
+      };
+      data.included = {
+        ...t.included,
+        groups: t.included.groups.map((group: any) => ({
+          heading: group.heading,
+          kind: group.kind,
+          rows: group.rows.map((row: any) => ({
+            label: row.label,
+            ...Object.fromEntries(
+              Object.entries(TICKET_ROW_FIELDS).map(([key, field]) => [
+                field,
+                (row.tickets ?? []).includes(key),
+              ]),
+            ),
+          })),
+        })),
+      };
+      data.compare = t.compare;
+    } else {
+      throw new Error(
+        "[seed] page-tickets: the fixture has no 2027 ticket model (hero, offer, included, compare); it is required to publish the Tickets page.",
+      );
+    }
+    if (t.tiers && t.comparison && t.categories) {
+      data.tiers = {
+        heading: t.tiers.heading,
+        intro: t.tiers.intro,
+        items: t.tiers.items.map((item: any) => ({
+          name: item.name,
+          price: item.price,
+          features: toTextRows(item.features),
+          note: item.note ?? null,
+          buyLabel: item.buyLabel,
+          buyHref: item.buyHref,
+        })),
+      };
+      data.comparison = {
+        heading: t.comparison.heading,
+        intro: t.comparison.intro,
+        tiers: t.comparison.tiers,
+        groups: t.comparison.groups.map((group: any) => ({
+          group: group.group,
+          rows: group.rows.map((row: any) => ({
+            feature: row.feature,
+            included: toValueRows(row.included),
+          })),
+        })),
+        academicNote: t.comparison.academicNote,
+      };
+      data.categories = {
+        heading: t.categories.heading,
+        items: t.categories.items.map((item: any) => ({
+          label: item.label,
+          bullets: toTextRows(item.bullets),
+        })),
+      };
+    }
     await payload.updateGlobal({
       slug: "page-tickets",
-      data: {
-        title: t.title,
-        metaDescription: t.metaDescription,
-        hero: t.hero,
-        offer: {
-          purchaseHref: t.offer.purchaseHref,
-          buyLabel: t.offer.buyLabel,
-          detailsLabel: t.offer.detailsLabel,
-          saveLabel: t.offer.saveLabel,
-          footnote: t.offer.footnote,
-          tickets: t.offer.tickets.map((ticket: any) => ({
-            key: ticket.key,
-            name: ticket.name,
-            description: ticket.description,
-            regularPrice: ticket.regularPrice,
-            price: ticket.price,
-            highlights: toTextRows(ticket.highlights),
-            note: ticket.note ?? null,
-          })),
-        },
-        included: {
-          ...t.included,
-          groups: t.included.groups.map((group: any) => ({
-            heading: group.heading,
-            kind: group.kind,
-            rows: group.rows.map((row: any) => ({
-              label: row.label,
-              tickets: row.tickets,
-            })),
-          })),
-        },
-        compare: t.compare,
-        _status: "published",
-      },
+      data: { ...data, _status: "published" },
       user: seedUser,
       overrideAccess: true,
     });

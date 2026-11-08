@@ -38,6 +38,23 @@ export const TICKET_KEYS = [
   { label: "Corporate", value: "corporate" },
 ] as const;
 
+export type TicketKey = (typeof TICKET_KEYS)[number]["value"];
+
+/*
+ * One checkbox per ticket category on every benefit row. Plain columns:
+ * a multi-select (select hasMany) nested in arrays cannot be stored in
+ * Payload's version tables (its rows are written with the text id where
+ * the version table expects the numeric one), so drafts would fail to save.
+ * apps/web maps these back to the ticket keys (pages.ts TICKET_ROW_FIELDS).
+ */
+export const TICKET_ROW_FIELDS: Record<TicketKey, string> = {
+  student: "student",
+  "young-professional": "youngProfessional",
+  "start-up": "startUp",
+  investor: "investor",
+  corporate: "corporate",
+};
+
 /*
  * The 2026 model (tiers / comparison / categories below) stays in the
  * database as an archive: content is modeled per edition and past editions
@@ -268,18 +285,21 @@ const benefitGroupFields: Field[] = [
     name: "rows",
     type: "array",
     required: true,
-    admin: ARRAY_ADMIN,
+    admin: {
+      ...ARRAY_ADMIN,
+      description:
+        "On each row, tick the tickets the benefit is included in (or, for a requirement, the tickets that require it).",
+    },
     fields: [
       { name: "label", type: "text", required: true },
       {
-        name: "tickets",
-        type: "select",
-        hasMany: true,
-        options: [...TICKET_KEYS],
-        admin: {
-          description:
-            "Tickets this benefit is included in (or, for a requirement, the tickets that require it). Leave empty for none.",
-        },
+        type: "row",
+        fields: TICKET_KEYS.map((ticket): Field => ({
+          name: TICKET_ROW_FIELDS[ticket.value],
+          label: ticket.label,
+          type: "checkbox",
+          defaultValue: false,
+        })),
       },
     ],
   },

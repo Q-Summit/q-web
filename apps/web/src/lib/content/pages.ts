@@ -709,11 +709,31 @@ interface CmsTicketsDoc {
       | {
           heading: string;
           kind: "benefit" | "eligibility";
-          rows: { label: string; tickets?: TicketKey[] | null }[];
+          rows: CmsTicketRow[];
         }[]
       | null;
   };
   compare: TicketCategoriesContent["compare"];
+}
+
+// Payload stores each benefit row as one checkbox per ticket (apps/cms
+// PageTickets.ts TICKET_ROW_FIELDS); the site works with the ticket keys.
+const TICKET_ROW_FIELDS = {
+  student: "student",
+  "young-professional": "youngProfessional",
+  "start-up": "startUp",
+  investor: "investor",
+  corporate: "corporate",
+} as const satisfies Record<TicketKey, string>;
+
+type CmsTicketRow = { label: string } & {
+  [F in (typeof TICKET_ROW_FIELDS)[TicketKey]]?: boolean | null;
+};
+
+function ticketsOfRow(row: CmsTicketRow): TicketKey[] {
+  return (Object.keys(TICKET_ROW_FIELDS) as TicketKey[]).filter(
+    (key) => row[TICKET_ROW_FIELDS[key]] === true,
+  );
 }
 
 async function cmsGetTicketCategories(): Promise<TicketCategoriesContent> {
@@ -753,7 +773,7 @@ async function cmsGetTicketCategories(): Promise<TicketCategoriesContent> {
       groups: (doc.included.groups ?? []).map((g) => ({
         heading: g.heading,
         kind: g.kind,
-        rows: g.rows.map((r) => ({ label: r.label, tickets: r.tickets ?? [] })),
+        rows: g.rows.map((r) => ({ label: r.label, tickets: ticketsOfRow(r) })),
       })),
     },
     compare: doc.compare,
