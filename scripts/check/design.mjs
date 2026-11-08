@@ -361,6 +361,8 @@ const UNMAPPED_TOKENS = new Map([
   ["--duration-ticket-glint", "see --duration-ticket-press"],
   ["--duration-ticket-enter", "see --duration-ticket-press"],
   ["--duration-ticket-stagger", "see --duration-ticket-press"],
+  ["--duration-ticket-picker-open", "see --duration-ticket-press"],
+  ["--duration-ticket-picker-close", "see --duration-ticket-press"],
   [
     "--duration-hack-fall",
     "see --ease-snappy; Q-Hack campaign only (DESIGN.md HACK-1)",

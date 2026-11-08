@@ -50,6 +50,21 @@ function initPress(root: HTMLElement): void {
 /* Carousel: one card at rest on phones; grid (no carousel) when wide.  */
 /* ------------------------------------------------------------------ */
 
+/*
+ * The count, the dots and the card always agree:
+ *   - Arrows, dots and keys set a target. The display jumps to it at once
+ *     and holds it while the smooth scroll travels there, so a scroll frame
+ *     that still has the old card nearest can never pull it back.
+ *   - A swipe moves the display only forward in the direction the track is
+ *     moving, and only once the next card is clearly closer (hysteresis),
+ *     so a finger hovering near the midpoint or a quick reversal cannot
+ *     make it flicker 3-4-3.
+ *   - When the track comes to rest (scrollend, or a short quiet period
+ *     where scrollend is missing) the display is set to the card that is
+ *     actually centered, whatever happened on the way.
+ * Heavy work (inert, pausing the light of off-screen cards) runs only at
+ * rest, never per scroll frame.
+ */
 function initCarousel(root: HTMLElement): void {
   const track = root.querySelector<HTMLElement>("[data-track]");
   const controls = root.querySelector<HTMLElement>("[data-controls]");
@@ -61,33 +76,51 @@ function initCarousel(root: HTMLElement): void {
   const current = controls.querySelector<HTMLElement>("[data-current]");
   controls.hidden = false;
 
-  let active = 0;
+  // Shown index (count + dots) and the index the track has settled on.
+  let shown = 0;
+  let settled = 0;
+  // Set while an arrow, dot or key scroll is on its way.
+  let target: number | null = null;
+  let lastLeft = track.scrollLeft;
   const isCarousel = () => track.scrollWidth > track.clientWidth + 1;
 
-  const render = () => {
-    const carousel = isCarousel();
-    slides.forEach((slide, i) => {
-      // Hidden slides keep nothing focusable (buy links, All benefits).
-      slide.inert = carousel && i !== active;
-    });
-    dots.forEach((dot, i) =>
-      i === active
+  const show = (i: number) => {
+    if (i === shown && current?.textContent === String(i + 1)) return;
+    shown = i;
+    dots.forEach((dot, d) =>
+      d === i
         ? dot.setAttribute("aria-current", "true")
         : dot.removeAttribute("aria-current"),
     );
-    if (current) current.textContent = String(active + 1);
-    if (prev) prev.disabled = active === 0;
-    if (next) next.disabled = active === slides.length - 1;
+    if (current) current.textContent = String(i + 1);
+    if (prev) prev.disabled = i === 0;
+    if (next) next.disabled = i === slides.length - 1;
   };
 
-  // The slide whose center is closest to the track's center is active.
+  // At rest: only the centered card is reachable and lit. The others keep
+  // nothing focusable (buy links, All benefits) and hold their light still,
+  // which frees the GPU for the one card on screen.
+  const settle = (i: number) => {
+    settled = i;
+    const carousel = isCarousel();
+    slides.forEach((slide, s) => {
+      const off = carousel && s !== i;
+      slide.inert = off;
+      slide.toggleAttribute("data-ticket-still", off);
+    });
+    show(i);
+  };
+
+  const centerOf = (i: number) =>
+    slides[i].offsetLeft + slides[i].offsetWidth / 2;
+  const viewCenter = () => track.scrollLeft + track.clientWidth / 2;
+
   const nearest = (): number => {
-    const center = track.scrollLeft + track.clientWidth / 2;
+    const center = viewCenter();
     let best = 0;
     let bestDistance = Infinity;
-    slides.forEach((slide, i) => {
-      const mid = slide.offsetLeft + slide.offsetWidth / 2;
-      const distance = Math.abs(mid - center);
+    slides.forEach((_, i) => {
+      const distance = Math.abs(centerOf(i) - center);
       if (distance < bestDistance) {
         bestDistance = distance;
         best = i;
@@ -97,17 +130,46 @@ function initCarousel(root: HTMLElement): void {
   };
 
   let frame = 0;
+  let quiet = 0;
+  const onRest = () => {
+    clearTimeout(quiet);
+    const i = nearest();
+    // A programmatic scroll is done once it reaches its card.
+    if (target !== null && i === target) target = null;
+    if (target === null) settle(i);
+  };
+
   track.addEventListener(
     "scroll",
     () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        const i = nearest();
-        if (i !== active) {
-          active = i;
-          render();
+        const left = track.scrollLeft;
+        const direction = Math.sign(left - lastLeft);
+        lastLeft = left;
+        if (target === null && direction !== 0) {
+          // The neighbor in the direction of travel takes over once its
+          // center is within 40% of a card width of the view's center.
+          const ahead = shown + direction;
+          if (ahead >= 0 && ahead < slides.length) {
+            const reach = slides[ahead].offsetWidth * 0.4;
+            if (Math.abs(centerOf(ahead) - viewCenter()) < reach) show(ahead);
+          }
         }
       });
+      // Fallback for browsers without scrollend.
+      clearTimeout(quiet);
+      quiet = window.setTimeout(onRest, 140);
+    },
+    { passive: true },
+  );
+  track.addEventListener("scrollend", onRest);
+
+  // A new touch takes over from any arrow or dot scroll still running.
+  track.addEventListener(
+    "pointerdown",
+    () => {
+      target = null;
     },
     { passive: true },
   );
@@ -115,31 +177,44 @@ function initCarousel(root: HTMLElement): void {
   const go = (i: number) => {
     const index = Math.max(0, Math.min(slides.length - 1, i));
     const slide = slides[index];
+    const left = slide.offsetLeft - (track.clientWidth - slide.offsetWidth) / 2;
+    show(index);
+    if (Math.abs(track.scrollLeft - left) < 1) {
+      target = null;
+      settle(index);
+      return;
+    }
+    target = index;
+    // The card being scrolled to must not be inert when it arrives, and
+    // its light starts as it slides in.
+    slide.inert = false;
+    slide.removeAttribute("data-ticket-still");
     track.scrollTo({
-      left: slide.offsetLeft - (track.clientWidth - slide.offsetWidth) / 2,
+      left,
       behavior: reducedMotion() ? "auto" : "smooth",
     });
-    active = index;
-    render();
   };
 
-  prev?.addEventListener("click", () => go(active - 1));
-  next?.addEventListener("click", () => go(active + 1));
+  // Arrows step from what is shown, so quick repeated taps queue up
+  // (2 -> 3 -> 4) instead of restarting from the card still sliding away.
+  prev?.addEventListener("click", () => go(shown - 1));
+  next?.addEventListener("click", () => go(shown + 1));
   dots.forEach((dot, i) => dot.addEventListener("click", () => go(i)));
 
   // Arrow keys move between tickets while focus is inside the carousel.
   root.addEventListener("keydown", (e) => {
     if (!isCarousel()) return;
     if ((e.target as Element).closest("select, input, textarea")) return;
-    if (e.key === "ArrowRight") go(active + 1);
-    else if (e.key === "ArrowLeft") go(active - 1);
+    if (e.key === "ArrowRight") go(shown + 1);
+    else if (e.key === "ArrowLeft") go(shown - 1);
     else return;
     e.preventDefault();
   });
 
-  // Crossing the 900px breakpoint switches carousel <-> grid.
-  new ResizeObserver(() => render()).observe(track);
-  render();
+  // Crossing the 900px breakpoint switches carousel <-> grid; in the grid
+  // every card is reachable and lit.
+  new ResizeObserver(() => settle(target ?? settled)).observe(track);
+  settle(nearest());
 }
 
 /* ------------------------------------------------------------------ */
@@ -258,15 +333,250 @@ function initTabs(section: HTMLElement): (key: string) => void {
 /* Compare: two pickers re-fill their column from the shared model.     */
 /* ------------------------------------------------------------------ */
 
+/*
+ * One compare picker: a button that opens a listbox (WAI-ARIA select-only
+ * pattern). It always opens downward; when the list would end below the
+ * visible area the page first eases down just enough (never above the
+ * fixed header). A second tap on the field, a tap outside, Escape or Tab
+ * close it and keep the previous pick. Keyboard: Enter, Space, Arrow keys
+ * open; Arrows, Home, End and a first letter move; Enter or Space pick.
+ */
+interface Picker {
+  root: HTMLElement;
+  value: () => string;
+  setValue: (key: string) => void;
+  setDisabled: (key: string) => void;
+  close: (focusField?: boolean) => void;
+  isOpen: () => boolean;
+}
+
+const openPickers = new Set<Picker>();
+
+function createPicker(root: HTMLElement, onPick: () => void): Picker | null {
+  const field = root.querySelector<HTMLButtonElement>("[data-picker-field]");
+  const list = root.querySelector<HTMLElement>("[data-picker-list]");
+  const label = root.querySelector<HTMLElement>("[data-picker-value]");
+  if (!field || !list || !label) return null;
+  const options = [...list.querySelectorAll<HTMLElement>('[role="option"]')];
+  let open = false;
+  let active = -1;
+  let hideTimer = 0;
+  let typed = "";
+  let typedTimer = 0;
+
+  const enabled = (o: HTMLElement) =>
+    o.getAttribute("aria-disabled") !== "true";
+  const value = () => root.dataset.value ?? "";
+
+  const setActive = (i: number) => {
+    active = i;
+    options.forEach((o, n) => o.classList.toggle("is-active", n === i));
+    const o = options[i];
+    if (o) {
+      list.setAttribute("aria-activedescendant", o.id);
+      o.scrollIntoView({ block: "nearest" });
+    } else list.removeAttribute("aria-activedescendant");
+  };
+
+  const step = (from: number, dir: 1 | -1) => {
+    for (let i = from + dir; i >= 0 && i < options.length; i += dir) {
+      if (enabled(options[i])) return i;
+    }
+    return from;
+  };
+
+  // Bring field and list into view below the fixed header, gently.
+  const reveal = () => {
+    const header = document.getElementById("site-header");
+    const top = (header?.getBoundingClientRect().bottom ?? 0) + 12;
+    const view = window.visualViewport?.height ?? window.innerHeight;
+    const fieldBox = field.getBoundingClientRect();
+    const fieldTop = fieldBox.top;
+    // Untransformed size: the list is still mid-unfold when this runs.
+    const listBottom =
+      fieldBox.bottom + list.offsetTop - field.offsetHeight + list.offsetHeight;
+    const need = listBottom + 16 - view;
+    if (need <= 0) return;
+    // Never push the field itself under the header.
+    const by = Math.min(need, Math.max(0, fieldTop - top));
+    if (by > 0) {
+      window.scrollBy({
+        top: by,
+        behavior: reducedMotion() ? "auto" : "smooth",
+      });
+    }
+  };
+
+  const show = () => {
+    if (open || field.disabled) return;
+    openPickers.forEach((p) => p !== picker && p.close());
+    open = true;
+    openPickers.add(picker);
+    clearTimeout(hideTimer);
+    list.hidden = false;
+    root.classList.add("is-open");
+    field.setAttribute("aria-expanded", "true");
+    // Next frame so the closed state is painted and the open transition runs.
+    void list.offsetHeight;
+    list.dataset.state = "open";
+    const selected = options.findIndex((o) => o.dataset.value === value());
+    setActive(selected >= 0 ? selected : step(-1, 1));
+    list.focus({ preventScroll: true });
+    reveal();
+  };
+
+  const close = (focusField = false) => {
+    if (!open) return;
+    open = false;
+    openPickers.delete(picker);
+    root.classList.remove("is-open");
+    field.setAttribute("aria-expanded", "false");
+    list.dataset.state = "closed";
+    list.removeAttribute("aria-activedescendant");
+    const ms = reducedMotion()
+      ? 0
+      : parseFloat(
+          getComputedStyle(list).getPropertyValue(
+            "--duration-ticket-picker-close",
+          ),
+        ) || 240;
+    hideTimer = window.setTimeout(() => {
+      if (!open) list.hidden = true;
+    }, ms);
+    if (focusField) field.focus({ preventScroll: true });
+  };
+
+  const pick = (i: number) => {
+    const o = options[i];
+    if (!o || !enabled(o)) return;
+    const changed = o.dataset.value !== value();
+    picker.setValue(o.dataset.value ?? "");
+    close(true);
+    if (changed) onPick();
+  };
+
+  // Tap/click on the field toggles. pointerdown on the field must not count
+  // as "outside" for the document listener below.
+  field.addEventListener("click", () => (open ? close(true) : show()));
+  field.addEventListener("keydown", (e) => {
+    if (["ArrowDown", "ArrowUp", "Enter", " "].includes(e.key)) {
+      e.preventDefault();
+      show();
+      if (e.key === "ArrowUp") setActive(step(options.length, -1));
+    }
+  });
+
+  list.addEventListener("click", (e) => {
+    const o = (e.target as Element).closest<HTMLElement>('[role="option"]');
+    if (o) pick(options.indexOf(o));
+  });
+  list.addEventListener("pointermove", (e) => {
+    const o = (e.target as Element).closest<HTMLElement>('[role="option"]');
+    if (o && enabled(o)) setActive(options.indexOf(o));
+  });
+  list.addEventListener("keydown", (e) => {
+    switch (e.key) {
+      case "ArrowDown":
+        setActive(step(active, 1));
+        break;
+      case "ArrowUp":
+        setActive(step(active, -1));
+        break;
+      case "Home":
+        setActive(step(-1, 1));
+        break;
+      case "End":
+        setActive(step(options.length, -1));
+        break;
+      case "Enter":
+      case " ":
+        pick(active);
+        break;
+      case "Escape":
+        close(true);
+        break;
+      case "Tab":
+        close();
+        return; // let focus move on
+      default:
+        if (e.key.length === 1 && /\S/.test(e.key)) {
+          clearTimeout(typedTimer);
+          typed += e.key.toLowerCase();
+          typedTimer = window.setTimeout(() => (typed = ""), 600);
+          const hit = options.findIndex(
+            (o) =>
+              enabled(o) &&
+              (o.textContent ?? "").trim().toLowerCase().startsWith(typed),
+          );
+          if (hit >= 0) setActive(hit);
+          break;
+        }
+        return;
+    }
+    e.preventDefault();
+  });
+  // Focus leaving the picker (e.g. a screen reader moving on) closes it.
+  root.addEventListener("focusout", (e) => {
+    if (open && !root.contains(e.relatedTarget as Node | null)) close();
+  });
+
+  const picker: Picker = {
+    root,
+    value,
+    isOpen: () => open,
+    close,
+    setValue: (key) => {
+      root.dataset.value = key;
+      options.forEach((o) =>
+        o.setAttribute(
+          "aria-selected",
+          o.dataset.value === key ? "true" : "false",
+        ),
+      );
+      const o = options.find((x) => x.dataset.value === key);
+      label.textContent = o?.textContent?.trim() ?? key;
+    },
+    setDisabled: (key) =>
+      options.forEach((o) =>
+        o.dataset.value === key
+          ? o.setAttribute("aria-disabled", "true")
+          : o.removeAttribute("aria-disabled"),
+      ),
+  };
+  field.disabled = false;
+  return picker;
+}
+
+// A tap or click anywhere outside an open picker closes it (no pick).
+document.addEventListener(
+  "pointerdown",
+  (e) => {
+    openPickers.forEach((p) => {
+      if (!p.root.contains(e.target as Node)) p.close();
+    });
+  },
+  { capture: true },
+);
+
 function initCompare(section: HTMLElement): void {
   const raw = section.querySelector("[data-ticket-data]")?.textContent;
   if (!raw) return;
   const data = JSON.parse(raw) as TicketClientData;
-  const selects = [0, 1].map((col) =>
-    section.querySelector<HTMLSelectElement>(`[data-select="${col}"]`),
+  const roots = [0, 1].map((col) =>
+    section.querySelector<HTMLElement>(`[data-picker="${col}"]`),
   );
-  if (!selects[0] || !selects[1]) return;
-  const pickers = selects as [HTMLSelectElement, HTMLSelectElement];
+  if (!roots[0] || !roots[1]) return;
+  const made: (Picker | null)[] = [];
+  roots.forEach((root, col) =>
+    made.push(
+      createPicker(root as HTMLElement, () => {
+        lockOptions();
+        fill(col);
+      }),
+    ),
+  );
+  if (!made[0] || !made[1]) return;
+  const pickers = made as [Picker, Picker];
 
   const replay = (el: Element | null) => {
     if (!el || reducedMotion()) return;
@@ -276,7 +586,7 @@ function initCompare(section: HTMLElement): void {
   };
 
   const fill = (col: number) => {
-    const ticket = data.tickets.find((t) => t.key === pickers[col].value);
+    const ticket = data.tickets.find((t) => t.key === pickers[col].value());
     if (!ticket) return;
 
     const box = section.querySelector<HTMLElement>(`[data-swap="${col}"]`);
@@ -321,29 +631,13 @@ function initCompare(section: HTMLElement): void {
   };
 
   // A ticket already shown in one column cannot be picked in the other.
-  const lockOptions = () => {
-    pickers.forEach((picker, col) => {
-      const other = pickers[1 - col].value;
-      [...picker.options].forEach((option) => {
-        option.disabled = option.value === other;
-      });
-    });
-  };
+  function lockOptions() {
+    pickers.forEach((picker, col) =>
+      picker.setDisabled(pickers[1 - col].value()),
+    );
+  }
 
-  pickers.forEach((picker, col) => {
-    picker.disabled = false;
-    picker.addEventListener("change", () => {
-      lockOptions();
-      fill(col);
-    });
-  });
   lockOptions();
-  // Restore what a back/forward navigation or a form autofill left behind.
-  fill(0);
-  fill(1);
-  section
-    .querySelectorAll(".is-swapping")
-    .forEach((el) => el.classList.remove("is-swapping"));
 }
 
 /* ------------------------------------------------------------------ */

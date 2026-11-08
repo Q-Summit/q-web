@@ -207,6 +207,9 @@
   --duration-ticket-glint: 5.2s;
   --duration-ticket-enter: 460ms;
   --duration-ticket-stagger: 18ms;
+  /* The compare pickers' list: a soft, unhurried open, a quicker close. */
+  --duration-ticket-picker-open: 340ms;
+  --duration-ticket-picker-close: 240ms;
   /* Hack campaign motion (DESIGN.md HACK-1). Ambient loops (falling
      fragments, the light seen through the white surface) run slowly and
      can be paused on the page; the reveal and the logo light pass are one

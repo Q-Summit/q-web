@@ -351,8 +351,14 @@
  * other makes the pools flow into new shapes, like light moving through
  * liquid glass, with transform as the only animated property.
  */
+/*
+ * Resting frame = the first keyframe (2D, so a still layer is not promoted
+ * to its own GPU layer). A card whose animation is removed while it is off
+ * screen (TicketCards) therefore restarts without a jump.
+ */
 .t-field::before {
   inset: -45%;
+  transform: translate(-5%, -3%) scale(1.08, 0.94);
   background:
     radial-gradient(
       32% 22% at 34% 38%,
@@ -373,6 +379,7 @@
 
 .t-field::after {
   inset: -40%;
+  transform: translate(5%, 4%) scale(0.95, 1.08);
   background:
     radial-gradient(
       30% 20% at 62% 70%,
@@ -549,6 +556,13 @@
   position: absolute;
   aspect-ratio: 1;
   pointer-events: none;
+  /* Resting frame = first keyframe of t-q-float (see .t-field::before). */
+  transform: rotate(-5deg);
+}
+
+.t-qb.is-card-sm,
+.t-qb.is-ground-2 {
+  transform: rotate(6deg) scale(0.98);
 }
 
 .t-qb > span {
@@ -597,6 +611,7 @@
 .t-qb-flow {
   position: absolute;
   inset: -45%;
+  transform: translate(-5%, -3%) scale(1.08, 0.94);
   background:
     radial-gradient(
       30% 20% at 35% 40%,
