@@ -11,7 +11,7 @@ const webMediaDir = path.resolve(dirname, "../../web/public/media");
 
 // Seeds the 12 per-page globals from page-content.json. Field shapes mirror
 // apps/web/src/lib/content.ts's PageContent 1:1; the only reshaping done
-// here is wrapping plain string[]/boolean[] JSON arrays into Payload's
+// here is wrapping plain string[] JSON arrays into Payload's
 // named-subfield array rows (see globals/shared-fields.ts + PageTickets.ts).
 // Idempotent: updateGlobal always overwrites the single document per slug.
 
@@ -24,7 +24,6 @@ function readJson(name: string): any {
 const seedUser = { id: "seed-admin", roles: ["admin", "approver"] } as any;
 
 const toTextRows = (values: string[]) => values.map((text) => ({ text }));
-const toValueRows = (values: boolean[]) => values.map((value) => ({ value }));
 
 // whyq audience photos are the only images referenced by page copy; the
 // component (FeatureSection.astro, off-limits here) derives its srcset from
@@ -239,7 +238,7 @@ async function run() {
     console.log("page-program: updated and published");
   }
 
-  // page-tickets
+  // page-tickets (2027 model; the 2026 archive groups are not seeded)
   {
     const t = content.ticketCategories;
     await payload.updateGlobal({
@@ -247,38 +246,35 @@ async function run() {
       data: {
         title: t.title,
         metaDescription: t.metaDescription,
-        tiers: {
-          heading: t.tiers.heading,
-          intro: t.tiers.intro,
-          items: t.tiers.items.map((item: any) => ({
-            name: item.name,
-            price: item.price,
-            features: toTextRows(item.features),
-            note: item.note ?? null,
-            buyLabel: item.buyLabel,
-            buyHref: item.buyHref,
+        hero: t.hero,
+        offer: {
+          purchaseHref: t.offer.purchaseHref,
+          buyLabel: t.offer.buyLabel,
+          detailsLabel: t.offer.detailsLabel,
+          saveLabel: t.offer.saveLabel,
+          footnote: t.offer.footnote,
+          tickets: t.offer.tickets.map((ticket: any) => ({
+            key: ticket.key,
+            name: ticket.name,
+            description: ticket.description,
+            regularPrice: ticket.regularPrice,
+            price: ticket.price,
+            highlights: toTextRows(ticket.highlights),
+            note: ticket.note ?? null,
           })),
         },
-        comparison: {
-          heading: t.comparison.heading,
-          intro: t.comparison.intro,
-          tiers: t.comparison.tiers,
-          groups: t.comparison.groups.map((group: any) => ({
-            group: group.group,
+        included: {
+          ...t.included,
+          groups: t.included.groups.map((group: any) => ({
+            heading: group.heading,
+            kind: group.kind,
             rows: group.rows.map((row: any) => ({
-              feature: row.feature,
-              included: toValueRows(row.included),
+              label: row.label,
+              tickets: row.tickets,
             })),
           })),
-          academicNote: t.comparison.academicNote,
         },
-        categories: {
-          heading: t.categories.heading,
-          items: t.categories.items.map((item: any) => ({
-            label: item.label,
-            bullets: toTextRows(item.bullets),
-          })),
-        },
+        compare: t.compare,
         _status: "published",
       },
       user: seedUser,

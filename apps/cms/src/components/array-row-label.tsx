@@ -16,7 +16,15 @@ export const TitleRowLabel: React.FC = () => {
   const { data, rowNumber } = useRowLabel<Record<string, unknown>>();
   const fallback = `Item ${String((rowNumber ?? 0) + 1).padStart(2, "0")}`;
 
-  for (const key of ["title", "label", "heading", "value", "text", "date"]) {
+  for (const key of [
+    "title",
+    "label",
+    "name",
+    "heading",
+    "value",
+    "text",
+    "date",
+  ]) {
     const candidate = data?.[key];
     if (typeof candidate === "string" && candidate.trim()) return candidate;
   }
