@@ -677,22 +677,25 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
     margin-inline: calc(-1 * clamp(var(--space-2xs), 1.5vw, var(--space-sm)));
     padding-inline: clamp(var(--space-2xs), 1.5vw, var(--space-sm));
     border-radius: var(--radius-ticket-panel);
-    /* Clear liquid glass: the rows passing under it show through, softly
-       broken by a strong blur, so nothing reads through the names; a thin
-       white fill, a lit top edge, a specular rim (::after) and a soft
-       shadow lift it off the sheet. */
+    /* Clear liquid glass in the home Buy Now's material: only a thin
+       white fill, so the rows passing under it show as color and shape,
+       and a strong blur that lifts brightness and saturation, so they never
+       read as a second line of text next to the names. A lit top edge, a
+       caustic cyan glow inside the lower edge, the bright rim (::after) and
+       a soft cyan halo make it glow a little; a soft shadow lifts it. */
     background: linear-gradient(
       180deg,
-      color-mix(in srgb, var(--color-white) 50%, transparent),
-      color-mix(in srgb, var(--color-white) 34%, transparent)
+      color-mix(in srgb, var(--color-white) 30%, transparent),
+      color-mix(in srgb, var(--color-white) 14%, transparent)
     );
     box-shadow:
       inset 0 1px 1px var(--color-white),
-      inset 0 -10px 16px -14px
-        color-mix(in srgb, var(--color-ticket-cyan) 80%, transparent),
-      0 10px 22px -14px color-mix(in srgb, var(--color-navy) 35%, transparent);
-    -webkit-backdrop-filter: blur(18px) saturate(170%);
-    backdrop-filter: blur(18px) saturate(170%);
+      inset 0 -12px 18px -14px var(--color-ticket-cyan),
+      0 10px 22px -14px color-mix(in srgb, var(--color-navy) 35%, transparent),
+      0 0 22px -8px
+        color-mix(in srgb, var(--color-ticket-cyan) 55%, transparent);
+    -webkit-backdrop-filter: blur(22px) saturate(190%) brightness(1.08);
+    backdrop-filter: blur(22px) saturate(190%) brightness(1.08);
   }
 
   .t-cmp-names::after {

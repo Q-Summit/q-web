@@ -58,8 +58,9 @@ function foldMs(panel: HTMLElement): number {
   const v = parseFloat(
     getComputedStyle(panel).getPropertyValue("--duration-glass-fold"),
   );
-  // The links fold with a short stagger after the sheet starts.
-  return (Number.isFinite(v) ? v : 220) + 120;
+  // The links leave first (0.35 of the fold), then the glass folds; keep
+  // the box until both have played (Nav.astro).
+  return (Number.isFinite(v) ? v : 220) * 1.35 + 40;
 }
 
 function setOpen(header: HTMLElement, open: boolean) {

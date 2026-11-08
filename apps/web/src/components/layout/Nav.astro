@@ -43,6 +43,7 @@ const isCurrent = (href: string): boolean =>
 
 <header class="site-header" id="site-header">
   <div class="container nav-inner">
+    <span class="nav-bar-glass" aria-hidden="true"></span>
     <a class="brand" href="/">
       <span
         class="brand-gloss"
@@ -74,7 +75,9 @@ const isCurrent = (href: string): boolean =>
       </span>
     </button>
     <nav id="site-nav" aria-label="Main">
-      <span class="nav-sheen" aria-hidden="true"></span>
+      <span class="nav-glass" aria-hidden="true">
+        <span class="nav-sheen"></span>
+      </span>
       <ul>
         {
           nav.map((link, i) => (
@@ -202,24 +205,48 @@ const isCurrent = (href: string): boolean =>
     padding-block: 0;
     padding-inline: var(--space-md) var(--space-2xs);
     border-radius: var(--radius-ticket-panel);
-    /* Light frosted glass, one flat tone with no gradient of its own: the
-       page shows through, softened by the blur. Dense enough that navy or
-       purple shapes passing under it (campaign sections, big headings)
-       never cut the links' contrast; the ticket page's original 22% clear
-       glass read well only on its own pale ground. Depth comes only from
-       its edges: a lit top rim, a faint lower edge and thin side lights,
-       the way a slab of glass catches light. */
-    background-color: color-mix(in srgb, var(--color-white) 55%, transparent);
+    /* Lift and halo; the glass itself is .nav-bar-glass below. */
     box-shadow:
-      inset 0 1px 1px color-mix(in srgb, var(--color-white) 95%, transparent),
-      inset 0 -1px 1px color-mix(in srgb, var(--color-black) 8%, transparent),
-      inset 1px 0 0 color-mix(in srgb, var(--color-white) 35%, transparent),
-      inset -1px 0 0 color-mix(in srgb, var(--color-white) 35%, transparent),
-      0 10px 30px -18px color-mix(in srgb, var(--color-black) 22%, transparent);
+      0 10px 30px -18px color-mix(in srgb, var(--color-black) 22%, transparent),
+      0 0 24px -10px
+        color-mix(in srgb, var(--color-ticket-cyan) 45%, transparent);
     pointer-events: auto;
     isolation: isolate;
-    -webkit-backdrop-filter: blur(14px) saturate(140%);
-    backdrop-filter: blur(14px) saturate(140%);
+  }
+
+  /*
+    The bar's glass, in the home Buy Now's material: a thin white fill, so
+    what lies behind stays visible as color, shape and movement, and a
+    strong blur that lifts brightness and saturation, so nothing behind
+    reads as a second line of text and the navy links keep their contrast.
+    Depth from light only: a lit top edge, a caustic cyan glow inside the
+    lower edge, thin side lights, the specular rim (.nav-inner::after) and
+    the halo on .nav-inner.
+
+    It is a layer of its own, not .nav-inner's background, on purpose: an
+    element with backdrop-filter is a backdrop root, and the phone menu's
+    glass (a child of .nav-inner) could then only blur the bar's own
+    content instead of the page behind it.
+  */
+  .nav-bar-glass {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    border-radius: inherit;
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-white) 36%, transparent),
+      color-mix(in srgb, var(--color-white) 18%, transparent)
+    );
+    box-shadow:
+      inset 0 1px 1px color-mix(in srgb, var(--color-white) 95%, transparent),
+      inset 0 -12px 18px -16px
+        color-mix(in srgb, var(--color-ticket-cyan) 75%, transparent),
+      inset 1px 0 0 color-mix(in srgb, var(--color-white) 40%, transparent),
+      inset -1px 0 0 color-mix(in srgb, var(--color-white) 40%, transparent);
+    pointer-events: none;
+    -webkit-backdrop-filter: blur(18px) saturate(180%) brightness(1.1);
+    backdrop-filter: blur(18px) saturate(180%) brightness(1.1);
   }
 
   /*
@@ -235,7 +262,7 @@ const isCurrent = (href: string): boolean =>
     inset: 0;
     z-index: -1;
     border-radius: inherit;
-    background-color: color-mix(in srgb, var(--color-white) 45%, transparent);
+    background-color: color-mix(in srgb, var(--color-white) 32%, transparent);
     opacity: 0;
     pointer-events: none;
     transition: opacity var(--duration-ticket-color) var(--ease-snappy);
@@ -280,8 +307,8 @@ const isCurrent = (href: string): boolean =>
   @supports not (
     (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
   ) {
-    .nav-inner {
-      background-color: color-mix(in srgb, var(--color-white) 95%, transparent);
+    .nav-bar-glass {
+      background: color-mix(in srgb, var(--color-white) 95%, transparent);
     }
   }
 
@@ -355,9 +382,19 @@ const isCurrent = (href: string): boolean =>
   }
 
   .nav-toggle__icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
     display: flex;
     width: 1.5rem;
     height: 1.5rem;
+    margin: -0.75rem 0 0 -0.75rem;
+    /* Closing: turns back together with the folding glass (same delay). */
+    transition:
+      opacity var(--duration-glass-fold) var(--ease-emphasized)
+        calc(var(--duration-glass-fold) * 0.35),
+      transform var(--duration-glass-fold) var(--ease-emphasized)
+        calc(var(--duration-glass-fold) * 0.35);
   }
 
   .nav-toggle__icon :global(svg) {
@@ -366,15 +403,24 @@ const isCurrent = (href: string): boolean =>
   }
 
   .nav-toggle__icon--close {
-    display: none;
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.6);
+  }
+
+  .site-header[data-open] .nav-toggle__icon {
+    transition:
+      opacity calc(var(--duration-glass-unfold) * 0.6) var(--ease-emphasized),
+      transform calc(var(--duration-glass-unfold) * 0.6) var(--ease-emphasized);
   }
 
   .site-header[data-open] .nav-toggle__icon--menu {
-    display: none;
+    opacity: 0;
+    transform: rotate(90deg) scale(0.6);
   }
 
   .site-header[data-open] .nav-toggle__icon--close {
-    display: flex;
+    opacity: 1;
+    transform: none;
   }
 
   nav ul {
@@ -478,11 +524,23 @@ const isCurrent = (href: string): boolean =>
     }
 
     /*
-     * The open menu is a second floating sheet under the bar: an opaque
-     * liquid surface in the Q27 blues, like the ticket cards. Its base is
-     * solid, so no page text ever shows through behind the links; on it,
-     * pools of ice, cyan and Q27 blue light turn and stretch (transform
-     * only), lit by a glass rim and a cyan glow along the lower edge.
+     * The open menu: a floating sheet of blue-tinted clear liquid glass
+     * under the bar (MOTION-6), one timeline for glass, links and icon.
+     *
+     *   #site-nav   the positioned box; no paint of its own and never
+     *               scaled or clipped, so link text is never cut or skewed
+     *   .nav-glass  the glass: Q27 blue light over a blur, so the page
+     *               behind shows as color and shape but never as a second
+     *               line of text; it unfolds out of the menu button
+     *
+     * Open: the glass springs from the button's box to full size; the
+     * links only start once it is about 95 percent open (the spring is
+     * front-loaded), a few frames apart, so no text ever sits outside the
+     * glass or on an empty-looking sheet. Close: the links leave first,
+     * then the glass folds back into the button and fades at the very end;
+     * the icon turns with it. All transitions, so a tap mid-way reverses
+     * from where everything is; nav-menu.client.ts hides the box only once
+     * the fold has played.
      */
     .site-header[data-js] #site-nav:not([hidden]) {
       display: block;
@@ -492,59 +550,66 @@ const isCurrent = (href: string): boolean =>
       left: var(--site-header-inset);
       z-index: 1;
       isolation: isolate;
-      overflow: hidden;
       padding: var(--space-2xs);
       border-radius: var(--radius-ticket-panel);
+      pointer-events: auto;
+    }
+
+    .site-header[data-js] #site-nav:not([hidden]) .nav-glass {
+      display: block;
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      overflow: hidden;
+      border-radius: inherit;
       background:
-        radial-gradient(80% 60% at 12% 0%, var(--color-white), transparent 70%),
+        radial-gradient(
+          80% 60% at 12% 0%,
+          color-mix(in srgb, var(--color-white) 55%, transparent),
+          transparent 70%
+        ),
         linear-gradient(
           165deg,
-          var(--color-ticket-ground) 0%,
-          var(--color-ticket-ice) 62%,
+          color-mix(in srgb, var(--color-ticket-ground) 62%, transparent) 0%,
+          color-mix(in srgb, var(--color-ticket-ice) 64%, transparent) 60%,
           color-mix(
               in srgb,
-              var(--color-ticket-sky) 28%,
-              var(--color-ticket-ice)
+              color-mix(
+                  in srgb,
+                  var(--color-ticket-sky) 44%,
+                  var(--color-ticket-ice)
+                )
+                72%,
+              transparent
             )
             100%
         );
       box-shadow:
         inset 0 1px 1px var(--color-white),
-        inset 0 0 0 1px color-mix(in srgb, var(--color-white) 65%, transparent),
+        inset 0 0 0 1px color-mix(in srgb, var(--color-white) 55%, transparent),
         inset 0 -26px 36px -26px
-          color-mix(in srgb, var(--color-ticket-cyan) 80%, transparent),
+          color-mix(in srgb, var(--color-ticket-cyan) 85%, transparent),
         0 0 0 1px color-mix(in srgb, var(--color-navy) 6%, transparent),
-        0 22px 44px -20px color-mix(in srgb, var(--color-navy) 40%, transparent);
-      pointer-events: auto;
-      /*
-       * Folded: clipped to a button-sized box at its top right corner,
-       * right under the menu button, a little lifted and squeezed, and
-       * clear. data-sheet="open" unfolds it from there (MOTION-6): the clip
-       * opens on the emphasized curve while the sheet itself springs to
-       * size with a small overshoot, and a light sweeps across it. Folding
-       * plays the same way back, faster, and fades only at the end. Both
-       * are transitions, so a quick second tap reverses mid-way.
-       */
+        0 22px 44px -20px color-mix(in srgb, var(--color-navy) 40%, transparent),
+        0 0 30px -12px
+          color-mix(in srgb, var(--color-ticket-cyan) 60%, transparent);
+      -webkit-backdrop-filter: blur(22px) saturate(180%) brightness(1.06);
+      backdrop-filter: blur(22px) saturate(180%) brightness(1.06);
+      /* Folded: the menu button's box, at the bar's right edge. */
       transform-origin: calc(100% - 1.4rem) -0.75rem;
-      clip-path: inset(
-        0 0 calc(100% - 3rem) calc(100% - 3.25rem) round
-          var(--radius-ticket-panel)
-      );
       opacity: 0;
-      transform: translateY(-0.6rem) scale(0.94, 0.88);
+      transform: translateY(-0.5rem) scale(0.14, 0.1);
       transition:
-        clip-path var(--duration-glass-fold) var(--ease-emphasized),
-        transform var(--duration-glass-fold) var(--ease-emphasized),
-        opacity calc(var(--duration-glass-fold) * 0.6) var(--ease-snappy)
-          calc(var(--duration-glass-fold) * 0.4);
+        transform var(--duration-glass-fold) var(--ease-emphasized)
+          calc(var(--duration-glass-fold) * 0.35),
+        opacity calc(var(--duration-glass-fold) * 0.5) var(--ease-snappy)
+          calc(var(--duration-glass-fold) * 0.85);
     }
 
-    .site-header[data-js] #site-nav[data-sheet="open"] {
-      clip-path: inset(0 round var(--radius-ticket-panel));
+    .site-header[data-js] #site-nav[data-sheet="open"] .nav-glass {
       opacity: 1;
       transform: none;
       transition:
-        clip-path var(--duration-glass-unfold) var(--ease-emphasized),
         transform var(--duration-glass-unfold) var(--ease-glass-spring),
         opacity var(--duration-hover) var(--ease-snappy);
     }
@@ -554,11 +619,11 @@ const isCurrent = (href: string): boolean =>
       display: block;
       position: absolute;
       inset: 0;
-      z-index: 0;
+      z-index: 1;
       background: linear-gradient(
         172deg,
         transparent 0% 30%,
-        color-mix(in srgb, var(--color-white) 80%, transparent) 50%,
+        color-mix(in srgb, var(--color-white) 75%, transparent) 50%,
         transparent 70% 100%
       );
       opacity: 0;
@@ -571,43 +636,45 @@ const isCurrent = (href: string): boolean =>
         var(--duration-glass-stagger) both;
     }
 
-    /* Links follow the glass in, a few frames apart, and leave together. */
+    /* Links: in once the glass is open, out before it folds. */
     .site-header[data-js] #site-nav li {
       opacity: 0;
-      transform: translateY(-0.4rem);
+      transform: translateY(-0.35rem);
       transition:
-        opacity var(--duration-glass-fold) var(--ease-snappy),
-        transform var(--duration-glass-fold) var(--ease-snappy);
+        opacity calc(var(--duration-glass-fold) * 0.35) var(--ease-snappy),
+        transform calc(var(--duration-glass-fold) * 0.35) var(--ease-snappy);
     }
 
     .site-header[data-js] #site-nav[data-sheet="open"] li {
       opacity: 1;
       transform: none;
-      transition-duration: var(--duration-glass-unfold);
+      transition-duration: calc(var(--duration-glass-unfold) * 0.5);
       transition-timing-function: var(--ease-emphasized);
-      transition-delay: calc(var(--duration-glass-stagger) * (var(--i, 0) + 3));
+      transition-delay: calc(
+        var(--duration-glass-unfold) * 0.4 + var(--duration-glass-stagger) *
+          0.6 * var(--i, 0)
+      );
     }
 
-    /* The moving light: two oversized layers behind the links. */
-    .site-header[data-js] #site-nav:not([hidden])::before,
-    .site-header[data-js] #site-nav:not([hidden])::after {
+    /* The moving light inside the glass: two oversized layers. */
+    .site-header[data-js] #site-nav:not([hidden]) .nav-glass::before,
+    .site-header[data-js] #site-nav:not([hidden]) .nav-glass::after {
       content: "";
       position: absolute;
-      z-index: -1;
       pointer-events: none;
     }
 
-    .site-header[data-js] #site-nav:not([hidden])::before {
+    .site-header[data-js] #site-nav:not([hidden]) .nav-glass::before {
       inset: -45%;
       background:
         radial-gradient(
           30% 20% at 34% 38%,
-          color-mix(in srgb, var(--color-ticket-cyan) 60%, transparent),
+          color-mix(in srgb, var(--color-ticket-cyan) 45%, transparent),
           transparent
         ),
         radial-gradient(
           26% 32% at 68% 64%,
-          color-mix(in srgb, var(--color-white) 85%, transparent),
+          color-mix(in srgb, var(--color-white) 45%, transparent),
           transparent
         ),
         radial-gradient(
@@ -617,7 +684,7 @@ const isCurrent = (href: string): boolean =>
         );
     }
 
-    .site-header[data-js] #site-nav:not([hidden])::after {
+    .site-header[data-js] #site-nav:not([hidden]) .nav-glass::after {
       inset: -40%;
       background:
         radial-gradient(
@@ -627,13 +694,12 @@ const isCurrent = (href: string): boolean =>
         ),
         radial-gradient(
           20% 28% at 28% 66%,
-          color-mix(in srgb, var(--color-ticket-cyan) 40%, transparent),
+          color-mix(in srgb, var(--color-ticket-cyan) 35%, transparent),
           transparent
         );
     }
 
-    /* The sheet clips the moving light; the link list scrolls instead,
-       so a short landscape screen still reaches every link. */
+    /* The link list scrolls inside the sheet on a short landscape screen. */
     .site-header[data-js] #site-nav:not([hidden]) ul {
       position: relative;
       z-index: 1;
@@ -663,17 +729,18 @@ const isCurrent = (href: string): boolean =>
   }
 
   @media (max-width: 767px) and (prefers-reduced-motion: no-preference) {
-    .site-header[data-js] #site-nav:not([hidden])::before {
+    .site-header[data-js] #site-nav[data-sheet="open"] .nav-glass::before {
       animation: nav-liquid var(--duration-ticket-drift) ease-in-out infinite
         alternate;
     }
 
-    .site-header[data-js] #site-nav:not([hidden])::after {
+    .site-header[data-js] #site-nav[data-sheet="open"] .nav-glass::after {
       animation: nav-liquid-alt var(--duration-ticket-drift-alt) ease-in-out
         infinite alternate;
     }
   }
 
+  .nav-glass,
   .nav-sheen {
     display: none;
   }
@@ -725,8 +792,10 @@ const isCurrent = (href: string): boolean =>
       transition: none;
     }
 
-    .site-header[data-js] #site-nav:not([hidden]),
-    .site-header[data-js] #site-nav[data-sheet="open"],
+    .nav-toggle__icon,
+    .site-header[data-open] .nav-toggle__icon,
+    .site-header[data-js] #site-nav:not([hidden]) .nav-glass,
+    .site-header[data-js] #site-nav[data-sheet="open"] .nav-glass,
     .site-header[data-js] #site-nav li,
     .site-header[data-js] #site-nav[data-sheet="open"] li {
       transition: none;
