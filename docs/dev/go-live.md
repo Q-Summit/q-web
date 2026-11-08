@@ -89,7 +89,7 @@ The public legal pages name PostHog Cloud EU as a sub-processor; that copy lives
 One-time, mirroring the Workers Builds git-connect above but for the CMS. In the Vercel dashboard:
 
 1. Create the Vercel project from this repo (git-connect the monorepo).
-2. Set **Root Directory** to `apps/cms`. Install/build defaults come from [`apps/cms/vercel.json`](../../apps/cms/vercel.json) (`pnpm install` from the monorepo root, then `pnpm run migrate && pnpm run build` in the CMS app). Production branch `main`.
+2. Set **Root Directory** to `apps/cms`. Install/build defaults come from [`apps/cms/vercel.json`](../../apps/cms/vercel.json) (`pnpm install` from the monorepo root, then the CMS build; migrations run only when `VERCEL_ENV=production`). Production branch `main`.
 3. Attach the CMS custom domain that `CMS_SERVER_URL` / `CMS_URL` point at (see the keys table below), then set the env keys in the Vercel project.
 
 ### Migrations
@@ -98,7 +98,7 @@ Local: schema **push**. Production: never push.
 
 1. `pnpm db:up` then `pnpm --filter cms run generate:migrations -- <name>`; verify with `pnpm --filter cms run migrate`.
 2. Commit `apps/cms/src/migrations/*` with the schema change.
-3. Vercel build command: `pnpm --filter cms run migrate && pnpm --filter cms run build` (once per deploy container; do not enable `prodMigrations` on every connect).
+3. Vercel build command (`apps/cms/vercel.json`): `pnpm run migrate` only when `VERCEL_ENV` is `production`, then `pnpm run build` (once per deploy container; do not enable `prodMigrations` on every connect). Preview and development builds skip migrations, so a preview can never change a database it may share with production; a failed production migration stops the build.
 4. Leave `PAYLOAD_DB_PUSH` unset in prod. Vercel sets `NODE_ENV=production` automatically, which is what disables the local password strategy and schema push; nothing to configure.
 
 ## Google SSO setup

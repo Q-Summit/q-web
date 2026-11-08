@@ -467,6 +467,234 @@
           ]
         }
       ]
+    },
+    "hero": {
+      "eyebrow": "Fixture offer · 10% off",
+      "heading": "Pick a fixture ticket",
+      "intro": "Sample copy for the ticket page used in CI builds.",
+      "compareLabel": "Compare fixture tickets"
+    },
+    "offer": {
+      "purchaseHref": "https://tickets.example.com/event/fixture",
+      "buyLabel": "Buy now",
+      "detailsLabel": "All benefits",
+      "saveLabel": "Save",
+      "footnote": "Fixture prices in EUR. Not for sale.",
+      "tickets": [
+        {
+          "key": "student",
+          "name": "Student",
+          "description": "Fixture audience 1",
+          "regularPrice": 20,
+          "price": 18,
+          "highlights": [
+            "Fixture highlight 1",
+            "Fixture highlight 2",
+            "Fixture highlight 3",
+            "Fixture highlight 4",
+            "Fixture highlight 5"
+          ],
+          "note": "Fixture requirement"
+        },
+        {
+          "key": "young-professional",
+          "name": "Young Pro",
+          "description": "Fixture audience 2",
+          "regularPrice": 30,
+          "price": 27,
+          "highlights": [
+            "Fixture highlight 1",
+            "Fixture highlight 2",
+            "Fixture highlight 3",
+            "Fixture highlight 4",
+            "Fixture highlight 5"
+          ]
+        },
+        {
+          "key": "start-up",
+          "name": "Start-Up",
+          "description": "Fixture audience 3",
+          "regularPrice": 40,
+          "price": 36,
+          "highlights": [
+            "Fixture highlight 1",
+            "Fixture highlight 2",
+            "Fixture highlight 3",
+            "Fixture highlight 4",
+            "Fixture highlight 5"
+          ]
+        },
+        {
+          "key": "investor",
+          "name": "Investor",
+          "description": "Fixture audience 4",
+          "regularPrice": 50,
+          "price": 45,
+          "highlights": [
+            "Fixture highlight 1",
+            "Fixture highlight 2",
+            "Fixture highlight 3",
+            "Fixture highlight 4",
+            "Fixture highlight 5"
+          ]
+        },
+        {
+          "key": "corporate",
+          "name": "Corporate",
+          "description": "Fixture audience 5",
+          "regularPrice": 60,
+          "price": 54,
+          "highlights": [
+            "Fixture highlight 1",
+            "Fixture highlight 2",
+            "Fixture highlight 3",
+            "Fixture highlight 4",
+            "Fixture highlight 5"
+          ]
+        }
+      ]
+    },
+    "included": {
+      "heading": "What's included (fixture)",
+      "intro": "Fixture intro for the benefit list.",
+      "ticketBuyLabel": "Buy {ticket} ticket",
+      "countLabel": "{included} of {total} benefits included",
+      "includedLabel": "Included",
+      "notIncludedLabel": "Not included",
+      "requiredLabel": "Required",
+      "notRequiredLabel": "Not required",
+      "groups": [
+        {
+          "heading": "Fixture group 1",
+          "kind": "eligibility",
+          "rows": [
+            {
+              "label": "Fixture benefit 1.1",
+              "tickets": ["student"]
+            }
+          ]
+        },
+        {
+          "heading": "Fixture group 2",
+          "kind": "benefit",
+          "rows": [
+            {
+              "label": "Fixture benefit 2.1",
+              "tickets": [
+                "student",
+                "young-professional",
+                "start-up",
+                "investor",
+                "corporate"
+              ]
+            },
+            {
+              "label": "Fixture benefit 2.2",
+              "tickets": [
+                "student",
+                "young-professional",
+                "start-up",
+                "investor",
+                "corporate"
+              ]
+            },
+            {
+              "label": "Fixture benefit 2.3",
+              "tickets": [
+                "student",
+                "young-professional",
+                "start-up",
+                "investor",
+                "corporate"
+              ]
+            },
+            {
+              "label": "Fixture benefit 2.4",
+              "tickets": [
+                "student",
+                "young-professional",
+                "start-up",
+                "investor",
+                "corporate"
+              ]
+            },
+            {
+              "label": "Fixture benefit 2.5",
+              "tickets": [
+                "student",
+                "young-professional",
+                "start-up",
+                "investor",
+                "corporate"
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "Fixture group 3",
+          "kind": "benefit",
+          "rows": [
+            {
+              "label": "Fixture benefit 3.1",
+              "tickets": [
+                "student",
+                "young-professional",
+                "start-up",
+                "investor",
+                "corporate"
+              ]
+            },
+            {
+              "label": "Fixture benefit 3.2",
+              "tickets": [
+                "student",
+                "young-professional",
+                "start-up",
+                "investor",
+                "corporate"
+              ]
+            },
+            {
+              "label": "Fixture benefit 3.3",
+              "tickets": [
+                "student",
+                "young-professional",
+                "start-up",
+                "investor",
+                "corporate"
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "Fixture group 4",
+          "kind": "benefit",
+          "rows": [
+            {
+              "label": "Fixture benefit 4.1",
+              "tickets": ["start-up"]
+            },
+            {
+              "label": "Fixture benefit 4.2",
+              "tickets": ["start-up"]
+            },
+            {
+              "label": "Fixture benefit 4.3",
+              "tickets": ["investor"]
+            },
+            {
+              "label": "Fixture benefit 4.4",
+              "tickets": ["corporate"]
+            }
+          ]
+        }
+      ]
+    },
+    "compare": {
+      "heading": "Compare fixture tickets",
+      "intro": "Fixture intro for the compare view.",
+      "firstLabel": "First ticket",
+      "secondLabel": "Second ticket"
     }
   },
   "contact": {
@@ -896,12 +1124,12 @@
         {
           "team": "Corporate Relations",
           "text": "You like building partnerships.",
-          "notionHref": "#teams"
+          "notionHref": "https://example.com/fixture-team"
         },
         {
           "team": "IT",
           "text": "You like building systems.",
-          "notionHref": "#teams"
+          "notionHref": "https://example.com/fixture-team"
         }
       ],
       "resultCopy": {

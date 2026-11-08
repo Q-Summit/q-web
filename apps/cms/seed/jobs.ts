@@ -48,9 +48,11 @@ async function run() {
   const payload = await getPayload({ config });
 
   const jobsCollectionConfig = payload.collections.jobs.config;
-  const descriptionField: any = jobsCollectionConfig.fields.find(
-    (f: any) => f.name === "description",
-  );
+  // description sits inside the collection's tab layout, so look it up in
+  // the flattened field list (nested presentational fields included).
+  const descriptionField: any = (
+    jobsCollectionConfig.flattenedFields ?? jobsCollectionConfig.fields
+  ).find((f: any) => f.name === "description");
   const sanitizedEditorConfig = descriptionField?.editor?.editorConfig;
   if (!sanitizedEditorConfig) {
     throw new Error(

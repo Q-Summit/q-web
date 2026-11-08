@@ -1612,79 +1612,127 @@ export interface PageJob {
  */
 export interface PageTicket {
   id: number;
-  tiers: {
+  hero: {
+    /**
+     * Small label, e.g. "Early Bird · 30% off".
+     */
+    eyebrow: string;
     heading: string;
     intro: string;
-    items: {
+    /**
+     * Link to the compare view, e.g. "Compare tickets".
+     */
+    compareLabel: string;
+  };
+  offer: {
+    /**
+     * Ticket shop link. Every buy button on the page opens exactly this address.
+     */
+    purchaseHref: string;
+    /**
+     * Buy button on the cards, e.g. "Buy now".
+     */
+    buyLabel: string;
+    /**
+     * Card link to the full benefit list, e.g. "All benefits".
+     */
+    detailsLabel: string;
+    /**
+     * Word before the saving, e.g. "Save" (shows as "Save €24").
+     */
+    saveLabel: string;
+    /**
+     * In display order.
+     */
+    tickets: {
+      /**
+       * Which ticket category this is. Links the card to its benefits and the compare view.
+       */
+      key: 'student' | 'young-professional' | 'start-up' | 'investor' | 'corporate';
+      /**
+       * Card title, e.g. "Student".
+       */
       name: string;
       /**
-       * e.g. "74€".
+       * e.g. "For currently enrolled students".
        */
-      price: string;
-      features: {
+      description: string;
+      /**
+       * Regular price in euros, shown struck through. Whole euros, e.g. 79.
+       */
+      regularPrice: number;
+      /**
+       * Current (Early Bird) price in euros. The saving is worked out from both prices.
+       */
+      price: number;
+      /**
+       * Up to five short lines on the ticket card. The full list lives under What's included.
+       */
+      highlights: {
         text: string;
         id?: string | null;
       }[];
       /**
-       * Optional footnote, e.g. "Student ID required".
+       * Optional requirement shown on the card above the buy button, e.g. "Valid student ID required".
        */
       note?: string | null;
-      buyLabel: string;
-      /**
-       * Ticket purchase link, e.g. the Vivenu checkout URL.
-       */
-      buyHref: string;
       id?: string | null;
     }[];
+    /**
+     * Small print under the compare view, e.g. "All prices in EUR."
+     */
+    footnote: string;
   };
-  comparison: {
+  included: {
     heading: string;
     intro: string;
     /**
-     * Table column headers, in display order.
+     * Buy button in the ticket summary. {ticket} becomes the ticket name, e.g. "Buy {ticket} ticket".
      */
-    tiers: {
-      name: string;
-      price: string;
-      audience: string;
-      id?: string | null;
-    }[];
+    ticketBuyLabel: string;
+    /**
+     * Benefit count, e.g. "{included} of {total} benefits included". The site counts them.
+     */
+    countLabel: string;
+    includedLabel: string;
+    notIncludedLabel: string;
+    requiredLabel: string;
+    notRequiredLabel: string;
     groups: {
       /**
-       * Section heading in the table.
+       * e.g. "Core access & event experience".
        */
-      group: string;
-      rows: {
-        feature: string;
-        /**
-         * One row per comparison tier, in the same order as comparison.tiers above. Check = included.
-         */
-        included: {
-          value?: boolean | null;
-          id?: string | null;
-        }[];
-        id?: string | null;
-      }[];
-      id?: string | null;
-    }[];
-    /**
-     * Footnote below the table, e.g. On-Conference variations.
-     */
-    academicNote: string;
-  };
-  categories: {
-    heading: string;
-    items: {
+      heading: string;
       /**
-       * e.g. "Student Ticket: 74€".
+       * Requirements are not counted as benefits in the ticket summary.
        */
-      label: string;
-      bullets: {
-        text: string;
+      kind: 'benefit' | 'eligibility';
+      /**
+       * On each row, tick the tickets the benefit is included in (or, for a requirement, the tickets that require it).
+       */
+      rows: {
+        label: string;
+        student?: boolean | null;
+        youngProfessional?: boolean | null;
+        startUp?: boolean | null;
+        investor?: boolean | null;
+        corporate?: boolean | null;
         id?: string | null;
       }[];
       id?: string | null;
     }[];
+  };
+  compare: {
+    heading: string;
+    intro: string;
+    /**
+     * Label of the left picker, e.g. "First ticket".
+     */
+    firstLabel: string;
+    /**
+     * Label of the right picker, e.g. "Second ticket".
+     */
+    secondLabel: string;
   };
   /**
    * Browser tab and social-share title for the ticket categories page (shown as "Q-Summit | …").
@@ -1694,6 +1742,90 @@ export interface PageTicket {
    * Search snippet and WhatsApp/LinkedIn preview text. Also the one-line note for this page in /llms.txt. Aim for 120 to 160 characters.
    */
   metaDescription?: string | null;
+  tiers?: {
+    heading?: string | null;
+    intro?: string | null;
+    items?:
+      | {
+          name?: string | null;
+          /**
+           * e.g. "74€".
+           */
+          price?: string | null;
+          features?:
+            | {
+                text: string;
+                id?: string | null;
+              }[]
+            | null;
+          /**
+           * Optional footnote, e.g. "Student ID required".
+           */
+          note?: string | null;
+          buyLabel?: string | null;
+          /**
+           * Ticket purchase link, e.g. the Vivenu checkout URL.
+           */
+          buyHref?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  comparison?: {
+    heading?: string | null;
+    intro?: string | null;
+    tiers?:
+      | {
+          name?: string | null;
+          price?: string | null;
+          audience?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    groups?:
+      | {
+          /**
+           * Section heading in the table.
+           */
+          group?: string | null;
+          rows?:
+            | {
+                feature?: string | null;
+                /**
+                 * One row per comparison tier, in the same order as comparison.tiers above. Check = included.
+                 */
+                included?:
+                  | {
+                      value?: boolean | null;
+                      id?: string | null;
+                    }[]
+                  | null;
+                id?: string | null;
+              }[]
+            | null;
+          id?: string | null;
+        }[]
+      | null;
+    academicNote?: string | null;
+  };
+  categories?: {
+    heading?: string | null;
+    items?:
+      | {
+          /**
+           * e.g. "Student Ticket: 74€".
+           */
+          label?: string | null;
+          bullets?:
+            | {
+                text: string;
+                id?: string | null;
+              }[]
+            | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
   lastEditedBy?: string | null;
   lastEditedAt?: string | null;
   lastPublishedBy?: string | null;
@@ -2517,6 +2649,80 @@ export interface PageJobsSelect<T extends boolean = true> {
  * via the `definition` "page-tickets_select".
  */
 export interface PageTicketsSelect<T extends boolean = true> {
+  hero?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+        intro?: T;
+        compareLabel?: T;
+      };
+  offer?:
+    | T
+    | {
+        purchaseHref?: T;
+        buyLabel?: T;
+        detailsLabel?: T;
+        saveLabel?: T;
+        tickets?:
+          | T
+          | {
+              key?: T;
+              name?: T;
+              description?: T;
+              regularPrice?: T;
+              price?: T;
+              highlights?:
+                | T
+                | {
+                    text?: T;
+                    id?: T;
+                  };
+              note?: T;
+              id?: T;
+            };
+        footnote?: T;
+      };
+  included?:
+    | T
+    | {
+        heading?: T;
+        intro?: T;
+        ticketBuyLabel?: T;
+        countLabel?: T;
+        includedLabel?: T;
+        notIncludedLabel?: T;
+        requiredLabel?: T;
+        notRequiredLabel?: T;
+        groups?:
+          | T
+          | {
+              heading?: T;
+              kind?: T;
+              rows?:
+                | T
+                | {
+                    label?: T;
+                    student?: T;
+                    youngProfessional?: T;
+                    startUp?: T;
+                    investor?: T;
+                    corporate?: T;
+                    id?: T;
+                  };
+              id?: T;
+            };
+      };
+  compare?:
+    | T
+    | {
+        heading?: T;
+        intro?: T;
+        firstLabel?: T;
+        secondLabel?: T;
+      };
+  title?: T;
+  metaDescription?: T;
   tiers?:
     | T
     | {
@@ -2589,8 +2795,6 @@ export interface PageTicketsSelect<T extends boolean = true> {
               id?: T;
             };
       };
-  title?: T;
-  metaDescription?: T;
   lastEditedBy?: T;
   lastEditedAt?: T;
   lastPublishedBy?: T;
