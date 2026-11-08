@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "cd ../.. && pnpm install",
-  "buildCommand": "pnpm run migrate && pnpm run build",
+  "buildCommand": "if [ \"$VERCEL_ENV\" = \"production\" ]; then pnpm run migrate; else echo \"Skipping database migrations: VERCEL_ENV=${VERCEL_ENV:-unset} is not production\"; fi && pnpm run build",
   "framework": "nextjs",
   "functions": {
     "src/app/**/*": {
