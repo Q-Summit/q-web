@@ -1,20 +1,19 @@
 ---
 // Check mark glyph for an included ticket benefit (DESIGN.md COMP-3). One
-// copy of the 24-grid path the Webflow port pasted inline into both places
-// the ticket-categories page prints an inclusion: the feature list on each
-// plan card (tickets/TicketTierCards.astro) and the included cells of the
-// comparison table (tickets/PricingComparisonTable.astro). Single path,
-// fill=currentColor, so the caller's wrapper decides the color (navy on the
-// cards, success green in the table); the wrapper is aria-hidden and the
-// table pairs each cell with visually hidden "Included" text, so the glyph
-// itself is decorative (aria-hidden here), like IconChevron.
+// copy of the 24-grid path the ticket page prints wherever it shows an
+// inclusion: the highlight list on each ticket card
+// (tickets/TicketCards.astro) and the status marks of What's included and
+// Compare tickets (tickets/TicketStatus.astro). Single path,
+// fill=currentColor, so the caller's wrapper decides the color; every mark
+// pairs the glyph with its status in words, so the glyph itself is
+// decorative (aria-hidden here), like IconChevron.
 //
 // The svg is rendered by THIS component, so it carries this component's
 // scope, not the caller's: a caller that needs to style it selects
 // `:global(svg)` inside its own wrapper, the same way layout/Footer.astro
 // and the four accordions do with IconChevron.
 interface Props {
-  /** Rendered box in px. 20 on the plan cards, 22 in the table. */
+  /** Rendered box in px. 14 on the card highlights, 16 in status marks. */
   size?: number;
 }
 

@@ -1,0 +1,167 @@
+---
+// Opener of the 2027 ticket page (DESIGN.md TICKETS-1): the Q in a glass
+// tile (the original mark, material from light only), the Early Bird
+// eyebrow, the page h1 and the neutral glass jump to Compare tickets.
+import "./ticket-theme.css";
+import type { TicketCategoriesContent } from "../../lib/content";
+import IconChevron from "../icons/IconChevron.astro";
+
+interface Props {
+  hero: TicketCategoriesContent["hero"];
+}
+
+const { hero } = Astro.props;
+
+// The square Q mark that ships with the site (public/icon-512.png, the
+// same file the Join Q quiz uses). No vector original is in the repo; the
+// 512px PNG stays sharp at the 72px tile it is drawn into.
+const markSrc = "/icon-512.png";
+---
+
+<header class="t-hero t-shell">
+  <span class="t-mark t-glass" aria-hidden="true">
+    <span class="t-mark-logo" style={`--mark: url(${markSrc})`}>
+      <img src={markSrc} alt="" width="512" height="512" decoding="async" />
+      <span class="t-mark-shade"></span>
+      <span class="t-mark-gloss"></span>
+    </span>
+  </span>
+  <p class="t-eyebrow t-glass" data-lp="hero.eyebrow">{hero.eyebrow}</p>
+  <h1 class="t-hero-title" data-lp="hero.heading">{hero.heading}</h1>
+  <p class="t-hero-intro" data-lp="hero.intro">{hero.intro}</p>
+  <a class="t-btn is-ghost t-hero-compare" href="#compare">
+    <span data-lp="hero.compareLabel">{hero.compareLabel}</span>
+    <span class="t-hero-chevron" aria-hidden="true">
+      <IconChevron size={20} />
+    </span>
+  </a>
+</header>
+
+<style>
+  /* DESIGN.md TICKETS-1: display type above the heading scale, glass Q. */
+  .t-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-block: clamp(2.5rem, 7vw, 4.5rem)
+      clamp(var(--space-lg), 5vw, var(--space-xl));
+    text-align: center;
+  }
+
+  /* The Q tile: neutral glass, the mark sits in it like an inlay. */
+  .t-mark {
+    display: grid;
+    place-items: center;
+    width: 5.25rem;
+    height: 5.25rem;
+    margin-bottom: var(--space-md);
+    border-radius: var(--radius-ticket-tile);
+    /* Material from ticket-theme .t-glass. */
+  }
+
+  /*
+   * Material on the original mark, never a redrawn Q: the image is the
+   * silhouette, a soft shadow lifts it off the tile, and two layers
+   * masked by the same image add the depth inside the outline: a lower
+   * shade and an upper gloss. Every layer is clipped to the mark, so its outline stays
+   * exactly the brand drawing.
+   */
+  .t-mark-logo {
+    position: relative;
+    display: block;
+    width: 3.25rem;
+    height: 3.25rem;
+  }
+
+  .t-mark-logo img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    /* Soft, blurred lift only: a hard offset shadow would add a visible
+       lip and so change the outline. */
+    filter: drop-shadow(
+        0 3px 4px
+          color-mix(in srgb, var(--color-ticket-midnight) 28%, transparent)
+      )
+      drop-shadow(
+        0 8px 10px
+          color-mix(in srgb, var(--color-ticket-midnight) 16%, transparent)
+      );
+  }
+
+  .t-mark-shade,
+  .t-mark-gloss {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    -webkit-mask: var(--mark) center / contain no-repeat;
+    mask: var(--mark) center / contain no-repeat;
+  }
+
+  .t-mark-shade {
+    background: linear-gradient(
+      180deg,
+      transparent 45%,
+      color-mix(in srgb, var(--color-ticket-midnight) 35%, transparent) 100%
+    );
+  }
+
+  .t-mark-gloss {
+    background:
+      radial-gradient(
+        60% 38% at 32% 14%,
+        color-mix(in srgb, var(--color-white) 70%, transparent),
+        transparent 70%
+      ),
+      linear-gradient(
+        165deg,
+        color-mix(in srgb, var(--color-white) 34%, transparent) 0%,
+        color-mix(in srgb, var(--color-ticket-sky) 30%, transparent) 38%,
+        transparent 52%
+      );
+  }
+
+  .t-hero-title {
+    max-width: 14ch;
+    margin: var(--space-sm) 0 0;
+    color: var(--color-navy);
+    font-size: clamp(2.6rem, 8vw, 5rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.045em;
+    line-height: 0.98;
+    text-wrap: balance;
+  }
+
+  .t-hero-intro {
+    max-width: 34rem;
+    margin: var(--space-sm) 0 0;
+    color: color-mix(in srgb, var(--color-navy) 76%, transparent);
+    font-size: var(--text-size-large);
+    line-height: 1.5;
+    text-wrap: pretty;
+  }
+
+  .t-hero-compare {
+    margin-top: var(--space-md);
+    padding-inline: 1.4rem 1.1rem;
+  }
+
+  .t-hero-chevron {
+    display: inline-flex;
+    margin-inline-end: -0.25rem;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    /* One quiet entrance for the whole opener, no stagger. */
+    .t-hero {
+      animation: t-hero-in var(--duration-reveal) var(--ease-emphasized) both;
+    }
+  }
+
+  @keyframes t-hero-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
+</style>

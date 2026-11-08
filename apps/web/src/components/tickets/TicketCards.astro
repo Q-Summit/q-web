@@ -1,0 +1,627 @@
+---
+// The five ticket cards (DESIGN.md TICKETS-1). One markup, three layouts:
+//   below 900px  a scroll-snap carousel, exactly one card at rest, with
+//                previous / next, dots and a "1 / 5" count
+//   900-1399px   three cards over two, centered, rows aligned by subgrid
+//   1400px+      all five in one row
+// Every card is a light field (ticket-theme.css .t-field) with a frosted
+// panel under the highlights. Buy links all go to the one shop URL from
+// the CMS; "All benefits" is a real in-page link to that ticket's panel,
+// which tickets.client.ts upgrades to select the matching tab.
+import "./ticket-theme.css";
+import type { TicketCategoriesContent } from "../../lib/content";
+import { EVENTS } from "../../lib/analytics/events";
+import IconCheck from "../icons/IconCheck.astro";
+import IconArrowRight from "../icons/IconArrowRight.astro";
+import IconChevron from "../icons/IconChevron.astro";
+import TicketQBubble from "./TicketQBubble.astro";
+import { euro, savings } from "./ticket-model";
+
+interface Props {
+  offer: TicketCategoriesContent["offer"];
+}
+
+const { offer } = Astro.props;
+const total = offer.tickets.length;
+
+// Each card's light sits in a slightly different place, so five cards read
+// as one family rather than five copies. Percentages only, no new colors.
+const LIGHT = [
+  ["14%", "10%", "95%", "96%"],
+  ["80%", "8%", "10%", "98%"],
+  ["30%", "4%", "100%", "80%"],
+  ["90%", "14%", "0%", "92%"],
+  ["8%", "20%", "92%", "100%"],
+] as const;
+---
+
+<section class="t-cards" aria-label="Tickets">
+  <div class="t-shell is-wide">
+    <div class="t-carousel" data-ticket-carousel data-ticket-motion>
+      <ul class="t-track" role="list" data-track>
+        {
+          offer.tickets.map((ticket, i) => {
+            const [x1, y1, x2, y2] = LIGHT[i % LIGHT.length];
+            const saved = savings(ticket);
+            return (
+              <li
+                class="t-slide"
+                data-slide
+                data-key={ticket.key}
+                role="group"
+                aria-roledescription="slide"
+                aria-label={`${i + 1} of ${total}: ${ticket.name}`}
+              >
+                <article
+                  class="t-card t-field"
+                  aria-labelledby={`ticket-${ticket.key}`}
+                  style={`--t-x1: ${x1}; --t-y1: ${y1}; --t-x2: ${x2}; --t-y2: ${y2}`}
+                >
+                  <span class="t-liquid" aria-hidden="true">
+                    <TicketQBubble class="is-card" />
+                    <TicketQBubble class="is-card-sm" />
+                  </span>
+                  <header class="t-card-head">
+                    <h2 id={`ticket-${ticket.key}`} class="t-card-name">
+                      {ticket.name}
+                    </h2>
+                    <p class="t-card-desc">{ticket.description}</p>
+                  </header>
+
+                  <div class="t-card-price">
+                    <p class="t-was">
+                      <span class="u-visually-hidden">Regular price </span>
+                      <s>{euro(ticket.regularPrice)}</s>
+                      {saved > 0 && (
+                        <span class="t-save t-glass">
+                          {offer.saveLabel} {euro(saved)}
+                        </span>
+                      )}
+                    </p>
+                    <p class="t-now">
+                      <span class="u-visually-hidden">Early Bird price </span>
+                      {euro(ticket.price)}
+                    </p>
+                  </div>
+
+                  <ul class="t-highlights t-glass" role="list">
+                    {ticket.highlights.map((line) => (
+                      <li>
+                        <span class="t-tick" aria-hidden="true">
+                          <IconCheck size={14} />
+                        </span>
+                        <span>{line}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {ticket.note ? (
+                    <p class="t-card-note">{ticket.note}</p>
+                  ) : (
+                    <span class="t-card-note is-empty" aria-hidden="true" />
+                  )}
+
+                  <div class="t-card-actions">
+                    <a
+                      class="t-btn is-block"
+                      href={offer.purchaseHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      data-ticket-buy
+                      data-ph-event={EVENTS.ticket_purchase_initiated}
+                      data-ph-prop-tier-name={ticket.name}
+                      data-ph-prop-tier-price={euro(ticket.price)}
+                    >
+                      {offer.buyLabel}
+                      <span class="u-visually-hidden">: {ticket.name}</span>
+                      <span class="t-btn-arrow" aria-hidden="true">
+                        <IconArrowRight />
+                      </span>
+                    </a>
+                    <a
+                      class="t-link"
+                      href={`#included-${ticket.key}`}
+                      data-show-ticket={ticket.key}
+                    >
+                      {offer.detailsLabel}
+                      <span class="u-visually-hidden">: {ticket.name}</span>
+                    </a>
+                  </div>
+                </article>
+              </li>
+            );
+          })
+        }
+      </ul>
+
+      <div class="t-controls" data-controls hidden>
+        <button
+          type="button"
+          class="t-btn is-soft t-arrow is-prev"
+          data-prev
+          aria-label="Previous ticket"
+        >
+          <IconChevron size={24} />
+        </button>
+        <div class="t-dots">
+          {
+            offer.tickets.map((ticket, i) => (
+              <button
+                type="button"
+                class="t-dot"
+                data-dot={i}
+                aria-label={`Show ${ticket.name}`}
+                aria-current={i === 0 ? "true" : undefined}
+              >
+                <span class="t-dot-pip" />
+                <span class="t-dot-q" />
+              </button>
+            ))
+          }
+        </div>
+        <p class="t-count" aria-hidden="true">
+          <span data-current>1</span> / {total}
+        </p>
+        <button
+          type="button"
+          class="t-btn is-soft t-arrow is-next"
+          data-next
+          aria-label="Next ticket"
+        >
+          <IconChevron size={24} />
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* DESIGN.md TICKETS-1: ticket cards, carousel and the 3 + 2 grid. */
+  .t-cards {
+    position: relative;
+  }
+
+  /* --- Card --- */
+  .t-card {
+    display: grid;
+    grid-template-rows: auto auto 1fr auto auto;
+    row-gap: var(--space-md);
+    height: 100%;
+    padding: clamp(1.25rem, 3.4vw, 1.75rem);
+    border: 1px solid color-mix(in srgb, var(--color-white) 70%, transparent);
+    border-radius: var(--radius-ticket-card);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, var(--color-white) 90%, transparent),
+      inset 0 -1px 0
+        color-mix(in srgb, var(--color-ticket-sky) 18%, transparent),
+      0 2px 6px color-mix(in srgb, var(--color-navy) 8%, transparent),
+      0 24px 48px -24px color-mix(in srgb, var(--color-navy) 38%, transparent);
+    color: var(--color-navy);
+  }
+
+  .t-card-name {
+    margin: 0;
+    color: var(--color-navy);
+    font-size: clamp(1.5rem, 2.2vw, 1.75rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+  }
+
+  .t-card-desc {
+    margin: 0.35rem 0 0;
+    color: color-mix(in srgb, var(--color-navy) 78%, transparent);
+    font-size: var(--text-size-small);
+    line-height: 1.45;
+  }
+
+  .t-card-price {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .t-was {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem var(--space-2xs);
+    margin: 0;
+    font-size: var(--text-size-small);
+    line-height: 1.3;
+  }
+
+  .t-was s {
+    color: color-mix(in srgb, var(--color-navy) 70%, transparent);
+    font-weight: var(--font-weight-medium);
+    text-decoration-thickness: 1.5px;
+  }
+
+  .t-save {
+    padding: 0.15rem 0.55rem;
+    border-radius: var(--radius-ticket-pill);
+    /* Small glass chip: .t-glass rim, a denser fill, no drop shadow. */
+    background: color-mix(in srgb, var(--color-white) 62%, transparent);
+    box-shadow:
+      inset 0 1px 1px color-mix(in srgb, var(--color-white) 90%, transparent),
+      inset 0 -4px 8px -4px
+        color-mix(in srgb, var(--color-ticket-cyan) 55%, transparent);
+    color: var(--color-navy);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  .t-now {
+    margin: 0;
+    color: var(--color-navy);
+    font-size: clamp(2.6rem, 5vw, 3.25rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.045em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The calm surface for the five highlights. */
+  .t-highlights {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    align-self: stretch;
+    margin: 0;
+    padding: var(--space-sm);
+    border-radius: var(--radius-ticket-panel);
+    /* Liquid glass (ticket-theme .t-glass), a little more opaque here so
+       the highlights read on a calm surface over the moving blobs. */
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-white) 70%, transparent),
+      color-mix(in srgb, var(--color-white) 48%, transparent)
+    );
+    list-style: none;
+  }
+
+  .t-highlights li {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.6rem;
+    align-items: start;
+    color: var(--color-navy);
+    font-size: var(--text-size-small);
+    line-height: 1.4;
+  }
+
+  .t-tick {
+    display: inline-grid;
+    place-items: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-top: 0.02rem;
+    border-radius: var(--radius-circle);
+    background: var(--color-navy);
+    color: var(--color-white);
+  }
+
+  .t-card-note {
+    margin: 0;
+    color: var(--color-navy);
+    font-size: var(--text-size-small);
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.35;
+  }
+
+  .t-card-note:not(.is-empty)::before {
+    content: "";
+    display: inline-block;
+    width: 0.45rem;
+    height: 0.45rem;
+    margin-inline-end: var(--space-2xs);
+    border-radius: var(--radius-circle);
+    background: var(--color-ticket-sky);
+    vertical-align: 0.1em;
+  }
+
+  .t-card-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+  }
+
+  .t-card-actions .t-link {
+    align-self: center;
+  }
+
+  /* --- Carousel (phones and portrait tablets) --- */
+  .t-carousel {
+    container-type: inline-size;
+    margin-inline: calc(-1 * var(--t-gutter));
+  }
+
+  .t-track {
+    --slide: min(100cqw - 2 * var(--t-gutter), 26rem);
+    --edge: calc((100cqw - var(--slide)) / 2);
+
+    display: flex;
+    gap: calc(var(--edge) + var(--space-md));
+    margin: 0;
+    padding: var(--space-xs) var(--edge) var(--space-lg);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--edge);
+    scrollbar-width: none;
+    list-style: none;
+  }
+
+  .t-track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .t-slide {
+    display: flex;
+    flex: 0 0 var(--slide);
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
+  }
+
+  .t-slide > .t-card {
+    flex: 1;
+  }
+
+  /* In the carousel each card is its own grid: an absent note takes no row. */
+  @media (max-width: 899px) {
+    .t-card-note.is-empty {
+      display: none;
+    }
+  }
+
+  /* Short phones: tighter rhythm so more of the card fits; it may still
+     grow and scroll with the page rather than clip. */
+  @media (max-width: 899px) and (max-height: 720px) {
+    .t-card {
+      row-gap: var(--space-sm);
+      padding: 1.1rem;
+    }
+
+    .t-now {
+      font-size: clamp(2.2rem, 11vw, 2.4rem);
+    }
+
+    .t-highlights {
+      gap: 0.45rem;
+      padding: 0.85rem;
+    }
+  }
+
+  .t-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2xs);
+    padding-inline: var(--t-gutter);
+  }
+
+  .t-controls[hidden] {
+    display: none;
+  }
+
+  /* Carousel arrows: small liquid glass lenses. */
+  .t-arrow {
+    width: 2.75rem;
+    min-height: 2.75rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-circle);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-white) 60%, transparent),
+      color-mix(in srgb, var(--color-white) 22%, transparent)
+    );
+    box-shadow:
+      inset 0 1px 1px var(--color-white),
+      inset 0 0 0 1px color-mix(in srgb, var(--color-white) 60%, transparent),
+      inset 0 -10px 14px -10px
+        color-mix(in srgb, var(--color-ticket-cyan) 80%, transparent),
+      0 8px 18px -10px color-mix(in srgb, var(--color-navy) 40%, transparent);
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
+    backdrop-filter: blur(12px) saturate(150%);
+  }
+
+  .t-arrow.is-prev :global(svg) {
+    transform: rotate(90deg);
+  }
+
+  .t-arrow.is-next :global(svg) {
+    transform: rotate(-90deg);
+  }
+
+  .t-dots {
+    display: flex;
+  }
+
+  .t-dot {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 2.75rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .t-dot-pip,
+  .t-dot-q {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    pointer-events: none;
+    transition:
+      transform var(--duration-ticket-color) var(--ease-snappy),
+      opacity var(--duration-ticket-color) var(--ease-snappy);
+  }
+
+  .t-dot-pip {
+    width: 0.5rem;
+    height: 0.5rem;
+    margin: -0.25rem 0 0 -0.25rem;
+    border-radius: var(--radius-circle);
+    background: color-mix(in srgb, var(--color-navy) 28%, transparent);
+  }
+
+  /*
+   * The current ticket is marked by a small Q bubble: the original Q mark
+   * as a mask (the same file as the background bubbles), filled with lit
+   * Q27 glass, a cyan halo behind it. It pops in as the pip fades.
+   */
+  .t-dot-q {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin: -0.625rem 0 0 -0.625rem;
+    opacity: 0;
+    transform: scale(0.4);
+  }
+
+  .t-dot-q::before {
+    content: "";
+    position: absolute;
+    inset: -45%;
+    border-radius: var(--radius-circle);
+    background: radial-gradient(
+      closest-side,
+      color-mix(in srgb, var(--color-ticket-cyan) 70%, transparent),
+      transparent
+    );
+  }
+
+  .t-dot-q::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(
+        34% 26% at 30% 22%,
+        color-mix(in srgb, var(--color-white) 95%, transparent),
+        transparent 72%
+      ),
+      linear-gradient(
+        160deg,
+        var(--color-ticket-sky) 0%,
+        var(--color-navy) 70%,
+        var(--color-ticket-cyan) 100%
+      );
+    -webkit-mask: url("/icon-512.png") center / contain no-repeat;
+    mask: url("/icon-512.png") center / contain no-repeat;
+  }
+
+  .t-dot[aria-current="true"] .t-dot-pip {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+
+  .t-dot[aria-current="true"] .t-dot-q {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .t-count {
+    min-width: 3.25rem;
+    margin: 0;
+    color: color-mix(in srgb, var(--color-navy) 80%, transparent);
+    font-size: var(--text-size-small);
+    font-weight: var(--font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+  }
+
+  /* --- Grid: three over two, centered, rows aligned across cards --- */
+  @media (min-width: 900px) {
+    .t-carousel {
+      container-type: normal;
+      margin-inline: 0;
+    }
+
+    .t-track {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      column-gap: var(--space-md);
+      row-gap: 0;
+      padding: 0;
+      overflow: visible;
+    }
+
+    .t-slide {
+      display: grid;
+      grid-column: span 2;
+      grid-row: span 5;
+      grid-template-rows: subgrid;
+      row-gap: var(--space-md);
+      margin-bottom: var(--space-md);
+    }
+
+    .t-slide:nth-child(4):nth-last-child(2) {
+      grid-column: 2 / span 2;
+    }
+
+    .t-slide:nth-child(5):last-child {
+      grid-column: 4 / span 2;
+    }
+
+    .t-slide > .t-card {
+      grid-row: 1 / -1;
+      grid-template-rows: subgrid;
+    }
+
+    .t-controls,
+    .t-controls[hidden] {
+      display: none;
+    }
+  }
+
+  @media (min-width: 1440px) {
+    .t-track {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      column-gap: 1.25rem;
+    }
+
+    .t-slide,
+    .t-slide:nth-child(4):nth-last-child(2),
+    .t-slide:nth-child(5):last-child {
+      grid-column: auto;
+    }
+
+    .t-card {
+      padding: 1.25rem;
+    }
+  }
+
+  /* Without subgrid, cards still match height; the actions sit at the foot. */
+  @supports not (grid-template-rows: subgrid) {
+    @media (min-width: 900px) {
+      .t-slide {
+        display: flex;
+      }
+
+      .t-slide > .t-card {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .t-card-actions {
+        margin-top: auto;
+      }
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .t-dot-pip,
+    .t-dot-q {
+      transition: none;
+    }
+  }
+</style>

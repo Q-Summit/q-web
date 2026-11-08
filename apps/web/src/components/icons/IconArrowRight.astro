@@ -1,0 +1,25 @@
+---
+// Right arrow for the ticket page's buy buttons (DESIGN.md TICKETS-1).
+// Single path, fill=currentColor so it takes the button's ink, including
+// the navy of the pressed state. Decorative: the link text carries the
+// meaning, so the glyph is aria-hidden, like IconChevron.
+interface Props {
+  /** Rendered box in px. */
+  size?: number;
+}
+
+const { size = 16 } = Astro.props;
+---
+
+<svg
+  width={size}
+  height={size}
+  viewBox="0 0 24 24"
+  fill="currentColor"
+  aria-hidden="true"
+  focusable="false"
+>
+  <path
+    d="M13.3 5.3a1 1 0 0 1 1.4 0l6 6a1 1 0 0 1 0 1.4l-6 6a1 1 0 1 1-1.4-1.4l4.29-4.3H4a1 1 0 1 1 0-2h13.59l-4.3-4.3a1 1 0 0 1 0-1.4Z"
+  ></path>
+</svg>

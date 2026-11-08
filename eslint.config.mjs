@@ -145,6 +145,7 @@ export default tseslint.config(
       "apps/web/test/content.test.ts",
       "apps/web/test/media-filename.test.ts",
       "apps/web/test/media-match.test.ts",
+      "apps/web/test/tickets.test.ts",
     ],
     languageOptions: {
       parserOptions: {

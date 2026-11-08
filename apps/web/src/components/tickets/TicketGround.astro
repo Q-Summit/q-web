@@ -1,0 +1,136 @@
+---
+// The page ground behind the 2027 ticket page (DESIGN.md TICKETS-1): the
+// pale cool base of the Join Q quiz panel, glowing pools of ice, cyan and
+// Q27 blue light, and three Q bubbles (the Q mark as liquid glass) that
+// float, turn and glow. Fixed behind the content, so the glass header,
+// cards and panels have living light to refract. Decorative only:
+// aria-hidden, no pointer events, transform-only motion, paused by
+// tickets.client.ts while no lit section is on screen, and a finished still
+// for reduced motion.
+import TicketQBubble from "./TicketQBubble.astro";
+---
+
+<div class="t-ground" aria-hidden="true" data-ticket-ground>
+  <span class="t-ground-light is-one"></span>
+  <span class="t-ground-light is-two"></span>
+  <span class="t-ground-light is-three"></span>
+  <TicketQBubble class="is-ground-1" />
+  <TicketQBubble class="is-ground-2" />
+  <TicketQBubble class="is-ground-3" />
+</div>
+
+<style>
+  /* DESIGN.md TICKETS-1: ambient ground, slow transform-only loops. */
+  .t-ground {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: -1;
+    height: 100vh;
+    height: 100lvh;
+    overflow: hidden;
+    background:
+      radial-gradient(
+        90% 60% at 50% -10%,
+        color-mix(in srgb, var(--color-white) 90%, transparent),
+        transparent 70%
+      ),
+      linear-gradient(
+        180deg,
+        var(--color-ticket-ground) 0%,
+        color-mix(
+            in srgb,
+            var(--color-ticket-ice) 40%,
+            var(--color-ticket-ground)
+          )
+          100%
+      );
+    pointer-events: none;
+  }
+
+  /* Glowing pools: elliptical, so turning them reads as flow. */
+  .t-ground-light {
+    position: absolute;
+    width: 82vmax;
+    height: 54vmax;
+    border-radius: var(--radius-circle);
+  }
+
+  .t-ground-light.is-one {
+    top: -30vmax;
+    left: -18vmax;
+    background: radial-gradient(
+      closest-side,
+      color-mix(in srgb, var(--color-ticket-ice) 95%, transparent),
+      transparent
+    );
+  }
+
+  .t-ground-light.is-two {
+    top: -12vmax;
+    right: -30vmax;
+    background: radial-gradient(
+      closest-side,
+      color-mix(in srgb, var(--color-ticket-sky) 42%, transparent),
+      transparent
+    );
+  }
+
+  .t-ground-light.is-three {
+    bottom: -40vmax;
+    left: 20vmax;
+    background: radial-gradient(
+      closest-side,
+      color-mix(in srgb, var(--color-ticket-cyan) 55%, transparent),
+      transparent
+    );
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .t-ground-light.is-one {
+      animation: t-ground-a var(--duration-ticket-drift) ease-in-out infinite
+        alternate;
+    }
+
+    .t-ground-light.is-two {
+      animation: t-ground-b var(--duration-ticket-drift-alt) ease-in-out
+        infinite alternate;
+    }
+
+    .t-ground-light.is-three {
+      animation: t-ground-a var(--duration-ticket-drift-alt) ease-in-out
+        infinite alternate-reverse;
+    }
+
+    .t-ground[data-ticket-still] span {
+      animation-play-state: paused;
+    }
+  }
+
+  @keyframes t-ground-a {
+    0% {
+      transform: translate3d(0, 0, 0) rotate(0deg) scale(1, 1);
+    }
+
+    50% {
+      transform: translate3d(10vmax, 5vmax, 0) rotate(35deg) scale(1.08, 0.9);
+    }
+
+    100% {
+      transform: translate3d(4vmax, 10vmax, 0) rotate(70deg) scale(0.94, 1.1);
+    }
+  }
+
+  @keyframes t-ground-b {
+    0% {
+      transform: translate3d(0, 0, 0) rotate(0deg) scale(1.05, 0.95);
+    }
+
+    50% {
+      transform: translate3d(-9vmax, 7vmax, 0) rotate(-40deg) scale(0.92, 1.1);
+    }
+
+    100% {
+      transform: translate3d(-4vmax, 12vmax, 0) rotate(-80deg) scale(1.06, 0.98);
+    }
+  }
+</style>

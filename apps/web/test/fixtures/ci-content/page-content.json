@@ -267,206 +267,235 @@
     }
   },
   "ticketCategories": {
-    "title": "Ticket Categories",
-    "metaDescription": "Get an overview of the different types of tickets and the benefits and services they offer.",
-    "tiers": {
-      "heading": "Ticket Options",
-      "intro": "For the best possible overview, we recommend viewing this page on a desktop",
-      "items": [
+    "title": "Tickets (fixture)",
+    "metaDescription": "Fake ticket page used by CI. Not real prices.",
+    "hero": {
+      "eyebrow": "Fixture offer · 10% off",
+      "heading": "Pick a fixture ticket",
+      "intro": "Sample copy for the ticket page used in CI builds.",
+      "compareLabel": "Compare fixture tickets"
+    },
+    "offer": {
+      "purchaseHref": "https://tickets.example.com/event/fixture",
+      "buyLabel": "Buy now",
+      "detailsLabel": "All benefits",
+      "saveLabel": "Save",
+      "footnote": "Fixture prices in EUR. Not for sale.",
+      "tickets": [
         {
+          "key": "student",
           "name": "Student",
-          "price": "74€",
-          "features": [
-            "Event Access",
-            "Networking",
-            "Application for Workshops, Speed Dating & Campfire Sessions"
+          "description": "Fixture audience 1",
+          "regularPrice": 20,
+          "price": 18,
+          "highlights": [
+            "Fixture highlight 1",
+            "Fixture highlight 2",
+            "Fixture highlight 3",
+            "Fixture highlight 4",
+            "Fixture highlight 5"
           ],
-          "note": "Student ID required",
-          "buyLabel": "Buy Tickets",
-          "buyHref": "https://vivenu.com/event/q-summit-2026-ilm9r9"
+          "note": "Fixture requirement"
         },
         {
-          "name": "Young Pro.",
-          "price": "94€",
-          "features": [
-            "Event Access",
-            "Networking",
-            "Application for Workshops, Speed Dating & Campfire Sessions"
-          ],
-          "buyLabel": "Buy Tickets",
-          "buyHref": "https://vivenu.com/event/q-summit-2026-ilm9r9"
+          "key": "young-professional",
+          "name": "Young Pro",
+          "description": "Fixture audience 2",
+          "regularPrice": 30,
+          "price": 27,
+          "highlights": [
+            "Fixture highlight 1",
+            "Fixture highlight 2",
+            "Fixture highlight 3",
+            "Fixture highlight 4",
+            "Fixture highlight 5"
+          ]
         },
         {
+          "key": "start-up",
           "name": "Start-Up",
-          "price": "199€",
-          "features": [
-            "Event Access",
-            "Networking",
-            "Apply for the Pitchbattle",
-            "Apply for the Qube"
-          ],
-          "buyLabel": "Buy Tickets",
-          "buyHref": "https://vivenu.com/event/q-summit-2026-ilm9r9"
+          "description": "Fixture audience 3",
+          "regularPrice": 40,
+          "price": 36,
+          "highlights": [
+            "Fixture highlight 1",
+            "Fixture highlight 2",
+            "Fixture highlight 3",
+            "Fixture highlight 4",
+            "Fixture highlight 5"
+          ]
         },
         {
+          "key": "investor",
           "name": "Investor",
-          "price": "299€",
-          "features": ["Event Access", "Networking", "Qube"],
-          "buyLabel": "Buy Tickets",
-          "buyHref": "https://vivenu.com/event/q-summit-2026-ilm9r9"
+          "description": "Fixture audience 4",
+          "regularPrice": 50,
+          "price": 45,
+          "highlights": [
+            "Fixture highlight 1",
+            "Fixture highlight 2",
+            "Fixture highlight 3",
+            "Fixture highlight 4",
+            "Fixture highlight 5"
+          ]
         },
         {
+          "key": "corporate",
           "name": "Corporate",
-          "price": "349€",
-          "features": [
-            "Event Access",
-            "Networking",
-            "Dedicated Chill & Working Area"
-          ],
-          "buyLabel": "Buy Tickets",
-          "buyHref": "https://vivenu.com/event/q-summit-2026-ilm9r9"
+          "description": "Fixture audience 5",
+          "regularPrice": 60,
+          "price": 54,
+          "highlights": [
+            "Fixture highlight 1",
+            "Fixture highlight 2",
+            "Fixture highlight 3",
+            "Fixture highlight 4",
+            "Fixture highlight 5"
+          ]
         }
       ]
     },
-    "comparison": {
-      "heading": "Pricing Overview",
-      "intro": "Explore our ticket options and their unique benefits.",
-      "tiers": [
-        {
-          "name": "Student",
-          "price": "€74",
-          "audience": "Student-ID required"
-        },
-        {
-          "name": "Young Professional",
-          "price": "€94",
-          "audience": "For Young Professionals"
-        },
-        {
-          "name": "Start-Up",
-          "price": "€199",
-          "audience": "For founders or employees of a Start-Up"
-        },
-        {
-          "name": "Investor",
-          "price": "€299",
-          "audience": "For Investors"
-        },
-        {
-          "name": "Corporate",
-          "price": "€349",
-          "audience": "For members of Corporates"
-        }
-      ],
+    "included": {
+      "heading": "What's included (fixture)",
+      "intro": "Fixture intro for the benefit list.",
+      "ticketBuyLabel": "Buy {ticket} ticket",
+      "countLabel": "{included} of {total} benefits included",
+      "includedLabel": "Included",
+      "notIncludedLabel": "Not included",
+      "requiredLabel": "Required",
+      "notRequiredLabel": "Not required",
       "groups": [
         {
-          "group": "Core Access & Event Experience",
+          "heading": "Fixture group 1",
+          "kind": "eligibility",
           "rows": [
             {
-              "feature": "Full Event Access",
-              "included": [true, true, true, true, true]
-            },
-            {
-              "feature": "Exclusive Evening Events & After-Party",
-              "included": [true, true, true, true, true]
-            },
-            {
-              "feature": "Complimentary Food & Drinks",
-              "included": [true, true, true, true, true]
-            },
-            {
-              "feature": "Watch Pitchbattle",
-              "included": [true, true, true, true, true]
-            },
-            {
-              "feature": "Event App",
-              "included": [true, true, true, true, true]
+              "label": "Fixture benefit 1.1",
+              "tickets": ["student"]
             }
           ]
         },
         {
-          "group": "Networking & Professional Opportunities",
+          "heading": "Fixture group 2",
+          "kind": "benefit",
           "rows": [
             {
-              "feature": "Application for Speed Dating, Workshops, Campfire Sessions",
-              "included": [true, true, true, true, true]
+              "label": "Fixture benefit 2.1",
+              "tickets": [
+                "student",
+                "young-professional",
+                "start-up",
+                "investor",
+                "corporate"
+              ]
             },
             {
-              "feature": "Networking with Students, Alumni, Startups, VCs, Industry Professionals",
-              "included": [true, true, true, true, true]
+              "label": "Fixture benefit 2.2",
+              "tickets": [
+                "student",
+                "young-professional",
+                "start-up",
+                "investor",
+                "corporate"
+              ]
             },
             {
-              "feature": "Access to Internships, Full-time Roles & Networking",
-              "included": [true, true, true, true, true]
+              "label": "Fixture benefit 2.3",
+              "tickets": [
+                "student",
+                "young-professional",
+                "start-up",
+                "investor",
+                "corporate"
+              ]
+            },
+            {
+              "label": "Fixture benefit 2.4",
+              "tickets": [
+                "student",
+                "young-professional",
+                "start-up",
+                "investor",
+                "corporate"
+              ]
+            },
+            {
+              "label": "Fixture benefit 2.5",
+              "tickets": [
+                "student",
+                "young-professional",
+                "start-up",
+                "investor",
+                "corporate"
+              ]
             }
           ]
         },
         {
-          "group": "Ticket-Specific Privileges",
+          "heading": "Fixture group 3",
+          "kind": "benefit",
           "rows": [
             {
-              "feature": "Apply for Qube",
-              "included": [false, false, true, false, false]
+              "label": "Fixture benefit 3.1",
+              "tickets": [
+                "student",
+                "young-professional",
+                "start-up",
+                "investor",
+                "corporate"
+              ]
             },
             {
-              "feature": "Apply for the Pitchbattle",
-              "included": [false, false, true, false, false]
+              "label": "Fixture benefit 3.2",
+              "tickets": [
+                "student",
+                "young-professional",
+                "start-up",
+                "investor",
+                "corporate"
+              ]
             },
             {
-              "feature": "Investment Opportunities",
-              "included": [false, false, false, true, false]
-            },
-            {
-              "feature": "Dedicated Chill & Working Area with Exclusive Drinks & Snacks",
-              "included": [false, false, false, false, true]
+              "label": "Fixture benefit 3.3",
+              "tickets": [
+                "student",
+                "young-professional",
+                "start-up",
+                "investor",
+                "corporate"
+              ]
             }
           ]
-        }
-      ],
-      "academicNote": "Looking for an academic focus? Cheaper 'On-Conference' variations are available for Students and Young Professionals."
-    },
-    "categories": {
-      "heading": "Explore Our Ticket Categories",
-      "items": [
-        {
-          "label": "Student Ticket: 74€",
-          "bullets": [
-            "This ticket grants full access to Q-Summit 2026, including all keynotes, panel discussions, and the Innovillage, and provides the opportunity to apply for participation in formats such as speed dating, workshops, and campfire sessions",
-            "Offers opportunities to connect with students, alumni, startups, venture capitalists, and industry professionals, as well as access to resources for internships, full-time roles, and networking",
-            "The ticket includes exclusive evening events, a concluding after-party, complimentary food and drinks throughout the event, and a free goodie bag",
-            "Proof of student ID is required to purchase this ticket!"
-          ]
         },
         {
-          "label": "Young Professionals: 94€",
-          "bullets": [
-            "This ticket grants full access to Q-Summit 2026, including all keynotes, panel discussions, and the Innovillage, and provides the opportunity to apply for participation in formats such as speed dating, workshops, and campfire sessions",
-            "Offers opportunities to connect with students, alumni, startups, venture capitalists, and industry professionals, as well as access to resources for internships, full-time roles, and networking",
-            "The ticket includes exclusive evening events, a concluding after-party, complimentary food and drinks throughout the event, and a free goodie bag"
-          ]
-        },
-        {
-          "label": "Start-Up: 199€",
-          "bullets": [
-            "As a founder or an employee of a Start-up, this ticket provides full access to Q-Summit 2026, offering opportunities to connect with students, industry leaders, and investors. Apply to present your innovation in the Qube or to take part in the Pitchbattle to showcase your ideas to potential collaborators and key stakeholders",
-            "The ticket includes access to keynotes, panel discussions, and the Innovillage as well as exclusive evening events, a concluding after-party, complimentary food and drinks throughout the event, and a free goodie bag"
-          ]
-        },
-        {
-          "label": "Investor: 299€",
-          "bullets": [
-            "As an Investor, you have access to Q-Summit 2026, offering valuable opportunities to connect with startups, industry leaders, and ambitious students. Explore innovative ideas in the Qube or discover high-potential ventures in the Pitchbattle, where promising startups showcase their concepts to key stakeholders",
-            "This ticket includes access to keynotes, panel discussions, and the Innovillage, as well as exclusive evening events, a concluding after-party, complimentary food and drinks throughout the event, and a free goodie bag"
-          ]
-        },
-        {
-          "label": "Corporate: 349€",
-          "bullets": [
-            "The Corporate Ticket provides an exclusive experience at Q-Summit 2026, designed for professionals and companies seeking to connect with top talent, industry leaders, and innovative startups. Corporate attendees benefit from early check-in, allowing access one day prior to the event for a smooth and efficient start. Additionally, a dedicated chill and working area is available, providing a comfortable space to relax or focus during the conference, along with exclusive drinks and snacks",
-            "The ticket includes access to keynotes, panel discussions, and the Innovillage as well as exclusive evening events, a concluding after-party, complimentary food and drinks throughout the event, and a free goodie bag."
+          "heading": "Fixture group 4",
+          "kind": "benefit",
+          "rows": [
+            {
+              "label": "Fixture benefit 4.1",
+              "tickets": ["start-up"]
+            },
+            {
+              "label": "Fixture benefit 4.2",
+              "tickets": ["start-up"]
+            },
+            {
+              "label": "Fixture benefit 4.3",
+              "tickets": ["investor"]
+            },
+            {
+              "label": "Fixture benefit 4.4",
+              "tickets": ["corporate"]
+            }
           ]
         }
       ]
+    },
+    "compare": {
+      "heading": "Compare fixture tickets",
+      "intro": "Fixture intro for the compare view.",
+      "firstLabel": "First ticket",
+      "secondLabel": "Second ticket"
     }
   },
   "contact": {

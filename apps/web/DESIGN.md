@@ -40,6 +40,13 @@ colors:
   kickoff-option-ink: "#08227f"
   kickoff-badge: "#061a69"
   kickoff-cyan: "#74ccff"
+  ticket-ice: "#bbe4ff"
+  ticket-cyan: "#8fd8ff"
+  ticket-sky: "#3875df"
+  ticket-deep: "#1b2284"
+  ticket-midnight: "#080739"
+  ticket-ground: "#f3f7fc"
+  ticket-press: "#a8dcff"
   hack-ink: "#22004d"
   hack-deep: "#36026e"
   hack-violet: "#5c1cae"
@@ -126,6 +133,11 @@ rounded:
   kickoff-mark: 15px
   kickoff-quiz-compact: 28px
   kickoff-step-num: 1rem
+  ticket-card: 22px
+  ticket-panel: 14px
+  ticket-button: 10px
+  ticket-tile: 22px
+  ticket-pill: 999px
   hack-cta: 16px
 spacing:
   section: 6rem
@@ -237,6 +249,7 @@ Every rule, with the token or class it is about. Cite these IDs verbatim in code
 | MOTION-5 | Page transitions and reveals have one implementation each | `@view-transition`, `ui/Timeline` |
 | KICKOFF-1 | Join Q is its own visual system | `components/kickoff/` |
 | HACK-1 | Q-Hack x Hacktoberfest is its own campaign system | `components/hackathon/` |
+| TICKETS-1 | The 2027 ticket page is its own sales system | `components/tickets/` |
 
 Astro implementation rules (`PRIM-1` to `PRIM-3`) live in [`AGENTS.md`](AGENTS.md).
 
@@ -417,6 +430,14 @@ Each seam between white and violet is two halves that meet at the surface edge i
 The violet ramp is sampled from the Hack CI background artwork, which ships no written palette; `hack-haze` and `hack-mist` are that ring glow tinted toward white for crests, LED edges and glows. The accents are the Hacktoberfest 2026 brand-kit accents. All are documented as derived values in `tokens.css`. Partner and campaign logos are the official files, unmodified, with each brand's clear space; light may pass behind a logo, never over it, and logos never join the fragment animation.
 
 **HACK-1 Q-Hack x Hacktoberfest is its own campaign system.** Components under `src/components/hackathon/` and the `/hackathon` page shell may skip `.section` / `.container` padding rhythm / `.button` (LAYOUT-1, LAYOUT-3, COLOR-2, COMP-1, TYPE-1), may use the `hack-*` tokens, display type above the heading scale, the shared cut-out material in `hackathon/hack-light.css`, a page-local reveal (MOTION-5), and glows that are light, not elevation (DEPTH-1). Three motion exceptions are sanctioned here and nowhere else: the ground is a small first-party WebGL fragment shader (`ground-gl.ts`, started by `HackGround.astro`; no library; drawn in a worker on an OffscreenCanvas where the browser allows it, so its frames never wake the main thread; about 24 frames a second at half resolution, at most 1.5x device pixels and about one megapixel; paused off screen and in hidden tabs; its noise uses no sine, so every GPU draws the same field and a still WebP poster of its start frame (rendered by `pnpm ground:poster`, a tiny copy inlined into the CSS) shows from the first paint, without WebGL and without JavaScript, and the shader fades in over the identical frame; on portrait screens the field is scaled down so as many folds show across as on a wide screen; not a runtime under MOTION-4), the ambient loops (ground, falling fragments, and the light in the cut-outs, which `HackReveal.astro` drifts by background-position about twelve times a second, a paint-only property on small areas, and only for cut-outs on screen) run longer than 500ms and continuously, and the one pause button on the page stops all of them. Everything else stays inside MOTION-2 and MOTION-3: transform and opacity for movement, the schedule pulse and the laptop zoom driven by one scroll-progress value each, the photo band a CSS 3D cylinder (perspective and rotateY, no library) that turns only when the visitor picks a photo, along its own path on `--ease-hack-turn`, laid out at its final pixel size and scaled down (layers under a perspective rasterize at one pixel per CSS pixel, so a scaled-up band would blur), with its slight blur limited to the outer ends on wide screens, no wheel capture and no long pin on phones, and reduced motion renders a still frame, resting fragments, a fully lit schedule and the band without zoom or transitions. Without JavaScript the band is a plain photo grid. Conference pages may not import the `hack-*` tokens or `hack-light.css`. Cite this ID on every hackathon `<style>` block that would otherwise look like a silent deviation.
+
+## Tickets
+
+`/ticket-categories/` is the 2027 ticket shop front, and it trades the conference minimalism for a calm, precise sales surface in the Q27 CI, built from liquid glass after the reference images the team picked. Liquid glass here means clear glass with a specular rim that catches light top left and bottom right, a caustic cyan glow along the lower inner edge, a little brightness and saturation lifted from what lies behind, and depth from light rather than from a flat fill (`.t-glass` in `tickets/ticket-theme.css`). A pale cool ground carries glowing light pools and Q bubbles; every ticket card is its own field of ice, cyan and Q27 blue light with Q bubbles inside, and the highlights sit on a glass panel that shows the light behind it blurred. A Q bubble is the original Q mark (`public/icon-512.png`) used as a mask and filled with flowing light; its rim is cut from the same mask, so the brand drawing is never redrawn, and it only floats, turns a few degrees and scales evenly, never stretched or skewed. Buttons are calm rounded rectangles (`--radius-ticket-button`) with a small uppercase label: buy buttons are navy glass with a lit rim, a Q27 blue inner glow and a trailing arrow; pressing one turns it light blue (`ticket-press`) with navy text, on touch, mouse and keyboard alike, and navigation is never delayed for the animation. Moving parts are glass too: a lens that glides to the picked tab and stretches as it moves (on phones the five tabs form a centered, symmetric three over two), glass carousel arrows and a small Q bubble marking the current ticket among the dots, the benefit meter as a glass tube whose glowing fill slides between tickets and carries a passing glint, and the compare pickers, whose open list (where the browser supports a styled select) is one flat frosted glass tone, dense enough that nothing behind it shows through, that settles in with a short stretch and marks options with raised glass chips, never with a color. Switching tickets under What's included plays one short entrance: the summary rises in, the benefit sheet slides up, and the rows follow in a quick cascade with their status icons popping in; statuses sit in one fixed-width column so icons align. The header on this page (`Nav`'s `glass` variant) is a floating bar of clear light-grey glass inset from the viewport edges: one flat tone with no gradient of its own, the page light showing through the blur, depth only from its lit edges, and small chip links; its open menu on phones is an opaque liquid surface in the Q27 blues, like the ticket cards, with light that turns slowly behind the links, so nothing of the page ever shows through the text. The page ends in a short glass fade into the footer (`.t-page-fade`), which replaces the footer's hairline on this page. The compare view is a product spec sheet in the CI: a glass sheet over the page light, navy ink and hairline rows, with the same buy buttons as the cards. The hero Q keeps its exact drawing: material comes only from light, a soft highlight and a shallow shadow, never from redrawing, tilting or distorting the mark.
+
+On phones the cards become a scroll-snap carousel with exactly one card at rest, buttons, dots and a `1 / 5` count; it never autoplays and never captures vertical scrolling. Tablets and laptops show three cards over two, centered; wide screens show all five in one row. Without JavaScript the carousel still swipes, every panel of What's included is shown, and every buy link works.
+
+**TICKETS-1 The 2027 ticket page is its own sales system.** Components under `src/components/tickets/` and the `/ticket-categories` page shell may skip `.section` / `.container` padding rhythm / `.button` (LAYOUT-1, LAYOUT-3, COMP-1, TYPE-1), may use the `ticket-*` tokens, display type above the heading scale, and glass depth built from tinted, layered shadows and inset light edges rather than the `--shadow-*` steps (DEPTH-1). The ambient light fields loop longer than 500ms (`--duration-ticket-drift*`), move by transform only, pause off screen, and stop entirely for reduced motion, which shows a still frame of the same light. Everything else stays inside MOTION-2 and MOTION-3. Conference pages may not import the `ticket-*` tokens or `tickets/ticket-theme.css`. The header's `glass` variant in `layout/Nav.astro` is opt-in and only this page turns it on. Cite this ID on every tickets `<style>` block that would otherwise look like a silent deviation.
 
 ## Do's and Don'ts
 

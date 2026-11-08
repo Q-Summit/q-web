@@ -5,7 +5,7 @@
 // run in the Workers pool. This file therefore runs in the "node" vitest
 // project (see ../vitest.config.ts) and is typechecked by
 // ./tsconfig.node.json, which pulls in @types/node.
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -17,6 +17,7 @@ import {
   currentSpeakerEdition,
   speakersForEdition,
 } from "../src/lib/content";
+import { assertTicketPage } from "../src/lib/content/pages";
 
 describe("normalizeHrefsDeep", () => {
   it("rewrites href-like keys case-insensitively, recursing objects and arrays", () => {
@@ -227,5 +228,35 @@ describe("speaker edition selection", () => {
   it("ignores previous-highlights when choosing the edition", () => {
     const all = [s("current", 2026, "a"), s("previous", 2099, "old highlight")];
     expect(currentSpeakerEdition(all)).toBe(2026);
+  });
+});
+
+// The ticket page's build guard: the fixture passes, and the two failures
+// that would otherwise ship a broken page (2027 groups not published yet, a
+// benefit naming a ticket that is not on the page) fail the build loudly.
+describe("assertTicketPage", () => {
+  const fixture = () =>
+    JSON.parse(
+      readFileSync(
+        new URL("./fixtures/ci-content/page-content.json", import.meta.url),
+        "utf-8",
+      ),
+    ).ticketCategories;
+
+  it("accepts the committed fixture", () => {
+    expect(() => assertTicketPage(fixture())).not.toThrow();
+  });
+
+  it("fails when the 2027 groups are empty (2026 doc still published)", () => {
+    const page = { ...fixture(), hero: null, offer: null };
+    expect(() => assertTicketPage(page)).toThrow(/2027 ticket fields/);
+  });
+
+  it("fails when a benefit names a ticket that is not on the page", () => {
+    const page = fixture();
+    page.offer.tickets = page.offer.tickets.filter(
+      (t: { key: string }) => t.key !== "corporate",
+    );
+    expect(() => assertTicketPage(page)).toThrow(/corporate/);
   });
 });

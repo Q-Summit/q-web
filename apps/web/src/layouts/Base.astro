@@ -65,6 +65,12 @@ interface Props {
    * as data-ph-prop-* attributes on <main>. Anonymous only, never PII.
    */
   pageEvent?: { name: EventName; props?: Record<string, string> };
+  /**
+   * Neutral liquid glass header (the Nav glass variant). Only the 2027 ticket
+   * page turns it on (DESIGN.md TICKETS-1); every other page keeps the
+   * plain white bar.
+   */
+  navGlass?: boolean;
 }
 
 const {
@@ -81,6 +87,7 @@ const {
   noindex = false,
   livePreviewGlobal,
   pageEvent,
+  navGlass = false,
 } = Astro.props;
 const { siteTitle, footer } = await getSiteSettings();
 // Empty page meta falls back to the site tagline (real site copy).
@@ -186,7 +193,7 @@ const pageEventAttrs = pageEvent
         focused) lives in global.css next to the shared :focus-visible rule. */
     }
     <a class="skip-link" href="#main-content">Skip to content</a>
-    <Nav />
+    <Nav glass={navGlass} />
     {
       /* tabindex="-1" makes main a valid focus target for the skip link
         (fragment navigation only) without adding it to the normal Tab

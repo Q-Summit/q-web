@@ -28,6 +28,7 @@
     "./analytics.test.ts",
     "./content.test.ts",
     "./media-filename.test.ts",
-    "./media-match.test.ts"
+    "./media-match.test.ts",
+    "./tickets.test.ts"
   ]
 }

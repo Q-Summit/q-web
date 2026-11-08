@@ -1,12 +1,16 @@
 ---
-// /ticket-categories: ticket option cards, pricing comparison table, and
-// per-category detail accordion. All content loads at build time from
-// page-content.json via src/lib/content.ts; buy CTAs are plain external
-// links to the vivenu ticket shop (no embeds, no client JS).
+// /ticket-categories: the 2027 ticket page (DESIGN.md TICKETS-1). One
+// ticket model from the page-tickets global (2027 groups) drives the
+// cards, What's included and Compare tickets. Every buy button links to
+// the one shop URL in that global (offer.purchaseHref); no embeds.
+// tickets.client.ts adds the carousel, tabs, compare pickers and the
+// touch/keyboard pressed state on top of complete static HTML.
 import Base from "../layouts/Base.astro";
-import TicketTierCards from "../components/tickets/TicketTierCards.astro";
-import PricingComparisonTable from "../components/tickets/PricingComparisonTable.astro";
-import CategoryAccordion from "../components/tickets/CategoryAccordion.astro";
+import TicketGround from "../components/tickets/TicketGround.astro";
+import TicketHero from "../components/tickets/TicketHero.astro";
+import TicketCards from "../components/tickets/TicketCards.astro";
+import TicketIncluded from "../components/tickets/TicketIncluded.astro";
+import TicketCompare from "../components/tickets/TicketCompare.astro";
 import { getPageContent } from "../lib/content";
 import { EVENTS } from "../lib/analytics/events";
 
@@ -18,25 +22,20 @@ const { ticketCategories: page } = await getPageContent();
   description={page.metaDescription}
   livePreviewGlobal="page-tickets"
   pageEvent={{ name: EVENTS.ticket_page_viewed }}
+  navGlass
 >
-  <TicketTierCards
-    heading={page.tiers.heading}
-    intro={page.tiers.intro}
-    tiers={page.tiers.items}
-  />
-
-  <PricingComparisonTable
-    heading={page.comparison.heading}
-    intro={page.comparison.intro}
-    comparison={{
-      tiers: page.comparison.tiers,
-      groups: page.comparison.groups,
-    }}
-    academicNote={page.comparison.academicNote}
-  />
-
-  <CategoryAccordion
-    heading={page.categories.heading}
-    details={page.categories.items}
-  />
+  <div class="ticket-page" data-ticket-page>
+    <TicketGround />
+    <TicketHero hero={page.hero} />
+    <TicketCards offer={page.offer} />
+    <TicketIncluded offer={page.offer} included={page.included} />
+    <TicketCompare page={page} />
+    <div class="t-page-fade" aria-hidden="true"></div>
+  </div>
 </Base>
+
+<script>
+  import { initTicketPage } from "../components/tickets/tickets.client";
+
+  initTicketPage();
+</script>
