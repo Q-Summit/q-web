@@ -62,6 +62,18 @@
   --color-kickoff-badge: #061a69;
   --color-kickoff-cyan: #74ccff;
 
+  /* Ticket page 2027 only (DESIGN.md TICKETS-1). The Q27 CI guide's
+     circular gradient (#3875df, #1b2284, #080739) plus its ice #bbe4ff,
+     the cyan light fields of the Join Q quiz panel, and a light blue for
+     the pressed buy button. */
+  --color-ticket-ice: #bbe4ff;
+  --color-ticket-cyan: #8fd8ff;
+  --color-ticket-sky: #3875df;
+  --color-ticket-deep: #1b2284;
+  --color-ticket-midnight: #080739;
+  --color-ticket-ground: #f3f7fc;
+  --color-ticket-press: #a8dcff;
+
   /* Q-Hack x Hacktoberfest campaign, /hackathon only (DESIGN.md HACK-1).
      The Hack CI ships a background artwork, not a palette: the violet
      ramp is sampled from that artwork (the Hack 2027 CI reference), the
@@ -182,6 +194,19 @@
   --duration-kickoff-pulse-alt: 17s;
   --duration-kickoff-flow: 2.8s;
   --ease-kickoff-fold: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Ticket page motion (DESIGN.md TICKETS-1). Press feedback lands inside
+     the 100 to 180ms band, color settles inside 180 to 250ms, and the
+     ambient light fields drift on slow loops that stop for reduced motion
+     and off screen. */
+  --duration-ticket-press: 120ms;
+  --duration-ticket-color: 200ms;
+  --duration-ticket-swap: 220ms;
+  --duration-ticket-drift: 14s;
+  --duration-ticket-drift-alt: 19s;
+  --duration-ticket-meter: 700ms;
+  --duration-ticket-glint: 5.2s;
+  --duration-ticket-enter: 460ms;
+  --duration-ticket-stagger: 18ms;
   /* Hack campaign motion (DESIGN.md HACK-1). Ambient loops (falling
      fragments, the light seen through the white surface) run slowly and
      can be paused on the page; the reveal and the logo light pass are one
@@ -247,6 +272,14 @@
   --radius-kickoff-mark: 15px;
   --radius-kickoff-quiz-compact: 28px;
   --radius-kickoff-step-num: 1rem;
+
+  /* Ticket page radii (DESIGN.md TICKETS-1): soft cards and panels,
+     rounded-rectangle buttons and pickers, pill badges, the glass Q tile. */
+  --radius-ticket-card: 22px;
+  --radius-ticket-panel: 14px;
+  --radius-ticket-button: 10px;
+  --radius-ticket-tile: 22px;
+  --radius-ticket-pill: 999px;
 
   /* Hack campaign radius (DESIGN.md HACK-1): the poster-style apply
      button. */

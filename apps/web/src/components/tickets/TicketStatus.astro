@@ -1,0 +1,45 @@
+---
+// Status mark used by What's included and Compare tickets: an icon plus the
+// status in words, so it never relies on color (WCAG 1.4.1). Both glyphs
+// ship in the markup and data-positive picks one, so tickets.client.ts can
+// flip a cell when a picker changes without rebuilding it.
+import IconCheck from "../icons/IconCheck.astro";
+
+interface Props {
+  positive: boolean;
+  label: string;
+  /** Extra class for a caller-specific tone. */
+  class?: string;
+}
+
+const { positive, label, class: className } = Astro.props;
+---
+
+<span
+  class:list={["t-status", className]}
+  data-positive={positive ? "true" : "false"}
+  data-status
+>
+  <span class="t-status-icon" aria-hidden="true">
+    <span class="t-icon-yes"><IconCheck size={16} /></span>
+    <svg
+      class="t-icon-no"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <rect x="6" y="11" width="12" height="2" rx="1"></rect>
+    </svg>
+  </span>
+  <span data-status-label>{label}</span>
+</span>
+
+<style>
+  /* DESIGN.md TICKETS-1: status marks inside the ticket system. */
+  .t-icon-yes {
+    display: contents;
+  }
+</style>

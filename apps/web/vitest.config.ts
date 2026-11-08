@@ -13,7 +13,8 @@ import { defineConfig } from "vitest/config";
 //
 //  - "node": src/lib/content (and media-filename) use node:fs / process at
 //    module load, which the Workers pool cannot run, so those tests use a
-//    plain Node environment. href/lexical-html stay pure so they can remain
+//    plain Node environment. tickets.test.ts joins them because the ticket
+//    model imports its types from src/lib/content. href/lexical-html stay pure so they can remain
 //    in the workers project alongside the Worker tests.
 export default defineConfig({
   test: {
@@ -27,6 +28,7 @@ export default defineConfig({
             "test/content.test.ts",
             "test/media-filename.test.ts",
             "test/media-match.test.ts",
+            "test/tickets.test.ts",
           ],
           // content.ts resolves CONTENT_SOURCE at module load and now throws
           // on an unset or unrecognized value, so a misconfigured production
@@ -95,6 +97,7 @@ export default defineConfig({
             "test/content.test.ts",
             "test/media-filename.test.ts",
             "test/media-match.test.ts",
+            "test/tickets.test.ts",
           ],
         },
       },

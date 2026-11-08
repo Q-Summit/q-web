@@ -1,0 +1,724 @@
+---
+// "What's included" (DESIGN.md TICKETS-1): one ticket at a time, picked
+// with tabs, as a compact summary (prices, benefit count, buy) beside the
+// grouped benefit list. Every status and the count come from ticket-model,
+// the same functions the compare view uses.
+//
+// Progressive enhancement: the static HTML shows all five panels one under
+// another and hides the tab row, so without JavaScript every ticket's full
+// list is readable and the cards' "All benefits" links land on the right
+// panel. tickets.client.ts reveals the tabs and shows one panel at a time.
+import "./ticket-theme.css";
+import type { TicketCategoriesContent } from "../../lib/content";
+import { EVENTS } from "../../lib/analytics/events";
+import IconArrowRight from "../icons/IconArrowRight.astro";
+import TicketQBubble from "./TicketQBubble.astro";
+import TicketStatus from "./TicketStatus.astro";
+import {
+  benefitCount,
+  euro,
+  fillLabel,
+  isPositive,
+  savings,
+  statusLabel,
+  statusOf,
+} from "./ticket-model";
+
+interface Props {
+  offer: TicketCategoriesContent["offer"];
+  included: TicketCategoriesContent["included"];
+}
+
+const { offer, included } = Astro.props;
+const first = offer.tickets[0]?.key;
+// Running row index across groups, for the staggered entrance (--i).
+const rowStart = included.groups.map((_, gi) =>
+  included.groups.slice(0, gi).reduce((n, g) => n + g.rows.length, 0),
+);
+---
+
+<section
+  class="t-included t-anchor"
+  id="included"
+  aria-labelledby="included-title"
+  data-ticket-included
+>
+  <div class="t-shell">
+    <div class="t-included-head">
+      <h2
+        id="included-title"
+        class="t-section-title"
+        data-lp="included.heading"
+      >
+        {included.heading}
+      </h2>
+      <p class="t-section-intro" data-lp="included.intro">{included.intro}</p>
+    </div>
+
+    <div
+      class="t-tabs t-glass"
+      role="tablist"
+      aria-label={included.heading}
+      data-tablist
+      hidden
+    >
+      <span class="t-tab-lens" aria-hidden="true" data-tab-lens></span>
+      {
+        offer.tickets.map((ticket) => (
+          <button
+            type="button"
+            class="t-tab"
+            role="tab"
+            id={`tab-${ticket.key}`}
+            aria-controls={`included-${ticket.key}`}
+            aria-selected={ticket.key === first ? "true" : "false"}
+            tabindex={ticket.key === first ? 0 : -1}
+            data-tab={ticket.key}
+          >
+            {ticket.name}
+          </button>
+        ))
+      }
+    </div>
+
+    <div class="t-panels">
+      {
+        offer.tickets.map((ticket) => {
+          const count = benefitCount(included.groups, ticket.key);
+          const saved = savings(ticket);
+          return (
+            <div
+              class="t-panel t-anchor"
+              id={`included-${ticket.key}`}
+              role="tabpanel"
+              aria-labelledby={`tab-${ticket.key}`}
+              tabindex="0"
+              data-panel={ticket.key}
+            >
+              <aside class="t-summary t-field" aria-label={ticket.name}>
+                <span class="t-liquid" aria-hidden="true">
+                  <TicketQBubble class="is-summary" />
+                </span>
+                <h3 class="t-summary-name">{ticket.name}</h3>
+                <p class="t-summary-desc">{ticket.description}</p>
+                <div class="t-summary-price">
+                  <p class="t-summary-was">
+                    <span class="u-visually-hidden">Regular price </span>
+                    <s>{euro(ticket.regularPrice)}</s>
+                    {saved > 0 && (
+                      <span>
+                        {offer.saveLabel} {euro(saved)}
+                      </span>
+                    )}
+                  </p>
+                  <p class="t-summary-now">
+                    <span class="u-visually-hidden">Early Bird price </span>
+                    {euro(ticket.price)}
+                  </p>
+                </div>
+                <div class="t-meter">
+                  <p class="t-meter-label">
+                    {fillLabel(included.countLabel, count)}
+                  </p>
+                  <span
+                    class="t-meter-track"
+                    aria-hidden="true"
+                    data-meter
+                    style={`--fill: ${count.total ? count.included / count.total : 0}`}
+                  >
+                    <span class="t-meter-glow" />
+                    <span class="t-meter-clip">
+                      <span class="t-meter-fill" />
+                    </span>
+                  </span>
+                </div>
+                <a
+                  class="t-btn is-block"
+                  href={offer.purchaseHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-ticket-buy
+                  data-ph-event={EVENTS.ticket_purchase_initiated}
+                  data-ph-prop-tier-name={ticket.name}
+                  data-ph-prop-tier-price={euro(ticket.price)}
+                >
+                  {fillLabel(included.ticketBuyLabel, { ticket: ticket.name })}
+                  <span class="t-btn-arrow" aria-hidden="true">
+                    <IconArrowRight />
+                  </span>
+                </a>
+              </aside>
+
+              <div class="t-benefits">
+                {included.groups.map((group, gi) => (
+                  <section class="t-group">
+                    <h4 class="t-group-title">{group.heading}</h4>
+                    <ul class="t-rows" role="list">
+                      {group.rows.map((row, ri) => {
+                        const status = statusOf(group, row, ticket.key);
+                        return (
+                          <li
+                            class="t-row"
+                            data-tone={status}
+                            style={`--i: ${rowStart[gi] + ri}`}
+                          >
+                            <span class="t-row-label">{row.label}</span>
+                            <TicketStatus
+                              positive={isPositive(status)}
+                              label={statusLabel(status, included)}
+                            />
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </section>
+                ))}
+              </div>
+            </div>
+          );
+        })
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  /* DESIGN.md TICKETS-1: tabs, ticket summary and grouped benefit list. */
+  .t-included {
+    padding-block: clamp(var(--space-xl), 8vw, 6rem)
+      clamp(var(--space-lg), 5vw, 3.5rem);
+  }
+
+  .t-included-head {
+    margin-bottom: var(--space-lg);
+  }
+
+  /*
+   * Tabs: a liquid glass track (ticket-theme .t-glass) with one glass lens
+   * that glides to the picked ticket and briefly stretches as it moves,
+   * like a drop of liquid. Position and stretch are transform properties.
+   */
+  .t-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    width: fit-content;
+    max-width: 100%;
+    margin-bottom: var(--space-md);
+    padding: 0.35rem;
+    border-radius: var(--radius-ticket-panel);
+  }
+
+  .t-tabs[hidden] {
+    display: none;
+  }
+
+  .t-tab-lens {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    width: var(--lens-w, 0);
+    height: var(--lens-h, 0);
+    border-radius: var(--radius-ticket-button);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-white) 85%, transparent),
+      color-mix(in srgb, var(--color-white) 45%, transparent)
+    );
+    box-shadow:
+      inset 0 1px 1px var(--color-white),
+      inset 0 -10px 14px -10px
+        color-mix(in srgb, var(--color-ticket-cyan) 80%, transparent),
+      0 0 0 1px color-mix(in srgb, var(--color-white) 60%, transparent),
+      0 8px 18px -10px color-mix(in srgb, var(--color-navy) 45%, transparent),
+      0 0 24px -6px
+        color-mix(in srgb, var(--color-ticket-cyan) 60%, transparent);
+    opacity: 0;
+    pointer-events: none;
+    translate: var(--lens-x, 0) var(--lens-y, 0);
+    transition:
+      translate var(--duration-open) var(--ease-emphasized),
+      opacity var(--duration-ticket-color) var(--ease-snappy);
+  }
+
+  [data-lens-ready] > .t-tab-lens {
+    opacity: 1;
+  }
+
+  [data-lens-instant] > .t-tab-lens {
+    transition: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .t-tab-lens.is-moving {
+      animation: t-lens-stretch var(--duration-open) var(--ease-emphasized);
+    }
+  }
+
+  @keyframes t-lens-stretch {
+    40% {
+      scale: 1.12 0.86;
+    }
+  }
+
+  .t-tab {
+    position: relative;
+    z-index: 1;
+    min-height: 2.75rem;
+    padding: var(--space-2xs) 1.1rem;
+    border: 0;
+    border-radius: var(--radius-ticket-button);
+    background: transparent;
+    color: color-mix(in srgb, var(--color-navy) 72%, transparent);
+    font: inherit;
+    font-size: var(--text-size-small);
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+      color var(--duration-ticket-color) var(--ease-snappy),
+      transform var(--duration-ticket-press) var(--ease-snappy);
+  }
+
+  @media (hover: hover) {
+    .t-tab:hover {
+      color: var(--color-navy);
+    }
+  }
+
+  .t-tab:active {
+    transform: scale(0.97);
+  }
+
+  .t-tab[aria-selected="true"] {
+    color: var(--color-navy);
+    font-weight: var(--font-weight-extrabold);
+  }
+
+  /* Before the lens is placed, the picked tab still reads as picked. */
+  .t-tabs:not([data-lens-ready]) .t-tab[aria-selected="true"] {
+    background: color-mix(in srgb, var(--color-white) 75%, transparent);
+  }
+
+  /* Panels */
+  .t-panels {
+    display: grid;
+    gap: var(--space-xl);
+  }
+
+  .t-panel {
+    display: grid;
+    grid-template-columns: minmax(17rem, 21rem) minmax(0, 1fr);
+    gap: var(--space-md);
+    align-items: start;
+    border-radius: var(--radius-ticket-card);
+  }
+
+  .t-panel[hidden] {
+    display: none;
+  }
+
+  .t-panel:focus-visible {
+    outline-offset: 6px;
+  }
+
+  /*
+   * Switching tickets: the summary card rises in with a slight scale, the
+   * benefit sheet slides up just behind it, and the rows follow in a quick
+   * cascade (--i, set per row) while each status icon pops into place.
+   * The whole entrance stays under a second; transform and opacity only.
+   */
+  @media (prefers-reduced-motion: no-preference) {
+    [data-tabs-ready] .t-panel:not([hidden]) .t-summary {
+      animation: t-summary-in var(--duration-ticket-enter)
+        var(--ease-emphasized) both;
+    }
+
+    [data-tabs-ready] .t-panel:not([hidden]) .t-benefits {
+      animation: t-sheet-in var(--duration-ticket-enter) var(--ease-emphasized)
+        both;
+    }
+
+    [data-tabs-ready] .t-panel:not([hidden]) .t-row {
+      animation: t-row-in var(--duration-ticket-enter) var(--ease-emphasized)
+        both;
+      animation-delay: calc(var(--i, 0) * var(--duration-ticket-stagger));
+    }
+
+    [data-tabs-ready] .t-panel:not([hidden]) .t-row :global(.t-status-icon) {
+      animation: t-icon-pop var(--duration-ticket-enter) var(--ease-emphasized)
+        both;
+      animation-delay: calc(
+        var(--i, 0) * var(--duration-ticket-stagger) +
+          var(--duration-ticket-press)
+      );
+    }
+  }
+
+  @keyframes t-summary-in {
+    from {
+      opacity: 0;
+      transform: translateY(14px) scale(0.96);
+    }
+  }
+
+  @keyframes t-sheet-in {
+    from {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+  }
+
+  @keyframes t-row-in {
+    from {
+      opacity: 0;
+      transform: translateX(-10px);
+    }
+  }
+
+  @keyframes t-icon-pop {
+    0% {
+      opacity: 0;
+      transform: scale(0.4);
+    }
+
+    60% {
+      opacity: 1;
+      transform: scale(1.12);
+    }
+
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .t-summary {
+    position: sticky;
+    top: 6rem;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+    border: 1px solid color-mix(in srgb, var(--color-white) 70%, transparent);
+    border-radius: var(--radius-ticket-card);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, var(--color-white) 90%, transparent),
+      0 24px 48px -26px color-mix(in srgb, var(--color-navy) 40%, transparent);
+    color: var(--color-navy);
+  }
+
+  .t-summary-name {
+    margin: 0;
+    color: var(--color-navy);
+    font-size: clamp(1.6rem, 3vw, 2rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+
+  .t-summary-desc {
+    margin: -0.5rem 0 0;
+    color: color-mix(in srgb, var(--color-navy) 78%, transparent);
+    font-size: var(--text-size-small);
+  }
+
+  .t-summary-was {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs);
+    margin: 0;
+    font-size: var(--text-size-small);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .t-summary-was s {
+    color: color-mix(in srgb, var(--color-navy) 70%, transparent);
+    font-weight: var(--font-weight-medium);
+  }
+
+  .t-summary-now {
+    margin: 0;
+    font-size: clamp(2.5rem, 5vw, 3rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.045em;
+    line-height: 1;
+  }
+
+  .t-meter-label {
+    margin: 0 0 0.4rem;
+    font-size: var(--text-size-small);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  /*
+   * The benefit meter as a liquid glass tube: a recessed clear track, a
+   * fill of Q27 blue running into cyan and a white-hot tip, a glow that
+   * spills past the tube's edge, and a glint that runs along the fill now
+   * and then. Switching tickets slides the fill from the last value to the
+   * new one (tickets.client.ts sets --from). Transform only: the fill is a
+   * full-width bar shifted left by the share it does not cover.
+   */
+  .t-meter-track {
+    --meter-shift: calc((var(--fill, 0) - 1) * 100%);
+    --meter-from: calc((var(--from, 0) - 1) * 100%);
+
+    position: relative;
+    display: block;
+    height: 0.625rem;
+    border-radius: var(--radius-ticket-pill);
+    background: color-mix(in srgb, var(--color-white) 45%, transparent);
+    box-shadow:
+      inset 0 1px 2px color-mix(in srgb, var(--color-navy) 22%, transparent),
+      inset 0 -1px 0 color-mix(in srgb, var(--color-white) 85%, transparent),
+      0 0 0 1px color-mix(in srgb, var(--color-white) 55%, transparent);
+  }
+
+  .t-meter-clip {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: inherit;
+  }
+
+  /*
+   * The glow: one soft layer under the tube, scaled from the left to the
+   * filled share. Nothing clips it, so its light fades out on every side
+   * instead of stopping at a box edge.
+   */
+  .t-meter-glow {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-ticket-pill);
+    background: color-mix(in srgb, var(--color-ticket-cyan) 45%, transparent);
+    box-shadow:
+      0 0 10px 1px color-mix(in srgb, var(--color-ticket-cyan) 80%, transparent),
+      0 0 22px 3px color-mix(in srgb, var(--color-ticket-sky) 40%, transparent);
+    pointer-events: none;
+    transform: scaleX(var(--fill, 0));
+    transform-origin: left center;
+  }
+
+  .t-meter-fill {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    border-radius: var(--radius-ticket-pill);
+    transform: translateX(var(--meter-shift));
+  }
+
+  .t-meter-fill {
+    top: 0;
+    bottom: 0;
+    overflow: hidden;
+    background: linear-gradient(
+      90deg,
+      var(--color-ticket-sky) 0%,
+      var(--color-ticket-cyan) 78%,
+      var(--color-white) 100%
+    );
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, var(--color-white) 75%, transparent),
+      inset 0 -2px 3px
+        color-mix(in srgb, var(--color-ticket-deep) 35%, transparent);
+  }
+
+  /* The glint: a narrow band of light crossing the fill, then a rest. */
+  .t-meter-fill::after {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 30%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--color-white) 85%, transparent),
+      transparent
+    );
+    opacity: 0;
+    transform: translateX(-120%);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .t-meter-fill::after {
+      opacity: 1;
+      animation: t-meter-glint var(--duration-ticket-glint) var(--ease-snappy)
+        infinite;
+    }
+
+    .t-meter-track.is-filling .t-meter-fill {
+      animation: t-meter-in var(--duration-ticket-meter) var(--ease-emphasized)
+        both;
+    }
+
+    .t-meter-track.is-filling .t-meter-glow {
+      animation: t-meter-glow-in var(--duration-ticket-meter)
+        var(--ease-emphasized) both;
+    }
+  }
+
+  @keyframes t-meter-in {
+    from {
+      transform: translateX(var(--meter-from));
+    }
+
+    to {
+      transform: translateX(var(--meter-shift));
+    }
+  }
+
+  @keyframes t-meter-glow-in {
+    from {
+      transform: scaleX(var(--from, 0));
+    }
+
+    to {
+      transform: scaleX(var(--fill, 0));
+    }
+  }
+
+  @keyframes t-meter-glint {
+    0% {
+      transform: translateX(-120%);
+    }
+
+    45%,
+    100% {
+      transform: translateX(380%);
+    }
+  }
+
+  /* Benefit list: a quiet frosted sheet with hairline rows. */
+  .t-benefits {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    padding: clamp(var(--space-sm), 3vw, 1.75rem);
+    border: 1px solid color-mix(in srgb, var(--color-white) 85%, transparent);
+    border-radius: var(--radius-ticket-card);
+    background: color-mix(in srgb, var(--color-white) 78%, transparent);
+    box-shadow:
+      inset 0 1px 0 var(--color-white),
+      0 20px 44px -30px color-mix(in srgb, var(--color-navy) 40%, transparent);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+  }
+
+  .t-group-title {
+    margin: 0 0 0.35rem;
+    color: var(--color-ticket-sky);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.12em;
+    line-height: 1.3;
+    text-transform: uppercase;
+  }
+
+  .t-rows {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .t-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    min-height: 2.75rem;
+    padding-block: 0.55rem;
+    border-top: 1px solid color-mix(in srgb, var(--color-navy) 9%, transparent);
+    color: var(--color-navy);
+    font-size: var(--text-size-small);
+    line-height: 1.4;
+  }
+
+  /* One status column: a fixed width, icon first, so every icon and
+     every word line up whatever the status says. */
+  .t-row :global(.t-status) {
+    flex: 0 0 auto;
+    width: 8.5rem;
+  }
+
+  .t-row :global(.t-status-icon) {
+    background: var(--color-navy);
+    color: var(--color-white);
+  }
+
+  .t-row :global(.t-status[data-positive="false"]) {
+    color: var(--color-neutral-dark);
+    font-weight: var(--font-weight-medium);
+  }
+
+  .t-row :global(.t-status[data-positive="false"] .t-status-icon) {
+    background: var(--color-neutral-lightest);
+    color: var(--color-neutral-dark);
+  }
+
+  .t-row[data-tone="not-included"] .t-row-label {
+    color: color-mix(in srgb, var(--color-navy) 72%, transparent);
+  }
+
+  /* Mobile: summary above the list, status under long labels if needed. */
+  @media (max-width: 899px) {
+    .t-panel {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    /* relative, not static: the light field layers must stay clipped. */
+    .t-summary {
+      position: relative;
+      top: auto;
+    }
+  }
+
+  /*
+   * Phones: the five tickets as a calm, symmetric block, three over two,
+   * centered, every tab the same width (six columns, each tab spans two;
+   * the fourth and fifth start one column in). The lens is absolutely
+   * placed, so it takes no grid cell.
+   */
+  @media (max-width: 599px) {
+    .t-tabs {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      width: 100%;
+    }
+
+    .t-tab {
+      grid-column: span 2;
+      padding-inline: 0.4rem;
+    }
+
+    .t-tab:nth-of-type(4):nth-last-of-type(2) {
+      grid-column: 2 / span 2;
+    }
+
+    .t-tab:nth-of-type(5):last-of-type {
+      grid-column: 4 / span 2;
+    }
+  }
+
+  @media (max-width: 479px) {
+    .t-row {
+      flex-wrap: wrap;
+      gap: 0.35rem var(--space-sm);
+    }
+
+    .t-row-label {
+      flex: 1 1 12rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .t-tab,
+    .t-tab-lens {
+      transition: none;
+    }
+
+    .t-tab:active {
+      transform: none;
+    }
+  }
+</style>

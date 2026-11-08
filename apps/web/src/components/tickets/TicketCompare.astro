@@ -1,0 +1,694 @@
+---
+// Compare tickets (DESIGN.md TICKETS-1): two pickers, two columns, one row
+// per benefit, laid out like a product spec sheet in the Q27 CI: navy ink,
+// ice glass and hairline rows, with the same buy buttons as the cards.
+//
+// The static HTML is the first ticket against Start-Up (the 2027 PDF's
+// default pair), complete without JavaScript; the pickers stay disabled
+// until tickets.client.ts takes over and re-fills both columns from the
+// embedded ticket model (ticket-model.clientData) on every change. A
+// ticket already shown in one column is disabled in the other picker, so
+// the two columns never silently show the same ticket.
+import "./ticket-theme.css";
+import type { TicketCategoriesContent } from "../../lib/content";
+import { EVENTS } from "../../lib/analytics/events";
+import IconArrowRight from "../icons/IconArrowRight.astro";
+import IconChevron from "../icons/IconChevron.astro";
+import TicketStatus from "./TicketStatus.astro";
+import {
+  clientData,
+  euro,
+  isPositive,
+  statusLabel,
+  statusOf,
+} from "./ticket-model";
+
+interface Props {
+  page: TicketCategoriesContent;
+}
+
+const { page } = Astro.props;
+const { offer, included, compare } = page;
+const tickets = offer.tickets;
+const firstTicket = tickets[0];
+const secondTicket =
+  tickets.find((t) => t.key === "start-up" && t.key !== firstTicket.key) ??
+  tickets[1];
+const columns = [
+  { ticket: firstTicket, label: compare.firstLabel },
+  { ticket: secondTicket, label: compare.secondLabel },
+];
+
+// JSON inside <script>: escape "<" so no value can close the element.
+const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
+---
+
+<section
+  class="t-compare t-anchor"
+  id="compare"
+  aria-labelledby="compare-title"
+  data-ticket-compare
+>
+  <script
+    type="application/json"
+    is:inline
+    data-ticket-data
+    set:html={payload}
+  />
+  <div class="t-shell">
+    <div class="t-sheet">
+      <div class="t-cmp-pickers">
+        <header class="t-compare-head">
+          <h2
+            id="compare-title"
+            class="t-compare-title"
+            data-lp="compare.heading"
+          >
+            {compare.heading}
+          </h2>
+          <p class="t-compare-intro" data-lp="compare.intro">
+            {compare.intro}
+          </p>
+        </header>
+        {
+          columns.map(({ ticket, label }, col) => (
+            <div class="t-cmp-col" data-col={col}>
+              <label class="t-cmp-label" for={`cmp-select-${col}`}>
+                {label}
+              </label>
+              <div class="t-select">
+                <select
+                  id={`cmp-select-${col}`}
+                  data-select={col}
+                  disabled
+                  autocomplete="off"
+                >
+                  {tickets.map((t) => (
+                    <option
+                      value={t.key}
+                      selected={t.key === ticket.key}
+                      disabled={t.key === columns[1 - col].ticket.key}
+                    >
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+                <span class="t-select-chevron" aria-hidden="true">
+                  <IconChevron size={20} />
+                </span>
+              </div>
+              <div class="t-cmp-ticket" data-swap={col}>
+                <p class="t-cmp-price">
+                  <span class="u-visually-hidden">Early Bird price </span>
+                  <span data-f="price">{euro(ticket.price)}</span>
+                  <span class="u-visually-hidden"> Regular price </span>
+                  <s data-f="regular">{euro(ticket.regularPrice)}</s>
+                </p>
+                <p class="t-cmp-desc" data-f="description">
+                  {ticket.description}
+                </p>
+                <a
+                  class="t-btn is-block"
+                  href={offer.purchaseHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-ticket-buy
+                  data-f="buy"
+                  data-ph-event={EVENTS.ticket_purchase_initiated}
+                  data-ph-prop-tier-name={ticket.name}
+                  data-ph-prop-tier-price={euro(ticket.price)}
+                >
+                  {offer.buyLabel}
+                  <span class="u-visually-hidden" data-f="buy-name">
+                    : {ticket.name}
+                  </span>
+                  <span class="t-btn-arrow" aria-hidden="true">
+                    <IconArrowRight />
+                  </span>
+                </a>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+
+      <div class="t-cmp-table" role="table" aria-labelledby="compare-title">
+        <div class="t-cmp-names" role="rowgroup">
+          <div class="t-cmp-name-row" role="row">
+            <span class="t-cmp-name-cell is-corner" role="columnheader">
+              <span class="u-visually-hidden">Benefit</span>
+            </span>
+            {
+              columns.map(({ ticket }, col) => (
+                <span
+                  class="t-cmp-name-cell"
+                  role="columnheader"
+                  data-col={col}
+                  data-f="name"
+                >
+                  {ticket.name}
+                </span>
+              ))
+            }
+          </div>
+        </div>
+
+        {
+          included.groups.map((group, gi) => (
+            <div class="t-cmp-group" role="rowgroup">
+              <div class="t-cmp-group-row" role="row">
+                <span class="t-cmp-group-cell" role="cell" aria-colspan="3">
+                  <h3 class="t-cmp-group-title">{group.heading}</h3>
+                </span>
+              </div>
+              {group.rows.map((row, ri) => (
+                <div class="t-cmp-row" role="row">
+                  <span class="t-cmp-row-label" role="rowheader">
+                    {row.label}
+                  </span>
+                  {columns.map(({ ticket }, col) => {
+                    const status = statusOf(group, row, ticket.key);
+                    return (
+                      <span
+                        class="t-cmp-cell"
+                        role="cell"
+                        data-col={col}
+                        data-cell={`${gi}.${ri}`}
+                      >
+                        <TicketStatus
+                          positive={isPositive(status)}
+                          label={statusLabel(status, included)}
+                        />
+                      </span>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          ))
+        }
+      </div>
+
+      <p class="t-footnote" data-lp="offer.footnote">{offer.footnote}</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  /*
+   * DESIGN.md TICKETS-1: the compare view. An ice band and a white glass
+   * sheet, navy ink, hairline rows instead of boxes; glass kept quieter
+   * than the cards so the comparison reads at a glance.
+   */
+  .t-compare {
+    padding-block: clamp(2.5rem, 6vw, 4.5rem) clamp(4rem, 9vw, 7rem);
+    background: linear-gradient(
+      180deg,
+      transparent 0,
+      color-mix(in srgb, var(--color-ticket-ice) 35%, transparent) 9rem,
+      color-mix(in srgb, var(--color-ticket-ice) 45%, transparent) 100%
+    );
+  }
+
+  .t-sheet {
+    padding: clamp(1.25rem, 4vw, var(--space-xl));
+    border-radius: var(--radius-ticket-card);
+    /* A large liquid glass sheet: the page light glows through, blurred,
+       while a denser fill keeps every row on a calm surface. */
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-white) 66%, transparent),
+      color-mix(in srgb, var(--color-white) 52%, transparent)
+    );
+    box-shadow:
+      inset 0 1px 1px var(--color-white),
+      inset 0 0 0 1px color-mix(in srgb, var(--color-white) 55%, transparent),
+      inset 0 -40px 60px -50px
+        color-mix(in srgb, var(--color-ticket-cyan) 70%, transparent),
+      0 30px 60px -40px color-mix(in srgb, var(--color-navy) 35%, transparent);
+    color: var(--color-navy);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    backdrop-filter: blur(24px) saturate(150%);
+  }
+
+  /* Wide screens: the opener sits in the label column, left of the
+     pickers, like a spec sheet's title cell (LAYOUT-4 deviation, as
+     TICKETS-1 allows). */
+  .t-compare-head {
+    align-self: start;
+    padding-bottom: var(--space-sm);
+  }
+
+  .t-compare-title {
+    margin: 0;
+    color: var(--color-navy);
+    font-size: clamp(2rem, 4.6vw, 3.25rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+  }
+
+  .t-compare-intro {
+    margin: var(--space-xs) 0 0;
+    color: color-mix(in srgb, var(--color-navy) 72%, transparent);
+    font-size: var(--text-size-medium);
+  }
+
+  /* Three columns on wide screens: labels, first ticket, second ticket. */
+  .t-cmp-pickers,
+  .t-cmp-name-row,
+  .t-cmp-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: clamp(var(--space-sm), 3vw, 2.5rem);
+  }
+
+  .t-cmp-pickers {
+    align-items: stretch;
+    padding-bottom: var(--space-md);
+  }
+
+  .t-cmp-col {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xs);
+    min-width: 0;
+  }
+
+  .t-cmp-label {
+    color: color-mix(in srgb, var(--color-navy) 72%, transparent);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* Glass picker: the closed field and, where the browser allows a styled
+     select, the open list too. */
+  .t-select {
+    position: relative;
+  }
+
+  .t-select select {
+    width: 100%;
+    min-height: 3rem;
+    padding: 0.6rem 2.6rem 0.6rem 1.1rem;
+    border: 0;
+    border-radius: var(--radius-ticket-button);
+    /* Glass field: one flat frosted tone, a lit rim, a faint lower edge. */
+    background: color-mix(in srgb, var(--color-white) 72%, transparent);
+    box-shadow:
+      inset 0 1px 1px var(--color-white),
+      inset 0 0 0 1px color-mix(in srgb, var(--color-white) 70%, transparent),
+      inset 0 -1px 1px color-mix(in srgb, var(--color-navy) 8%, transparent),
+      0 0 0 1px color-mix(in srgb, var(--color-navy) 8%, transparent),
+      0 8px 18px -12px color-mix(in srgb, var(--color-navy) 35%, transparent);
+    color: var(--color-navy);
+    font: inherit;
+    font-size: var(--text-size-medium);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.01em;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    appearance: none;
+    transition:
+      box-shadow var(--duration-ticket-color) var(--ease-snappy),
+      background-color var(--duration-ticket-color) var(--ease-snappy);
+  }
+
+  .t-select select:disabled {
+    cursor: default;
+    opacity: 1;
+  }
+
+  .t-select select:active {
+    box-shadow:
+      inset 0 2px 5px color-mix(in srgb, var(--color-navy) 12%, transparent),
+      0 1px 1px color-mix(in srgb, var(--color-navy) 8%, transparent);
+  }
+
+  .t-select-chevron {
+    position: absolute;
+    top: 50%;
+    right: 0.9rem;
+    display: inline-flex;
+    color: color-mix(in srgb, var(--color-navy) 72%, transparent);
+    pointer-events: none;
+    transform: translateY(-50%);
+    transition: transform var(--duration-icon) var(--ease-snappy);
+  }
+
+  /*
+   * The open list as liquid glass, as transparent as the header bar, where
+   * the browser supports a customizable select (appearance: base-select).
+   * It stays a real <select>: keyboard, screen readers and form behavior
+   * are native. Other browsers keep their own picker (the iOS wheel, for
+   * example), which still works the same way.
+   */
+  @supports (appearance: base-select) {
+    .t-select select,
+    .t-select select::picker(select) {
+      appearance: base-select;
+    }
+
+    .t-select select::picker-icon {
+      display: none;
+    }
+
+    .t-select:has(select:open) .t-select-chevron {
+      transform: translateY(-50%) rotate(180deg);
+    }
+
+    /*
+     * The open list is glass and nothing else: one flat frosted tone, dense
+     * and strongly blurred so nothing behind it shows through, with a lit
+     * rim and a faint lower edge for depth. No gradient, no color. It opens
+     * with a short liquid settle (a slight stretch that comes to rest) and
+     * closes faster.
+     */
+    .t-select select::picker(select) {
+      margin-block: var(--space-2xs);
+      padding: 0.35rem;
+      border: 0;
+      border-radius: var(--radius-ticket-panel);
+      background: color-mix(in srgb, var(--color-white) 88%, transparent);
+      box-shadow:
+        inset 0 1px 1px var(--color-white),
+        inset 0 0 0 1px color-mix(in srgb, var(--color-white) 70%, transparent),
+        inset 0 -1px 1px color-mix(in srgb, var(--color-navy) 8%, transparent),
+        0 0 0 1px color-mix(in srgb, var(--color-navy) 7%, transparent),
+        0 26px 50px -22px color-mix(in srgb, var(--color-navy) 32%, transparent);
+      opacity: 1;
+      transform: none;
+      transform-origin: top center;
+      -webkit-backdrop-filter: blur(30px);
+      backdrop-filter: blur(30px);
+      transition:
+        opacity var(--duration-close) var(--ease-snappy),
+        transform var(--duration-close) var(--ease-snappy),
+        display var(--duration-close) allow-discrete,
+        overlay var(--duration-close) allow-discrete;
+    }
+
+    .t-select select:not(:open)::picker(select) {
+      opacity: 0;
+      transform: translateY(-4px) scale(0.97, 0.94);
+    }
+
+    .t-select select:open::picker(select) {
+      animation: t-picker-in var(--duration-open) var(--ease-emphasized);
+    }
+
+    .t-select option {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+      min-height: 2.75rem;
+      padding: var(--space-2xs) var(--space-xs);
+      border-radius: var(--radius-ticket-button);
+      color: var(--color-navy);
+      font-size: var(--text-size-regular);
+      font-weight: var(--font-weight-semibold);
+      cursor: pointer;
+      transition:
+        background-color var(--duration-hover) var(--ease-snappy),
+        box-shadow var(--duration-hover) var(--ease-snappy);
+    }
+
+    /* Hover and the picked ticket: a raised glass chip, never a color. */
+    .t-select option:hover,
+    .t-select option:focus-visible {
+      background-color: color-mix(
+        in srgb,
+        var(--color-neutral-lightest) 70%,
+        transparent
+      );
+      box-shadow: inset 0 1px 1px var(--color-white);
+      outline: none;
+    }
+
+    .t-select option:checked {
+      background-color: var(--color-white);
+      box-shadow:
+        inset 0 1px 1px var(--color-white),
+        0 0 0 1px color-mix(in srgb, var(--color-navy) 8%, transparent),
+        0 4px 10px -6px color-mix(in srgb, var(--color-navy) 30%, transparent);
+      font-weight: var(--font-weight-extrabold);
+    }
+
+    .t-select option::checkmark {
+      order: 1;
+      margin-inline-start: auto;
+      color: var(--color-navy);
+    }
+
+    /* The ticket already shown in the other column. */
+    .t-select option:disabled {
+      color: color-mix(in srgb, var(--color-navy) 35%, transparent);
+      cursor: not-allowed;
+    }
+  }
+
+  @keyframes t-picker-in {
+    0% {
+      opacity: 0;
+      transform: translateY(-6px) scale(0.94, 0.82);
+    }
+
+    60% {
+      opacity: 1;
+      transform: translateY(0) scale(1.01, 1.02);
+    }
+
+    100% {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .t-cmp-ticket {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--space-2xs);
+    padding-top: var(--space-2xs);
+  }
+
+  /* Both buy buttons on one line, whatever the descriptions' length. */
+  .t-cmp-ticket .t-btn {
+    margin-top: auto;
+  }
+
+  /* A changed column settles in with a short fade; nothing moves. */
+  @media (prefers-reduced-motion: no-preference) {
+    .t-cmp-ticket.is-swapping,
+    .t-cmp-cell.is-swapping,
+    .t-cmp-name-cell.is-swapping {
+      animation: t-cmp-swap var(--duration-ticket-swap) var(--ease-snappy);
+    }
+  }
+
+  @keyframes t-cmp-swap {
+    from {
+      opacity: 0.25;
+    }
+  }
+
+  .t-cmp-price {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2xs);
+    margin: 0;
+  }
+
+  .t-cmp-price [data-f="price"] {
+    color: var(--color-navy);
+    font-size: clamp(2rem, 4vw, 2.6rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.04em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .t-cmp-price s {
+    color: color-mix(in srgb, var(--color-navy) 72%, transparent);
+    font-size: var(--text-size-regular);
+    font-weight: var(--font-weight-medium);
+  }
+
+  .t-cmp-desc {
+    min-height: 2.9em;
+    margin: 0 0 0.35rem;
+    color: color-mix(in srgb, var(--color-navy) 72%, transparent);
+    font-size: var(--text-size-small);
+    line-height: 1.45;
+  }
+
+  /*
+   * The compact name row: the only sticky part, so long lists keep each
+   * column's ticket in view without a tall header covering the rows. It
+   * stays inside the table and parks under the fixed header.
+   */
+  .t-cmp-names {
+    position: sticky;
+    top: 4.75rem;
+    z-index: 2;
+    margin-inline: calc(-1 * clamp(var(--space-2xs), 1.5vw, var(--space-sm)));
+    padding-inline: clamp(var(--space-2xs), 1.5vw, var(--space-sm));
+    border-radius: var(--radius-ticket-panel);
+    background: color-mix(in srgb, var(--color-white) 88%, transparent);
+    box-shadow:
+      inset 0 -1px 0 color-mix(in srgb, var(--color-navy) 10%, transparent),
+      0 8px 18px -14px color-mix(in srgb, var(--color-navy) 30%, transparent);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+  }
+
+  .t-cmp-name-cell {
+    padding-block: 0.7rem;
+    color: var(--color-navy);
+    font-size: var(--text-size-regular);
+    font-weight: var(--font-weight-extrabold);
+    line-height: 1.25;
+  }
+
+  .t-cmp-group-row {
+    display: block;
+    padding-top: var(--space-lg);
+  }
+
+  .t-cmp-group-title {
+    margin: 0;
+    padding-bottom: var(--space-2xs);
+    border-bottom: 1px solid
+      color-mix(in srgb, var(--color-navy) 22%, transparent);
+    color: var(--color-navy);
+    font-size: var(--text-size-large);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.015em;
+    line-height: 1.3;
+  }
+
+  /*
+   * Deviates from DESIGN.md COMP-5 (black 1px table rules) as TICKETS-1
+   * allows: two columns and short rows read as a spec sheet, so a faint
+   * hairline separates rows and only the group titles carry a firmer rule.
+   */
+  .t-cmp-row {
+    align-items: center;
+    min-height: 3.25rem;
+    padding-block: 0.7rem;
+    border-bottom: 1px solid
+      color-mix(in srgb, var(--color-navy) 8%, transparent);
+  }
+
+  .t-cmp-row-label {
+    color: var(--color-navy);
+    font-size: var(--text-size-regular);
+    line-height: 1.4;
+  }
+
+  .t-cmp-cell :global(.t-status) {
+    color: var(--color-navy);
+  }
+
+  .t-cmp-cell :global(.t-status-icon) {
+    background: var(--color-navy);
+    color: var(--color-white);
+  }
+
+  .t-cmp-cell :global(.t-status[data-positive="false"]) {
+    color: color-mix(in srgb, var(--color-navy) 72%, transparent);
+    font-weight: var(--font-weight-medium);
+  }
+
+  .t-cmp-cell :global(.t-status[data-positive="false"] .t-status-icon) {
+    background: color-mix(
+      in srgb,
+      var(--color-ticket-ice) 70%,
+      var(--color-white)
+    );
+    color: color-mix(in srgb, var(--color-navy) 72%, transparent);
+  }
+
+  .t-footnote {
+    margin: var(--space-lg) 0 0;
+    color: color-mix(in srgb, var(--color-navy) 72%, transparent);
+    font-size: var(--text-size-small);
+    text-align: center;
+  }
+
+  /*
+   * Phones and portrait tablets: two equal columns. Each benefit's label
+   * runs full width above its two status cells, so both results are on
+   * screen together without sideways scrolling.
+   */
+  @media (max-width: 767px) {
+    .t-cmp-pickers,
+    .t-cmp-name-row,
+    .t-cmp-row {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      column-gap: var(--space-sm);
+    }
+
+    .t-cmp-name-cell.is-corner {
+      display: none;
+    }
+
+    .t-compare-head {
+      grid-column: 1 / -1;
+      padding-bottom: var(--space-md);
+      text-align: center;
+    }
+
+    .t-cmp-names {
+      top: 4.25rem;
+    }
+
+    .t-cmp-name-cell {
+      padding-block: 0.55rem;
+      font-size: var(--text-size-small);
+    }
+
+    .t-cmp-row {
+      row-gap: 0.4rem;
+      padding-block: var(--space-xs);
+    }
+
+    .t-cmp-row-label {
+      grid-column: 1 / -1;
+      font-size: var(--text-size-small);
+      font-weight: var(--font-weight-semibold);
+    }
+
+    .t-select select {
+      padding-inline: 0.9rem 2.2rem;
+      font-size: var(--text-size-regular);
+    }
+
+    .t-select-chevron {
+      right: 0.7rem;
+    }
+
+    .t-cmp-cell :global(.t-status) {
+      white-space: normal;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .t-select select,
+    .t-select option,
+    .t-select-chevron {
+      transition: none;
+    }
+
+    /* Own rules: browsers without ::picker() drop only these. */
+    .t-select select::picker(select) {
+      transition: none;
+    }
+
+    .t-select select:open::picker(select) {
+      animation: none;
+    }
+  }
+</style>

@@ -1,0 +1,777 @@
+/*
+ * Shared chrome of the 2027 ticket page (DESIGN.md TICKETS-1): page width,
+ * eyebrow, the liquid glass buttons, status marks and the animated light
+ * field inside each ticket card. Only components under tickets/ import
+ * this file. Deviates from LAYOUT-1, LAYOUT-3, COMP-1, TYPE-1 and DEPTH-1
+ * as TICKETS-1 allows: the page is its own sales system.
+ */
+
+.t-shell {
+  --t-gutter: clamp(1rem, 5vw, 2.5rem);
+
+  width: min(100% - 2 * var(--t-gutter), var(--container-large));
+  margin-inline: auto;
+}
+
+/* A capped breakout for the five-card row on wide screens (TICKETS-1). */
+@media (min-width: 1440px) {
+  .t-shell.is-wide {
+    width: min(100% - 2 * var(--t-gutter), 92rem);
+  }
+}
+
+/* Header offset for in-page jumps (Compare tickets, All benefits). */
+.t-anchor {
+  scroll-margin-top: 5.5rem;
+}
+
+.t-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  margin: 0;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--color-white) 70%, transparent);
+  border-radius: var(--radius-ticket-pill);
+  background: color-mix(in srgb, var(--color-white) 62%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--color-white) 90%, transparent),
+    0 4px 14px -6px color-mix(in srgb, var(--color-navy) 30%, transparent);
+  color: var(--color-navy);
+  font-size: var(--text-size-tiny);
+  font-weight: var(--font-weight-extrabold);
+  letter-spacing: 0.14em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.t-section-title {
+  margin: 0;
+  color: var(--color-navy);
+  font-size: clamp(2rem, 4.6vw, 3.25rem);
+  font-weight: var(--font-weight-extrabold);
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+
+.t-section-intro {
+  max-width: 36rem;
+  margin: var(--space-xs) 0 0;
+  color: color-mix(in srgb, var(--color-navy) 74%, transparent);
+  font-size: var(--text-size-medium);
+  line-height: 1.55;
+}
+
+/*
+ * Buttons: calm, rounded rectangles with a small uppercase label (the
+ * reference the team picked), in the Q27 CI.
+ *   .t-btn           navy glass: the buy buttons; pressing turns it light
+ *                    blue with navy text
+ *   .t-btn.is-soft   translucent navy tint (carousel arrows)
+ *   .t-btn.is-ghost  translucent white glass (the hero's compare link)
+ * Depth is one lit top edge and a soft shadow, no glossy lens. The pressed
+ * finish sits on ::before and fades in by opacity (a composited cross
+ * fade). .is-pressed is set by tickets.client.ts for touch and keyboard,
+ * so the state is not a desktop-only :active.
+ */
+.t-btn {
+  --t-btn-ink: var(--color-white);
+  --t-btn-ink-pressed: var(--color-navy);
+
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: 3rem;
+  padding: 0.8rem 1.35rem;
+  overflow: hidden;
+  border: 1px solid
+    color-mix(in srgb, var(--color-ticket-midnight) 55%, transparent);
+  border-radius: var(--radius-ticket-button);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-ticket-deep) 85%, var(--color-navy)) 0%,
+    var(--color-navy) 100%
+  );
+  /* Navy glass: a lit top rim and a Q27 blue glow inside the lower edge. */
+  box-shadow:
+    inset 0 1px 1px color-mix(in srgb, var(--color-white) 40%, transparent),
+    inset 0 -12px 16px -12px
+      color-mix(in srgb, var(--color-ticket-sky) 85%, transparent),
+    0 1px 2px color-mix(in srgb, var(--color-ticket-midnight) 25%, transparent),
+    0 8px 20px -12px color-mix(in srgb, var(--color-navy) 70%, transparent);
+  color: var(--t-btn-ink);
+  font: inherit;
+  font-size: var(--text-size-tiny);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.09em;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  text-transform: uppercase;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  transition:
+    transform var(--duration-ticket-press) var(--ease-snappy),
+    color var(--duration-ticket-color) var(--ease-snappy),
+    background-color var(--duration-ticket-color) var(--ease-snappy),
+    box-shadow var(--duration-ticket-color) var(--ease-snappy);
+}
+
+/* Pressed material: light blue glass. */
+.t-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(
+    180deg,
+    var(--color-ticket-ice) 0%,
+    var(--color-ticket-press) 100%
+  );
+  opacity: 0;
+  transition: opacity var(--duration-ticket-color) var(--ease-snappy);
+}
+
+/* Hover: the fill lifts a step, like a light coming on behind the glass. */
+.t-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--color-white) 10%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-hover) var(--ease-snappy);
+}
+
+@media (hover: hover) {
+  .t-btn:hover::after {
+    opacity: 1;
+  }
+}
+
+.t-btn:active,
+.t-btn.is-pressed {
+  color: var(--t-btn-ink-pressed);
+  transform: scale(0.98);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--color-white) 70%, transparent),
+    0 1px 2px color-mix(in srgb, var(--color-navy) 18%, transparent);
+}
+
+.t-btn:active::before,
+.t-btn.is-pressed::before {
+  opacity: 1;
+}
+
+.t-btn:focus-visible {
+  outline-offset: 3px;
+}
+
+.t-btn.is-block {
+  width: 100%;
+}
+
+/* Trailing arrow on buy buttons; nudges forward on hover. */
+.t-btn-arrow {
+  display: inline-flex;
+  flex: 0 0 auto;
+  transition: transform var(--duration-hover) var(--ease-snappy);
+}
+
+.t-btn-arrow svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+@media (hover: hover) {
+  .t-btn:hover .t-btn-arrow {
+    transform: translateX(2px);
+  }
+}
+
+/* Secondary: translucent navy tint, navy ink. */
+.t-btn.is-soft,
+.t-btn.is-ghost {
+  --t-btn-ink: var(--color-navy);
+
+  border-color: color-mix(in srgb, var(--color-navy) 10%, transparent);
+  box-shadow: inset 0 1px 0
+    color-mix(in srgb, var(--color-white) 70%, transparent);
+}
+
+.t-btn.is-soft {
+  background: color-mix(in srgb, var(--color-navy) 6%, transparent);
+}
+
+.t-btn.is-soft::after,
+.t-btn.is-ghost::after {
+  background: color-mix(in srgb, var(--color-navy) 6%, transparent);
+}
+
+/* Ghost: white glass over the page light. */
+.t-btn.is-ghost {
+  background: color-mix(in srgb, var(--color-white) 55%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+.t-btn.is-soft:active,
+.t-btn.is-soft.is-pressed,
+.t-btn.is-ghost:active,
+.t-btn.is-ghost.is-pressed {
+  box-shadow: inset 0 1px 0
+    color-mix(in srgb, var(--color-white) 80%, transparent);
+}
+
+.t-btn:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+/* Quiet text link with a full touch target (All benefits). */
+.t-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 2.75rem;
+  padding-inline: var(--space-2xs);
+  color: var(--color-navy);
+  font-size: var(--text-size-small);
+  font-weight: var(--font-weight-semibold);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--color-navy) 30%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.3em;
+  transition: text-decoration-color var(--duration-hover) var(--ease-snappy);
+}
+
+@media (hover: hover) {
+  .t-link:hover {
+    text-decoration-color: var(--color-navy);
+  }
+}
+
+/* Status mark: icon plus words, never color alone. */
+.t-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: var(--text-size-small);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.t-status-icon {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 1.375rem;
+  height: 1.375rem;
+  border-radius: var(--radius-circle);
+}
+
+.t-status-icon svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.t-status .t-icon-no {
+  display: none;
+}
+
+.t-status[data-positive="false"] .t-icon-yes {
+  display: none;
+}
+
+.t-status[data-positive="false"] .t-icon-no {
+  display: block;
+}
+
+/*
+ * The light field: the Join Q quiz panel's ice, cyan and Q27 blue light,
+ * moved into a ticket. Two oversized layers morph by transform only; the
+ * static gradient underneath already carries the full look, so reduced
+ * motion (and a paused, off-screen card) shows a finished still.
+ */
+.t-field {
+  --t-x1: 14%;
+  --t-y1: 12%;
+  --t-x2: 92%;
+  --t-y2: 96%;
+
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      70% 55% at var(--t-x1) var(--t-y1),
+      color-mix(in srgb, var(--color-white) 92%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      85% 60% at var(--t-x2) var(--t-y2),
+      color-mix(in srgb, var(--color-ticket-sky) 32%, transparent),
+      transparent 72%
+    ),
+    radial-gradient(
+      60% 45% at 100% 0%,
+      color-mix(in srgb, var(--color-ticket-cyan) 55%, transparent),
+      transparent 70%
+    ),
+    linear-gradient(
+      160deg,
+      var(--color-ticket-ground) 0%,
+      var(--color-ticket-ice) 58%,
+      color-mix(in srgb, var(--color-ticket-sky) 24%, var(--color-ticket-ice))
+        100%
+    );
+}
+
+.t-field::before,
+.t-field::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/*
+ * Liquid morph: each layer holds elliptical pools of light on an oversized
+ * square. Turning it while it stretches on one axis and shrinks on the
+ * other makes the pools flow into new shapes, like light moving through
+ * liquid glass, with transform as the only animated property.
+ */
+.t-field::before {
+  inset: -45%;
+  background:
+    radial-gradient(
+      32% 22% at 34% 38%,
+      color-mix(in srgb, var(--color-ticket-cyan) 58%, transparent),
+      transparent
+    ),
+    radial-gradient(
+      26% 34% at 66% 62%,
+      color-mix(in srgb, var(--color-white) 80%, transparent),
+      transparent
+    ),
+    radial-gradient(
+      20% 14% at 58% 30%,
+      color-mix(in srgb, var(--color-ticket-ice) 90%, transparent),
+      transparent
+    );
+}
+
+.t-field::after {
+  inset: -40%;
+  background:
+    radial-gradient(
+      30% 20% at 62% 70%,
+      color-mix(in srgb, var(--color-ticket-sky) 26%, transparent),
+      transparent
+    ),
+    radial-gradient(
+      18% 26% at 30% 64%,
+      color-mix(in srgb, var(--color-ticket-cyan) 34%, transparent),
+      transparent
+    );
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .t-field::before {
+    animation: t-morph var(--duration-ticket-drift) ease-in-out infinite
+      alternate;
+  }
+
+  .t-field::after {
+    animation: t-morph-alt var(--duration-ticket-drift-alt) ease-in-out infinite
+      alternate;
+  }
+
+  [data-ticket-still] .t-field::before,
+  [data-ticket-still] .t-field::after {
+    animation-play-state: paused;
+  }
+}
+
+@keyframes t-morph {
+  0% {
+    transform: translate3d(-5%, -3%, 0) rotate(0deg) scale(1.08, 0.94);
+  }
+
+  50% {
+    transform: translate3d(4%, 5%, 0) rotate(70deg) scale(0.94, 1.1);
+  }
+
+  100% {
+    transform: translate3d(6%, -4%, 0) rotate(140deg) scale(1.06, 0.96);
+  }
+}
+
+@keyframes t-morph-alt {
+  0% {
+    transform: translate3d(5%, 4%, 0) rotate(0deg) scale(0.95, 1.08);
+  }
+
+  50% {
+    transform: translate3d(-4%, -2%, 0) rotate(-60deg) scale(1.1, 0.92);
+  }
+
+  100% {
+    transform: translate3d(-6%, 5%, 0) rotate(-120deg) scale(0.98, 1.04);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-btn,
+  .t-btn::before,
+  .t-btn::after,
+  .t-btn-arrow,
+  .t-link {
+    transition: none;
+  }
+
+  /* Keep the color feedback, drop the movement (MOTION-2). */
+  .t-btn:active,
+  .t-btn.is-pressed,
+  .t-btn:hover .t-btn-arrow {
+    transform: none;
+  }
+}
+
+/*
+ * Liquid glass (DESIGN.md TICKETS-1), after the reference images the team
+ * picked: clear glass with a specular rim that catches light top left and
+ * bottom right, a soft caustic glow along the lower inner edge, a little
+ * brightness and saturation lifted from what lies behind, and depth from
+ * light rather than from a flat fill.
+ *
+ *   .t-glass        the material on any positioned surface (rim on ::after)
+ *   .t-liquid       a layer inside a .t-field holding Q bubbles and the rim
+ *   .t-qb           a Q bubble: the Q mark as liquid glass (TicketQBubble)
+ */
+.t-glass {
+  position: relative;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-white) 42%, transparent),
+    color-mix(in srgb, var(--color-white) 16%, transparent)
+  );
+  box-shadow:
+    inset 0 1px 1px color-mix(in srgb, var(--color-white) 90%, transparent),
+    inset 0 18px 24px -22px
+      color-mix(in srgb, var(--color-white) 85%, transparent),
+    inset 0 -16px 24px -18px
+      color-mix(in srgb, var(--color-ticket-cyan) 60%, transparent),
+    0 14px 34px -18px color-mix(in srgb, var(--color-navy) 38%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+}
+
+/* The specular rim: a one pixel ring, bright where light hits the edge. */
+.t-glass::after,
+.t-liquid::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    140deg,
+    color-mix(in srgb, var(--color-white) 95%, transparent) 0%,
+    color-mix(in srgb, var(--color-white) 30%, transparent) 20%,
+    transparent 42%,
+    transparent 58%,
+    color-mix(in srgb, var(--color-ticket-cyan) 70%, transparent) 80%,
+    color-mix(in srgb, var(--color-white) 90%, transparent) 100%
+  );
+  pointer-events: none;
+  -webkit-mask:
+    linear-gradient(var(--color-black) 0 0) content-box,
+    linear-gradient(var(--color-black) 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(var(--color-black) 0 0) content-box exclude,
+    linear-gradient(var(--color-black) 0 0);
+}
+
+/* Without backdrop blur, a near-opaque fill keeps text on a calm surface. */
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  .t-glass {
+    background: color-mix(in srgb, var(--color-white) 90%, transparent);
+  }
+}
+
+/*
+ * Inside a light field: Q bubbles float behind the content and the rim
+ * lights the field's edge. Content sits above on z-index 1.
+ */
+.t-liquid {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 1px 1px color-mix(in srgb, var(--color-white) 95%, transparent),
+    inset 0 -26px 36px -26px
+      color-mix(in srgb, var(--color-ticket-cyan) 75%, transparent);
+  pointer-events: none;
+}
+
+.t-field > :not(.t-liquid) {
+  position: relative;
+  z-index: 1;
+}
+
+/*
+ * Q bubbles (TicketQBubble.astro): the original Q mark as liquid glass.
+ * The mask is the brand file, so the outline is exact; the Q only floats,
+ * turns a few degrees and breathes evenly, never stretched or skewed. The
+ * liquid motion is the light flowing inside it.
+ */
+.t-qb {
+  --q-mark: url("/icon-512.png");
+  --q-rim: 2px;
+
+  position: absolute;
+  aspect-ratio: 1;
+  pointer-events: none;
+}
+
+.t-qb > span {
+  position: absolute;
+  inset: 0;
+}
+
+/* A soft glow behind the Q; a plain gradient, no filter. */
+.t-qb > .t-qb-halo {
+  inset: -22%;
+  border-radius: var(--radius-circle);
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--color-ticket-cyan) 55%, transparent),
+    color-mix(in srgb, var(--color-ticket-sky) 16%, transparent) 62%,
+    transparent
+  );
+}
+
+/* The glass body: clear in the middle, a specular highlight up left, a
+   caustic glow low right, Q27 blue gathering toward the lower edge. */
+.t-qb-glass {
+  overflow: hidden;
+  background:
+    radial-gradient(
+      28% 20% at 30% 20%,
+      color-mix(in srgb, var(--color-white) 95%, transparent),
+      transparent 72%
+    ),
+    radial-gradient(
+      50% 40% at 74% 84%,
+      color-mix(in srgb, var(--color-ticket-cyan) 90%, transparent),
+      transparent 72%
+    ),
+    linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--color-white) 55%, transparent) 0%,
+      color-mix(in srgb, var(--color-ticket-ice) 45%, transparent) 45%,
+      color-mix(in srgb, var(--color-ticket-sky) 55%, transparent) 100%
+    );
+  -webkit-mask: var(--q-mark) center / contain no-repeat;
+  mask: var(--q-mark) center / contain no-repeat;
+}
+
+/* Light flowing inside the Q: pools that turn and stretch. */
+.t-qb-flow {
+  position: absolute;
+  inset: -45%;
+  background:
+    radial-gradient(
+      30% 20% at 35% 40%,
+      color-mix(in srgb, var(--color-white) 75%, transparent),
+      transparent
+    ),
+    radial-gradient(
+      26% 34% at 65% 62%,
+      color-mix(in srgb, var(--color-ticket-cyan) 70%, transparent),
+      transparent
+    ),
+    radial-gradient(
+      22% 16% at 58% 28%,
+      color-mix(in srgb, var(--color-ticket-sky) 45%, transparent),
+      transparent
+    );
+}
+
+/* Rim light: the Q minus itself shifted, which leaves a thin crescent
+   along one side of the exact outline. */
+.t-qb-rim {
+  -webkit-mask:
+    var(--q-mark) center / contain no-repeat,
+    var(--q-mark) var(--rim-x) var(--rim-y) / contain no-repeat;
+  -webkit-mask-composite: source-out;
+  mask:
+    var(--q-mark) center / contain no-repeat subtract,
+    var(--q-mark) var(--rim-x) var(--rim-y) / contain no-repeat;
+}
+
+.t-qb-rim.is-light {
+  --rim-x: calc(50% + var(--q-rim));
+  --rim-y: calc(50% + var(--q-rim));
+
+  background: color-mix(in srgb, var(--color-white) 95%, transparent);
+}
+
+.t-qb-rim.is-glow {
+  --rim-x: calc(50% - var(--q-rim));
+  --rim-y: calc(50% - var(--q-rim));
+
+  background: color-mix(in srgb, var(--color-ticket-cyan) 90%, transparent);
+}
+
+/* Placement. In a card: one Q beside the price, where every layout has
+   room, and a small one wholly behind the glass highlights panel, so the
+   panel shows it blurred, as glass would. */
+.t-qb.is-card {
+  top: 21%;
+  right: 5%;
+  width: 26%;
+  opacity: 0.95;
+}
+
+.t-qb.is-card-sm {
+  top: 52%;
+  right: 16%;
+  width: 24%;
+  opacity: 0.75;
+}
+
+.t-qb.is-summary {
+  top: 7%;
+  right: 7%;
+  width: 30%;
+  opacity: 0.9;
+}
+
+.t-qb.is-ground-1 {
+  --q-rim: 3px;
+
+  top: 10vh;
+  right: 6vw;
+  width: 28vmax;
+  opacity: 0.85;
+}
+
+.t-qb.is-ground-2 {
+  --q-rim: 3px;
+
+  top: 48vh;
+  left: 4vw;
+  width: 20vmax;
+  opacity: 0.65;
+}
+
+.t-qb.is-ground-3 {
+  bottom: 6vh;
+  right: 32vw;
+  width: 13vmax;
+  opacity: 0.55;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .t-qb {
+    animation: t-q-float var(--duration-ticket-drift) ease-in-out infinite
+      alternate;
+  }
+
+  .t-qb.is-card-sm,
+  .t-qb.is-ground-2 {
+    animation: t-q-float-alt var(--duration-ticket-drift-alt) ease-in-out
+      infinite alternate;
+  }
+
+  .t-qb.is-ground-3 {
+    animation-direction: alternate-reverse;
+  }
+
+  .t-qb-flow {
+    animation: t-morph var(--duration-ticket-drift-alt) ease-in-out infinite
+      alternate;
+  }
+
+  [data-ticket-still] .t-qb,
+  [data-ticket-still] .t-qb-flow {
+    animation-play-state: paused;
+  }
+}
+
+/* Uniform scale only: the Q keeps its proportions in every frame. */
+@keyframes t-q-float {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(-5deg) scale(1);
+  }
+
+  50% {
+    transform: translate3d(-6%, 8%, 0) rotate(3deg) scale(1.04);
+  }
+
+  100% {
+    transform: translate3d(-2%, -5%, 0) rotate(7deg) scale(0.97);
+  }
+}
+
+@keyframes t-q-float-alt {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(6deg) scale(0.98);
+  }
+
+  50% {
+    transform: translate3d(7%, -6%, 0) rotate(-3deg) scale(1.03);
+  }
+
+  100% {
+    transform: translate3d(3%, 5%, 0) rotate(-7deg) scale(1);
+  }
+}
+
+/*
+ * Into the footer: a short, clean liquid glass fade. The page light stays
+ * faintly visible through a blur that fades in while a light white veil
+ * rises to the footer's own white, so there is no hard edge. The footer's
+ * hairline is hidden on this page only, where the fade replaces it.
+ */
+.t-page-fade {
+  --t-fade: clamp(4rem, 8vw, 6rem);
+
+  position: relative;
+  z-index: 1;
+  height: var(--t-fade);
+  margin-top: calc(-1 * var(--t-fade));
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--color-white) 45%, transparent) 55%,
+    var(--color-background) 100%
+  );
+  pointer-events: none;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  -webkit-mask: linear-gradient(transparent, var(--color-black) 65%);
+  mask: linear-gradient(transparent, var(--color-black) 65%);
+}
+
+body:has(.t-page-fade) .site-footer {
+  border-top-color: transparent;
+}

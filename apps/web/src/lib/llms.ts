@@ -349,21 +349,34 @@ export function buildLlmsFullTxt(opts: {
         ticketCategories.title,
         ticketCategories.metaDescription,
       ),
-      ...section("Tiers", [
-        ticketCategories.tiers.heading,
-        ticketCategories.tiers.intro,
-        ...ticketCategories.tiers.items.map((tier) => {
-          const features = tier.features.join("; ");
-          const note = tier.note ? ` (${tier.note})` : "";
-          return bullet(tier.name, `${tier.price}${note}. ${features}`.trim());
+      ...section("Tickets", [
+        ticketCategories.hero.heading,
+        ticketCategories.hero.intro,
+        ...ticketCategories.offer.tickets.map((ticket) => {
+          const note = ticket.note ? ` (${ticket.note})` : "";
+          return bullet(
+            ticket.name,
+            `€${ticket.price} (regular €${ticket.regularPrice})${note}. ${ticket.description}. ${ticket.highlights.join("; ")}`,
+          );
         }),
+        ticketCategories.offer.footnote,
       ]),
-      ...section("Categories", [
-        ticketCategories.categories.heading,
-        ...ticketCategories.categories.items.map((cat) =>
-          bullet(cat.label, cat.bullets.join("; ")),
+      ...section(
+        ticketCategories.included.heading,
+        ticketCategories.included.groups.map((group) =>
+          bullet(
+            group.heading,
+            group.rows
+              .map((row) => {
+                const names = ticketCategories.offer.tickets
+                  .filter((t) => row.tickets.includes(t.key))
+                  .map((t) => t.name);
+                return `${row.label} (${names.length ? names.join(", ") : "none"})`;
+              })
+              .join("; "),
+          ),
         ),
-      ]),
+      ),
       "---",
       "",
     ],

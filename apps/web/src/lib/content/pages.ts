@@ -1,8 +1,8 @@
 /**
  * Per-page Payload globals mapped onto PageContent.
  *
- * Payload has no primitive string[]/boolean[] field; array-of-primitive JSON
- * fields were seeded as named-subfield rows: fromTextRows / fromValueRows undo that.
+ * Payload has no primitive string[] field; array-of-primitive JSON fields
+ * were seeded as named-subfield rows: fromTextRows undoes that.
  */
 import { normalizeHrefsDeep } from "./hrefs";
 import { fetchGlobal, fetchGlobalOptional, memoizeCms } from "./cms";
@@ -32,34 +32,45 @@ export interface AgendaItem {
   description: string;
 }
 
-export interface TicketTier {
+/**
+ * Ticket category registry. Mirrors TICKET_KEYS in
+ * apps/cms/src/globals/PageTickets.ts 1:1: the key ties one ticket's card,
+ * its "What's included" panel and its compare column together, and every
+ * benefit row names the tickets it applies to by key.
+ */
+export const TICKET_KEYS = [
+  "student",
+  "young-professional",
+  "start-up",
+  "investor",
+  "corporate",
+] as const;
+export type TicketKey = (typeof TICKET_KEYS)[number];
+
+export interface TicketOffer {
+  key: TicketKey;
   name: string;
-  price: string;
-  features: string[];
+  description: string;
+  /** Whole euros, struck through on the card. */
+  regularPrice: number;
+  /** Whole euros, the current (Early Bird) price. */
+  price: number;
+  highlights: string[];
+  /** Requirement shown on the card, e.g. "Valid student ID required". */
   note?: string;
-  buyLabel: string;
-  buyHref: string;
 }
 
-export interface PricingComparisonTier {
-  name: string;
-  price: string;
-  audience: string;
-}
-
-export interface PricingComparisonGroup {
-  group: string;
-  rows: { feature: string; included: boolean[] }[];
-}
-
-export interface PricingComparison {
-  tiers: PricingComparisonTier[];
-  groups: PricingComparisonGroup[];
-}
-
-export interface TicketCategoryDetail {
+export interface TicketBenefitRow {
   label: string;
-  bullets: string[];
+  /** Tickets that include this benefit (or, for eligibility, require it). */
+  tickets: TicketKey[];
+}
+
+export interface TicketBenefitGroup {
+  heading: string;
+  /** eligibility rows read Required / Not required and are not benefits. */
+  kind: "benefit" | "eligibility";
+  rows: TicketBenefitRow[];
 }
 
 export interface BoardMember {
@@ -189,21 +200,39 @@ export interface ProgramContent {
 export interface TicketCategoriesContent {
   title: string;
   metaDescription: string;
-  tiers: {
+  hero: {
+    eyebrow: string;
     heading: string;
     intro: string;
-    items: TicketTier[];
+    compareLabel: string;
   };
-  comparison: {
+  offer: {
+    /** The one shop link every buy button on the page uses. */
+    purchaseHref: string;
+    buyLabel: string;
+    detailsLabel: string;
+    saveLabel: string;
+    tickets: TicketOffer[];
+    footnote: string;
+  };
+  included: {
     heading: string;
     intro: string;
-    tiers: PricingComparisonTier[];
-    groups: PricingComparisonGroup[];
-    academicNote: string;
+    /** Contains {ticket}. */
+    ticketBuyLabel: string;
+    /** Contains {included} and {total}. */
+    countLabel: string;
+    includedLabel: string;
+    notIncludedLabel: string;
+    requiredLabel: string;
+    notRequiredLabel: string;
+    groups: TicketBenefitGroup[];
   };
-  categories: {
+  compare: {
     heading: string;
-    items: TicketCategoryDetail[];
+    intro: string;
+    firstLabel: string;
+    secondLabel: string;
   };
 }
 
@@ -463,12 +492,6 @@ function toIsoDay(value: string | null | undefined): string {
   return raw.slice(0, 10);
 }
 
-function fromValueRows(
-  rows: { value?: boolean | null }[] | null | undefined,
-): boolean[] {
-  return (rows ?? []).map((row) => Boolean(row.value));
-}
-
 interface CmsPageStat {
   value: string;
   label: string;
@@ -662,78 +685,98 @@ async function cmsGetProgram(): Promise<ProgramContent> {
 interface CmsTicketsDoc {
   title: string;
   metaDescription?: string | null;
-  tiers: {
-    heading: string;
-    intro: string;
-    items: {
-      name: string;
-      price: string;
-      features?: { text: string }[] | null;
-      note?: string | null;
-      buyLabel: string;
-      buyHref: string;
-    }[];
+  hero: TicketCategoriesContent["hero"];
+  offer: {
+    purchaseHref: string;
+    buyLabel: string;
+    detailsLabel: string;
+    saveLabel: string;
+    footnote: string;
+    tickets?:
+      | {
+          key: TicketKey;
+          name: string;
+          description: string;
+          regularPrice: number;
+          price: number;
+          highlights?: { text: string }[] | null;
+          note?: string | null;
+        }[]
+      | null;
   };
-  comparison: {
-    heading: string;
-    intro: string;
-    tiers: { name: string; price: string; audience: string }[];
-    groups: {
-      group: string;
-      rows: {
-        feature: string;
-        included?: { value?: boolean | null }[] | null;
-      }[];
-    }[];
-    academicNote: string;
+  included: Omit<TicketCategoriesContent["included"], "groups"> & {
+    groups?:
+      | {
+          heading: string;
+          kind: "benefit" | "eligibility";
+          rows: CmsTicketRow[];
+        }[]
+      | null;
   };
-  categories: {
-    heading: string;
-    items: { label: string; bullets?: { text: string }[] | null }[];
-  };
+  compare: TicketCategoriesContent["compare"];
+}
+
+// Payload stores each benefit row as one checkbox per ticket (apps/cms
+// PageTickets.ts TICKET_ROW_FIELDS); the site works with the ticket keys.
+const TICKET_ROW_FIELDS = {
+  student: "student",
+  "young-professional": "youngProfessional",
+  "start-up": "startUp",
+  investor: "investor",
+  corporate: "corporate",
+} as const satisfies Record<TicketKey, string>;
+
+type CmsTicketRow = { label: string } & {
+  [F in (typeof TICKET_ROW_FIELDS)[TicketKey]]?: boolean | null;
+};
+
+function ticketsOfRow(row: CmsTicketRow): TicketKey[] {
+  return (Object.keys(TICKET_ROW_FIELDS) as TicketKey[]).filter(
+    (key) => row[TICKET_ROW_FIELDS[key]] === true,
+  );
 }
 
 async function cmsGetTicketCategories(): Promise<TicketCategoriesContent> {
   const doc = await fetchGlobal<CmsTicketsDoc>("page-tickets");
+  // The 2026 groups (tiers / comparison / categories) stay in Payload as an
+  // archive and are deliberately not read here. assertTicketPage() fails the
+  // build if the 2027 groups have not been published yet.
   return {
     title: doc.title,
     metaDescription: doc.metaDescription ?? "",
-    tiers: {
-      heading: doc.tiers.heading,
-      intro: doc.tiers.intro,
-      items: doc.tiers.items.map((item) => ({
-        name: item.name,
-        price: item.price,
-        features: fromTextRows(item.features),
-        note: item.note ?? undefined,
-        buyLabel: item.buyLabel,
-        buyHref: item.buyHref,
-      })),
-    },
-    comparison: {
-      heading: doc.comparison.heading,
-      intro: doc.comparison.intro,
-      tiers: doc.comparison.tiers.map((t) => ({
+    hero: doc.hero,
+    offer: doc.offer && {
+      purchaseHref: doc.offer.purchaseHref,
+      buyLabel: doc.offer.buyLabel,
+      detailsLabel: doc.offer.detailsLabel,
+      saveLabel: doc.offer.saveLabel,
+      footnote: doc.offer.footnote,
+      tickets: (doc.offer.tickets ?? []).map((t) => ({
+        key: t.key,
         name: t.name,
+        description: t.description,
+        regularPrice: t.regularPrice,
         price: t.price,
-        audience: t.audience,
-      })),
-      groups: doc.comparison.groups.map((group) => ({
-        group: group.group,
-        rows: group.rows.map((row) => ({
-          feature: row.feature,
-          included: fromValueRows(row.included),
-        })),
-      })),
-      academicNote: doc.comparison.academicNote,
-    },
-    categories: {
-      heading: doc.categories.heading,
-      items: doc.categories.items.map((item) => ({
-        label: item.label,
-        bullets: fromTextRows(item.bullets),
+        highlights: fromTextRows(t.highlights),
+        ...(t.note ? { note: t.note } : {}),
       })),
     },
+    included: doc.included && {
+      heading: doc.included.heading,
+      intro: doc.included.intro,
+      ticketBuyLabel: doc.included.ticketBuyLabel,
+      countLabel: doc.included.countLabel,
+      includedLabel: doc.included.includedLabel,
+      notIncludedLabel: doc.included.notIncludedLabel,
+      requiredLabel: doc.included.requiredLabel,
+      notRequiredLabel: doc.included.notRequiredLabel,
+      groups: (doc.included.groups ?? []).map((g) => ({
+        heading: g.heading,
+        kind: g.kind,
+        rows: g.rows.map((r) => ({ label: r.label, tickets: ticketsOfRow(r) })),
+      })),
+    },
+    compare: doc.compare,
   };
 }
 
@@ -1428,26 +1471,64 @@ async function cmsGetPageContent(): Promise<PageContent> {
   };
 }
 
-// PageTickets.ts documents comparison.groups[].rows[].included as "one row
-// per comparison tier, in the same order as comparison.tiers above", but
-// nothing in Payload's schema enforces that the array lengths actually
-// match. A CMS editor adding/removing a tier without touching every existing
-// row would otherwise misalign the table silently (columns render under the
-// wrong tier headers, no error anywhere). Fail the build loudly instead.
-function assertTicketComparisonAligned(
-  ticketCategories: TicketCategoriesContent,
-): void {
-  const tierCount = ticketCategories.comparison.tiers.length;
-  for (const group of ticketCategories.comparison.groups) {
+/**
+ * The ticket page draws its cards, the "What's included" panels and the
+ * compare view from one model, so a slip in it would show three different
+ * answers. Payload validates most of this on save, but the JSON path, and a
+ * doc published before the 2027 groups existed (they are then empty), reach
+ * the build unchecked. Fail the build loudly, naming the field, instead of
+ * shipping an empty or contradictory ticket page.
+ */
+export function assertTicketPage(t: TicketCategoriesContent): void {
+  const fail = (msg: string): never => {
+    throw new Error(`[content] ticketCategories: ${msg}`);
+  };
+  if (
+    !t.hero?.heading ||
+    !t.offer?.purchaseHref ||
+    !t.included?.heading ||
+    !t.compare?.heading
+  ) {
+    fail(
+      "the 2027 ticket fields (hero, offer, included, compare) are empty. Publish the Tickets page in the CMS with them filled before building.",
+    );
+  }
+  const keys = new Set<string>();
+  for (const ticket of t.offer.tickets) {
+    if (!(TICKET_KEYS as readonly string[]).includes(ticket.key)) {
+      fail(`ticket "${ticket.name}" has unknown key "${ticket.key}".`);
+    }
+    if (keys.has(ticket.key)) {
+      fail(`ticket key "${ticket.key}" is used twice.`);
+    }
+    keys.add(ticket.key);
+    if (
+      !Number.isFinite(ticket.price) ||
+      !Number.isFinite(ticket.regularPrice)
+    ) {
+      fail(`ticket "${ticket.name}" needs a numeric price and regularPrice.`);
+    }
+  }
+  if (keys.size < 2) fail("the compare view needs at least two tickets.");
+  for (const group of t.included.groups) {
     for (const row of group.rows) {
-      if (row.included.length !== tierCount) {
-        throw new Error(
-          `[content] ticketCategories.comparison: row "${row.feature}" in group "${group.group}" has ${row.included.length} included ${
-            row.included.length === 1 ? "entry" : "entries"
-          }, but comparison.tiers has ${tierCount}. Each row's included[] must have exactly one entry per tier, in the same order.`,
-        );
+      for (const key of row.tickets) {
+        if (!keys.has(key)) {
+          fail(
+            `"${row.label}" in "${group.heading}" names ticket "${key}", which is not on the page.`,
+          );
+        }
       }
     }
+  }
+  if (!t.included.ticketBuyLabel.includes("{ticket}")) {
+    fail('included.ticketBuyLabel must contain "{ticket}".');
+  }
+  if (
+    !t.included.countLabel.includes("{included}") ||
+    !t.included.countLabel.includes("{total}")
+  ) {
+    fail('included.countLabel must contain "{included}" and "{total}".');
   }
 }
 
@@ -1458,7 +1539,7 @@ export async function getPageContent(): Promise<PageContent> {
       : readJson<PageContent>("page-content.json");
   const resolved = normalizeHrefsDeep(await content);
   resolved.kickoff = normalizeKickoff(resolved.kickoff);
-  assertTicketComparisonAligned(resolved.ticketCategories);
+  assertTicketPage(resolved.ticketCategories);
   assertEventDates(resolved.home?.event);
   return resolved;
 }
