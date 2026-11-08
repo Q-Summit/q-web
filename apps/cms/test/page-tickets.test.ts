@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   requirePlaceholders,
   TICKET_KEYS,
+  TICKET_ROW_FIELDS,
   validateRowsMatchTierCount,
   validateUniqueTicketKeys,
 } from "../src/globals/PageTickets";
@@ -113,5 +114,16 @@ describe("TICKET_KEYS", () => {
       "investor",
       "corporate",
     ]);
+  });
+});
+
+// Every category needs its own checkbox on each benefit row, and the field
+// names must stay unique, or two categories would share one column.
+describe("TICKET_ROW_FIELDS", () => {
+  it("maps every ticket category to its own checkbox field", () => {
+    const keys = TICKET_KEYS.map((k) => k.value);
+    expect(Object.keys(TICKET_ROW_FIELDS).sort()).toEqual([...keys].sort());
+    const fields = Object.values(TICKET_ROW_FIELDS);
+    expect(new Set(fields).size).toBe(fields.length);
   });
 });

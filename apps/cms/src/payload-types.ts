@@ -1707,12 +1707,16 @@ export interface PageTicket {
        * Requirements are not counted as benefits in the ticket summary.
        */
       kind: 'benefit' | 'eligibility';
+      /**
+       * On each row, tick the tickets the benefit is included in (or, for a requirement, the tickets that require it).
+       */
       rows: {
         label: string;
-        /**
-         * Tickets this benefit is included in (or, for a requirement, the tickets that require it). Leave empty for none.
-         */
-        tickets?: ('student' | 'young-professional' | 'start-up' | 'investor' | 'corporate')[] | null;
+        student?: boolean | null;
+        youngProfessional?: boolean | null;
+        startUp?: boolean | null;
+        investor?: boolean | null;
+        corporate?: boolean | null;
         id?: string | null;
       }[];
       id?: string | null;
@@ -2699,7 +2703,11 @@ export interface PageTicketsSelect<T extends boolean = true> {
                 | T
                 | {
                     label?: T;
-                    tickets?: T;
+                    student?: T;
+                    youngProfessional?: T;
+                    startUp?: T;
+                    investor?: T;
+                    corporate?: T;
                     id?: T;
                   };
               id?: T;
