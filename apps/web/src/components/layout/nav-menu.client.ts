@@ -1,4 +1,5 @@
 /** Mobile nav disclosure (WAI APG): toggle, Escape, outside dismiss, scroll lock. */
+import { tokenMs } from "../../lib/motion/time";
 
 const OPEN_CLASS = "is-nav-open";
 const LABEL_OPEN = "Open menu";
@@ -55,12 +56,9 @@ let foldTimer = 0;
 
 function foldMs(panel: HTMLElement): number {
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return 0;
-  const v = parseFloat(
-    getComputedStyle(panel).getPropertyValue("--duration-glass-fold"),
-  );
   // The links leave first (0.35 of the fold), then the glass folds; keep
   // the box until both have played (Nav.astro).
-  return (Number.isFinite(v) ? v : 220) * 1.35 + 40;
+  return tokenMs("--duration-glass-fold", 220, panel) * 1.35 + 40;
 }
 
 function setOpen(header: HTMLElement, open: boolean) {

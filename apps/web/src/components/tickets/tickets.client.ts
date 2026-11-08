@@ -10,6 +10,7 @@ import {
   type TicketClientData,
 } from "./ticket-model";
 import { typeWords } from "../../lib/motion/typewriter";
+import { tokenMs } from "../../lib/motion/time";
 
 const reducedMotion = (): boolean =>
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -278,7 +279,7 @@ function initTabs(section: HTMLElement): (key: string) => void {
    */
   const root = document.documentElement;
   const cssMs = (name: string, fallback: number) =>
-    parseFloat(getComputedStyle(root).getPropertyValue(name)) || fallback;
+    tokenMs(name, fallback, root);
   const running: Animation[] = [];
 
   const unfold = (tab: HTMLElement, panel: HTMLElement) => {
@@ -552,9 +553,7 @@ function createPicker(root: HTMLElement, onPick: () => void): Picker | null {
     // sits in the second half of --duration-glass-fold).
     const ms = reducedMotion()
       ? 0
-      : (parseFloat(
-          getComputedStyle(list).getPropertyValue("--duration-glass-fold"),
-        ) || 220) + 40;
+      : tokenMs("--duration-glass-fold", 220, list) + 40;
     hideTimer = window.setTimeout(() => {
       if (!open) list.hidden = true;
     }, ms);

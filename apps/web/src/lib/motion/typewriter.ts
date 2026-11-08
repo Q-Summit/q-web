@@ -15,15 +15,12 @@
  * again replaces whatever is still typing. Reduced motion, or no
  * JavaScript at all, shows the plain text.
  */
+import { tokenMs } from "./time";
+
 const MAX_MS = 720;
 
 const reduce = () =>
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-function tokenMs(el: HTMLElement, name: string, fallback: number): number {
-  const v = parseFloat(getComputedStyle(el).getPropertyValue(name));
-  return Number.isFinite(v) && v > 0 ? v : fallback;
-}
 
 export function typeWords(
   el: HTMLElement,
@@ -37,7 +34,7 @@ export function typeWords(
   }
   const words = clean.split(/\s+/);
   const perWord = Math.min(
-    tokenMs(el, "--duration-type-word", 150),
+    tokenMs("--duration-type-word", 150, el),
     MAX_MS / Math.max(1, words.length),
   );
 
