@@ -180,6 +180,22 @@
   --duration-hover: 150ms;
   --duration-reveal: 500ms;
   --duration-page: 220ms;
+  /* Glass motion (DESIGN.md MOTION-6): the shared material motion of the
+     liquid glass parts (home Buy Now, site header menu, ticket pickers,
+     What's included). Timings measured from the team's reference videos:
+     a press lands on the first frame, a surface unfolds out of its trigger
+     in about 380ms with a small overshoot, folds back faster, and text
+     writes itself word by word. The spring curve overshoots on purpose
+     (about 3 percent on a scale), so it is for transforms only. */
+  --ease-glass-spring: cubic-bezier(0.34, 1.32, 0.64, 1);
+  --duration-glass-press: 90ms;
+  --duration-glass-release: 420ms;
+  --duration-glass-unfold: 380ms;
+  --duration-glass-fold: 220ms;
+  --duration-glass-light: 520ms;
+  --duration-glass-stagger: 28ms;
+  --duration-type-word: 150ms;
+  --duration-type-fade: 120ms;
   /* Kickoff glass motion (DESIGN.md KICKOFF-1). Longer than the
      conference 500ms ceiling on purpose: the zip's blob pulse and
      album card snap are the look of this page. */
@@ -206,8 +222,7 @@
   --duration-ticket-meter: 700ms;
   --duration-ticket-glint: 5.2s;
   --duration-ticket-enter: 460ms;
-  --duration-ticket-stagger: 18ms;
-  /* Hack campaign motion (DESIGN.md HACK-1). Ambient loops (falling
+  --duration-ticket-stagger: 18ms; /* Hack campaign motion (DESIGN.md HACK-1). Ambient loops (falling
      fragments, the light seen through the white surface) run slowly and
      can be paused on the page; the reveal and the logo light pass are one
      shot. Per-fragment speeds multiply --duration-hack-fall. The photo

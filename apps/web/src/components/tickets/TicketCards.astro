@@ -253,6 +253,33 @@ const LIGHT = [
     white-space: nowrap;
   }
 
+  /*
+   * GPU budget (the brief blur and pixelation while loading and swiping
+   * on phones). All five cards used to animate their light and re-blur it
+   * under two glass surfaces each, so a phone showing one card carried
+   * about 170 layers and 44 animations and fell back to low-resolution
+   * tiles. Now:
+   *   - a card that is not the centered one (tickets.client.ts sets
+   *     data-ticket-still at rest) drops its light animation entirely, not
+   *     just pauses it, so its layers are freed; the resting frame equals
+   *     the first keyframe (ticket-theme.css), so it restarts seamlessly;
+   *   - the Save chip has no live backdrop blur: it sits on the card's own
+   *     soft light, where the blur changed nothing you can see.
+   * The highlights panel keeps its glass blur, which is what shows the Q
+   * bubbles behind it frosted.
+   */
+  .t-save {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .t-slide[data-ticket-still] .t-card::before,
+  .t-slide[data-ticket-still] .t-card::after,
+  .t-slide[data-ticket-still] :global(.t-qb),
+  .t-slide[data-ticket-still] :global(.t-qb-flow) {
+    animation: none;
+  }
+
   .t-now {
     margin: 0;
     color: var(--color-navy);

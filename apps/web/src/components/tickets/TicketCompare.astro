@@ -13,6 +13,7 @@ import "./ticket-theme.css";
 import type { TicketCategoriesContent } from "../../lib/content";
 import { EVENTS } from "../../lib/analytics/events";
 import IconArrowRight from "../icons/IconArrowRight.astro";
+import IconCheck from "../icons/IconCheck.astro";
 import IconChevron from "../icons/IconChevron.astro";
 import TicketStatus from "./TicketStatus.astro";
 import {
@@ -73,29 +74,58 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
         {
           columns.map(({ ticket, label }, col) => (
             <div class="t-cmp-col" data-col={col}>
-              <label class="t-cmp-label" for={`cmp-select-${col}`}>
+              <span class="t-cmp-label" id={`cmp-label-${col}`}>
                 {label}
-              </label>
-              <div class="t-select">
-                <select
+              </span>
+              <div class="t-select" data-picker={col} data-value={ticket.key}>
+                <button
+                  type="button"
+                  class="t-select-field"
                   id={`cmp-select-${col}`}
-                  data-select={col}
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-controls={`cmp-list-${col}`}
+                  aria-labelledby={`cmp-label-${col} cmp-select-${col}`}
+                  data-picker-field
+                  data-glass-press
                   disabled
-                  autocomplete="off"
                 >
-                  {tickets.map((t) => (
-                    <option
-                      value={t.key}
-                      selected={t.key === ticket.key}
-                      disabled={t.key === columns[1 - col].ticket.key}
+                  <span class="glass-light" aria-hidden="true" />
+                  <span data-picker-value>{ticket.name}</span>
+                  <span class="t-select-chevron" aria-hidden="true">
+                    <IconChevron size={20} />
+                  </span>
+                </button>
+                <ul
+                  class="t-select-list"
+                  id={`cmp-list-${col}`}
+                  role="listbox"
+                  aria-labelledby={`cmp-label-${col}`}
+                  tabindex="-1"
+                  data-picker-list
+                  hidden
+                >
+                  {tickets.map((t, i) => (
+                    <li
+                      class="t-select-option"
+                      style={`--i: ${i}`}
+                      id={`cmp-opt-${col}-${t.key}`}
+                      role="option"
+                      data-value={t.key}
+                      aria-selected={t.key === ticket.key ? "true" : "false"}
+                      aria-disabled={
+                        t.key === columns[1 - col].ticket.key
+                          ? "true"
+                          : undefined
+                      }
                     >
-                      {t.name}
-                    </option>
+                      <span>{t.name}</span>
+                      <span class="t-select-check" aria-hidden="true">
+                        <IconCheck size={16} />
+                      </span>
+                    </li>
                   ))}
-                </select>
-                <span class="t-select-chevron" aria-hidden="true">
-                  <IconChevron size={20} />
-                </span>
+                </ul>
               </div>
               <div class="t-cmp-ticket" data-swap={col}>
                 <p class="t-cmp-price">
@@ -213,20 +243,39 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
   .t-sheet {
     padding: clamp(1.25rem, 4vw, var(--space-xl));
     border-radius: var(--radius-ticket-card);
-    /* A large liquid glass sheet: the page light glows through, blurred,
-       while a denser fill keeps every row on a calm surface. */
-    background: linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--color-white) 66%, transparent),
-      color-mix(in srgb, var(--color-white) 52%, transparent)
-    );
+    position: relative;
+    isolation: isolate;
+    /* A large liquid glass sheet, in the home Buy Now's material: clear at
+       the top where the pickers sit, so the page light glows through the
+       blur, and a little denser further down so the rows read on a calm
+       surface. Depth from light only: a lit top edge, a caustic cyan glow
+       inside the lower edge, a specular rim (::after) and a soft shadow.
+       The fill and blur live on ::before, not on the sheet: an element with
+       its own backdrop-filter is a backdrop root, and the sticky names
+       inside it could then not blur the rows passing under them. */
     box-shadow:
       inset 0 1px 1px var(--color-white),
-      inset 0 0 0 1px color-mix(in srgb, var(--color-white) 55%, transparent),
+      inset 0 24px 40px -30px
+        color-mix(in srgb, var(--color-white) 90%, transparent),
       inset 0 -40px 60px -50px
         color-mix(in srgb, var(--color-ticket-cyan) 70%, transparent),
       0 30px 60px -40px color-mix(in srgb, var(--color-navy) 35%, transparent);
     color: var(--color-navy);
+  }
+
+  .t-sheet::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-white) 30%, transparent) 0,
+      color-mix(in srgb, var(--color-white) 44%, transparent) 20rem,
+      color-mix(in srgb, var(--color-white) 50%, transparent) 100%
+    );
+    pointer-events: none;
     -webkit-backdrop-filter: blur(24px) saturate(150%);
     backdrop-filter: blur(24px) saturate(150%);
   }
@@ -283,48 +332,111 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
     text-transform: uppercase;
   }
 
-  /* Glass picker: the closed field and, where the browser allows a styled
-     select, the open list too. */
+  /*
+   * Glass picker: a button that opens a listbox (WAI-ARIA select-only
+   * pattern, tickets.client.ts), replacing the native select, whose open
+   * list differed per browser: it flipped upward near the screen edge and,
+   * on some phones, could not be closed without picking. This one always
+   * opens downward (the page eases down first when the list would not fit),
+   * closes on a second tap, a tap outside or Escape and keeps the previous
+   * pick, and works the same on touch, mouse and keyboard.
+   */
   .t-select {
     position: relative;
   }
 
-  .t-select select {
+  /* The sheet's specular rim, as on every glass part (ticket-theme.css). */
+  .t-sheet::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: linear-gradient(
+      150deg,
+      color-mix(in srgb, var(--color-white) 95%, transparent) 0%,
+      color-mix(in srgb, var(--color-white) 25%, transparent) 22%,
+      transparent 45% 70%,
+      color-mix(in srgb, var(--color-ticket-cyan) 60%, transparent) 88%,
+      color-mix(in srgb, var(--color-white) 85%, transparent) 100%
+    );
+    pointer-events: none;
+    -webkit-mask:
+      linear-gradient(var(--color-black) 0 0) content-box,
+      linear-gradient(var(--color-black) 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(var(--color-black) 0 0) content-box exclude,
+      linear-gradient(var(--color-black) 0 0);
+  }
+
+  .t-select.is-open {
+    z-index: 4;
+  }
+
+  .t-select-field {
+    display: flex;
+    align-items: center;
     width: 100%;
     min-height: 3rem;
     padding: 0.6rem 2.6rem 0.6rem 1.1rem;
     border: 0;
+    position: relative;
+    isolation: isolate;
     border-radius: var(--radius-ticket-button);
-    /* Glass field: one flat frosted tone, a lit rim, a faint lower edge. */
-    background: color-mix(in srgb, var(--color-white) 72%, transparent);
+    /* Clear glass in the home Buy Now's material, on a light ground: a thin
+       white fill over a light blur, a lit top edge, a caustic cyan glow
+       inside the lower edge and a soft lift; navy ink. Pressing gives a
+       little and lights up from the touch point (MOTION-6). */
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-white) 55%, transparent) 0%,
+      color-mix(in srgb, var(--color-white) 22%, transparent) 100%
+    );
     box-shadow:
       inset 0 1px 1px var(--color-white),
-      inset 0 0 0 1px color-mix(in srgb, var(--color-white) 70%, transparent),
-      inset 0 -1px 1px color-mix(in srgb, var(--color-navy) 8%, transparent),
-      0 0 0 1px color-mix(in srgb, var(--color-navy) 8%, transparent),
-      0 8px 18px -12px color-mix(in srgb, var(--color-navy) 35%, transparent);
+      inset 0 0 0 1px color-mix(in srgb, var(--color-white) 55%, transparent),
+      inset 0 -12px 18px -14px
+        color-mix(in srgb, var(--color-ticket-cyan) 85%, transparent),
+      0 0 0 1px color-mix(in srgb, var(--color-navy) 7%, transparent),
+      0 10px 24px -14px color-mix(in srgb, var(--color-navy) 38%, transparent);
     color: var(--color-navy);
+    -webkit-backdrop-filter: blur(8px) saturate(160%);
+    backdrop-filter: blur(8px) saturate(160%);
     font: inherit;
     font-size: var(--text-size-medium);
     font-weight: var(--font-weight-extrabold);
     letter-spacing: -0.01em;
-    text-overflow: ellipsis;
+    text-align: start;
     cursor: pointer;
-    appearance: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
     transition:
       box-shadow var(--duration-ticket-color) var(--ease-snappy),
-      background-color var(--duration-ticket-color) var(--ease-snappy);
+      transform var(--duration-glass-release) var(--ease-glass-spring);
   }
 
-  .t-select select:disabled {
+  .t-select-field.is-pressed {
+    transform: scale(0.98, 0.95);
+    transition-duration:
+      var(--duration-ticket-color), var(--duration-glass-press);
+  }
+
+  .t-select-field > [data-picker-value] {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .t-select-field:disabled {
     cursor: default;
-    opacity: 1;
   }
 
-  .t-select select:active {
+  .t-select-field:active,
+  .t-select.is-open .t-select-field {
     box-shadow:
       inset 0 2px 5px color-mix(in srgb, var(--color-navy) 12%, transparent),
-      0 1px 1px color-mix(in srgb, var(--color-navy) 8%, transparent);
+      0 0 0 1px color-mix(in srgb, var(--color-navy) 14%, transparent);
   }
 
   .t-select-chevron {
@@ -335,135 +447,163 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
     color: color-mix(in srgb, var(--color-navy) 72%, transparent);
     pointer-events: none;
     transform: translateY(-50%);
-    transition: transform var(--duration-icon) var(--ease-snappy);
+    transition: transform var(--duration-glass-unfold) var(--ease-emphasized);
+  }
+
+  .t-select.is-open .t-select-chevron {
+    transform: translateY(-50%) rotate(180deg);
   }
 
   /*
-   * The open list as liquid glass, as transparent as the header bar, where
-   * the browser supports a customizable select (appearance: base-select).
-   * It stays a real <select>: keyboard, screen readers and form behavior
-   * are native. Other browsers keep their own picker (the iOS wheel, for
-   * example), which still works the same way.
+   * The open list is glass and nothing else: one flat frosted tone, dense
+   * and strongly blurred so nothing behind it shows through, a lit rim and
+   * a faint lower edge. Always below the field.
+   *
+   * It unfolds out of the field (MOTION-6): it starts as a field-height
+   * strip tucked under the field, clipped to that strip, and opens down
+   * while it springs to full size and its shadow deepens; then the options
+   * follow a few frames apart. Closing runs the same way back into the
+   * field, faster, the options leaving first, and only fades at the very
+   * end. Both directions are transitions on data-state, so a quick second
+   * tap reverses mid-way, and the list is hidden only after the fold.
+   * Scale is on the list alone, never on the compare columns.
    */
-  @supports (appearance: base-select) {
-    .t-select select,
-    .t-select select::picker(select) {
-      appearance: base-select;
-    }
+  .t-select-list {
+    position: absolute;
+    top: calc(100% + var(--space-2xs));
+    right: 0;
+    left: 0;
+    z-index: 1;
+    margin: 0;
+    padding: 0.35rem;
+    border-radius: var(--radius-ticket-panel);
+    background: color-mix(in srgb, var(--color-white) 90%, transparent);
+    box-shadow:
+      inset 0 1px 1px var(--color-white),
+      inset 0 0 0 1px color-mix(in srgb, var(--color-white) 70%, transparent),
+      inset 0 -1px 1px color-mix(in srgb, var(--color-navy) 8%, transparent),
+      0 0 0 1px color-mix(in srgb, var(--color-navy) 7%, transparent),
+      0 26px 50px -22px color-mix(in srgb, var(--color-navy) 32%, transparent);
+    list-style: none;
+    clip-path: inset(0 0 calc(100% - 3rem) 0 round var(--radius-ticket-panel));
+    opacity: 0;
+    transform: translateY(calc(-1 * var(--space-sm))) scale(0.97, 0.9);
+    transform-origin: top center;
+    -webkit-backdrop-filter: blur(30px);
+    backdrop-filter: blur(30px);
+    transition:
+      clip-path var(--duration-glass-fold) var(--ease-emphasized),
+      transform var(--duration-glass-fold) var(--ease-emphasized),
+      opacity calc(var(--duration-glass-fold) * 0.5) var(--ease-snappy)
+        calc(var(--duration-glass-fold) * 0.5);
+  }
 
-    .t-select select::picker-icon {
-      display: none;
-    }
+  .t-select-list[data-state="open"] {
+    clip-path: inset(0 round var(--radius-ticket-panel));
+    opacity: 1;
+    transform: none;
+    transition:
+      clip-path var(--duration-glass-unfold) var(--ease-emphasized),
+      transform var(--duration-glass-unfold) var(--ease-glass-spring),
+      opacity var(--duration-hover) var(--ease-snappy);
+  }
 
-    .t-select:has(select:open) .t-select-chevron {
-      transform: translateY(-50%) rotate(180deg);
-    }
+  .t-select-list > .t-select-option {
+    opacity: 0;
+    transform: translateY(calc(-1 * var(--space-2xs)));
+    transition:
+      opacity var(--duration-glass-fold) var(--ease-snappy),
+      transform var(--duration-glass-fold) var(--ease-snappy),
+      background-color var(--duration-hover) var(--ease-snappy);
+  }
 
-    /*
-     * The open list is glass and nothing else: one flat frosted tone, dense
-     * and strongly blurred so nothing behind it shows through, with a lit
-     * rim and a faint lower edge for depth. No gradient, no color. It opens
-     * with a short liquid settle (a slight stretch that comes to rest) and
-     * closes faster.
-     */
-    .t-select select::picker(select) {
-      margin-block: var(--space-2xs);
-      padding: 0.35rem;
-      border: 0;
-      border-radius: var(--radius-ticket-panel);
-      background: color-mix(in srgb, var(--color-white) 88%, transparent);
-      box-shadow:
-        inset 0 1px 1px var(--color-white),
-        inset 0 0 0 1px color-mix(in srgb, var(--color-white) 70%, transparent),
-        inset 0 -1px 1px color-mix(in srgb, var(--color-navy) 8%, transparent),
-        0 0 0 1px color-mix(in srgb, var(--color-navy) 7%, transparent),
-        0 26px 50px -22px color-mix(in srgb, var(--color-navy) 32%, transparent);
-      opacity: 1;
-      transform: none;
-      transform-origin: top center;
-      -webkit-backdrop-filter: blur(30px);
-      backdrop-filter: blur(30px);
-      transition:
-        opacity var(--duration-close) var(--ease-snappy),
-        transform var(--duration-close) var(--ease-snappy),
-        display var(--duration-close) allow-discrete,
-        overlay var(--duration-close) allow-discrete;
-    }
+  .t-select-list[data-state="open"] > .t-select-option {
+    opacity: 1;
+    transform: none;
+    transition-duration:
+      var(--duration-glass-unfold), var(--duration-glass-unfold),
+      var(--duration-hover);
+    transition-timing-function:
+      var(--ease-emphasized), var(--ease-emphasized), var(--ease-snappy);
+    transition-delay:
+      calc(var(--duration-glass-stagger) * (var(--i, 0) + 2)),
+      calc(var(--duration-glass-stagger) * (var(--i, 0) + 2)),
+      calc(var(--duration-glass-stagger) * 0);
+  }
 
-    .t-select select:not(:open)::picker(select) {
-      opacity: 0;
-      transform: translateY(-4px) scale(0.97, 0.94);
-    }
+  .t-select-list:focus {
+    outline: none;
+  }
 
-    .t-select select:open::picker(select) {
-      animation: t-picker-in var(--duration-open) var(--ease-emphasized);
-    }
+  .t-select-option {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    min-height: 2.75rem;
+    padding: var(--space-2xs) var(--space-xs);
+    border-radius: var(--radius-ticket-button);
+    color: var(--color-navy);
+    font-size: var(--text-size-regular);
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
 
-    .t-select option {
-      display: flex;
-      align-items: center;
-      gap: var(--space-xs);
-      min-height: 2.75rem;
-      padding: var(--space-2xs) var(--space-xs);
-      border-radius: var(--radius-ticket-button);
-      color: var(--color-navy);
-      font-size: var(--text-size-regular);
-      font-weight: var(--font-weight-semibold);
-      cursor: pointer;
-      transition:
-        background-color var(--duration-hover) var(--ease-snappy),
-        box-shadow var(--duration-hover) var(--ease-snappy);
-    }
+  .t-select-check {
+    display: inline-flex;
+    margin-inline-start: auto;
+    color: var(--color-navy);
+    opacity: 0;
+  }
 
-    /* Hover and the picked ticket: a raised glass chip, never a color. */
-    .t-select option:hover,
-    .t-select option:focus-visible {
+  /* The picked ticket: a raised glass chip and a check, never a color. */
+  .t-select-option[aria-selected="true"] {
+    background-color: var(--color-white);
+    box-shadow:
+      inset 0 1px 1px var(--color-white),
+      0 0 0 1px color-mix(in srgb, var(--color-navy) 8%, transparent),
+      0 4px 10px -6px color-mix(in srgb, var(--color-navy) 30%, transparent);
+    font-weight: var(--font-weight-extrabold);
+  }
+
+  .t-select-option[aria-selected="true"] .t-select-check {
+    opacity: 1;
+  }
+
+  /* The keyboard's current option (aria-activedescendant): a quieter chip
+     plus the focus ring while the list has keyboard focus. */
+  .t-select-option.is-active:not([aria-selected="true"]) {
+    background-color: color-mix(
+      in srgb,
+      var(--color-neutral-lightest) 80%,
+      transparent
+    );
+    box-shadow: inset 0 1px 1px var(--color-white);
+  }
+
+  .t-select-list:focus-visible .t-select-option.is-active {
+    outline: 2px solid var(--color-focus);
+    outline-offset: -2px;
+  }
+
+  @media (hover: hover) {
+    .t-select-option:not([aria-disabled="true"]):hover {
       background-color: color-mix(
         in srgb,
-        var(--color-neutral-lightest) 70%,
+        var(--color-neutral-lightest) 80%,
         transparent
       );
-      box-shadow: inset 0 1px 1px var(--color-white);
-      outline: none;
     }
 
-    .t-select option:checked {
+    .t-select-option[aria-selected="true"]:hover {
       background-color: var(--color-white);
-      box-shadow:
-        inset 0 1px 1px var(--color-white),
-        0 0 0 1px color-mix(in srgb, var(--color-navy) 8%, transparent),
-        0 4px 10px -6px color-mix(in srgb, var(--color-navy) 30%, transparent);
-      font-weight: var(--font-weight-extrabold);
-    }
-
-    .t-select option::checkmark {
-      order: 1;
-      margin-inline-start: auto;
-      color: var(--color-navy);
-    }
-
-    /* The ticket already shown in the other column. */
-    .t-select option:disabled {
-      color: color-mix(in srgb, var(--color-navy) 35%, transparent);
-      cursor: not-allowed;
     }
   }
 
-  @keyframes t-picker-in {
-    0% {
-      opacity: 0;
-      transform: translateY(-6px) scale(0.94, 0.82);
-    }
-
-    60% {
-      opacity: 1;
-      transform: translateY(0) scale(1.01, 1.02);
-    }
-
-    100% {
-      opacity: 1;
-      transform: none;
-    }
+  /* The ticket already shown in the other column. */
+  .t-select-option[aria-disabled="true"] {
+    color: color-mix(in srgb, var(--color-navy) 35%, transparent);
+    cursor: not-allowed;
   }
 
   .t-cmp-ticket {
@@ -531,17 +671,64 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
    */
   .t-cmp-names {
     position: sticky;
-    top: 4.75rem;
+    /* Parks just under the floating site header (DESIGN.md COMP-6). */
+    top: calc(var(--site-header-height, 4.5rem) + var(--space-2xs));
     z-index: 2;
     margin-inline: calc(-1 * clamp(var(--space-2xs), 1.5vw, var(--space-sm)));
     padding-inline: clamp(var(--space-2xs), 1.5vw, var(--space-sm));
     border-radius: var(--radius-ticket-panel);
-    background: color-mix(in srgb, var(--color-white) 88%, transparent);
+    /* Clear liquid glass in the home Buy Now's material: only a thin
+       white fill, so the rows passing under it show as color and shape,
+       and a strong blur that lifts brightness and saturation, so they never
+       read as a second line of text next to the names. A lit top edge, a
+       caustic cyan glow inside the lower edge, the bright rim (::after) and
+       a soft cyan halo make it glow a little; a soft shadow lifts it. */
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-white) 30%, transparent),
+      color-mix(in srgb, var(--color-white) 14%, transparent)
+    );
     box-shadow:
-      inset 0 -1px 0 color-mix(in srgb, var(--color-navy) 10%, transparent),
-      0 8px 18px -14px color-mix(in srgb, var(--color-navy) 30%, transparent);
-    -webkit-backdrop-filter: blur(14px);
-    backdrop-filter: blur(14px);
+      inset 0 1px 1px var(--color-white),
+      inset 0 -12px 18px -14px var(--color-ticket-cyan),
+      0 10px 22px -14px color-mix(in srgb, var(--color-navy) 35%, transparent),
+      0 0 22px -8px
+        color-mix(in srgb, var(--color-ticket-cyan) 55%, transparent);
+    -webkit-backdrop-filter: blur(22px) saturate(190%) brightness(1.08);
+    backdrop-filter: blur(22px) saturate(190%) brightness(1.08);
+  }
+
+  .t-cmp-names::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: linear-gradient(
+      150deg,
+      color-mix(in srgb, var(--color-white) 95%, transparent) 0%,
+      color-mix(in srgb, var(--color-white) 25%, transparent) 30%,
+      transparent 55%,
+      color-mix(in srgb, var(--color-ticket-cyan) 55%, transparent) 90%,
+      color-mix(in srgb, var(--color-white) 80%, transparent) 100%
+    );
+    pointer-events: none;
+    -webkit-mask:
+      linear-gradient(var(--color-black) 0 0) content-box,
+      linear-gradient(var(--color-black) 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(var(--color-black) 0 0) content-box exclude,
+      linear-gradient(var(--color-black) 0 0);
+  }
+
+  /* Without backdrop blur the names keep a calm, near-opaque fill. */
+  @supports not (
+    (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+  ) {
+    .t-cmp-names {
+      background: color-mix(in srgb, var(--color-white) 94%, transparent);
+    }
   }
 
   .t-cmp-name-cell {
@@ -641,10 +828,6 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
       text-align: center;
     }
 
-    .t-cmp-names {
-      top: 4.25rem;
-    }
-
     .t-cmp-name-cell {
       padding-block: 0.55rem;
       font-size: var(--text-size-small);
@@ -661,7 +844,7 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
       font-weight: var(--font-weight-semibold);
     }
 
-    .t-select select {
+    .t-select-field {
       padding-inline: 0.9rem 2.2rem;
       font-size: var(--text-size-regular);
     }
@@ -675,20 +858,21 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
     }
   }
 
+  /* Reduced motion: the list appears and goes at once, nothing moves. */
   @media (prefers-reduced-motion: reduce) {
-    .t-select select,
-    .t-select option,
-    .t-select-chevron {
+    .t-select-field,
+    .t-select-option,
+    .t-select-chevron,
+    .t-select-list,
+    .t-select-list[data-state="open"],
+    .t-select-list > .t-select-option,
+    .t-select-list[data-state="open"] > .t-select-option {
       transition: none;
     }
 
-    /* Own rules: browsers without ::picker() drop only these. */
-    .t-select select::picker(select) {
-      transition: none;
-    }
-
-    .t-select select:open::picker(select) {
-      animation: none;
+    .t-select-list,
+    .t-select-field.is-pressed {
+      transform: none;
     }
   }
 </style>

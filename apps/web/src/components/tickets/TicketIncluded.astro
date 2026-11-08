@@ -96,7 +96,8 @@ const rowStart = included.groups.map((_, gi) =>
               data-panel={ticket.key}
             >
               <aside class="t-summary t-field" aria-label={ticket.name}>
-                <span class="t-liquid" aria-hidden="true">
+                <span class="t-liquid" aria-hidden="true" data-unfold-light>
+                  <span class="glass-light" />
                   <TicketQBubble class="is-summary" />
                 </span>
                 <h3 class="t-summary-name">{ticket.name}</h3>
@@ -324,22 +325,16 @@ const rowStart = included.groups.map((_, gi) =>
   }
 
   /*
-   * Switching tickets: the summary card rises in with a slight scale, the
-   * benefit sheet slides up just behind it, and the rows follow in a quick
-   * cascade (--i, set per row) while each status icon pops into place.
-   * The whole entrance stays under a second; transform and opacity only.
+   * Switching tickets (DESIGN.md MOTION-6): the summary card and then the
+   * benefit sheet unfold out of the tab just picked (tickets.client.ts,
+   * Web Animations, interruptible), a light runs across the summary, the
+   * summary's contents follow a few frames apart and its description
+   * writes itself in; the rows then follow in a quick cascade (--i, set per
+   * row) while each status icon pops into place. While a panel unfolds
+   * (data-unfold) the cascade waits for the sheet. Transform and opacity
+   * only; the whole change stays under a second.
    */
   @media (prefers-reduced-motion: no-preference) {
-    [data-tabs-ready] .t-panel:not([hidden]) .t-summary {
-      animation: t-summary-in var(--duration-ticket-enter)
-        var(--ease-emphasized) both;
-    }
-
-    [data-tabs-ready] .t-panel:not([hidden]) .t-benefits {
-      animation: t-sheet-in var(--duration-ticket-enter) var(--ease-emphasized)
-        both;
-    }
-
     [data-tabs-ready] .t-panel:not([hidden]) .t-row {
       animation: t-row-in var(--duration-ticket-enter) var(--ease-emphasized)
         both;
@@ -354,19 +349,22 @@ const rowStart = included.groups.map((_, gi) =>
           var(--duration-ticket-press)
       );
     }
-  }
 
-  @keyframes t-summary-in {
-    from {
-      opacity: 0;
-      transform: translateY(14px) scale(0.96);
+    [data-tabs-ready] .t-panel[data-unfold]:not([hidden]) .t-row {
+      animation-delay: calc(
+        var(--i, 0) * var(--duration-ticket-stagger) +
+          var(--duration-glass-stagger) * 6
+      );
     }
-  }
 
-  @keyframes t-sheet-in {
-    from {
-      opacity: 0;
-      transform: translateY(18px);
+    [data-tabs-ready]
+      .t-panel[data-unfold]:not([hidden])
+      .t-row
+      :global(.t-status-icon) {
+      animation-delay: calc(
+        var(--i, 0) * var(--duration-ticket-stagger) +
+          var(--duration-ticket-press) + var(--duration-glass-stagger) * 6
+      );
     }
   }
 

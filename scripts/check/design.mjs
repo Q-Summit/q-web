@@ -362,6 +362,18 @@ const UNMAPPED_TOKENS = new Map([
   ["--duration-ticket-enter", "see --duration-ticket-press"],
   ["--duration-ticket-stagger", "see --duration-ticket-press"],
   [
+    "--ease-glass-spring",
+    "see --ease-snappy; shared glass motion (DESIGN.md MOTION-6)",
+  ],
+  ["--duration-glass-press", "see --ease-glass-spring"],
+  ["--duration-glass-release", "see --ease-glass-spring"],
+  ["--duration-glass-unfold", "see --ease-glass-spring"],
+  ["--duration-glass-fold", "see --ease-glass-spring"],
+  ["--duration-glass-light", "see --ease-glass-spring"],
+  ["--duration-glass-stagger", "see --ease-glass-spring"],
+  ["--duration-type-word", "see --ease-glass-spring"],
+  ["--duration-type-fade", "see --ease-glass-spring"],
+  [
     "--duration-hack-fall",
     "see --ease-snappy; Q-Hack campaign only (DESIGN.md HACK-1)",
   ],
