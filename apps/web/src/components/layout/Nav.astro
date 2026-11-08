@@ -1,33 +1,27 @@
 ---
-// Site navigation. Link targets keep the live site's URL paths so existing
-// inbound links keep working at cutover. Matches the live nav exactly: 7
-// items, home reachable via the logo only (no Home/Tickets/Contact entries).
+// Site navigation, shared by every page (DESIGN.md COMP-6). Link targets
+// keep the live site's URL paths so existing inbound links keep working at
+// cutover: 7 items, home reachable via the logo only.
 //
-// Sticky on all viewports -> replaced by position:fixed + spacer: sticky
-// reflows against mobile browser chrome and vibrates the hamburger on scroll.
+// The header is the floating liquid glass bar first built for the 2027
+// ticket page (DESIGN.md TICKETS-1), now the one header of the site. It is
+// position:fixed with a spacer (not sticky): sticky reflows against mobile
+// browser chrome and vibrates the hamburger on scroll.
 // Below 768px: disclosure hamburger (WAI APG) via nav-menu.client.ts.
 // Without JS the mobile list stays visible and stacked.
+// nav-tone.client.ts sets data-tone="dark" while the bar floats over a
+// dark ground (the home video, .section.is-dark) so its glass turns more
+// opaque and the navy text keeps its contrast.
 import { logoHeight, logoSrc, logoWidth } from "../../assets/media/brand";
 import { getSiteSettings } from "../../lib/content";
 import { normalizeInternalHref } from "../../lib/href";
 import IconClose from "../icons/IconClose.astro";
 import IconMenu from "../icons/IconMenu.astro";
 
-interface Props {
-  /**
-   * Neutral liquid glass bar (DESIGN.md TICKETS-1): translucent white, a
-   * measured backdrop blur, a lit edge and a soft shadow, plus a light
-   * material on the logo that never changes its drawing. Opt-in; only the
-   * ticket page sets it.
-   */
-  glass?: boolean;
-}
-
-const { glass = false } = Astro.props;
 const { nav } = await getSiteSettings();
 
-// Nav lockup: ~3rem tall reads as a normal header mark. Taller than that
-// dominates the bar; much shorter and Mannheim becomes a blur.
+// Nav lockup: the intrinsic size is only the aspect ratio for layout; the
+// rendered height comes from --site-header-logo-height below.
 const logoDisplayHeight = 48;
 const logoDisplayWidth = Math.round(
   (logoWidth / logoHeight) * logoDisplayHeight,
@@ -47,18 +41,13 @@ const isCurrent = (href: string): boolean =>
   (href !== "/" && href.startsWith("/") && currentPath.startsWith(href));
 ---
 
-<header class:list={["site-header", { "is-glass": glass }]} id="site-header">
+<header class="site-header" id="site-header">
   <div class="container nav-inner">
     <a class="brand" href="/">
-      {
-        glass && (
-          <span
-            class="brand-gloss"
-            aria-hidden="true"
-            style={`--brand-mask: url(${logoSrc})`}
-          />
-        )
-      }
+      <span
+        class="brand-gloss"
+        aria-hidden="true"
+        style={`--brand-mask: url(${logoSrc})`}></span>
       <img
         src={logoSrc}
         alt="Q-Summit home"
@@ -121,16 +110,40 @@ const isCurrent = (href: string): boolean =>
 
 <script>
   import { initNavMenu } from "./nav-menu.client";
+  import { initNavTone } from "./nav-tone.client";
 
   document
     .querySelectorAll<HTMLElement>(".site-header:not([data-nav-ready])")
     .forEach((header) => {
       header.setAttribute("data-nav-ready", "true");
       initNavMenu(header);
+      initNavTone(header);
     });
 </script>
 
 <style is:global>
+  /*
+    Header geometry, on :root so a page section that runs under the
+    floating bar (the home hero video) can pull itself up by exactly the
+    header's height. Bar plus the inset gap above it.
+  */
+  :root {
+    --site-header-inset: var(--space-xs);
+    --site-header-bar: 3.75rem;
+    --site-header-logo-height: 2.25rem;
+    --site-header-height: calc(
+      var(--site-header-bar) + var(--site-header-inset)
+    );
+  }
+
+  @media (max-width: 767px) {
+    :root {
+      --site-header-inset: var(--space-2xs);
+      --site-header-bar: 3.5rem;
+      --site-header-logo-height: 2rem;
+    }
+  }
+
   /* Reserve scrollbar space so locking overflow does not shift the fixed
      header sideways when the menu opens. */
   html {
@@ -142,268 +155,58 @@ const isCurrent = (href: string): boolean =>
   html.is-nav-open body {
     overflow: hidden;
   }
+
+  /* In-page anchors land below the floating bar, not under it. */
+  html {
+    scroll-padding-top: calc(var(--site-header-height) + var(--space-xs));
+  }
 </style>
 
 <style>
   /*
-    Fixed header (not sticky). Sticky + mobile URL-bar show/hide makes the
-    bar/hamburger vibrate on scroll. Fixed pins to the viewport; the spacer
-    below keeps page content from sliding under it.
+    DESIGN.md COMP-6: the floating liquid glass bar from TICKETS-1, on every
+    page. It may use the ticket-* tokens (radius, Q27 blues) it was built
+    with. A floating bar inset from the viewport edges: liquid glass with
+    no tint of its own, mostly clear, a strong blur that lifts brightness
+    and color from what lies behind, and a still specular rim (no light
+    ever sweeps across the menu). Links are small chips with a faint fill;
+    the current page is a raised white chip.
   */
   .site-header {
-    /* Compact bar: 3rem logo + 0.5rem pad each side ~ 4rem total - a normal
-       site header, not a billboard. */
-    --site-header-pad-block: var(--space-2xs);
-    --site-header-logo-height: 3rem;
-    --site-header-height: calc(
-      var(--site-header-logo-height) + 2 * var(--site-header-pad-block) + 1px
-    );
-
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     z-index: 100;
     height: var(--site-header-height);
-    background-color: var(--color-background);
-    border-bottom: 1px solid var(--color-neutral-lighter);
-  }
-
-  .site-header-spacer {
-    flex-shrink: 0;
-    height: var(--site-header-height, 4.01rem);
-  }
-
-  /* Mirror header height tokens onto the spacer (sibling, not child). */
-  .site-header + .site-header-spacer {
-    --site-header-pad-block: var(--space-2xs);
-    --site-header-logo-height: 3rem;
-    --site-header-height: calc(
-      var(--site-header-logo-height) + 2 * var(--site-header-pad-block) + 1px
-    );
-    height: var(--site-header-height);
-  }
-
-  .nav-inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-md);
-    height: 100%;
-    padding-block: var(--site-header-pad-block);
-  }
-
-  .brand {
-    flex: 0 0 auto;
-    display: block;
-    line-height: 0;
-    text-decoration: none;
-  }
-
-  .brand img {
-    display: block;
-    height: var(--site-header-logo-height);
-    width: auto;
-  }
-
-  @media (max-width: 767px) {
-    .site-header,
-    .site-header + .site-header-spacer {
-      /* Slightly smaller on phones so logo + hamburger share the row. */
-      --site-header-logo-height: 2.75rem;
-    }
-
-    /* No-JS: stay in normal flow so the stacked link list is not clipped
-       by the fixed bar height. Inline script sets data-js before paint. */
-    .site-header:not([data-js]) {
-      position: relative;
-      height: auto;
-    }
-
-    .site-header:not([data-js]) + .site-header-spacer {
-      display: none;
-    }
-  }
-
-  .nav-toggle {
-    /* Hidden until JS enhances on small viewports (see [data-js] below). */
-    display: none;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    width: 2.75rem;
-    height: 2.75rem;
-    margin: 0;
-    padding: 0;
-    border: none;
-    background: transparent;
-    color: var(--color-text);
-    cursor: pointer;
-    border-radius: var(--radius-button-small);
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
-  }
-
-  .nav-toggle:focus-visible {
-    outline: 2px solid var(--color-focus);
-    outline-offset: 2px;
-  }
-
-  .nav-toggle__icon {
-    display: flex;
-    width: 1.5rem;
-    height: 1.5rem;
-  }
-
-  .nav-toggle__icon :global(svg) {
-    width: 100%;
-    height: 100%;
-  }
-
-  .nav-toggle__icon--close {
-    display: none;
-  }
-
-  .site-header[data-open] .nav-toggle__icon--menu {
-    display: none;
-  }
-
-  .site-header[data-open] .nav-toggle__icon--close {
-    display: flex;
-  }
-
-  nav ul {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2xs) 1.75rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  nav a {
-    color: var(--color-text);
-    text-decoration: none;
-    font-size: var(--text-size-regular);
-    font-weight: var(--font-weight-medium);
-  }
-
-  nav a[aria-current="page"] {
-    color: var(--color-primary);
-  }
-
-  @media (hover: hover) {
-    nav a:hover {
-      color: var(--color-primary);
-    }
-  }
-
-  /* Mobile: without JS the list stacks under the logo (usable). With JS the
-     hamburger appears and the list becomes a disclosure panel. */
-  @media (max-width: 767px) {
-    .nav-inner {
-      flex-wrap: wrap;
-    }
-
-    .site-header[data-js] .nav-toggle {
-      display: inline-flex;
-      margin-left: auto;
-    }
-
-    .site-header[data-js] .nav-inner {
-      flex-wrap: nowrap;
-    }
-
-    .site-header[data-js]:not([data-open]) #site-nav[hidden] {
-      display: none;
-    }
-
-    .site-header[data-js][data-open] #site-nav {
-      display: block;
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
-      z-index: 1;
-      background-color: var(--color-background);
-      border-bottom: 1px solid var(--color-neutral-lighter);
-      padding: var(--space-sm) var(--padding-global) var(--space-md);
-      max-height: min(70svh, calc(100svh - var(--site-header-height)));
-      overflow-y: auto;
-      overscroll-behavior: contain;
-    }
-
-    nav ul {
-      flex-direction: column;
-      flex-wrap: nowrap;
-      gap: 0;
-      width: 100%;
-    }
-
-    nav a {
-      display: flex;
-      align-items: center;
-      min-height: 2.75rem;
-      padding-block: 0.625rem;
-    }
-  }
-
-  @media (min-width: 768px) {
-    .nav-toggle {
-      display: none;
-    }
-
-    nav {
-      display: block;
-    }
-
-    nav ul {
-      flex-wrap: wrap;
-      flex-direction: row;
-      width: auto;
-    }
-  }
-  /*
-    Glass variant (DESIGN.md TICKETS-1), the ticket page only: a floating
-    bar inset from the viewport edges, after the reference header the team
-    picked. Liquid glass with no tint of its own: mostly clear, a strong
-    blur that lifts brightness and color from what lies behind, and a still
-    specular rim (no light ever sweeps across the menu). Links are small
-    chips with a faint fill; the current page is a raised white chip.
-  */
-  .site-header.is-glass,
-  .site-header.is-glass + .site-header-spacer {
-    --site-header-inset: var(--space-xs);
-    --site-header-bar: 3.75rem;
-    --site-header-logo-height: 2.25rem;
-    --site-header-height: calc(
-      var(--site-header-bar) + var(--site-header-inset)
-    );
-  }
-
-  .site-header.is-glass {
     padding: var(--site-header-inset) var(--site-header-inset) 0;
-    border-bottom: 0;
-    background-color: transparent;
     /* The gutter around the bar is see-through; clicks pass to the page. */
     pointer-events: none;
   }
 
-  .is-glass .nav-inner {
+  .site-header-spacer {
+    flex-shrink: 0;
+    height: var(--site-header-height);
+  }
+
+  .nav-inner {
     position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
     height: var(--site-header-bar);
     padding-block: 0;
     padding-inline: var(--space-md) var(--space-2xs);
     border-radius: var(--radius-ticket-panel);
-    /* Clear light-grey glass, one flat tone with no gradient of its own:
-       the page's moving light shows through, softened by the blur. Depth
-       comes only from its edges: a lit top rim, a faint lower edge and
-       thin side lights, the way a slab of glass catches light. */
-    background: color-mix(
-      in srgb,
-      var(--color-neutral-lightest) 22%,
-      transparent
-    );
+    /* Light frosted glass, one flat tone with no gradient of its own: the
+       page shows through, softened by the blur. Dense enough that navy or
+       purple shapes passing under it (campaign sections, big headings)
+       never cut the links' contrast; the ticket page's original 22% clear
+       glass read well only on its own pale ground. Depth comes only from
+       its edges: a lit top rim, a faint lower edge and thin side lights,
+       the way a slab of glass catches light. */
+    background-color: color-mix(in srgb, var(--color-white) 55%, transparent);
     box-shadow:
       inset 0 1px 1px color-mix(in srgb, var(--color-white) 95%, transparent),
       inset 0 -1px 1px color-mix(in srgb, var(--color-black) 8%, transparent),
@@ -411,12 +214,41 @@ const isCurrent = (href: string): boolean =>
       inset -1px 0 0 color-mix(in srgb, var(--color-white) 35%, transparent),
       0 10px 30px -18px color-mix(in srgb, var(--color-black) 22%, transparent);
     pointer-events: auto;
+    isolation: isolate;
     -webkit-backdrop-filter: blur(14px) saturate(140%);
     backdrop-filter: blur(14px) saturate(140%);
   }
 
+  /*
+    Over a dark ground (the home video, navy sections) the same glass turns
+    frosted: a light layer under the links fades in (opacity only, MOTION-3)
+    so the navy logo and links keep their contrast. Before the tone script
+    runs, a page that opens on a dark section gets the frosted state from
+    CSS, so the first paint is already right.
+  */
+  .nav-inner::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background-color: color-mix(in srgb, var(--color-white) 45%, transparent);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--duration-ticket-color) var(--ease-snappy);
+  }
+
+  .site-header[data-tone="dark"] .nav-inner::before,
+  :global(
+    html:has(#main-content > .section.is-dark:first-child)
+      .site-header:not([data-tone])
+      .nav-inner::before
+  ) {
+    opacity: 1;
+  }
+
   /* The specular rim: bright where light meets the edge, never moving. */
-  .is-glass .nav-inner::after {
+  .nav-inner::after {
     content: "";
     position: absolute;
     inset: 0;
@@ -445,49 +277,9 @@ const isCurrent = (href: string): boolean =>
   @supports not (
     (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
   ) {
-    .is-glass .nav-inner {
-      background: color-mix(in srgb, var(--color-white) 95%, transparent);
+    .nav-inner {
+      background-color: color-mix(in srgb, var(--color-white) 95%, transparent);
     }
-  }
-
-  .is-glass nav a {
-    border-radius: var(--radius-ticket-button);
-    color: var(--color-neutral-darkest);
-    font-size: var(--text-size-tiny);
-    font-weight: var(--font-weight-semibold);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    transition: background-color var(--duration-hover) var(--ease-snappy);
-  }
-
-  .is-glass nav a[aria-current="page"] {
-    color: var(--color-neutral-darkest);
-    background-color: color-mix(in srgb, var(--color-white) 85%, transparent);
-    box-shadow:
-      inset 0 1px 0 var(--color-white),
-      0 0 0 1px color-mix(in srgb, var(--color-black) 6%, transparent);
-  }
-
-  @media (hover: hover) {
-    .is-glass nav a:hover {
-      color: var(--color-neutral-darkest);
-      background-color: color-mix(in srgb, var(--color-black) 5%, transparent);
-    }
-  }
-
-  .is-glass nav a:active {
-    background-color: color-mix(in srgb, var(--color-black) 9%, transparent);
-  }
-
-  .is-glass .nav-toggle {
-    border-radius: var(--radius-ticket-button);
-    background-color: color-mix(in srgb, var(--color-black) 4%, transparent);
-    color: var(--color-neutral-darkest);
-    transition: background-color var(--duration-hover) var(--ease-snappy);
-  }
-
-  .is-glass .nav-toggle:active {
-    background-color: color-mix(in srgb, var(--color-black) 9%, transparent);
   }
 
   /*
@@ -496,11 +288,18 @@ const isCurrent = (href: string): boolean =>
     catches light on the upper half. At header size both stay faint so the
     Q and the wordmark keep their crisp edges.
   */
-  .is-glass .brand {
+  .brand {
     position: relative;
+    flex: 0 0 auto;
+    display: block;
+    line-height: 0;
+    text-decoration: none;
   }
 
-  .is-glass .brand img {
+  .brand img {
+    display: block;
+    height: var(--site-header-logo-height);
+    width: auto;
     filter: drop-shadow(
       0 1px 2px
         color-mix(in srgb, var(--color-ticket-midnight) 22%, transparent)
@@ -522,16 +321,151 @@ const isCurrent = (href: string): boolean =>
     mask: var(--brand-mask) center / contain no-repeat;
   }
 
-  @media (max-width: 767px) {
-    .site-header.is-glass,
-    .site-header.is-glass + .site-header-spacer {
-      --site-header-inset: var(--space-2xs);
-      --site-header-bar: 3.5rem;
-      --site-header-logo-height: 2rem;
+  .nav-toggle {
+    /* Hidden until JS enhances on small viewports (see [data-js] below). */
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-ticket-button);
+    background-color: color-mix(in srgb, var(--color-black) 4%, transparent);
+    color: var(--color-neutral-darkest);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: background-color var(--duration-hover) var(--ease-snappy);
+  }
+
+  .nav-toggle:active {
+    background-color: color-mix(in srgb, var(--color-black) 9%, transparent);
+  }
+
+  .nav-toggle__icon {
+    display: flex;
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .nav-toggle__icon :global(svg) {
+    width: 100%;
+    height: 100%;
+  }
+
+  .nav-toggle__icon--close {
+    display: none;
+  }
+
+  .site-header[data-open] .nav-toggle__icon--menu {
+    display: none;
+  }
+
+  .site-header[data-open] .nav-toggle__icon--close {
+    display: flex;
+  }
+
+  nav ul {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  nav a {
+    border-radius: var(--radius-ticket-button);
+    color: var(--color-neutral-darkest);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: background-color var(--duration-hover) var(--ease-snappy);
+  }
+
+  nav a[aria-current="page"] {
+    background-color: color-mix(in srgb, var(--color-white) 85%, transparent);
+    box-shadow:
+      inset 0 1px 0 var(--color-white),
+      0 0 0 1px color-mix(in srgb, var(--color-black) 6%, transparent);
+  }
+
+  /* On the frosted (dark-ground) bar the white chip needs a firmer edge
+     to stand apart from the denser fill. */
+  .site-header[data-tone="dark"] nav a[aria-current="page"] {
+    background-color: var(--color-white);
+    box-shadow:
+      inset 0 1px 0 var(--color-white),
+      0 0 0 1px color-mix(in srgb, var(--color-navy) 14%, transparent),
+      0 2px 6px -2px color-mix(in srgb, var(--color-navy) 25%, transparent);
+  }
+
+  @media (hover: hover) {
+    nav a:hover {
+      background-color: color-mix(in srgb, var(--color-black) 5%, transparent);
     }
 
-    .is-glass .nav-inner {
+    .nav-toggle:hover {
+      background-color: color-mix(in srgb, var(--color-black) 7%, transparent);
+    }
+  }
+
+  nav a:active {
+    background-color: color-mix(in srgb, var(--color-black) 9%, transparent);
+  }
+
+  @media (min-width: 768px) {
+    nav ul {
+      gap: var(--space-2xs) 0.25rem;
+    }
+
+    nav a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 2.25rem;
+      padding-inline: var(--space-xs);
+    }
+  }
+
+  /* Mobile: without JS the list stacks under the logo (usable). With JS the
+     hamburger appears and the list becomes a disclosure panel. */
+  @media (max-width: 767px) {
+    .nav-inner {
+      flex-wrap: wrap;
       padding-inline: var(--space-sm) 0.375rem;
+    }
+
+    /* No-JS: stay in normal flow so the stacked link list is not clipped
+       by the fixed bar height. Inline script sets data-js before paint. */
+    .site-header:not([data-js]) {
+      position: relative;
+      height: auto;
+    }
+
+    .site-header:not([data-js]) .nav-inner {
+      height: auto;
+      padding-block: var(--space-2xs);
+    }
+
+    .site-header:not([data-js]) + .site-header-spacer {
+      display: none;
+    }
+
+    .site-header[data-js] .nav-toggle {
+      display: inline-flex;
+      margin-left: auto;
+    }
+
+    .site-header[data-js] .nav-inner {
+      flex-wrap: nowrap;
+    }
+
+    .site-header[data-js]:not([data-open]) #site-nav[hidden] {
+      display: none;
     }
 
     /*
@@ -541,14 +475,16 @@ const isCurrent = (href: string): boolean =>
      * pools of ice, cyan and Q27 blue light turn and stretch (transform
      * only), lit by a glass rim and a cyan glow along the lower edge.
      */
-    .site-header.is-glass[data-js][data-open] #site-nav {
+    .site-header[data-js][data-open] #site-nav {
+      display: block;
+      position: absolute;
       top: calc(100% + var(--space-2xs));
       right: var(--site-header-inset);
       left: var(--site-header-inset);
+      z-index: 1;
       isolation: isolate;
       overflow: hidden;
       padding: var(--space-2xs);
-      border-bottom: 0;
       border-radius: var(--radius-ticket-panel);
       background:
         radial-gradient(80% 60% at 12% 0%, var(--color-white), transparent 70%),
@@ -575,15 +511,15 @@ const isCurrent = (href: string): boolean =>
     }
 
     /* The moving light: two oversized layers behind the links. */
-    .site-header.is-glass[data-js][data-open] #site-nav::before,
-    .site-header.is-glass[data-js][data-open] #site-nav::after {
+    .site-header[data-js][data-open] #site-nav::before,
+    .site-header[data-js][data-open] #site-nav::after {
       content: "";
       position: absolute;
       z-index: -1;
       pointer-events: none;
     }
 
-    .site-header.is-glass[data-js][data-open] #site-nav::before {
+    .site-header[data-js][data-open] #site-nav::before {
       inset: -45%;
       background:
         radial-gradient(
@@ -603,7 +539,7 @@ const isCurrent = (href: string): boolean =>
         );
     }
 
-    .site-header.is-glass[data-js][data-open] #site-nav::after {
+    .site-header[data-js][data-open] #site-nav::after {
       inset: -40%;
       background:
         radial-gradient(
@@ -620,7 +556,7 @@ const isCurrent = (href: string): boolean =>
 
     /* The sheet clips the moving light; the link list scrolls instead,
        so a short landscape screen still reaches every link. */
-    .site-header.is-glass[data-js][data-open] #site-nav ul {
+    .site-header[data-js][data-open] #site-nav ul {
       position: relative;
       z-index: 1;
       max-height: calc(
@@ -630,24 +566,31 @@ const isCurrent = (href: string): boolean =>
       overscroll-behavior: contain;
     }
 
-    .is-glass nav a {
+    nav ul {
+      flex-direction: column;
+      flex-wrap: nowrap;
+      gap: 0;
+      width: 100%;
+    }
+
+    nav a {
+      display: flex;
+      align-items: center;
+      min-height: 2.75rem;
+      padding-block: 0.625rem;
       padding-inline: var(--space-sm);
       color: var(--color-navy);
       font-size: var(--text-size-small);
     }
-
-    .is-glass nav a[aria-current="page"] {
-      color: var(--color-navy);
-    }
   }
 
   @media (max-width: 767px) and (prefers-reduced-motion: no-preference) {
-    .site-header.is-glass[data-js][data-open] #site-nav::before {
+    .site-header[data-js][data-open] #site-nav::before {
       animation: nav-liquid var(--duration-ticket-drift) ease-in-out infinite
         alternate;
     }
 
-    .site-header.is-glass[data-js][data-open] #site-nav::after {
+    .site-header[data-js][data-open] #site-nav::after {
       animation: nav-liquid-alt var(--duration-ticket-drift-alt) ease-in-out
         infinite alternate;
     }
@@ -688,26 +631,14 @@ const isCurrent = (href: string): boolean =>
     }
   }
 
-  @media (min-width: 768px) {
-    .is-glass nav ul {
-      gap: var(--space-2xs) 0.25rem;
-    }
-
-    .is-glass nav a {
-      display: inline-flex;
-      align-items: center;
-      min-height: 2.25rem;
-      padding-inline: var(--space-xs);
-    }
-  }
-
   @media (prefers-reduced-motion: reduce) {
-    .is-glass nav a,
-    .is-glass .nav-toggle {
+    .nav-inner::before,
+    nav a,
+    .nav-toggle {
       transition: none;
     }
 
-    .site-header.is-glass[data-js][data-open] #site-nav {
+    .site-header[data-js][data-open] #site-nav {
       animation: none;
     }
   }

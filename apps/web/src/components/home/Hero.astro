@@ -15,6 +15,7 @@
 import type { PageLink } from "../../lib/content";
 import { EVENTS } from "../../lib/analytics/events";
 import Container from "../ui/Container.astro";
+import IconArrowRight from "../icons/IconArrowRight.astro";
 
 interface Props {
   headline: string;
@@ -196,7 +197,7 @@ const { headline, tagline, announcement, cta } = Astro.props;
       {
         cta && (
           <a
-            class="button hero-cta"
+            class="button is-glass hero-cta"
             href={cta.href}
             data-lp="hero.cta"
             data-lp-href="hero.cta.href"
@@ -204,7 +205,10 @@ const { headline, tagline, announcement, cta } = Astro.props;
             data-ph-prop-cta-label={cta.label}
             data-ph-prop-cta-href={cta.href}
           >
-            {cta.label}
+            <span data-lp-label>{cta.label}</span>
+            <span class="button-arrow" aria-hidden="true">
+              <IconArrowRight />
+            </span>
           </a>
         )
       }
@@ -216,12 +220,17 @@ const { headline, tagline, announcement, cta } = Astro.props;
   /* .section.is-dark supplies the navy background, inverse text color, and
      standard section padding; this adds only what a video masthead needs
      on top (centering, min-height, layered video/overlay). */
+  /* The video runs up under the floating glass header (DESIGN.md COMP-6):
+     the hero pulls itself up by the header's height and grows by the same
+     amount, and the copy steps down by it, so the copy stays centered in
+     the part of the video below the bar. */
   .hero {
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: min(90svh, 52rem);
+    min-height: calc(min(90svh, 52rem) + var(--site-header-height, 0px));
+    margin-top: calc(-1 * var(--site-header-height, 0px));
     overflow: hidden;
   }
 
@@ -251,6 +260,7 @@ const { headline, tagline, announcement, cta } = Astro.props;
   .hero-content {
     position: relative;
     z-index: 1;
+    padding-top: var(--site-header-height, 0px);
     max-width: var(--container-medium);
     margin-inline: auto;
     text-align: center;

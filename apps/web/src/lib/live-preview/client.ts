@@ -53,7 +53,11 @@ function applyDocument(data: unknown): void {
         if (typeof href === "string") el.setAttribute("href", href);
       }
       const label = displayValue(value);
-      if (label != null) el.textContent = label;
+      // A link with an icon (e.g. the home hero's arrow) marks its text
+      // node holder with data-lp-label so the icon survives the update.
+      const labelTarget =
+        el.querySelector<HTMLElement>("[data-lp-label]") ?? el;
+      if (label != null) labelTarget.textContent = label;
       return;
     }
 

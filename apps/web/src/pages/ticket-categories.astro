@@ -22,7 +22,6 @@ const { ticketCategories: page } = await getPageContent();
   description={page.metaDescription}
   livePreviewGlobal="page-tickets"
   pageEvent={{ name: EVENTS.ticket_page_viewed }}
-  navGlass
 >
   <div class="ticket-page" data-ticket-page>
     <TicketGround />
