@@ -259,4 +259,29 @@ describe("assertTicketPage", () => {
     );
     expect(() => assertTicketPage(page)).toThrow(/corporate/);
   });
+
+  it("checks the discount phases when present", () => {
+    const page = fixture();
+    expect(page.phases.items.length).toBeGreaterThan(0);
+    expect(() =>
+      assertTicketPage({ ...page, phases: { ...page.phases, activeKey: "x" } }),
+    ).toThrow(/activeKey/);
+    expect(() =>
+      assertTicketPage({
+        ...page,
+        phases: {
+          ...page.phases,
+          items: [{ ...page.phases.items[0], discount: 0 }],
+        },
+      }),
+    ).toThrow(/discount/);
+    expect(() =>
+      assertTicketPage({
+        ...page,
+        phases: { ...page.phases, discountLabel: "off" },
+      }),
+    ).toThrow(/{discount}/);
+    const { phases: _omit, ...withoutPhases } = page;
+    expect(() => assertTicketPage(withoutPhases)).not.toThrow();
+  });
 });

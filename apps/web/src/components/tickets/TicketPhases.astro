@@ -1,0 +1,511 @@
+---
+// The discount phases above the ticket hero heading (DESIGN.md TICKETS-1,
+// MOTION-6): Early Bird, Christmas, Back 2 Uni, Late Bird, as the shop
+// runs them one after another. One source (ticketCategories.phases) for
+// the phases and the one on sale now; the state is never derived from a
+// date, because the shop moves on when a phase sells out.
+//
+// A compact sheet of blue-tinted clear glass: a glass line that mirrors
+// the light runs between the phases (it stops short of each point, never
+// crossing it), the phase on sale now carries the Q mark (the original
+// mark, as a mask, like the carousel's current dot) and reads strongest,
+// and every other phase is a clear glass bead; coming phases stay calm but
+// legible. On first paint the sheet unfolds, the line draws and the phases
+// settle in left to right, once; the Q sits on the active phase from its
+// first frame, so nothing suggests the sale moving.
+import type { TicketPhases } from "../../lib/content";
+import { fillLabel, phaseStates } from "./ticket-model";
+
+interface Props {
+  phases: TicketPhases;
+}
+
+const { phases } = Astro.props;
+const items = phaseStates(phases);
+const markSrc = "/icon-512.png";
+const stateLabel = {
+  past: phases.pastLabel,
+  current: phases.currentLabel,
+  upcoming: phases.upcomingLabel,
+} as const;
+---
+
+<div class="t-phases" style={`--n: ${items.length}`} data-ticket-phases>
+  <span class="t-phases-glass" aria-hidden="true"></span>
+  <ol class="t-phases-list" aria-label={phases.label}>
+    {
+      items.map((p, i) => (
+        <li
+          class="t-phase"
+          data-state={p.state}
+          data-next-current={items[i + 1]?.state === "current" ? "" : undefined}
+          style={`--i: ${i}`}
+          aria-current={p.state === "current" ? "step" : undefined}
+        >
+          <span class="t-phase-mark" aria-hidden="true">
+            {p.state === "current" ? (
+              <span class="t-phase-q" style={`--mark: url(${markSrc})`} />
+            ) : (
+              <span class="t-phase-dot" />
+            )}
+          </span>
+          <span class="t-phase-name">{p.label}</span>
+          <span class="t-phase-off">
+            {fillLabel(phases.discountLabel, { discount: String(p.discount) })}
+          </span>
+          <span class="t-phase-state">{stateLabel[p.state]}</span>
+        </li>
+      ))
+    }
+  </ol>
+</div>
+
+<style>
+  /*
+   * DESIGN.md TICKETS-1: ticket-* tokens, glass depth from light. The
+   * sheet's glass is its own layer (.t-phases-glass) so the sheet itself
+   * is no backdrop root (COMP-6 note in DESIGN.md).
+   */
+  .t-phases {
+    --mark-row: 2rem;
+    --dot-inset: 0.75rem;
+    --q-inset: calc(var(--mark-row) / 2 + 0.3rem);
+
+    position: relative;
+    isolation: isolate;
+    width: min(100%, 40rem);
+    margin-bottom: var(--space-xs);
+    padding: var(--space-sm) clamp(var(--space-2xs), 3vw, var(--space-lg));
+    border-radius: var(--radius-ticket-card);
+    color: var(--color-navy);
+  }
+
+  /*
+   * Transparent glass, like the hero's Compare tickets button: barely any
+   * fill and only a light blur, so the page light and the Q bubbles behind
+   * stay visible as shapes; the glass reads from its lit edge, the
+   * specular rim and a soft cyan halo, with a faint blue tint toward the
+   * lower right.
+   */
+  .t-phases-glass {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--color-white) 16%, transparent) 0%,
+      color-mix(in srgb, var(--color-white) 4%, transparent) 50%,
+      color-mix(in srgb, var(--color-ticket-sky) 8%, transparent) 100%
+    );
+    box-shadow:
+      inset 0 1px 1px color-mix(in srgb, var(--color-white) 90%, transparent),
+      inset 0 -10px 16px -16px var(--color-ticket-cyan),
+      0 14px 32px -26px color-mix(in srgb, var(--color-navy) 35%, transparent),
+      0 0 22px -12px
+        color-mix(in srgb, var(--color-ticket-cyan) 30%, transparent);
+    -webkit-backdrop-filter: blur(5px) saturate(110%);
+    backdrop-filter: blur(5px) saturate(110%);
+  }
+
+  /* The specular rim, as on every glass part. */
+  .t-phases-glass::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: linear-gradient(
+      150deg,
+      color-mix(in srgb, var(--color-white) 95%, transparent) 0%,
+      color-mix(in srgb, var(--color-white) 25%, transparent) 30%,
+      transparent 55%,
+      color-mix(in srgb, var(--color-ticket-cyan) 60%, transparent) 88%,
+      color-mix(in srgb, var(--color-white) 85%, transparent) 100%
+    );
+    pointer-events: none;
+    -webkit-mask:
+      linear-gradient(var(--color-black) 0 0) content-box,
+      linear-gradient(var(--color-black) 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(var(--color-black) 0 0) content-box exclude,
+      linear-gradient(var(--color-black) 0 0);
+  }
+
+  .t-phases-list {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .t-phase {
+    --line-inset: var(--dot-inset);
+    --next-inset: var(--dot-inset);
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    min-width: 0;
+    padding-inline: var(--phase-pad, 0rem);
+    text-align: center;
+  }
+
+  /*
+   * The mark row spans the whole column (out through its padding) so the
+   * line halves of neighboring phases meet at the column edge.
+   */
+  .t-phase-mark {
+    position: relative;
+    display: grid;
+    place-items: center;
+    align-self: stretch;
+    height: var(--mark-row);
+    margin-inline: calc(var(--phase-pad, 0rem) * -1);
+    margin-bottom: 0.35rem;
+  }
+
+  /*
+   * The line: one glass rod per stretch, drawn by the phase on its left
+   * from just past its own mark (--line-inset) to just before the next
+   * one (--next-inset), so it runs between the points, never through
+   * them, and has no joint. It reads as a mirror: a clear tinted body, a
+   * bright reflection along its top edge and a cyan caustic along its
+   * bottom edge. Lit in the Q27 blues up to the phase on sale now.
+   */
+  .t-phase-mark::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    height: 4px;
+    margin-top: -2px;
+    border-radius: var(--radius-ticket-pill);
+    background: linear-gradient(
+      180deg,
+      var(--color-white) 0%,
+      color-mix(in srgb, var(--color-white) 55%, transparent) 30%,
+      color-mix(in srgb, var(--color-ticket-ice) 35%, transparent) 55%,
+      color-mix(in srgb, var(--color-ticket-cyan) 55%, transparent) 85%,
+      color-mix(in srgb, var(--color-white) 80%, transparent) 100%
+    );
+    box-shadow: 0 1px 1px color-mix(in srgb, var(--color-navy) 10%, transparent);
+    transform-origin: left center;
+  }
+
+  /* Columns are equal, so the next mark's center is 50% past this edge. */
+  .t-phase-mark::after {
+    left: calc(50% + var(--line-inset));
+    right: calc(var(--next-inset) - 50%);
+  }
+
+  .t-phase:last-child .t-phase-mark::after {
+    display: none;
+  }
+
+  .t-phase[data-state="past"] .t-phase-mark::after {
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-white) 75%, var(--color-ticket-sky)) 0%,
+      var(--color-ticket-sky) 40%,
+      var(--color-navy) 100%
+    );
+    box-shadow: 0 1px 1px color-mix(in srgb, var(--color-navy) 18%, transparent);
+  }
+
+  /*
+   * Every other phase is a clear glass bead that mirrors the light: an
+   * almost clear body, a crisp white reflection top left, a lit rim, a
+   * small counter glint and a cyan caustic pooling along the lower edge.
+   */
+  .t-phase-dot {
+    width: 0.95rem;
+    height: 0.95rem;
+    border-radius: var(--radius-circle);
+    background:
+      radial-gradient(
+        30% 22% at 34% 24%,
+        var(--color-white) 0%,
+        var(--color-white) 45%,
+        color-mix(in srgb, var(--color-white) 0%, transparent) 100%
+      ),
+      radial-gradient(
+        16% 12% at 70% 70%,
+        color-mix(in srgb, var(--color-white) 85%, transparent) 0%,
+        color-mix(in srgb, var(--color-white) 0%, transparent) 100%
+      ),
+      radial-gradient(
+        circle at 50% 100%,
+        color-mix(in srgb, var(--color-ticket-cyan) 55%, transparent) 0%,
+        color-mix(in srgb, var(--color-ticket-cyan) 0%, transparent) 60%
+      ),
+      linear-gradient(
+        160deg,
+        color-mix(in srgb, var(--color-white) 55%, transparent),
+        color-mix(in srgb, var(--color-ticket-ice) 20%, transparent) 55%,
+        color-mix(in srgb, var(--color-ticket-sky) 30%, transparent)
+      );
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--color-white) 85%, transparent),
+      inset 0 -1px 2px color-mix(in srgb, var(--color-navy) 18%, transparent),
+      0 0 0 0.5px color-mix(in srgb, var(--color-navy) 18%, transparent),
+      0 2px 4px color-mix(in srgb, var(--color-navy) 14%, transparent),
+      0 0 8px color-mix(in srgb, var(--color-ticket-cyan) 30%, transparent);
+    -webkit-backdrop-filter: blur(2px) saturate(160%) brightness(1.1);
+    backdrop-filter: blur(2px) saturate(160%) brightness(1.1);
+  }
+
+  .t-phase[data-state="past"] .t-phase-dot {
+    background:
+      radial-gradient(
+        30% 22% at 34% 24%,
+        color-mix(in srgb, var(--color-white) 80%, transparent) 0%,
+        color-mix(in srgb, var(--color-white) 0%, transparent) 100%
+      ),
+      linear-gradient(
+        160deg,
+        color-mix(in srgb, var(--color-ticket-sky) 55%, transparent),
+        color-mix(in srgb, var(--color-navy) 55%, transparent)
+      );
+  }
+
+  /*
+   * The phase on sale now: the original Q mark (public/icon-512.png as a
+   * mask, never redrawn), filled with lit Q27 glass, a cyan halo behind
+   * it, as the carousel's current dot.
+   */
+  .t-phase[data-state="current"] {
+    --line-inset: var(--q-inset);
+  }
+
+  .t-phase[data-next-current] {
+    --next-inset: var(--q-inset);
+  }
+
+  .t-phase-q {
+    position: relative;
+    display: block;
+    width: var(--mark-row);
+    height: var(--mark-row);
+  }
+
+  .t-phase-q::before {
+    content: "";
+    position: absolute;
+    inset: -40%;
+    border-radius: var(--radius-circle);
+    background: radial-gradient(
+      closest-side,
+      color-mix(in srgb, var(--color-ticket-cyan) 70%, transparent),
+      transparent
+    );
+  }
+
+  .t-phase-q::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(
+        34% 26% at 30% 22%,
+        color-mix(in srgb, var(--color-white) 90%, transparent),
+        transparent 72%
+      ),
+      linear-gradient(
+        160deg,
+        var(--color-ticket-sky) 0%,
+        var(--color-navy) 68%,
+        var(--color-ticket-deep) 100%
+      );
+    -webkit-mask: var(--mark) center / contain no-repeat;
+    mask: var(--mark) center / contain no-repeat;
+  }
+
+  .t-phase-name {
+    color: color-mix(in srgb, var(--color-navy) 66%, transparent);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: 0.08em;
+    line-height: 1.25;
+    text-transform: uppercase;
+  }
+
+  .t-phase-off {
+    color: color-mix(in srgb, var(--color-navy) 62%, transparent);
+    font-size: var(--text-size-medium);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    white-space: nowrap;
+  }
+
+  .t-phase-state {
+    margin-top: 0.15rem;
+    color: color-mix(in srgb, var(--color-navy) 58%, transparent);
+    font-size: var(--text-size-tiny);
+    line-height: 1.3;
+  }
+
+  /* On sale now: full ink, the biggest number, a navy glass pill. */
+  .t-phase[data-state="current"] .t-phase-name {
+    color: var(--color-navy);
+  }
+
+  .t-phase[data-state="current"] .t-phase-off {
+    color: var(--color-navy);
+    font-size: clamp(1.25rem, 4.2vw, 1.75rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.035em;
+  }
+
+  .t-phase[data-state="current"] .t-phase-state {
+    padding: 0.2rem 0.6rem;
+    border-radius: var(--radius-ticket-pill);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-ticket-deep) 85%, var(--color-navy)),
+      var(--color-navy)
+    );
+    box-shadow:
+      inset 0 1px 1px color-mix(in srgb, var(--color-white) 40%, transparent),
+      inset 0 -6px 8px -6px var(--color-ticket-sky),
+      0 4px 10px -6px color-mix(in srgb, var(--color-navy) 60%, transparent);
+    color: var(--color-white);
+    font-weight: var(--font-weight-semibold);
+    white-space: nowrap;
+  }
+
+  /* Phones: tighter type so four phases fit without sideways scrolling. */
+  @media (max-width: 479px) {
+    .t-phases {
+      --mark-row: 1.65rem;
+    }
+
+    .t-phase-name {
+      font-size: calc(var(--text-size-tiny) * 0.85);
+      letter-spacing: 0.05em;
+    }
+
+    .t-phase-off {
+      font-size: var(--text-size-small);
+    }
+
+    .t-phase-state {
+      font-size: calc(var(--text-size-tiny) * 0.85);
+    }
+
+    .t-phase[data-state="current"] .t-phase-state {
+      padding-inline: 0.45rem;
+    }
+  }
+
+  /* The narrowest phones (320px): every phase keeps its own column. */
+  @media (max-width: 379px) {
+    .t-phases {
+      --dot-inset: 0.6rem;
+
+      padding-inline: var(--space-2xs);
+    }
+
+    .t-phase {
+      --phase-pad: 0.125rem;
+    }
+
+    .t-phase-name {
+      letter-spacing: 0.02em;
+    }
+
+    .t-phase[data-state="current"] .t-phase-off {
+      font-size: var(--text-size-regular);
+    }
+
+    .t-phase[data-state="current"] .t-phase-state {
+      padding-inline: 0.25rem;
+      font-size: calc(var(--text-size-tiny) * 0.8);
+      letter-spacing: -0.01em;
+    }
+  }
+
+  /*
+   * First appearance, once (CSS on load, no script, never on scroll):
+   * the sheet unfolds, the line draws from the first phase, then the
+   * phases settle in left to right, a few frames apart. The Q is on the
+   * active phase from its first frame and only blooms in with it.
+   * Backwards fill only: once played, nothing keeps an animation (or a
+   * compositor layer) alive.
+   */
+  @media (prefers-reduced-motion: no-preference) {
+    /* The unfold runs on the glass layer, never on .t-phases: opacity or
+       a transform there would make the sheet a backdrop root, so the
+       blur would see nothing and be redrawn on every frame. */
+    .t-phases-glass {
+      transform-origin: 50% 0;
+      animation: t-phases-in var(--duration-glass-unfold)
+        var(--ease-glass-spring) backwards;
+    }
+
+    /* The line draws left to right, stretch by stretch. */
+    .t-phase-mark::after {
+      animation: t-phases-line var(--duration-glass-unfold)
+        var(--ease-emphasized) backwards;
+      animation-delay: calc(
+        var(--duration-glass-unfold) * 0.5 + var(--duration-glass-stagger) * 3 *
+          var(--i)
+      );
+    }
+
+    .t-phase-dot,
+    .t-phase-q,
+    .t-phase-name,
+    .t-phase-off,
+    .t-phase-state {
+      animation: t-phase-in var(--duration-glass-unfold) var(--ease-emphasized)
+        backwards;
+      animation-delay: calc(
+        var(--duration-glass-unfold) * 0.6 + var(--duration-glass-stagger) * 3 *
+          var(--i)
+      );
+    }
+
+    .t-phase-dot,
+    .t-phase-q {
+      animation-name: t-phase-mark-in;
+      animation-timing-function: var(--ease-glass-spring);
+    }
+  }
+
+  @keyframes t-phases-in {
+    from {
+      opacity: 0;
+      clip-path: inset(0 3% 60% round var(--radius-ticket-card));
+      transform: translateY(-0.4rem);
+    }
+
+    to {
+      clip-path: inset(0 round var(--radius-ticket-card));
+    }
+  }
+
+  @keyframes t-phases-line {
+    from {
+      transform: scaleX(0);
+    }
+  }
+
+  @keyframes t-phase-in {
+    from {
+      opacity: 0;
+      transform: translateY(0.3rem);
+    }
+  }
+
+  @keyframes t-phase-mark-in {
+    from {
+      opacity: 0;
+      transform: scale(0.4);
+    }
+  }
+</style>

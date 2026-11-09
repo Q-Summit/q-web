@@ -109,6 +109,13 @@ const pageEventAttrs = pageEvent
 <html lang={lang} translate="no">
   <head>
     <meta charset="utf-8" />
+    {
+      /* Before first paint: lets global.css hold data-type text until the
+         typewriter takes it (no flash of the finished text). */
+    }
+    <script is:inline>
+      document.documentElement.classList.add("js-type");
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={resolvedDescription} />
@@ -178,11 +185,16 @@ const pageEventAttrs = pageEvent
     <script>
       import "../lib/analytics/boot";
     </script>
-    {/* Press light and compression for [data-glass-press] (MOTION-6). */}
+    {
+      /* Press light and compression for [data-glass-press], and text marked
+         data-type writing itself in on first view (MOTION-6). */
+    }
     <script>
       import { initGlassPress } from "../lib/motion/glass-press";
+      import { typeOnView } from "../lib/motion/typewriter";
 
       initGlassPress();
+      typeOnView();
     </script>
   </head>
   <body>

@@ -19,9 +19,11 @@ import { euro, savings } from "./ticket-model";
 
 interface Props {
   offer: TicketCategoriesContent["offer"];
+  /** Screen-reader name of the sale price, from the active phase. */
+  priceLabel?: string;
 }
 
-const { offer } = Astro.props;
+const { offer, priceLabel = "Early Bird price" } = Astro.props;
 const total = offer.tickets.length;
 
 // Each card's light sits in a slightly different place, so five cards read
@@ -79,7 +81,7 @@ const LIGHT = [
                       )}
                     </p>
                     <p class="t-now">
-                      <span class="u-visually-hidden">Early Bird price </span>
+                      <span class="u-visually-hidden">{priceLabel} </span>
                       {euro(ticket.price)}
                     </p>
                   </div>

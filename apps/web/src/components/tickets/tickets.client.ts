@@ -254,20 +254,6 @@ function initTabs(section: HTMLElement): (key: string) => void {
     if (animate && !reducedMotion()) replay(lens, "is-moving");
   };
 
-  // The benefit meter slides from the last ticket's share to the new one.
-  const fillOf = (key: string) =>
-    section
-      .querySelector<HTMLElement>(`[data-panel="${key}"] [data-meter]`)
-      ?.style.getPropertyValue("--fill") ?? "0";
-  const runMeter = (key: string, from: string) => {
-    const meter = section.querySelector<HTMLElement>(
-      `[data-panel="${key}"] [data-meter]`,
-    );
-    if (!meter || reducedMotion()) return;
-    meter.style.setProperty("--from", from);
-    replay(meter, "is-filling");
-  };
-
   /*
    * The new ticket's panel unfolds out of the tab just picked (MOTION-6):
    * the summary card and, a beat later, the benefit sheet start squeezed
@@ -364,12 +350,22 @@ function initTabs(section: HTMLElement): (key: string) => void {
       void light.offsetWidth;
       light.classList.add("is-lit");
     }
+    // The ticket's name, then its description, write themselves in.
+    const name = summary.querySelector<HTMLElement>(".t-summary-name");
+    const nameText = names.get(panel.dataset.panel ?? "");
+    if (name && nameText) typeWords(name, nameText, { delay: unfoldMs * 0.4 });
     const desc = summary.querySelector<HTMLElement>(".t-summary-desc");
     const text = descriptions.get(panel.dataset.panel ?? "");
-    if (desc && text) typeWords(desc, text, { delay: unfoldMs * 0.55 });
+    if (desc && text) typeWords(desc, text, { delay: unfoldMs * 0.75 });
   };
 
   // Each summary's description as authored, read once before any typing.
+  const names = new Map(
+    panels.map((p) => [
+      p.dataset.panel ?? "",
+      p.querySelector(".t-summary-name")?.textContent?.trim() ?? "",
+    ]),
+  );
   const descriptions = new Map(
     panels.map((p) => [
       p.dataset.panel ?? "",
@@ -391,7 +387,6 @@ function initTabs(section: HTMLElement): (key: string) => void {
     });
     placeLens(previous !== "" && previous !== key);
     if (previous && previous !== key) {
-      runMeter(key, fillOf(previous));
       const tab = tabs.find((t) => t.dataset.tab === key);
       const panel = panels.find((p) => p.dataset.panel === key);
       if (tab && panel) unfold(tab, panel);
@@ -400,16 +395,6 @@ function initTabs(section: HTMLElement): (key: string) => void {
 
   // Tabs can wrap onto a second row; keep the lens under its tab.
   new ResizeObserver(() => placeLens(false)).observe(list);
-
-  // The first time the section comes into view, the meter fills from zero.
-  if ("IntersectionObserver" in window) {
-    const io = new IntersectionObserver((entries) => {
-      if (!entries.some((e) => e.isIntersecting)) return;
-      io.disconnect();
-      runMeter(current, "0");
-    });
-    io.observe(section);
-  }
 
   tabs.forEach((tab, i) => {
     tab.addEventListener("click", () => select(tab.dataset.tab ?? ""));

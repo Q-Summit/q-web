@@ -8,6 +8,7 @@ import * as migration_20260907_185943_kickoff_location_href from './20260907_185
 import * as migration_20261016_222725_hackathon_2026_partner_logos from './20261016_222725_hackathon_2026_partner_logos';
 import * as migration_20261107_215149_ticket_page_2027 from './20261107_215149_ticket_page_2027';
 import * as migration_20261108_160000_ticket_rows_checkboxes_additive from './20261108_160000_ticket_rows_checkboxes_additive';
+import * as migration_20261109_195959_ticket_phases from './20261109_195959_ticket_phases';
 
 export const migrations = [
   {
@@ -58,6 +59,11 @@ export const migrations = [
   {
     up: migration_20261108_160000_ticket_rows_checkboxes_additive.up,
     down: migration_20261108_160000_ticket_rows_checkboxes_additive.down,
-    name: '20261108_160000_ticket_rows_checkboxes_additive'
+    name: '20261108_160000_ticket_rows_checkboxes_additive',
+  },
+  {
+    up: migration_20261109_195959_ticket_phases.up,
+    down: migration_20261109_195959_ticket_phases.down,
+    name: '20261109_195959_ticket_phases'
   },
 ];

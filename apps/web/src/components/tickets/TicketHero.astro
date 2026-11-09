@@ -1,16 +1,21 @@
 ---
-// Opener of the 2027 ticket page (DESIGN.md TICKETS-1): the Q in a glass
-// tile (the original mark, material from light only), the Early Bird
-// eyebrow, the page h1 and the neutral glass jump to Compare tickets.
+// Opener of the 2027 ticket page (DESIGN.md TICKETS-1): the discount
+// phase timeline, whose current phase carries the Q (or, without phases,
+// the Q in a glass tile, the original mark with material from light only,
+// over the one-line offer eyebrow, so the discount is never stated twice),
+// the page h1, the intro that writes itself in (MOTION-6) and the clear
+// glass jump to Compare tickets.
 import "./ticket-theme.css";
 import type { TicketCategoriesContent } from "../../lib/content";
 import IconChevron from "../icons/IconChevron.astro";
+import TicketPhases from "./TicketPhases.astro";
 
 interface Props {
   hero: TicketCategoriesContent["hero"];
+  phases?: TicketCategoriesContent["phases"];
 }
 
-const { hero } = Astro.props;
+const { hero, phases } = Astro.props;
 
 // The square Q mark that ships with the site (public/icon-512.png, the
 // same file the Join Q quiz uses). No vector original is in the repo; the
@@ -19,16 +24,34 @@ const markSrc = "/icon-512.png";
 ---
 
 <header class="t-hero t-shell">
-  <span class="t-mark t-glass" aria-hidden="true">
-    <span class="t-mark-logo" style={`--mark: url(${markSrc})`}>
-      <img src={markSrc} alt="" width="512" height="512" decoding="async" />
-      <span class="t-mark-shade"></span>
-      <span class="t-mark-gloss"></span>
-    </span>
-  </span>
-  <p class="t-eyebrow t-glass" data-lp="hero.eyebrow">{hero.eyebrow}</p>
+  {
+    phases ? (
+      <TicketPhases phases={phases} />
+    ) : (
+      <>
+        <span class="t-mark t-glass" aria-hidden="true">
+          <span class="t-mark-logo" style={`--mark: url(${markSrc})`}>
+            <img
+              src={markSrc}
+              alt=""
+              width="512"
+              height="512"
+              decoding="async"
+            />
+            <span class="t-mark-shade" />
+            <span class="t-mark-gloss" />
+          </span>
+        </span>
+        <p class="t-eyebrow t-glass" data-lp="hero.eyebrow">
+          {hero.eyebrow}
+        </p>
+      </>
+    )
+  }
   <h1 class="t-hero-title" data-lp="hero.heading">{hero.heading}</h1>
-  <p class="t-hero-intro" data-lp="hero.intro">{hero.intro}</p>
+  <p class="t-hero-intro" data-lp="hero.intro" data-type data-type-after="1.6">
+    {hero.intro}
+  </p>
   <a class="t-btn is-ghost t-hero-compare" href="#compare">
     <span data-lp="hero.compareLabel">{hero.compareLabel}</span>
     <span class="t-hero-chevron" aria-hidden="true">
@@ -152,9 +175,14 @@ const markSrc = "/icon-512.png";
   }
 
   @media (prefers-reduced-motion: no-preference) {
-    /* One quiet entrance for the whole opener, no stagger. */
-    .t-hero {
-      animation: t-hero-in var(--duration-reveal) var(--ease-emphasized) both;
+    /* One quiet entrance for the opener, no stagger. It runs on the
+       children, never on .t-hero: opacity there would make the hero a
+       backdrop root, so the timeline's glass would blur nothing until it
+       ended. Scoped, so it never reaches the timeline (its own component,
+       with its own unfold). */
+    .t-hero > * {
+      animation: t-hero-in var(--duration-reveal) var(--ease-emphasized)
+        backwards;
     }
   }
 
