@@ -22,6 +22,20 @@ export const vrtTicketPage: TicketCategoriesContent = {
     intro: "Sample intro for the ticket page used by the visual gallery.",
     compareLabel: "Compare sample tickets",
   },
+  phases: {
+    label: "Sample discount phases",
+    items: [
+      { key: "sample-a", label: "Sample phase A", discount: 12 },
+      { key: "sample-b", label: "Sample phase B", discount: 9 },
+      { key: "sample-c", label: "Sample phase C", discount: 6 },
+      { key: "sample-d", label: "Sample phase D", discount: 3 },
+    ],
+    activeKey: "sample-b",
+    currentLabel: "Sample now",
+    upcomingLabel: "Sample later",
+    pastLabel: "Sample over",
+    discountLabel: "{discount}% off",
+  },
   offer: {
     purchaseHref: "https://tickets.example.com/event/sample",
     buyLabel: "Buy now",

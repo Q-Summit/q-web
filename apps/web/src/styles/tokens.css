@@ -219,8 +219,6 @@
   --duration-ticket-swap: 220ms;
   --duration-ticket-drift: 14s;
   --duration-ticket-drift-alt: 19s;
-  --duration-ticket-meter: 700ms;
-  --duration-ticket-glint: 5.2s;
   --duration-ticket-enter: 460ms;
   --duration-ticket-stagger: 18ms; /* Hack campaign motion (DESIGN.md HACK-1). Ambient loops (falling
      fragments, the light seen through the white surface) run slowly and

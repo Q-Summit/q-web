@@ -357,8 +357,6 @@ const UNMAPPED_TOKENS = new Map([
   ["--duration-ticket-swap", "see --duration-ticket-press"],
   ["--duration-ticket-drift", "see --duration-ticket-press"],
   ["--duration-ticket-drift-alt", "see --duration-ticket-press"],
-  ["--duration-ticket-meter", "see --duration-ticket-press"],
-  ["--duration-ticket-glint", "see --duration-ticket-press"],
   ["--duration-ticket-enter", "see --duration-ticket-press"],
   ["--duration-ticket-stagger", "see --duration-ticket-press"],
   [

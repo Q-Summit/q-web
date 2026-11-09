@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  requiredWithPhases,
   requirePlaceholders,
   TICKET_KEYS,
   TICKET_ROW_FIELDS,
+  validateActivePhase,
+  validateDiscountLabel,
+  validatePhaseDiscount,
   validateRowsMatchTierCount,
+  validateUniquePhaseKeys,
   validateUniqueTicketKeys,
 } from "../src/globals/PageTickets";
 
@@ -125,5 +130,54 @@ describe("TICKET_ROW_FIELDS", () => {
     expect(Object.keys(TICKET_ROW_FIELDS).sort()).toEqual([...keys].sort());
     const fields = Object.values(TICKET_ROW_FIELDS);
     expect(new Set(fields).size).toBe(fields.length);
+  });
+});
+
+// Discount phases are optional: an empty timeline needs no labels, a filled
+// one needs every label, a valid active key and whole-percent discounts.
+describe("discount phases", () => {
+  const items = [
+    { key: "early-bird", label: "Early Bird" },
+    { key: "late-bird", label: "Late Bird" },
+  ];
+  const withPhases = { siblingData: { items } } as never;
+  const empty = { siblingData: { items: [] } } as never;
+
+  it("asks for nothing while there are no phases", () => {
+    expect(requiredWithPhases("", empty)).toBe(true);
+    expect(validateActivePhase("", empty)).toBe(true);
+    expect(validateDiscountLabel("", empty)).toBe(true);
+  });
+
+  it("requires the labels once a phase exists", () => {
+    expect(requiredWithPhases("", withPhases)).not.toBe(true);
+    expect(requiredWithPhases("On sale now", withPhases)).toBe(true);
+  });
+
+  it("accepts only a key that names one of the phases", () => {
+    expect(validateActivePhase("early-bird", withPhases)).toBe(true);
+    const result = validateActivePhase("christmas", withPhases);
+    expect(String(result)).toMatch(/early-bird, late-bird/);
+  });
+
+  it("keeps {discount} in the discount label", () => {
+    expect(validateDiscountLabel("{discount}% off", withPhases)).toBe(true);
+    expect(validateDiscountLabel("30% off", withPhases)).not.toBe(true);
+  });
+
+  it("takes whole discounts from 1 to 99", () => {
+    expect(validatePhaseDiscount(30, {} as never)).toBe(true);
+    expect(validatePhaseDiscount(0, {} as never)).not.toBe(true);
+    expect(validatePhaseDiscount(100, {} as never)).not.toBe(true);
+    expect(validatePhaseDiscount(12.5, {} as never)).not.toBe(true);
+  });
+
+  it("rejects a phase key used twice, naming the phase", () => {
+    expect(validateUniquePhaseKeys(items, {} as never)).toBe(true);
+    const result = validateUniquePhaseKeys(
+      [...items, { key: "early-bird", label: "Copy" }],
+      {} as never,
+    );
+    expect(String(result)).toMatch(/Copy/);
   });
 });

@@ -275,6 +275,31 @@
       "intro": "Sample copy for the ticket page used in CI builds.",
       "compareLabel": "Compare fixture tickets"
     },
+    "phases": {
+      "label": "Fixture discount phases",
+      "items": [
+        {
+          "key": "fixture-a",
+          "label": "Fixture phase A",
+          "discount": 10
+        },
+        {
+          "key": "fixture-b",
+          "label": "Fixture phase B",
+          "discount": 8
+        },
+        {
+          "key": "fixture-c",
+          "label": "Fixture phase C",
+          "discount": 5
+        }
+      ],
+      "activeKey": "fixture-a",
+      "currentLabel": "Fixture now",
+      "upcomingLabel": "Fixture later",
+      "pastLabel": "Fixture over",
+      "discountLabel": "{discount}% off"
+    },
     "offer": {
       "purchaseHref": "https://tickets.example.com/event/fixture",
       "buyLabel": "Buy now",
@@ -845,7 +870,12 @@
           "linkedin": "https://example.com/alex",
           "image": "",
           "imageAlt": "",
-          "crop": { "x": 50, "y": 24, "zoom": 100, "shiftY": 0 }
+          "crop": {
+            "x": 50,
+            "y": 24,
+            "zoom": 100,
+            "shiftY": 0
+          }
         },
         {
           "name": "Sam Sample",
@@ -854,7 +884,12 @@
           "linkedin": "https://example.com/sam",
           "image": "",
           "imageAlt": "",
-          "crop": { "x": 50, "y": 24, "zoom": 100, "shiftY": 0 }
+          "crop": {
+            "x": 50,
+            "y": 24,
+            "zoom": 100,
+            "shiftY": 0
+          }
         }
       ]
     },

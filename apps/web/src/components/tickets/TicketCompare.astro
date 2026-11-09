@@ -19,6 +19,7 @@ import TicketStatus from "./TicketStatus.astro";
 import {
   clientData,
   euro,
+  salePriceLabel,
   isPositive,
   statusLabel,
   statusOf,
@@ -29,6 +30,7 @@ interface Props {
 }
 
 const { page } = Astro.props;
+const priceLabel = salePriceLabel(page.phases);
 const { offer, included, compare } = page;
 const tickets = offer.tickets;
 const firstTicket = tickets[0];
@@ -64,10 +66,16 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
             id="compare-title"
             class="t-compare-title"
             data-lp="compare.heading"
+            data-type
           >
             {compare.heading}
           </h2>
-          <p class="t-compare-intro" data-lp="compare.intro">
+          <p
+            class="t-compare-intro"
+            data-lp="compare.intro"
+            data-type
+            data-type-after="0.6"
+          >
             {compare.intro}
           </p>
         </header>
@@ -129,7 +137,7 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
               </div>
               <div class="t-cmp-ticket" data-swap={col}>
                 <p class="t-cmp-price">
-                  <span class="u-visually-hidden">Early Bird price </span>
+                  <span class="u-visually-hidden">{priceLabel} </span>
                   <span data-f="price">{euro(ticket.price)}</span>
                   <span class="u-visually-hidden"> Regular price </span>
                   <s data-f="regular">{euro(ticket.regularPrice)}</s>
@@ -677,25 +685,27 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
     margin-inline: calc(-1 * clamp(var(--space-2xs), 1.5vw, var(--space-sm)));
     padding-inline: clamp(var(--space-2xs), 1.5vw, var(--space-sm));
     border-radius: var(--radius-ticket-panel);
-    /* Clear liquid glass in the home Buy Now's material: only a thin
-       white fill, so the rows passing under it show as color and shape,
-       and a strong blur that lifts brightness and saturation, so they never
-       read as a second line of text next to the names. A lit top edge, a
-       caustic cyan glow inside the lower edge, the bright rim (::after) and
-       a soft cyan halo make it glow a little; a soft shadow lifts it. */
+    /* Transparent glass, like the hero's Compare tickets button and the
+       discount timeline: barely any fill and no saturation boost, so the
+       page shows through as it is. Rows pass under this bar, so its blur
+       is a little stronger than the button's: just enough that their text
+       never reads as a second line next to the names. The lit top edge, a
+       fine caustic cyan line inside the lower edge, the bright rim
+       (::after) and a soft cyan halo carry the glass; a soft shadow lifts
+       it. */
     background: linear-gradient(
       180deg,
-      color-mix(in srgb, var(--color-white) 30%, transparent),
-      color-mix(in srgb, var(--color-white) 14%, transparent)
+      color-mix(in srgb, var(--color-white) 16%, transparent),
+      color-mix(in srgb, var(--color-white) 4%, transparent)
     );
     box-shadow:
-      inset 0 1px 1px var(--color-white),
-      inset 0 -12px 18px -14px var(--color-ticket-cyan),
-      0 10px 22px -14px color-mix(in srgb, var(--color-navy) 35%, transparent),
-      0 0 22px -8px
-        color-mix(in srgb, var(--color-ticket-cyan) 55%, transparent);
-    -webkit-backdrop-filter: blur(22px) saturate(190%) brightness(1.08);
-    backdrop-filter: blur(22px) saturate(190%) brightness(1.08);
+      inset 0 1px 1px color-mix(in srgb, var(--color-white) 95%, transparent),
+      inset 0 -8px 12px -12px var(--color-ticket-cyan),
+      0 10px 22px -16px color-mix(in srgb, var(--color-navy) 30%, transparent),
+      0 0 18px -10px
+        color-mix(in srgb, var(--color-ticket-cyan) 30%, transparent);
+    -webkit-backdrop-filter: blur(10px) saturate(110%);
+    backdrop-filter: blur(10px) saturate(110%);
   }
 
   .t-cmp-names::after {

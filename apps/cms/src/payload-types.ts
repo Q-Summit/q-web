@@ -1624,6 +1624,52 @@ export interface PageTicket {
      */
     compareLabel: string;
   };
+  phases?: {
+    /**
+     * Name of the timeline for screen readers, e.g. "Discount phases".
+     */
+    label?: string | null;
+    /**
+     * In order, first phase first.
+     */
+    items?:
+      | {
+          /**
+           * Short id, e.g. "early-bird". Keep it once set.
+           */
+          key: string;
+          /**
+           * Shown name, e.g. "Early Bird".
+           */
+          label: string;
+          /**
+           * Percent off the regular price, e.g. 30.
+           */
+          discount: number;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Key of the phase on sale now, e.g. "early-bird". Earlier phases show as over, later ones as coming.
+     */
+    activeKey?: string | null;
+    /**
+     * e.g. "On sale now".
+     */
+    currentLabel?: string | null;
+    /**
+     * e.g. "Coming soon".
+     */
+    upcomingLabel?: string | null;
+    /**
+     * e.g. "Sold out".
+     */
+    pastLabel?: string | null;
+    /**
+     * Discount under each phase. {discount} becomes the number, e.g. "{discount}% off".
+     */
+    discountLabel?: string | null;
+  };
   offer: {
     /**
      * Ticket shop link. Every buy button on the page opens exactly this address.
@@ -1691,7 +1737,7 @@ export interface PageTicket {
      */
     ticketBuyLabel: string;
     /**
-     * Benefit count, e.g. "{included} of {total} benefits included". The site counts them.
+     * Benefit count, e.g. "{included} of {total} benefits included". Not shown on the page at the moment.
      */
     countLabel: string;
     includedLabel: string;
@@ -2656,6 +2702,24 @@ export interface PageTicketsSelect<T extends boolean = true> {
         heading?: T;
         intro?: T;
         compareLabel?: T;
+      };
+  phases?:
+    | T
+    | {
+        label?: T;
+        items?:
+          | T
+          | {
+              key?: T;
+              label?: T;
+              discount?: T;
+              id?: T;
+            };
+        activeKey?: T;
+        currentLabel?: T;
+        upcomingLabel?: T;
+        pastLabel?: T;
+        discountLabel?: T;
       };
   offer?:
     | T

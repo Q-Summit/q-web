@@ -286,6 +286,8 @@ async function run() {
         })),
       };
       data.compare = t.compare;
+      // Optional discount timeline; without it the hero shows its eyebrow.
+      if (t.phases) data.phases = t.phases;
     } else {
       throw new Error(
         "[seed] page-tickets: the fixture has no 2027 ticket model (hero, offer, included, compare); it is required to publish the Tickets page.",

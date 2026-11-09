@@ -1,15 +1,16 @@
 // The ticket page shows one model three ways (cards, What's included,
 // Compare tickets); these helpers are the only place prices, savings,
-// statuses and the benefit count are computed, server side and in the
+// statuses and discount phase states are computed, server side and in the
 // browser. Pure module, so it runs in the workers project.
 import { describe, expect, it } from "vitest";
 
-import type { TicketBenefitGroup } from "../src/lib/content";
+import type { TicketBenefitGroup, TicketPhases } from "../src/lib/content";
 import {
-  benefitCount,
   euro,
   fillLabel,
   isPositive,
+  phaseStates,
+  salePriceLabel,
   savings,
   statusLabel,
   statusOf,
@@ -57,19 +58,6 @@ const labels = {
   notRequiredLabel: "Not required",
 };
 
-describe("benefitCount", () => {
-  it("never counts a requirement as a benefit (Student: 8 of 12)", () => {
-    expect(benefitCount(groups, "student")).toEqual({ included: 8, total: 12 });
-  });
-
-  it("counts ticket-specific privileges", () => {
-    expect(benefitCount(groups, "start-up")).toEqual({
-      included: 10,
-      total: 12,
-    });
-  });
-});
-
 describe("statusOf / statusLabel", () => {
   const [eligibility, , privileges] = groups;
 
@@ -116,5 +104,34 @@ describe("fillLabel", () => {
     expect(fillLabel("Buy {ticket} ticket {x}", { ticket: "Student" })).toBe(
       "Buy Student ticket {x}",
     );
+  });
+});
+
+describe("discount phases", () => {
+  const phases: TicketPhases = {
+    label: "Discount phases",
+    items: [
+      { key: "a", label: "Phase A", discount: 30 },
+      { key: "b", label: "Phase B", discount: 20 },
+      { key: "c", label: "Phase C", discount: 10 },
+    ],
+    activeKey: "b",
+    currentLabel: "Now",
+    upcomingLabel: "Later",
+    pastLabel: "Over",
+    discountLabel: "{discount}% off",
+  };
+
+  it("marks phases before the active one past and after it upcoming", () => {
+    expect(phaseStates(phases).map((p) => p.state)).toEqual([
+      "past",
+      "current",
+      "upcoming",
+    ]);
+  });
+
+  it("names the sale price after the active phase", () => {
+    expect(salePriceLabel(phases)).toBe("Phase B price");
+    expect(salePriceLabel(undefined)).toBe("Early Bird price");
   });
 });

@@ -197,15 +197,55 @@ export interface ProgramContent {
   };
 }
 
+/**
+ * One discount phase of the ticket sale (Early Bird, Christmas, ...), as
+ * the shop runs them one after another. The website only shows them; it
+ * never switches prices or phases on a date.
+ */
+export interface TicketPhase {
+  /** Stable id, e.g. "early-bird". */
+  key: string;
+  /** Shown name, e.g. "Early Bird". */
+  label: string;
+  /** Whole-number discount in percent off the regular price, e.g. 30. */
+  discount: number;
+}
+
+/**
+ * The discount phases above the ticket hero heading: one source for the
+ * phases and which one is on sale now. activeKey is set by hand (the shop
+ * moves to the next phase when one sells out, not on a date), so the page
+ * never guesses. Phases before the active one read as over, those after it
+ * as coming.
+ */
+export interface TicketPhases {
+  /** Accessible name of the timeline, e.g. "Discount phases". */
+  label: string;
+  items: TicketPhase[];
+  /** key of the phase on sale now. */
+  activeKey: string;
+  /** e.g. "On sale now". */
+  currentLabel: string;
+  /** e.g. "Coming soon". */
+  upcomingLabel: string;
+  /** e.g. "Sold out". */
+  pastLabel: string;
+  /** Contains {discount}, e.g. "{discount}% off". */
+  discountLabel: string;
+}
+
 export interface TicketCategoriesContent {
   title: string;
   metaDescription: string;
   hero: {
+    /** The one-line offer badge; the phase timeline replaces it when set. */
     eyebrow: string;
     heading: string;
     intro: string;
     compareLabel: string;
   };
+  /** Discount phase timeline in the hero (optional). */
+  phases?: TicketPhases;
   offer: {
     /** The one shop link every buy button on the page uses. */
     purchaseHref: string;
@@ -220,7 +260,8 @@ export interface TicketCategoriesContent {
     intro: string;
     /** Contains {ticket}. */
     ticketBuyLabel: string;
-    /** Contains {included} and {total}. */
+    /** Contains {included} and {total}. No longer shown (the benefit
+     * count was removed from the summaries); kept for the CMS field. */
     countLabel: string;
     includedLabel: string;
     notIncludedLabel: string;
@@ -686,6 +727,16 @@ interface CmsTicketsDoc {
   title: string;
   metaDescription?: string | null;
   hero: TicketCategoriesContent["hero"];
+  /** Optional group; the timeline shows once it has items. */
+  phases?: {
+    label?: string | null;
+    items?: { key: string; label: string; discount: number }[] | null;
+    activeKey?: string | null;
+    currentLabel?: string | null;
+    upcomingLabel?: string | null;
+    pastLabel?: string | null;
+    discountLabel?: string | null;
+  } | null;
   offer: {
     purchaseHref: string;
     buyLabel: string;
@@ -777,6 +828,24 @@ async function cmsGetTicketCategories(): Promise<TicketCategoriesContent> {
       })),
     },
     compare: doc.compare,
+    ...(doc.phases?.items?.length
+      ? {
+          // assertTicketPage() names any label left empty.
+          phases: {
+            label: doc.phases.label ?? "",
+            items: doc.phases.items.map((p) => ({
+              key: p.key,
+              label: p.label,
+              discount: p.discount,
+            })),
+            activeKey: doc.phases.activeKey ?? "",
+            currentLabel: doc.phases.currentLabel ?? "",
+            upcomingLabel: doc.phases.upcomingLabel ?? "",
+            pastLabel: doc.phases.pastLabel ?? "",
+            discountLabel: doc.phases.discountLabel ?? "",
+          },
+        }
+      : {}),
   };
 }
 
@@ -1524,11 +1593,40 @@ export function assertTicketPage(t: TicketCategoriesContent): void {
   if (!t.included.ticketBuyLabel.includes("{ticket}")) {
     fail('included.ticketBuyLabel must contain "{ticket}".');
   }
-  if (
-    !t.included.countLabel.includes("{included}") ||
-    !t.included.countLabel.includes("{total}")
-  ) {
-    fail('included.countLabel must contain "{included}" and "{total}".');
+  if (t.phases) {
+    const p = t.phases;
+    if (!p.items?.length) fail("phases has no items.");
+    const phaseKeys = new Set<string>();
+    for (const item of p.items) {
+      if (!item.key || !item.label)
+        fail("every phase needs a key and a label.");
+      if (phaseKeys.has(item.key))
+        fail(`phase key "${item.key}" is used twice.`);
+      phaseKeys.add(item.key);
+      if (
+        !Number.isInteger(item.discount) ||
+        item.discount < 1 ||
+        item.discount > 99
+      ) {
+        fail(
+          `phase "${item.label}" needs a whole-number discount from 1 to 99.`,
+        );
+      }
+    }
+    if (!phaseKeys.has(p.activeKey)) {
+      fail(`phases.activeKey "${p.activeKey}" is not one of the phases.`);
+    }
+    if (!p.discountLabel?.includes("{discount}")) {
+      fail('phases.discountLabel must contain "{discount}".');
+    }
+    for (const field of [
+      "label",
+      "currentLabel",
+      "upcomingLabel",
+      "pastLabel",
+    ] as const) {
+      if (!p[field]?.trim()) fail(`phases.${field} is empty.`);
+    }
   }
 }
 

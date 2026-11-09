@@ -60,6 +60,8 @@ export type {
   AgendaItem,
   TicketKey,
   TicketOffer,
+  TicketPhase,
+  TicketPhases,
   TicketBenefitRow,
   TicketBenefitGroup,
   BoardMember,

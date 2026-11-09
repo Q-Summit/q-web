@@ -2,6 +2,7 @@ import type {
   ArrayFieldValidation,
   Field,
   GlobalConfig,
+  NumberFieldSingleValidation,
   TextFieldSingleValidation,
 } from "payload";
 
@@ -260,6 +261,81 @@ const offerTicketFields: Field[] = [
   },
 ];
 
+/*
+ * Discount phases (Early Bird, Christmas, ...). Optional: with no phases the
+ * hero shows its eyebrow instead of the timeline, so every field is only
+ * required once a phase exists. The phase on sale now is set by hand
+ * (activeKey); the site never switches phases or prices on a date.
+ * Mirrors TicketPhases in apps/web/src/lib/content/pages.ts.
+ */
+type PhaseSiblings = { items?: { key?: string | null }[] | null };
+
+const hasPhases = (siblingData: unknown): boolean =>
+  ((siblingData as PhaseSiblings | undefined)?.items?.length ?? 0) > 0;
+
+/** Required only while the timeline has phases. */
+export const requiredWithPhases: TextFieldSingleValidation = (
+  value,
+  { siblingData },
+) =>
+  !hasPhases(siblingData) || (typeof value === "string" && value.trim() !== "")
+    ? true
+    : "Required while there are discount phases.";
+
+/** The phase on sale now must name one of the phases by its key. */
+export const validateActivePhase: TextFieldSingleValidation = (
+  value,
+  { siblingData },
+) => {
+  if (!hasPhases(siblingData)) return true;
+  const keys = ((siblingData as PhaseSiblings).items ?? [])
+    .map((item) => item.key)
+    .filter((key): key is string => Boolean(key));
+  return typeof value === "string" && keys.includes(value)
+    ? true
+    : `Enter the key of the phase on sale now, one of: ${keys.join(", ")}.`;
+};
+
+/** A discount label must keep {discount} once phases exist. */
+export const validateDiscountLabel: TextFieldSingleValidation = (
+  value,
+  { siblingData },
+) =>
+  !hasPhases(siblingData) ||
+  (typeof value === "string" && value.includes("{discount}"))
+    ? true
+    : "Keep {discount} in the text; the site replaces it.";
+
+/** Whole percent, 1 to 99. */
+export const validatePhaseDiscount: NumberFieldSingleValidation = (value) =>
+  typeof value === "number" &&
+  Number.isInteger(value) &&
+  value >= 1 &&
+  value <= 99
+    ? true
+    : "Enter a whole number from 1 to 99.";
+
+/** Each phase key once, so the phase on sale now is unambiguous. */
+export const validateUniquePhaseKeys: ArrayFieldValidation = (value) => {
+  const seen = new Set<string>();
+  const rows = (value ?? []) as { key?: string | null; label?: string }[];
+  for (const row of rows) {
+    if (!row.key) continue; // the key's own `required` covers it
+    if (seen.has(row.key)) {
+      return `"${row.label ?? row.key}" uses a key that another phase already uses. Each key may appear once.`;
+    }
+    seen.add(row.key);
+  }
+  return true;
+};
+
+const phaseLabelField = (name: string, description: string): Field => ({
+  name,
+  type: "text",
+  admin: { description },
+  validate: requiredWithPhases,
+});
+
 const benefitGroupFields: Field[] = [
   {
     name: "heading",
@@ -333,6 +409,84 @@ export const PageTickets: GlobalConfig = pageGlobal({
           admin: {
             description: 'Link to the compare view, e.g. "Compare tickets".',
           },
+        },
+      ],
+    }),
+    groupSection({
+      label: "Discount phases",
+      name: "phases",
+      description:
+        "Timeline at the top of the page. Leave it empty to show the small label from Header instead. The phase on sale now is set here by hand; nothing changes on a date.",
+      fields: [
+        phaseLabelField(
+          "label",
+          'Name of the timeline for screen readers, e.g. "Discount phases".',
+        ),
+        {
+          name: "items",
+          label: "Phases",
+          type: "array",
+          admin: {
+            ...ARRAY_ADMIN,
+            description: "In order, first phase first.",
+          },
+          validate: validateUniquePhaseKeys,
+          fields: [
+            {
+              type: "row",
+              fields: [
+                {
+                  name: "key",
+                  type: "text",
+                  required: true,
+                  admin: {
+                    description:
+                      'Short id, e.g. "early-bird". Keep it once set.',
+                  },
+                },
+                {
+                  name: "label",
+                  type: "text",
+                  required: true,
+                  admin: { description: 'Shown name, e.g. "Early Bird".' },
+                },
+                {
+                  name: "discount",
+                  type: "number",
+                  required: true,
+                  min: 1,
+                  max: 99,
+                  admin: {
+                    description: "Percent off the regular price, e.g. 30.",
+                    step: 1,
+                  },
+                  validate: validatePhaseDiscount,
+                },
+              ],
+            },
+          ],
+        },
+        {
+          name: "activeKey",
+          label: "On sale now",
+          type: "text",
+          admin: {
+            description:
+              'Key of the phase on sale now, e.g. "early-bird". Earlier phases show as over, later ones as coming.',
+          },
+          validate: validateActivePhase,
+        },
+        phaseLabelField("currentLabel", 'e.g. "On sale now".'),
+        phaseLabelField("upcomingLabel", 'e.g. "Coming soon".'),
+        phaseLabelField("pastLabel", 'e.g. "Sold out".'),
+        {
+          name: "discountLabel",
+          type: "text",
+          admin: {
+            description:
+              'Discount under each phase. {discount} becomes the number, e.g. "{discount}% off".',
+          },
+          validate: validateDiscountLabel,
         },
       ],
     }),
@@ -420,7 +574,7 @@ export const PageTickets: GlobalConfig = pageGlobal({
           required: true,
           admin: {
             description:
-              'Benefit count, e.g. "{included} of {total} benefits included". The site counts them.',
+              'Benefit count, e.g. "{included} of {total} benefits included". Not shown on the page at the moment.',
           },
           validate: requirePlaceholders("included", "total"),
         },
