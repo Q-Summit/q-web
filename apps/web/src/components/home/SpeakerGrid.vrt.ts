@@ -40,7 +40,7 @@ const base = {
   heading: "Sample speaker highlights",
   cta: { label: "See all sample speakers", href: "#speakers" },
   alumni,
-  alumniLabel: "Sample alumni",
+  alumniLabel: "Sample past speaker",
 };
 
 export default {

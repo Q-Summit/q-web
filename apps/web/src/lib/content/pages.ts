@@ -220,7 +220,10 @@ export interface HomeContent {
     heading: string;
     intro: string;
     cta: PageLink;
-    /** Badge on past speakers, e.g. "Q-Summit Alumni". */
+    /**
+     * Badge on past speakers, e.g. "Past Speaker". The name is historical:
+     * they are not Q alumni (those are former team members).
+     */
     alumniLabel?: string;
     /** Names of past speakers to show, in order; default: the panel group. */
     highlights?: string[];

@@ -345,11 +345,15 @@ export const PageHome: GlobalConfig = pageGlobal({
         { name: "heading", type: "text", required: true },
         { name: "intro", type: "textarea", required: true },
         {
+          // The stored name is historical. These are past speakers, not Q
+          // alumni (alumni are former team members), so neither the label
+          // editors see nor the example says "alumni".
           name: "alumniLabel",
+          label: "Past Speaker Label",
           type: "text",
           admin: {
             description:
-              'Badge on past speakers, e.g. "Q-Summit Alumni", so nobody reads them as booked for the next edition. Leave empty for no badge.',
+              'Badge on past speakers, e.g. "Past Speaker", so nobody reads them as booked for the next edition. Do not call them alumni: Q alumni are former team members. Leave empty for no badge.',
           },
         },
         stringArrayField("highlights", {
