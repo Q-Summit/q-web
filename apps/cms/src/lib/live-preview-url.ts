@@ -11,7 +11,9 @@
  */
 export const PATH_BY_GLOBAL: Record<string, string> = {
   "page-home": "/",
-  "page-whyq": "/whyq/",
+  // "Why Q?" has no overview page: its content shows on the four audience
+  // pages (apps/web pages/whyq/[audience].astro); /whyq/ itself redirects.
+  "page-whyq": "/whyq/students/",
   "page-kickoff": "/kickoff/",
   "page-program": "/program/",
   "page-tickets": "/ticket-categories/",

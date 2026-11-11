@@ -61,7 +61,28 @@ export const SiteSettings: GlobalConfig = reviewWorkflowGlobal({
       type: "array",
       required: true,
       admin: { description: "Top navigation links, in display order." },
-      fields: pageLinkFields(),
+      fields: [
+        ...pageLinkFields(),
+        // NavLink.children in apps/web/src/lib/content/site-settings.ts: an
+        // optional submenu. Empty or missing reads as a plain link there, so
+        // existing nav items stay valid without it.
+        {
+          name: "children",
+          label: "Sub-items",
+          labels: { singular: "Sub-item", plural: "Sub-items" },
+          type: "array",
+          admin: {
+            description:
+              "Optional links shown in a menu under this item, in display order (e.g. the audience pages under Why Q?). " +
+              "Leave empty for a plain link. The item itself always stays a link.",
+            initCollapsed: true,
+            components: {
+              RowLabel: "/components/array-row-label#TitleRowLabel",
+            },
+          },
+          fields: pageLinkFields(),
+        },
+      ],
     },
     {
       name: "footer",

@@ -26,7 +26,7 @@ export const PageWhyq: GlobalConfig = pageGlobal({
       required: true,
       admin: {
         description:
-          "One section per audience (attendees, startups, investors, partners, founders), in display order.",
+          "One section per audience. Each shows on its own page under Why Q?: attendees on /whyq/students/, startups on /whyq/startups/, partners on /whyq/corporates/, investors on /whyq/investors/. A section with another anchor id (founders) is kept but not shown on the site.",
       },
       fields: [
         {
