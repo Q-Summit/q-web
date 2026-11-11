@@ -1,0 +1,34 @@
+---
+// A glass Q (DESIGN.md HOME-1): the Q mark as a thick, clear glass object,
+// rendered in 3D from the brand file's own outline (one small WebP with
+// alpha, public/home/q-glass-a.webp). The home ground floats three of them
+// behind the page (HomeGround.astro); the ticket cards carry the same
+// render (tickets/TicketQBubble.astro). Decorative: empty alt, aria-hidden, no pointer events.
+// Placement, size and motion come from the caller's class.
+interface Props {
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+---
+
+<img
+  class:list={["h-q", className]}
+  src="/home/q-glass-a.webp"
+  alt=""
+  aria-hidden="true"
+  width="768"
+  height="768"
+  decoding="async"
+/>
+
+<style is:global>
+  /* DESIGN.md HOME-1 */
+  .h-q {
+    position: absolute;
+    display: block;
+    height: auto;
+    pointer-events: none;
+    user-select: none;
+  }
+</style>

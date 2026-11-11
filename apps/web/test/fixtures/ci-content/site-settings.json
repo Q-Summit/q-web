@@ -3,7 +3,25 @@
   "nav": [
     {
       "label": "Why Q?",
-      "href": "/whyq"
+      "href": "/whyq",
+      "children": [
+        {
+          "label": "Fixture audience A",
+          "href": "/whyq/students"
+        },
+        {
+          "label": "Fixture audience B",
+          "href": "/whyq/startups"
+        },
+        {
+          "label": "Fixture audience C",
+          "href": "/whyq/corporates"
+        },
+        {
+          "label": "Fixture audience D",
+          "href": "/whyq/investors"
+        }
+      ]
     },
     {
       "label": "Speaker",
@@ -12,10 +30,6 @@
     {
       "label": "Partner",
       "href": "/partner"
-    },
-    {
-      "label": "Program",
-      "href": "/program"
     },
     {
       "label": "Hackathon",

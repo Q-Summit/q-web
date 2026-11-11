@@ -1,16 +1,11 @@
----
-// Why attend Q-Summit: audience sections (attendees, startups, investors,
-// partners, founders) in the live page's order. Copy comes from
-// page-content.json (src/lib/content.ts) at build time.
-import Base from "../layouts/Base.astro";
-import FeatureSection from "../components/whyq/FeatureSection.astro";
+/*
+ * Image resolution for the Why Q audience sections, shared by /whyq/ (every
+ * audience on one page) and the audience pages under /whyq/<audience>/.
+ * Both render components/whyq/FeatureSection.astro, which takes the
+ * FeatureImage built here.
+ */
 import type { FeatureImage } from "../components/whyq/FeatureSection.astro";
-import { getPageContent } from "../lib/content";
-import { resolveContentImage } from "../lib/images";
-import Section from "../components/ui/Section.astro";
-import Container from "../components/ui/Container.astro";
-
-const { whyq } = await getPageContent();
+import { resolveContentImage } from "./images";
 
 // Asset dimensions/extension are a technical fact about the image file, not
 // editorial content, so they stay code-side keyed by the content layer's
@@ -40,7 +35,8 @@ const WHYQ_IMAGE_ASSETS: Record<
  */
 const WHYQ_IMAGE_FALLBACK = { ext: "webp", width: 800, height: 600 } as const;
 
-async function resolveImage(
+/** The FeatureSection image for one audience's `imageFile` / `imageAlt`. */
+export async function resolveWhyqImage(
   imageFile: string,
   alt: string,
 ): Promise<FeatureImage> {
@@ -48,7 +44,7 @@ async function resolveImage(
   if (!registered) {
     console.warn(
       `[whyq] no asset dimensions registered for "${imageFile}"; rendering it without ` +
-        `responsive variants. Add it to WHYQ_IMAGE_ASSETS in src/pages/whyq.astro.`,
+        `responsive variants. Add it to WHYQ_IMAGE_ASSETS in src/lib/whyq-images.ts.`,
     );
   }
   const asset = registered ?? WHYQ_IMAGE_FALLBACK;
@@ -65,51 +61,3 @@ async function resolveImage(
     asset: pipelineImage,
   };
 }
-
-const audienceImages = await Promise.all(
-  whyq.audiences.map(({ imageFile, imageAlt }) =>
-    resolveImage(imageFile, imageAlt),
-  ),
-);
----
-
-<Base
-  title={whyq.title}
-  description={whyq.metaDescription}
-  livePreviewGlobal="page-whyq"
->
-  <Section small>
-    <Container>
-      <div class="section-header whyq-header">
-        <h1 data-lp="heading">{whyq.heading}</h1>
-        <p data-lp="intro">{whyq.intro}</p>
-      </div>
-    </Container>
-  </Section>
-
-  {
-    whyq.audiences.map(({ id, heading, intro, items, imageLeft }, index) => (
-      <FeatureSection
-        id={id}
-        heading={heading}
-        paragraph={intro}
-        items={items}
-        image={audienceImages[index]}
-        imageLeft={imageLeft}
-        eager={index === 0}
-      />
-    ))
-  }
-</Base>
-
-<style>
-  /* The live page renders its h1 at h2 scale (heading-style-h2-2), so the
-     size is restated here per DESIGN.md TYPE-1 as a documented live-site deviation. */
-  .whyq-header h1 {
-    font-size: var(--heading-h2-size);
-  }
-
-  .whyq-header p {
-    font-size: var(--text-size-medium);
-  }
-</style>

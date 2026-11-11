@@ -1,0 +1,202 @@
+---
+// The ground behind the home page (DESIGN.md HOME-1), built like the
+// ticket page's ground: a pale, cool base, three very large pools of ice,
+// cyan and blue light that drift slowly, and three glass Qs that float,
+// turn a few degrees and breathe. The Qs are one small 3D render of the Q
+// mark as clear glass (GlassQ.astro), shown at three sizes. Fixed behind
+// the content, so the glass panes always have light and shape to pick up.
+// Decorative only: aria-hidden, no pointer events, transform-only motion,
+// still while the hero video covers it (home.client.ts) and for reduced
+// motion.
+import GlassQ from "./GlassQ.astro";
+---
+
+<div class="h-ground" aria-hidden="true" data-home-ground>
+  <span class="h-ground-pool is-one"></span>
+  <span class="h-ground-pool is-two"></span>
+  <span class="h-ground-pool is-three"></span>
+  <GlassQ class="is-one" />
+  <GlassQ class="is-two" />
+  <GlassQ class="is-three" />
+</div>
+
+<style>
+  /* DESIGN.md HOME-1: ambient ground, slow transform-only loops. */
+  .h-ground {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: -1;
+    height: 100vh;
+    height: 100lvh;
+    overflow: hidden;
+    background:
+      radial-gradient(
+        90% 60% at 50% -10%,
+        color-mix(in srgb, var(--color-white) 90%, transparent),
+        transparent 70%
+      ),
+      linear-gradient(
+        180deg,
+        var(--color-ticket-ground) 0%,
+        color-mix(
+            in srgb,
+            var(--color-ticket-ice) 40%,
+            var(--color-ticket-ground)
+          )
+          100%
+      );
+    pointer-events: none;
+  }
+
+  .h-ground-pool {
+    position: absolute;
+    width: 82vmax;
+    height: 54vmax;
+    border-radius: var(--radius-circle);
+  }
+
+  .h-ground-pool.is-one {
+    top: -30vmax;
+    left: -18vmax;
+    background: radial-gradient(
+      closest-side,
+      color-mix(in srgb, var(--color-ticket-ice) 95%, transparent),
+      transparent
+    );
+  }
+
+  .h-ground-pool.is-two {
+    top: -12vmax;
+    right: -30vmax;
+    background: radial-gradient(
+      closest-side,
+      color-mix(in srgb, var(--color-ticket-sky) 42%, transparent),
+      transparent
+    );
+  }
+
+  .h-ground-pool.is-three {
+    bottom: -40vmax;
+    left: 20vmax;
+    background: radial-gradient(
+      closest-side,
+      color-mix(in srgb, var(--color-ticket-cyan) 55%, transparent),
+      transparent
+    );
+  }
+
+  /* The three glass Qs: large top right, medium left, small low. */
+  .h-ground :global(.h-q.is-one) {
+    top: 8vh;
+    right: 4vw;
+    width: 30vmax;
+  }
+
+  .h-ground :global(.h-q.is-two) {
+    top: 46vh;
+    left: 2vw;
+    width: 21vmax;
+    opacity: 0.85;
+  }
+
+  .h-ground :global(.h-q.is-three) {
+    right: 30vw;
+    bottom: 4vh;
+    width: 13vmax;
+    opacity: 0.7;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .h-ground-pool.is-one {
+      animation: h-ground-a var(--duration-ticket-drift) ease-in-out infinite
+        alternate;
+    }
+
+    .h-ground-pool.is-two {
+      animation: h-ground-b var(--duration-ticket-drift-alt) ease-in-out
+        infinite alternate;
+    }
+
+    .h-ground-pool.is-three {
+      animation: h-ground-a var(--duration-ticket-drift-alt) ease-in-out
+        infinite alternate-reverse;
+    }
+
+    .h-ground :global(.h-q.is-one) {
+      animation: h-q-float var(--duration-ticket-drift) ease-in-out infinite
+        alternate;
+    }
+
+    .h-ground :global(.h-q.is-two) {
+      animation: h-q-float-alt var(--duration-ticket-drift-alt) ease-in-out
+        infinite alternate;
+    }
+
+    .h-ground :global(.h-q.is-three) {
+      animation: h-q-float var(--duration-ticket-drift-alt) ease-in-out infinite
+        alternate-reverse;
+    }
+
+    .h-ground[data-still] .h-ground-pool,
+    .h-ground[data-still] :global(.h-q) {
+      animation-play-state: paused;
+    }
+  }
+
+  @keyframes h-ground-a {
+    0% {
+      transform: translate3d(0, 0, 0) rotate(0deg) scale(1, 1);
+    }
+
+    50% {
+      transform: translate3d(10vmax, 5vmax, 0) rotate(35deg) scale(1.08, 0.9);
+    }
+
+    100% {
+      transform: translate3d(4vmax, 10vmax, 0) rotate(70deg) scale(0.94, 1.1);
+    }
+  }
+
+  @keyframes h-ground-b {
+    0% {
+      transform: translate3d(0, 0, 0) rotate(0deg) scale(1.05, 0.95);
+    }
+
+    50% {
+      transform: translate3d(-9vmax, 7vmax, 0) rotate(-40deg) scale(0.92, 1.1);
+    }
+
+    100% {
+      transform: translate3d(-4vmax, 12vmax, 0) rotate(-80deg) scale(1.06, 0.98);
+    }
+  }
+
+  /* Uniform scale only: the Q keeps its proportions in every frame. */
+  @keyframes h-q-float {
+    0% {
+      transform: translate3d(0, 0, 0) rotate(-5deg) scale(1);
+    }
+
+    50% {
+      transform: translate3d(-6%, 8%, 0) rotate(3deg) scale(1.04);
+    }
+
+    100% {
+      transform: translate3d(-2%, -5%, 0) rotate(7deg) scale(0.97);
+    }
+  }
+
+  @keyframes h-q-float-alt {
+    0% {
+      transform: translate3d(0, 0, 0) rotate(6deg) scale(0.98);
+    }
+
+    50% {
+      transform: translate3d(7%, -6%, 0) rotate(-3deg) scale(1.03);
+    }
+
+    100% {
+      transform: translate3d(3%, 5%, 0) rotate(-7deg) scale(1);
+    }
+  }
+</style>

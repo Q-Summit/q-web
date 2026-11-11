@@ -1,7 +1,18 @@
 ---
 // Site navigation, shared by every page (DESIGN.md COMP-6). Link targets
 // keep the live site's URL paths so existing inbound links keep working at
-// cutover: 7 items, home reachable via the logo only.
+// cutover; the items come from site settings, home is reachable via the
+// logo only.
+//
+// An item with `children` (the audience pages under "Why Q?") is one
+// disclosure button (WAI APG disclosure navigation): the item is no page of
+// its own, so its label and chevron are a single button that opens the
+// submenu, and the item's own href is not used. From 768px up the submenu
+// is a small glass dropdown under the item; below, it expands in place
+// inside the menu sheet. nav-submenu.client.ts drives both. Without JS the
+// button does nothing by itself: the dropdown opens on hover and keyboard
+// focus (the button takes the focus), and the phone list shows the
+// children expanded under it.
 //
 // The header is the floating liquid glass bar first built for the 2027
 // ticket page (DESIGN.md TICKETS-1), now the one header of the site. It is
@@ -15,6 +26,7 @@
 import { logoHeight, logoSrc, logoWidth } from "../../assets/media/brand";
 import { getSiteSettings } from "../../lib/content";
 import { normalizeInternalHref } from "../../lib/href";
+import IconChevron from "../icons/IconChevron.astro";
 import IconClose from "../icons/IconClose.astro";
 import IconMenu from "../icons/IconMenu.astro";
 
@@ -39,6 +51,26 @@ const currentPath = normalizeInternalHref(Astro.url.pathname);
 const isCurrent = (href: string): boolean =>
   currentPath === href ||
   (href !== "/" && href.startsWith("/") && currentPath.startsWith(href));
+
+// One entry per nav item. A plain item is highlighted on its own page
+// ("page", also for a section prefix of it). An item with a submenu is a
+// button, never the current page: it is highlighted ("true") while the
+// current page is one of its children, which then carries "page" itself.
+const items = nav.map((link) => {
+  const children = (link.children ?? []).map((child) => ({
+    ...child,
+    current: isCurrent(child.href),
+  }));
+  const within =
+    isCurrent(link.href) || children.some((child) => child.current);
+  const onChild = children.length > 0 && currentPath !== link.href;
+  const current: "page" | "true" | undefined = !within
+    ? undefined
+    : onChild
+      ? "true"
+      : "page";
+  return { ...link, children, current };
+});
 ---
 
 <header class="site-header" id="site-header">
@@ -80,17 +112,50 @@ const isCurrent = (href: string): boolean =>
       </span>
       <ul>
         {
-          nav.map((link, i) => (
-            <li style={`--i: ${i}`}>
-              <a
-                href={link.href}
-                aria-current={isCurrent(link.href) ? "page" : undefined}
-                data-astro-prefetch="hover"
-              >
-                {link.label}
-              </a>
-            </li>
-          ))
+          items.map((link, i) =>
+            link.children.length === 0 ? (
+              <li style={`--i: ${i}`}>
+                <a
+                  href={link.href}
+                  aria-current={link.current}
+                  data-astro-prefetch="hover"
+                >
+                  {link.label}
+                </a>
+              </li>
+            ) : (
+              <li class="nav-group" style={`--i: ${i}`} data-nav-group>
+                <button
+                  type="button"
+                  class="nav-sub-toggle"
+                  aria-expanded="false"
+                  aria-controls={`site-nav-sub-${i}`}
+                  data-current={link.current ? "true" : undefined}
+                >
+                  <span>{link.label}</span>
+                  <IconChevron size={16} />
+                </button>
+                <div class="nav-sub" id={`site-nav-sub-${i}`}>
+                  <span class="nav-sub__glass" aria-hidden="true" />
+                  <div class="nav-sub__body">
+                    <ul class="nav-sub__list">
+                      {link.children.map((child, j) => (
+                        <li style={`--j: ${j}`}>
+                          <a
+                            href={child.href}
+                            aria-current={child.current ? "page" : undefined}
+                            data-astro-prefetch="hover"
+                          >
+                            {child.label}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </li>
+            ),
+          )
         }
       </ul>
     </nav>
@@ -101,14 +166,17 @@ const isCurrent = (href: string): boolean =>
 
 {
   /* Runs before paint so mobile does not flash the full stacked list while
-     the deferred module script loads. No-JS: this never runs -> list stays
-     visible (progressive enhancement). */
+     the deferred module script loads, and so the submenu buttons (hidden
+     without JS) are there from the first paint instead of shifting the
+     links when the module arrives. No-JS: this never runs -> list stays
+     visible, submenus stay reachable (progressive enhancement). */
 }
 <script is:inline>
   (() => {
     const header = document.getElementById("site-header");
-    if (!header || !window.matchMedia("(max-width: 767px)").matches) return;
+    if (!header) return;
     header.setAttribute("data-js", "true");
+    if (!window.matchMedia("(max-width: 767px)").matches) return;
     const nav = document.getElementById("site-nav");
     if (nav) nav.hidden = true;
   })();
@@ -116,6 +184,7 @@ const isCurrent = (href: string): boolean =>
 
 <script>
   import { initNavMenu } from "./nav-menu.client";
+  import { initNavSubmenus } from "./nav-submenu.client";
   import { initNavTone } from "./nav-tone.client";
 
   document
@@ -123,6 +192,7 @@ const isCurrent = (href: string): boolean =>
     .forEach((header) => {
       header.setAttribute("data-nav-ready", "true");
       initNavMenu(header);
+      initNavSubmenus(header);
       initNavTone(header);
     });
 </script>
@@ -442,7 +512,8 @@ const isCurrent = (href: string): boolean =>
     transition: background-color var(--duration-hover) var(--ease-snappy);
   }
 
-  nav a[aria-current="page"] {
+  nav a[aria-current],
+  .nav-sub-toggle[data-current] {
     background-color: color-mix(in srgb, var(--color-white) 85%, transparent);
     box-shadow:
       inset 0 1px 0 var(--color-white),
@@ -451,7 +522,8 @@ const isCurrent = (href: string): boolean =>
 
   /* On the frosted (dark-ground) bar the white chip needs a firmer edge
      to stand apart from the denser fill. */
-  .site-header[data-tone="dark"] nav a[aria-current="page"] {
+  .site-header[data-tone="dark"] nav a[aria-current],
+  .site-header[data-tone="dark"] .nav-sub-toggle[data-current] {
     background-color: var(--color-white);
     box-shadow:
       inset 0 1px 0 var(--color-white),
@@ -637,7 +709,7 @@ const isCurrent = (href: string): boolean =>
     }
 
     /* Links: in once the glass is open, out before it folds. */
-    .site-header[data-js] #site-nav li {
+    .site-header[data-js] #site-nav > ul > li {
       opacity: 0;
       transform: translateY(-0.35rem);
       transition:
@@ -645,7 +717,7 @@ const isCurrent = (href: string): boolean =>
         transform calc(var(--duration-glass-fold) * 0.35) var(--ease-snappy);
     }
 
-    .site-header[data-js] #site-nav[data-sheet="open"] li {
+    .site-header[data-js] #site-nav[data-sheet="open"] > ul > li {
       opacity: 1;
       transform: none;
       transition-duration: calc(var(--duration-glass-unfold) * 0.5);
@@ -700,7 +772,7 @@ const isCurrent = (href: string): boolean =>
     }
 
     /* The link list scrolls inside the sheet on a short landscape screen. */
-    .site-header[data-js] #site-nav:not([hidden]) ul {
+    .site-header[data-js] #site-nav:not([hidden]) > ul {
       position: relative;
       z-index: 1;
       max-height: calc(
@@ -796,8 +868,8 @@ const isCurrent = (href: string): boolean =>
     .site-header[data-open] .nav-toggle__icon,
     .site-header[data-js] #site-nav:not([hidden]) .nav-glass,
     .site-header[data-js] #site-nav[data-sheet="open"] .nav-glass,
-    .site-header[data-js] #site-nav li,
-    .site-header[data-js] #site-nav[data-sheet="open"] li {
+    .site-header[data-js] #site-nav > ul > li,
+    .site-header[data-js] #site-nav[data-sheet="open"] > ul > li {
       transition: none;
     }
 
@@ -808,6 +880,380 @@ const isCurrent = (href: string): boolean =>
     .nav-toggle:active,
     .nav-toggle.is-pressed {
       transform: none;
+    }
+  }
+
+  /*
+    Submenu (DESIGN.md COMP-6, MOTION-6): the children of a nav item, behind
+    a disclosure button that is the item itself (its label and a chevron,
+    set like the links beside it). One state attribute,
+    data-sub="open" on the item (nav-submenu.client.ts), and every change is
+    a transition, never a keyframe animation, so a second click mid-way
+    reverses from where everything is. All of those transitions live in the
+    prefers-reduced-motion: no-preference blocks at the end, so reduced
+    motion has none at all (MOTION-2).
+  */
+  .nav-sub-toggle {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: var(--space-2xs);
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-ticket-button);
+    background-color: transparent;
+    color: var(--color-neutral-darkest);
+    /* The type of the links beside it (a button does not inherit it). */
+    font-family: inherit;
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.08em;
+    line-height: inherit;
+    text-transform: uppercase;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .nav-sub-toggle :global(svg) {
+    display: block;
+  }
+
+  .nav-group[data-sub="open"] .nav-sub-toggle {
+    background-color: color-mix(in srgb, var(--color-black) 7%, transparent);
+  }
+
+  .nav-group[data-sub="open"] .nav-sub-toggle :global(svg) {
+    transform: rotate(180deg);
+  }
+
+  @media (hover: hover) {
+    .nav-sub-toggle:hover {
+      background-color: color-mix(in srgb, var(--color-black) 5%, transparent);
+    }
+  }
+
+  .nav-sub-toggle:active {
+    background-color: color-mix(in srgb, var(--color-black) 9%, transparent);
+  }
+
+  /* Without JS the button toggles nothing: the dropdown opens on hover and
+     focus, the phone list shows the children expanded (rules below), and
+     the button stays as the group's label. */
+  .site-header:not([data-js]) .nav-sub-toggle {
+    cursor: default;
+  }
+
+  /* "nav" in front so this outranks the scoped `nav ul` list rules. */
+  nav .nav-sub__list {
+    flex-flow: column nowrap;
+    gap: 0;
+    /* Room for a focus ring inside the phone group's clip box. */
+    padding: 0.375rem;
+  }
+
+  .nav-sub__list a {
+    display: flex;
+    align-items: center;
+    color: var(--color-navy);
+  }
+
+  @media (min-width: 768px) {
+    .nav-group {
+      position: relative;
+    }
+
+    .nav-sub-toggle {
+      min-height: 2.25rem;
+      padding-inline: var(--space-xs) var(--space-2xs);
+    }
+
+    /*
+      The dropdown, built like the phone sheet above:
+
+        .nav-sub         the positioned box. No paint, never scaled, no
+                         opacity or filter of its own, so the link text is
+                         never distorted and the glass inside it still
+                         blurs the page (an ancestor with any of those
+                         would become the glass's backdrop root).
+        .nav-sub__glass  the glass, in the bar's material: clear, a strong
+                         blur so text passing under never reads as a second
+                         line, a lit top edge and a faint cyan lower edge.
+                         It unfolds out of the chevron and folds back into
+                         it; nav-submenu.client.ts sets --nav-sub-origin-x
+                         to the chevron's place.
+
+      The box starts at the item's lower edge and reaches the glass through
+      its top padding, so a pointer moving down never leaves the item.
+      Closed, it stays out of the way with visibility, which switches only
+      once the fold has played (the script also makes it inert at once).
+    */
+    .nav-sub {
+      --nav-sub-bridge: calc(
+        (var(--site-header-bar) - 2.25rem) / 2 + var(--space-2xs)
+      );
+
+      position: absolute;
+      top: 100%;
+      left: 0;
+      z-index: 1;
+      isolation: isolate;
+      box-sizing: border-box;
+      width: max-content;
+      min-width: 13.5rem;
+      max-width: calc(100vw - 2 * var(--space-sm));
+      padding: var(--nav-sub-bridge) 0 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    /* Too close to the right edge: hang from the item's right instead. */
+    .nav-sub[data-align="end"] {
+      right: 0;
+      left: auto;
+    }
+
+    .nav-sub__glass {
+      position: absolute;
+      inset: var(--nav-sub-bridge) 0 0;
+      z-index: -1;
+      border-radius: var(--radius-ticket-panel);
+      background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--color-white) 46%, transparent),
+        color-mix(in srgb, var(--color-white) 30%, transparent)
+      );
+      box-shadow:
+        inset 0 1px 1px color-mix(in srgb, var(--color-white) 95%, transparent),
+        inset 0 -12px 18px -16px
+          color-mix(in srgb, var(--color-ticket-cyan) 75%, transparent),
+        inset 1px 0 0 color-mix(in srgb, var(--color-white) 40%, transparent),
+        inset -1px 0 0 color-mix(in srgb, var(--color-white) 40%, transparent),
+        0 0 0 1px color-mix(in srgb, var(--color-navy) 6%, transparent),
+        0 18px 36px -20px color-mix(in srgb, var(--color-navy) 40%, transparent),
+        0 0 24px -10px
+          color-mix(in srgb, var(--color-ticket-cyan) 45%, transparent);
+      -webkit-backdrop-filter: blur(24px) saturate(180%) brightness(1.1);
+      backdrop-filter: blur(24px) saturate(180%) brightness(1.1);
+      /* Folded: squeezed into the chevron, half a chip above the box. */
+      transform-origin: var(--nav-sub-origin-x, 50%)
+        calc(-1 * var(--nav-sub-bridge) - 1.125rem);
+      opacity: 0;
+      transform: scale(0.3, 0.12);
+    }
+
+    /* Over a dark ground the glass frosts, like the bar does, so the navy
+       links keep their contrast: under a bar that is itself on a dark
+       ground, or when the script finds one behind the dropdown. */
+    .nav-sub__glass::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background-color: color-mix(in srgb, var(--color-white) 46%, transparent);
+      opacity: 0;
+    }
+
+    .site-header[data-tone="dark"] .nav-sub__glass::before,
+    .nav-sub[data-ground="dark"] .nav-sub__glass::before {
+      opacity: 1;
+    }
+
+    .nav-sub__list a {
+      min-height: 2.5rem;
+      padding-inline: var(--space-xs);
+      white-space: nowrap;
+    }
+
+    /* Links: invisible while the glass is squeezed, in once it is open. */
+    .nav-sub__list li {
+      opacity: 0;
+      transform: translateY(-0.35rem);
+    }
+
+    .nav-group[data-sub="open"] > .nav-sub,
+    .site-header:not([data-js])
+      .nav-group:is(:hover, :focus-within)
+      > .nav-sub {
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .nav-group[data-sub="open"] .nav-sub__glass,
+    .site-header:not([data-js])
+      .nav-group:is(:hover, :focus-within)
+      .nav-sub__glass {
+      opacity: 1;
+      transform: none;
+    }
+
+    .nav-group[data-sub="open"] .nav-sub__list li,
+    .site-header:not([data-js])
+      .nav-group:is(:hover, :focus-within)
+      .nav-sub__list
+      li {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* Without backdrop blur, near-opaque so text never sits on raw page. */
+    @supports not (
+      (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+    ) {
+      .nav-sub__glass {
+        background: color-mix(in srgb, var(--color-white) 95%, transparent);
+      }
+    }
+  }
+
+  @media (max-width: 767px) {
+    .nav-sub-toggle {
+      justify-content: space-between;
+      width: 100%;
+      min-height: 2.75rem;
+      padding-block: 0.625rem;
+      padding-inline: var(--space-sm);
+      color: var(--color-navy);
+      font-size: var(--text-size-small);
+      text-align: start;
+    }
+
+    /* Inside the sheet the sheet's own glass is the surface. */
+    .nav-sub__glass {
+      display: none;
+    }
+
+    .nav-sub__list a {
+      padding-inline-start: var(--space-lg);
+    }
+
+    /*
+      The children expand in place under their parent row. The row height
+      is a grid track going from 0fr to 1fr around a clip box, the one
+      layout property animated here (DESIGN.md MOTION-3 keeps those for
+      the native details accordion): an in-flow group that pushes the rows
+      below it has no transform equivalent, and the track only resizes this
+      one group. The clip is on .nav-sub__body alone, so the sheet's glass
+      and links are never cut. Scoped to [data-js]: without JS the group
+      simply stays open.
+    */
+    .site-header[data-js] .nav-sub {
+      display: grid;
+      grid-template-rows: 0fr;
+      visibility: hidden;
+    }
+
+    .site-header[data-js] .nav-sub__body {
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .site-header[data-js] .nav-sub__list li {
+      opacity: 0;
+    }
+
+    .site-header[data-js] .nav-group[data-sub="open"] > .nav-sub {
+      grid-template-rows: 1fr;
+      visibility: visible;
+    }
+
+    .site-header[data-js] .nav-group[data-sub="open"] .nav-sub__list li {
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .nav-sub-toggle {
+      transition: background-color var(--duration-hover) var(--ease-snappy);
+    }
+
+    .nav-sub-toggle :global(svg) {
+      transition: transform var(--duration-icon) var(--ease-snappy);
+    }
+  }
+
+  /*
+    The dropdown's timeline, the phone sheet's in small (MOTION-6). Open:
+    the glass springs out of the chevron, the links follow once it is
+    nearly open, a stagger apart. Close: the links leave first, then the
+    glass folds back and fades at the very end; the box turns invisible
+    only after that (visibility stays "visible" for the whole step-end
+    transition and has none on the way in).
+  */
+  @media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+    .nav-sub {
+      transition: visibility calc(var(--duration-glass-fold) * 1.35) step-end;
+    }
+
+    .nav-sub__glass {
+      transition:
+        transform var(--duration-glass-fold) var(--ease-emphasized)
+          calc(var(--duration-glass-fold) * 0.35),
+        opacity calc(var(--duration-glass-fold) * 0.5) var(--ease-snappy)
+          calc(var(--duration-glass-fold) * 0.85);
+    }
+
+    .nav-sub__glass::before {
+      transition: opacity var(--duration-ticket-color) var(--ease-snappy);
+    }
+
+    .nav-sub__list li {
+      transition:
+        opacity calc(var(--duration-glass-fold) * 0.35) var(--ease-snappy),
+        transform calc(var(--duration-glass-fold) * 0.35) var(--ease-snappy);
+    }
+
+    .nav-group[data-sub="open"] > .nav-sub,
+    .site-header:not([data-js])
+      .nav-group:is(:hover, :focus-within)
+      > .nav-sub {
+      transition: none;
+    }
+
+    .nav-group[data-sub="open"] .nav-sub__glass,
+    .site-header:not([data-js])
+      .nav-group:is(:hover, :focus-within)
+      .nav-sub__glass {
+      transition:
+        transform var(--duration-glass-unfold) var(--ease-glass-spring),
+        opacity var(--duration-hover) var(--ease-snappy);
+    }
+
+    .nav-group[data-sub="open"] .nav-sub__list li,
+    .site-header:not([data-js])
+      .nav-group:is(:hover, :focus-within)
+      .nav-sub__list
+      li {
+      transition-duration: calc(var(--duration-glass-unfold) * 0.5);
+      transition-timing-function: var(--ease-emphasized);
+      transition-delay: calc(
+        var(--duration-glass-unfold) * 0.4 + var(--duration-glass-stagger) *
+          var(--j, 0)
+      );
+    }
+  }
+
+  /* The in-sheet group: the accordion timings (open, then a faster close),
+     the children fading in a stagger apart as the rows make room. */
+  @media (max-width: 767px) and (prefers-reduced-motion: no-preference) {
+    .site-header[data-js] .nav-sub {
+      transition:
+        grid-template-rows var(--duration-close) var(--ease-snappy),
+        visibility var(--duration-close) step-end;
+    }
+
+    .site-header[data-js] .nav-sub__list li {
+      transition: opacity var(--duration-close) var(--ease-snappy);
+    }
+
+    .site-header[data-js] .nav-group[data-sub="open"] > .nav-sub {
+      transition: grid-template-rows var(--duration-open) var(--ease-snappy);
+    }
+
+    .site-header[data-js] .nav-group[data-sub="open"] .nav-sub__list li {
+      transition-duration: var(--duration-open);
+      transition-delay: calc(var(--duration-glass-stagger) * var(--j, 0));
     }
   }
 </style>

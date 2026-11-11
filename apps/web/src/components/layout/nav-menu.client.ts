@@ -18,14 +18,18 @@ function lockScroll(header: HTMLElement) {
     document.body.style.paddingRight = `${scrollbarGap}px`;
   }
 
-  const panel = header.querySelector<HTMLElement>("#site-nav");
+  // The scroller is the link list, not the sheet: the list is the element
+  // with the max-height (Nav.astro), so the sheet itself never overflows.
+  // With a submenu expanded the list outgrows a small phone, and a touch
+  // that starts in it has to be allowed to scroll it.
+  const list = header.querySelector<HTMLElement>("#site-nav > ul");
   touchMoveBlock = (event: TouchEvent) => {
     const target = event.target;
     if (
-      panel &&
+      list &&
       target instanceof Node &&
-      panel.contains(target) &&
-      panel.scrollHeight > panel.clientHeight
+      list.contains(target) &&
+      list.scrollHeight > list.clientHeight
     ) {
       return;
     }

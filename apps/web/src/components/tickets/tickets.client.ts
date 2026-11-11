@@ -9,7 +9,6 @@ import {
   statusOf,
   type TicketClientData,
 } from "./ticket-model";
-import { typeWords } from "../../lib/motion/typewriter";
 import { tokenMs } from "../../lib/motion/time";
 
 const reducedMotion = (): boolean =>
@@ -350,13 +349,14 @@ function initTabs(section: HTMLElement): (key: string) => void {
       void light.offsetWidth;
       light.classList.add("is-lit");
     }
-    // The ticket's name, then its description, write themselves in.
+    // The ticket's name and description stand there at once, as plain
+    // text (they are not typed in).
     const name = summary.querySelector<HTMLElement>(".t-summary-name");
     const nameText = names.get(panel.dataset.panel ?? "");
-    if (name && nameText) typeWords(name, nameText, { delay: unfoldMs * 0.4 });
+    if (name && nameText) name.textContent = nameText;
     const desc = summary.querySelector<HTMLElement>(".t-summary-desc");
     const text = descriptions.get(panel.dataset.panel ?? "");
-    if (desc && text) typeWords(desc, text, { delay: unfoldMs * 0.75 });
+    if (desc && text) desc.textContent = text;
   };
 
   // Each summary's description as authored, read once before any typing.
@@ -695,10 +695,9 @@ function initCompare(section: HTMLElement): void {
     };
     set("price", euro(ticket.price));
     set("regular", euro(ticket.regularPrice));
-    // The one line that writes itself in (MOTION-6); prices, names and
-    // every status cell change at once.
-    const desc = box?.querySelector<HTMLElement>('[data-f="description"]');
-    if (desc) typeWords(desc, ticket.description, { delay: 60 });
+    // Like prices, names and every status cell, the description changes
+    // at once.
+    set("description", ticket.description);
     set("buy-name", `: ${ticket.name}`);
     const buy = box?.querySelector<HTMLAnchorElement>('[data-f="buy"]');
     if (buy) {

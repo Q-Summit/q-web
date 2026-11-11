@@ -1,34 +1,35 @@
 ---
-// Partner logo band, ported from the live site's stats/logo showcase rows:
-// two rows (startup/corporate partners, network partners). Each row is one
-// full-width marquee with the label (running count + name) rendered as a
-// fixed layer ON TOP of the strip: logos flow underneath it, disappear
-// into its feathered right edge, re-emerge from its feathered left edge,
-// and travel on to the band's left edge where the viewport mask fades
-// them out -- the "bridge" effect. Both rows share the same label inset
-// and width, so the two labels align pixel-for-pixel. The logo track is
-// two identical groups animated with a CSS keyframe translateX(-50%) loop
-// (no client JS needed for a working marquee), paused on hover/focus, and
-// falls back to a static wrapped grid under prefers-reduced-motion.
+// Partner rows on the home page (DESIGN.md HOME-1): one logo strip per
+// group (Startups, Corporates, Network), running from one edge of the
+// window to the other, straight and on no surface of its own. Only the
+// row's name sits on glass: a milky pane at the left, opaque behind the
+// words and clearing only to their right, so the logos pass under it and
+// dissolve into it. Every logo
+// sits on a small slab of glass with a visible lower edge.
 //
-// Seamless-loop coverage: translateX(-50%) is only gapless while one
-// group is at least as wide as the viewport (worst case, exactly one
-// group width of track remains on screen). A short row (the network
-// partners) can't rely on a single logo set for that at 120rem, so each
-// group repeats its set `repeats` times, computed at build time from the
-// logos' rendered widths against the band's maximum width.
+// Built to stay smooth:
+//   - a strip is two identical groups moving by translate3d(-50%), on its
+//     own compositor layer (will-change), so a frame only moves a texture
+//     and never repaints or lays out;
+//   - nothing filters or masks the moving strips: the milky pane is a
+//     plain gradient fill, not a backdrop blur, so it costs nothing per
+//     frame;
+//   - logos load eagerly, and home.client.ts swaps every logo for a copy
+//     scaled to its drawn size once the page is idle: the partner files
+//     are several hundred pixels wide, and decoding one each time it
+//     slid into view is what made the strips stutter;
+//   - a group repeats its logos only until it covers a wide window;
+//   - motion stops on hover and keyboard focus, with the Pause button and
+//     while the section is off screen (home.client.ts).
+// The repeats are decorative (aria-hidden, no link), so keyboard and
+// screen reader users meet every partner once. Reduced motion shows the
+// strips as plain rows that scroll sideways by hand.
 //
-// The band is a breakout (DESIGN.md LAYOUT-1's one documented exception, see
-// tokens.css's --container-marquee): it runs to the actual browser edge on
-// any viewport up to a full 1080p window (120rem) and is capped, centered,
-// only on wider monitors. On phones it collapses to a stacked label above
-// an edge-to-edge marquee with fades at both screen edges.
-//
-// Motion can be paused by hovering or focusing the track; reduced-motion
-// removes the animation entirely (below).
-import Section from "../ui/Section.astro";
-import Container from "../ui/Container.astro";
-import Button from "../ui/Button.astro";
+// Logos keep their proportions and get the same optical size: every logo
+// is scaled to the same area inside a fixed slab, so a wide wordmark and a
+// square mark carry the same weight.
+import "./home-theme.css";
+import IconArrowRight from "../icons/IconArrowRight.astro";
 
 export interface PartnerLogo {
   name: string;
@@ -39,466 +40,462 @@ export interface PartnerLogo {
 }
 
 export interface PartnerLogoGroup {
-  value: string;
   label: string;
+  description?: string;
   logos: PartnerLogo[];
 }
 
 interface Props {
+  eyebrow?: string;
+  heading?: string;
   groups: PartnerLogoGroup[];
   cta?: { label: string; href: string };
 }
 
-const { groups, cta } = Astro.props;
+const { eyebrow, heading, groups, cta } = Astro.props;
 
-// Rendered strip metrics, mirroring the CSS below: logos display at 2rem
-// (32px) tall capped at 7rem (112px) wide, with a 1.75rem (28px) flex gap,
-// and each set carries a trailing 1.75rem padding. One group must cover
-// the band's maximum width (--container-marquee, 120rem = 1920px) for the
-// -50% loop to stay gapless; a small margin absorbs rounding.
-const LOGO_HEIGHT_PX = 32;
-const LOGO_MAX_WIDTH_PX = 112;
-const LOGO_GAP_PX = 28;
-const GROUP_MIN_WIDTH_PX = 1920 + LOGO_GAP_PX;
+// Mirrors the CSS below (rem = 16px): slab 10rem wide, 0.75rem gap.
+const SLAB_PX = 160;
+const GAP_PX = 12;
+// One group must cover a wide window (the strips run edge to edge).
+const GROUP_MIN_PX = 2600;
+// Every strip moves this many pixels per second.
+const SPEED_PX_S = 30;
 
-function renderedSetWidth(logos: PartnerLogo[]): number {
-  return logos.reduce((sum, logo) => {
-    const scaled = Math.min(
-      (logo.width / logo.height) * LOGO_HEIGHT_PX,
-      LOGO_MAX_WIDTH_PX,
-    );
-    return sum + scaled + LOGO_GAP_PX;
-  }, 0);
+// Same optical size for every logo: equal area, capped to the slab.
+const LOGO_AREA = 2600;
+const LOGO_MAX_W = 118;
+const LOGO_MAX_H = 46;
+
+function logoBox(logo: PartnerLogo): { width: number; height: number } {
+  const ratio = logo.width / logo.height;
+  let width = Math.sqrt(LOGO_AREA * ratio);
+  let height = Math.sqrt(LOGO_AREA / ratio);
+  const fit = Math.min(1, LOGO_MAX_W / width, LOGO_MAX_H / height);
+  width *= fit;
+  height *= fit;
+  return { width: Math.round(width), height: Math.round(height) };
 }
 
-function repeatsFor(logos: PartnerLogo[]): number {
-  const setWidth = renderedSetWidth(logos);
-  return setWidth > 0
-    ? Math.max(1, Math.ceil(GROUP_MIN_WIDTH_PX / setWidth))
-    : 1;
-}
+const rows = groups.map((group, index) => {
+  const setWidth = group.logos.length * (SLAB_PX + GAP_PX);
+  const repeats =
+    setWidth > 0 ? Math.max(1, Math.ceil(GROUP_MIN_PX / setWidth)) : 1;
+  return {
+    ...group,
+    repeats,
+    reverse: index % 2 === 1,
+    seconds: Math.round((setWidth * repeats) / SPEED_PX_S),
+    logos: group.logos.map((logo) => ({ ...logo, box: logoBox(logo) })),
+  };
+});
 ---
 
 {
-  groups.length > 0 && (
-    <Section small class="partners" aria-label="Q-Summit partners">
-      <div class="partner-band-wrap">
-        {groups.map((group) => {
-          const repeats = repeatsFor(group.logos);
-          return (
-            <div
-              class="partner-band"
-              style={`--logo-count: ${group.logos.length * repeats}`}
+  rows.length > 0 && (
+    <section
+      class="h-section h-partners"
+      aria-labelledby={heading ? "home-partners-title" : undefined}
+      aria-label={heading ? undefined : "Partners"}
+      data-marquee
+    >
+      <div class="h-shell">
+        <div class="h-head">
+          <div>
+            {eyebrow && (
+              <p class="h-eyebrow" data-lp="partnerBand.eyebrow">
+                {eyebrow}
+              </p>
+            )}
+            {heading && (
+              <h2
+                id="home-partners-title"
+                class="h-title"
+                data-lp="partnerBand.heading"
+                data-h-reveal
+              >
+                {heading}
+              </h2>
+            )}
+          </div>
+          {cta && (
+            <a
+              class="h-more"
+              href={cta.href}
+              data-lp="partnerBand.cta"
+              data-lp-href="partnerBand.cta.href"
             >
-              <div class="partner-band-label">
-                <p class="partner-band-value">{group.value}</p>
-                <p class="partner-band-name">{group.label}</p>
-              </div>
-              <div class="partner-band-viewport">
-                <div class="partner-band-track">
-                  <div class="partner-band-group">
-                    <ul
-                      class="partner-band-logos"
-                      aria-label={`${group.label} partners`}
-                    >
-                      {group.logos.map((logo) => (
-                        <li>
-                          <a
-                            href={logo.href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            aria-label={`${logo.name} (opens in a new tab)`}
-                          >
-                            <img
-                              src={logo.src}
-                              alt={`${logo.name} logo`}
-                              width={logo.width}
-                              height={logo.height}
-                              loading="lazy"
-                              decoding="async"
-                            />
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                    {/* Coverage repeats: pad a short set out to the band's
-                        maximum width. Decorative (plain img, no link) and
-                        aria-hidden, so assistive tech and keyboard users
-                        only ever encounter the real list once. */}
-                    {Array.from({ length: repeats - 1 }).map(() => (
-                      <ul class="partner-band-logos" aria-hidden="true">
-                        {group.logos.map((logo) => (
-                          <li>
-                            <img
-                              src={logo.src}
-                              alt=""
-                              width={logo.width}
-                              height={logo.height}
-                              loading="lazy"
-                              decoding="async"
-                            />
-                          </li>
-                        ))}
-                      </ul>
-                    ))}
+              <span data-lp-label>{cta.label}</span>
+              <IconArrowRight />
+            </a>
+          )}
+        </div>
+      </div>
+
+      <div class="h-partner-band">
+        {rows.map((row) => (
+          <div class="h-partner-row">
+            <div class="h-partner-label">
+              <h3>{row.label}</h3>
+              {row.description && <p>{row.description}</p>}
+            </div>
+            <div class="h-partner-viewport">
+              <div
+                class:list={["h-partner-track", { "is-reverse": row.reverse }]}
+                style={`--marquee-seconds: ${row.seconds}s`}
+              >
+                {[0, 1].map((half) => (
+                  <div class="h-partner-group" aria-hidden={half === 1}>
+                    {Array.from({ length: row.repeats }).map((_, repeat) => {
+                      const real = half === 0 && repeat === 0;
+                      return (
+                        <ul
+                          class="h-partner-logos"
+                          aria-label={
+                            real ? `${row.label} partners` : undefined
+                          }
+                          aria-hidden={!real && half === 0 ? "true" : undefined}
+                        >
+                          {row.logos.map((logo) => {
+                            const image = (
+                              <img
+                                src={logo.src}
+                                alt=""
+                                width={logo.box.width}
+                                height={logo.box.height}
+                                style={`--w: ${logo.box.width}; --h: ${logo.box.height}`}
+                                decoding="async"
+                              />
+                            );
+                            return (
+                              <li>
+                                {real ? (
+                                  <a
+                                    class="h-partner-slab"
+                                    href={logo.href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label={`${logo.name} (opens in a new tab)`}
+                                  >
+                                    {image}
+                                  </a>
+                                ) : (
+                                  <span class="h-partner-slab">{image}</span>
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      );
+                    })}
                   </div>
-                  {/* Decorative duplicate group: continues the visual strip
-                      so the -50% loop reads as seamless. Hidden from
-                      assistive tech like the coverage repeats above. */}
-                  <div class="partner-band-group" aria-hidden="true">
-                    {Array.from({ length: repeats }).map(() => (
-                      <ul class="partner-band-logos">
-                        {group.logos.map((logo) => (
-                          <li>
-                            <img
-                              src={logo.src}
-                              alt=""
-                              width={logo.width}
-                              height={logo.height}
-                              loading="lazy"
-                              decoding="async"
-                            />
-                          </li>
-                        ))}
-                      </ul>
-                    ))}
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
-          );
-        })}
-      </div>
-      {cta && (
-        <Container>
-          <div class="u-section-cta partners-cta">
-            <Button variant="secondary" small href={cta.href}>
-              {cta.label}
-            </Button>
           </div>
-        </Container>
-      )}
-    </Section>
+        ))}
+      </div>
+
+      <div class="h-shell">
+        <button
+          type="button"
+          class="h-marquee-toggle"
+          aria-pressed="false"
+          data-marquee-toggle
+          data-glass-press
+        >
+          <span class="glass-light" aria-hidden="true" />
+          <span class="h-marquee-icon" aria-hidden="true" />
+          <span
+            data-marquee-label
+            data-pause="Pause logos"
+            data-play="Play logos"
+          >
+            Pause logos
+          </span>
+        </button>
+      </div>
+    </section>
   )
 }
 
 <style>
-  /* Breakout band: runs to the actual browser edge on any viewport up to
-     --container-marquee (120rem = a full 1080p window, tokens.css) and only
-     caps -- centered -- on wider monitors. No --padding-global inset: the
-     viewport mask's edge fade is what keeps the strip from ending in a
-     hard cut at the screen border. Vertical padding comes from
-     .section.is-small only. The shared label width/inset/scrim tokens live
-     here so both rows read the exact same values and their labels line up
-     pixel-for-pixel. */
-  .partner-band-wrap {
-    --partner-label-col: 14rem;
-    /* The label's left edge lands exactly where .container's text does
-       (global.css): centered max-width column plus the global 5% padding.
-       Both percentages here resolve against the full-width band, the same
-       reference .container's own math uses, so the label tracks the
-       content column exactly at every viewport width while the strip runs
-       wider underneath it. */
-    --partner-label-inset: calc(
-      max((100% - var(--container-large)) / 2, 0px) + var(--padding-global)
+  /* DESIGN.md HOME-1 */
+  /* Edge to edge: the band is not inside the page width. */
+  .h-partner-band {
+    --band-gutter: max(
+      clamp(1rem, 5vw, 2.5rem),
+      (100% - var(--container-large)) / 2
     );
-    /* Length of the gradient scrim OUTSIDE each of the label's hard
-       edges, and of the viewport's edge fade. */
-    --partner-scrim: 1.5rem;
-    --partner-edge-fade: 3rem;
-    width: 100%;
+
     display: grid;
-    gap: var(--space-md);
+    /* One column no wider than the window, however long a strip is. */
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2xs);
   }
 
-  .partner-band {
+  .h-partner-row {
     position: relative;
     min-width: 0;
   }
 
-  /* The label is a layer ON TOP of the full-width marquee: a fully solid
-     section-surface block (works on white and on .is-alternate) with a
-     crisp 1px hairline at each side -- a deliberate hard edge, not a mushy
-     fade -- plus a short gradient scrim OUTSIDE each hairline (the
-     pseudo-elements below), so logos dim as they approach, cut cleanly
-     under the line, and re-emerge the same way on the other side.
-     No pill, glass, blur, or radius. It also intercepts the pointer over
-     that area, so covered logos are never hover/click targets. */
-  .partner-band-label {
+  /*
+   * The row's name on milky glass: opaque from the window's left edge to
+   * just past the name, then clearing toward the right until it is gone, so
+   * the logos seem to slide under frosted glass. A plain gradient (no
+   * backdrop blur): it lies over a moving layer and must cost nothing per
+   * frame. The name starts at the page's left edge (--band-gutter).
+   */
+  .h-partner-label {
     position: absolute;
-    inset-block: 0;
-    left: var(--partner-label-inset);
+    inset: 0 auto 0 0;
     z-index: 1;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    width: var(--partner-label-col);
-    padding-inline: 1.75rem;
-    background: var(--section-surface);
-    border-inline: 1px solid var(--color-neutral-lighter);
-  }
-
-  .partner-band-label::before,
-  .partner-band-label::after {
-    content: "";
-    position: absolute;
-    inset-block: 0;
-    width: var(--partner-scrim);
+    width: calc(var(--band-gutter) + 20rem);
+    padding-left: var(--band-gutter);
+    /* Opaque behind the name, so no logo ever shows through the words;
+       it starts to clear only to the right of them. Its lit upper edge
+       and cool lower edge are two more gradients that fade with it, so
+       the pane needs no mask (a mask over a moving layer costs a blend
+       every frame). */
+    background:
+      linear-gradient(
+          90deg,
+          var(--color-white) calc(var(--band-gutter) + 10.5rem),
+          transparent
+        )
+        top / 100% 1px no-repeat,
+      linear-gradient(
+          90deg,
+          color-mix(in srgb, var(--color-ticket-cyan) 60%, transparent)
+            calc(var(--band-gutter) + 10.5rem),
+          transparent
+        )
+        bottom / 100% 1px no-repeat,
+      linear-gradient(
+        90deg,
+        var(--color-ticket-ground) 0%,
+        var(--color-white) calc(var(--band-gutter) + 10.5rem),
+        color-mix(in srgb, var(--color-white) 55%, transparent)
+          calc(var(--band-gutter) + 14.5rem),
+        transparent 100%
+      );
     pointer-events: none;
   }
 
-  /* Scrims run transparent (strip side) to ~3/4 surface (label side): the
-     logos visibly dim on approach but the hairline still lands on
-     something, keeping the edge readable as a hard line. */
-  .partner-band-label::before {
-    right: 100%;
+  /* The right end: the strip dissolves into the ground instead of being
+     cut by the window edge. A plain gradient again, no mask. */
+  .h-partner-row::after {
+    content: "";
+    position: absolute;
+    inset: 0 0 0 auto;
+    z-index: 1;
+    width: clamp(3rem, 9vw, 9rem);
     background: linear-gradient(
-      to left,
-      color-mix(in srgb, var(--section-surface) 75%, transparent),
-      transparent
+      270deg,
+      var(--color-ticket-ground) 0%,
+      color-mix(in srgb, var(--color-ticket-ground) 70%, transparent) 35%,
+      transparent 100%
     );
+    pointer-events: none;
   }
 
-  .partner-band-label::after {
-    left: 100%;
-    background: linear-gradient(
-      to right,
-      color-mix(in srgb, var(--section-surface) 75%, transparent),
-      transparent
-    );
-  }
-
-  /* Stat number stays navy, matching StatsBand: DESIGN.md COLOR-1 keeps
-     orange out of stat numbers. */
-  .partner-band-value {
+  .h-partner-label h3 {
     margin: 0;
-    font-size: var(--heading-h4-size);
-    font-weight: var(--heading-weight);
-    color: var(--color-heading);
+    color: var(--color-navy);
+    font-size: var(--heading-h5-size);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
   }
 
-  .partner-band-name {
-    margin: 0.25rem 0 0;
+  .h-partner-label p {
+    margin: var(--space-2xs) 0 0;
+    color: color-mix(in srgb, var(--color-navy) 76%, transparent);
     font-size: var(--text-size-small);
-    color: var(--color-neutral-dark);
+    line-height: 1.3;
   }
 
-  /* The strip runs under the label to the actual browser edge on any
-     viewport up to --container-marquee (a full 1080p window) and caps,
-     centered, only on wider monitors. Only it is masked/clipped. The fade
-     is a fixed length so edge softness is constant regardless of viewport
-     width (MDN mask-image, Baseline 2023-12; keep the -webkit- twin). */
-  .partner-band-viewport {
-    width: min(100%, var(--container-marquee));
-    margin-inline: auto;
-    min-width: 0;
+  /* Clips the strip; no mask, so a frame never has to re-blend it. */
+  .h-partner-viewport {
     overflow: hidden;
-    mask-image: linear-gradient(
-      to right,
-      transparent 0,
-      var(--color-black) var(--partner-edge-fade),
-      var(--color-black) calc(100% - var(--partner-edge-fade)),
-      transparent 100%
-    );
-    -webkit-mask-image: linear-gradient(
-      to right,
-      transparent 0,
-      var(--color-black) var(--partner-edge-fade),
-      var(--color-black) calc(100% - var(--partner-edge-fade)),
-      transparent 100%
-    );
+    contain: layout paint;
   }
 
-  /* Both marquees must move at the same constant px/s regardless of how
-     many logos a row has (and regardless of how wide those logos happen to
-     be). Each row's track is exactly double one logo list's width, so
-     animating it -50% always covers one list's width, keeping the loop
-     seamless (Ryan Mulligan / Smashing). --marquee-duration is set
-     precisely per row by the inline script below from that row's measured
-     width; the calc() here is only the no-JS fallback, approximating from
-     --logo-count (set inline per row).
-     Deviation from DESIGN.md MOTION-1 (no bare duration): this is the
-     continuous loop case in DESIGN.md's Motion table, whose curve is
-     `linear` and whose duration is the loop's own period, derived per row
-     from its measured width. There is no --duration-* step for it, and the
-     UI-transition tokens (all <=500ms) would spin the strip. The 2.4s here
-     is the per-logo no-JS approximation, not a UI timing. */
-  .partner-band-track {
+  .h-partner-track {
     display: flex;
     width: max-content;
-    padding-block: 1.75rem;
-    animation: partner-marquee
-      var(--marquee-duration, calc(var(--logo-count, 10) * 2.4s)) linear
-      infinite;
+    padding-block: var(--space-2xs) var(--space-xs);
+    /* Its own layer: the loop only moves this texture. */
+    will-change: transform;
+    backface-visibility: hidden;
   }
 
-  .partner-band:focus-within .partner-band-track {
-    animation-play-state: paused;
+  .h-partner-group,
+  .h-partner-logos {
+    display: flex;
+    flex: 0 0 auto;
   }
 
-  /* Pause on hover only when the device actually has hover; touch must
-     keep the marquee spinning (interactivity gated, not the animation). */
-  @media (hover: hover) {
-    .partner-band:hover .partner-band-track {
+  .h-partner-logos {
+    gap: var(--space-xs);
+    margin: 0;
+    padding: 0 var(--space-xs) 0 0;
+    list-style: none;
+  }
+
+  /* A slab of glass under each logo: a calm, light face, a lit upper
+     edge, a visible lower edge (its thickness) and a soft shadow on the
+     plane. No blur of its own: it moves. */
+  .h-partner-slab {
+    display: grid;
+    place-items: center;
+    width: 10rem;
+    height: 4.25rem;
+    border-radius: var(--radius-ticket-panel);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-white) 86%, transparent),
+      color-mix(in srgb, var(--color-white) 64%, transparent)
+    );
+    box-shadow:
+      inset 0 1px 0 var(--color-white),
+      inset 0 -3px 0
+        color-mix(in srgb, var(--color-ticket-ice) 85%, transparent),
+      0 3px 0 color-mix(in srgb, var(--color-ticket-sky) 26%, transparent),
+      0 12px 14px -10px color-mix(in srgb, var(--color-navy) 50%, transparent);
+  }
+
+  /* The build-time box (equal area for every logo), scaled with the slab. */
+  .h-partner-slab img {
+    display: block;
+    width: calc(var(--w) * var(--logo-scale, 1) * 1px);
+    height: calc(var(--h) * var(--logo-scale, 1) * 1px);
+    object-fit: contain;
+  }
+
+  /* Pause control: a small pill of glass. */
+  .h-marquee-toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    min-height: 2.75rem;
+    margin-top: var(--space-sm);
+    padding: 0 var(--space-sm);
+    border: 0;
+    border-radius: var(--radius-ticket-pill);
+    background: color-mix(in srgb, var(--color-white) 30%, transparent);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, var(--color-white) 90%, transparent),
+      inset 0 0 0 1px color-mix(in srgb, var(--color-white) 55%, transparent);
+    color: var(--color-navy);
+    font: inherit;
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--duration-glass-release) var(--ease-glass-spring);
+  }
+
+  .h-marquee-toggle:active,
+  .h-marquee-toggle.is-pressed {
+    transform: scale(0.96);
+    transition-duration: var(--duration-glass-press);
+  }
+
+  /* Two bars (pause) that become a triangle (play). */
+  .h-marquee-icon {
+    width: 0.625rem;
+    height: 0.75rem;
+    border-inline: 0.2rem solid currentcolor;
+  }
+
+  .h-marquee-toggle[aria-pressed="true"] .h-marquee-icon {
+    width: 0;
+    border-block: 0.375rem solid transparent;
+    border-left: 0.625rem solid currentcolor;
+    border-right: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .h-partner-track {
+      animation: h-marquee var(--marquee-seconds) linear infinite;
+    }
+
+    .h-partner-track.is-reverse {
+      animation-direction: reverse;
+    }
+
+    /* Hover, keyboard focus, the Pause button, or off screen. */
+    .h-partner-viewport:hover .h-partner-track,
+    .h-partner-viewport:focus-within .h-partner-track,
+    .h-partners[data-paused] .h-partner-track,
+    .h-partners[data-offscreen] .h-partner-track {
       animation-play-state: paused;
     }
   }
 
-  /* One group = one full translation distance of the loop; the JS below
-     measures its width for the exact duration. */
-  .partner-band-group {
-    display: flex;
-  }
-
-  .partner-band-logos {
-    display: flex;
-    flex-wrap: nowrap;
-    align-items: center;
-    gap: 1.75rem;
-    margin: 0;
-    padding-right: 1.75rem;
-    list-style: none;
-  }
-
-  .partner-band-logos img {
-    width: auto;
-    height: 2rem;
-    max-width: 7rem;
-    object-fit: contain;
-  }
-
-  @keyframes partner-marquee {
-    from {
-      transform: translateX(0);
-    }
+  @keyframes h-marquee {
     to {
-      transform: translateX(-50%);
+      transform: translate3d(-50%, 0, 0);
     }
   }
 
-  /* Phones: too narrow for an overlay layer, so the label stacks above an
-     edge-to-edge marquee as a normal static block with the global page
-     inset; the marquee keeps its both-edge fade (shortened to suit the
-     narrow screen). */
-  @media (max-width: 767px) {
-    .partner-band-wrap {
-      --partner-edge-fade: 2rem;
-    }
-
-    .partner-band-label {
-      position: static;
-      width: auto;
-      border: none;
-      padding: 0 var(--padding-global) var(--space-xs);
-    }
-
-    .partner-band-label::before,
-    .partner-band-label::after {
-      content: none;
-    }
-  }
-
+  /* Reduced motion: no loop, one set, scrolled by hand, on a flat plane;
+     no control needed. */
   @media (prefers-reduced-motion: reduce) {
-    /* Static fallback: a wrapped, non-scrolling logo grid with the mask,
-       overlay, and duplicate removed, so every partner is readable,
-       appears once, and nothing sits covered under the label. Without the
-       edge fades the band must not touch the screen border, so it aligns
-       with the normal content column (.container's width and padding). */
-    .partner-band-wrap {
-      width: min(100%, var(--container-large));
-      margin-inline: auto;
-      padding-inline: var(--padding-global);
+    .h-partner-viewport {
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
     }
 
-    .partner-band-label {
-      position: static;
-      width: auto;
-      border: none;
-      padding: 0 0 var(--space-xs);
+    .h-partner-track {
+      will-change: auto;
     }
 
-    .partner-band-label::before,
-    .partner-band-label::after {
-      content: none;
-    }
-
-    .partner-band-viewport {
-      overflow: visible;
-      mask-image: none;
-      -webkit-mask-image: none;
-    }
-
-    .partner-band-track {
-      width: auto;
-      padding-block: var(--space-2xs);
-      animation: none;
-    }
-
-    .partner-band-logos {
-      flex-wrap: wrap;
-      padding-right: 0;
-    }
-
-    /* The coverage repeats and the duplicate group only exist to fill the
-       animated loop; without motion they would just repeat the same logos
-       over and over. The surviving single set wraps inside its group. */
-    .partner-band-group[aria-hidden="true"],
-    .partner-band-logos[aria-hidden="true"] {
+    .h-partner-group[aria-hidden="true"],
+    .h-partner-logos[aria-hidden="true"],
+    .h-marquee-toggle {
       display: none;
     }
 
-    .partner-band-viewport {
-      width: 100%;
-    }
-
-    .partner-band-group {
-      display: contents;
+    .h-marquee-toggle {
+      transition: none;
     }
   }
 
-  /* Shared .u-section-cta (DESIGN.md COMP-3); the marquee sits closer to
-     its CTA than the --section-gap default, so only margin is local. */
-  .partners-cta {
-    margin-top: var(--space-lg);
+  /* Phones: the name stands above its strip, on the same milky glass,
+     now a short bar that clears toward the right. */
+  @media (max-width: 767px) {
+    .h-partner-band {
+      gap: var(--space-xs);
+    }
+
+    .h-partner-label {
+      position: relative;
+      inset: auto;
+      flex-direction: row;
+      align-items: baseline;
+      justify-content: flex-start;
+      gap: var(--space-xs);
+      width: auto;
+      padding-block: var(--space-2xs);
+    }
+
+    .h-partner-label p {
+      margin: 0;
+    }
+
+    .h-partner-slab {
+      --logo-scale: 0.82;
+
+      width: 8.25rem;
+      height: 3.75rem;
+    }
   }
 </style>
-
-<script>
-  // Progressive enhancement: the --logo-count-based CSS duration (above)
-  // only approximates equal px/s, because it assumes every logo+gap is
-  // about the same width; real logos vary enough (a wordmark vs. a square
-  // mark) that two rows can visibly drift apart. Once real layout is
-  // available, measure each row's actual one-list width and set an exact
-  // duration for a genuinely constant px/s, overriding the CSS
-  // approximation via the same --marquee-duration property the animation
-  // reads. Runs after load (fonts/images settled) and on a debounced
-  // resize, improving on a one-shot measure that drifts. No JS: the CSS
-  // fallback still applies, just less precisely.
-  const PX_PER_SECOND = 60;
-  const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-
-  function measure() {
-    if (motionQuery.matches) return;
-    document
-      .querySelectorAll<HTMLElement>(".partner-band-track")
-      .forEach((track) => {
-        const firstList = track.firstElementChild as HTMLElement | null;
-        const listWidth = firstList?.getBoundingClientRect().width ?? 0;
-        if (listWidth > 0) {
-          track.style.setProperty(
-            "--marquee-duration",
-            `${listWidth / PX_PER_SECOND}s`,
-          );
-        }
-      });
-  }
-
-  let resizeTimer: number | undefined;
-  function onResize() {
-    window.clearTimeout(resizeTimer);
-    resizeTimer = window.setTimeout(measure, 200);
-  }
-
-  window.addEventListener("load", measure);
-  window.addEventListener("resize", onResize);
-</script>

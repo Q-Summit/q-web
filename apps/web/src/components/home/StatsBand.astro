@@ -1,100 +1,253 @@
 ---
-// Numbers band, ported from the Webflow section_home_numbers. The old site
-// animated the counters with client JS; the values render statically here.
+// Key figures of the last edition (DESIGN.md HOME-1), right under the
+// hero: the site's tagline as the heading, then the four figures on one
+// pane of glass, set apart by rods of glass instead of each sitting on a
+// pane of its own.
+//
+// The pane is simply there (no entrance); only the figures move: the first
+// time the row is seen each one sharpens out of a blur while it counts up,
+// once (home.client.ts). The final value is in the markup from the start
+// and the digits are equal width, so nothing shifts; a visitor without
+// JavaScript or with reduced motion sees the figures at once, and screen
+// readers read the final value, never the running count.
 import type { PageStat } from "../../lib/content";
-import Section from "../ui/Section.astro";
+import "./home-theme.css";
 
 interface Props {
+  /** Shown above the figures: the hero tagline. */
+  tagline?: string;
+  /** Names the section when there is no tagline (not shown then). */
   heading: string;
-  intro: string;
   stats: PageStat[];
 }
 
-const { heading, intro, stats } = Astro.props;
-
-// The live site's counters animate via client JS that formats with
-// toLocaleString('de-DE') (adding "1.500"-style separators); this port
-// renders the final value statically with no such JS, so it renders the
-// content layer's plain digits ("1500") as-is, matching the site mirror.
+const { tagline, heading, stats } = Astro.props;
 ---
 
-<!-- Left-aligned opener (DESIGN.md LAYOUT-4 exception): the copy sits beside
-     the stats grid in a two-column layout on the live site, not centered
-     above it. -->
-<Section small class="stats" aria-label="Q-Summit in numbers">
-  <div class="container stats-inner">
-    <div class="stats-copy">
-      <h2 data-lp="stats.heading">{heading}</h2>
-      <p data-lp="stats.intro">{intro}</p>
-    </div>
-    <dl class="stats-grid" data-lp-list="stats.items">
+<section class="h-section is-tight h-stats" aria-labelledby="home-stats-title">
+  <div class="h-shell">
+    {
+      tagline ? (
+        <h2
+          id="home-stats-title"
+          class="h-stats-title"
+          data-lp="hero.tagline"
+          data-h-reveal
+        >
+          {tagline}
+        </h2>
+      ) : (
+        <h2
+          id="home-stats-title"
+          class="u-visually-hidden"
+          data-lp="stats.heading"
+        >
+          {heading}
+        </h2>
+      )
+    }
+    <dl class="h-stats-row h-glass" data-lp-list="stats.items">
       {
         stats.map((stat) => (
-          <div class="stat" data-lp-list-item>
+          <div class="h-stat" data-lp-list-item>
             <dt data-lp-list-label>{stat.label}</dt>
-            <dd data-lp-list-value>{stat.value}</dd>
+            <dd>
+              <span class="u-visually-hidden" data-lp-list-value>
+                {stat.value}
+              </span>
+              <span class="h-stat-figure" aria-hidden="true" data-count-up>
+                {stat.value}
+              </span>
+            </dd>
           </div>
         ))
       }
     </dl>
   </div>
-</Section>
+</section>
 
 <style>
-  .stats-inner {
+  /* DESIGN.md HOME-1: display figures above the heading scale. */
+  .h-stats {
+    /* The row sits close under the hero's mist. */
+    padding-top: var(--space-md);
+  }
+
+  /* The hero ends on the solid ground color (Hero.astro .hero-mist); this
+     band starts on the same color and lets it go, so the page's light and
+     the glass Qs come up gradually under the row. */
+  .h-stats::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: -1;
+    height: clamp(8rem, 20vw, 15rem);
+    /* A smoothstep curve, like the hero's veil above it: flat where it
+       meets the hero, flat where it ends, no bend in between. */
+    background: linear-gradient(
+      180deg,
+      var(--color-ticket-ground) 0%,
+      color-mix(in srgb, var(--color-ticket-ground) 98%, transparent) 8.3%,
+      color-mix(in srgb, var(--color-ticket-ground) 93%, transparent) 16.7%,
+      color-mix(in srgb, var(--color-ticket-ground) 84%, transparent) 25%,
+      color-mix(in srgb, var(--color-ticket-ground) 74%, transparent) 33.3%,
+      color-mix(in srgb, var(--color-ticket-ground) 62%, transparent) 41.7%,
+      color-mix(in srgb, var(--color-ticket-ground) 50%, transparent) 50%,
+      color-mix(in srgb, var(--color-ticket-ground) 38%, transparent) 58.3%,
+      color-mix(in srgb, var(--color-ticket-ground) 26%, transparent) 66.7%,
+      color-mix(in srgb, var(--color-ticket-ground) 16%, transparent) 75%,
+      color-mix(in srgb, var(--color-ticket-ground) 7%, transparent) 83.3%,
+      color-mix(in srgb, var(--color-ticket-ground) 2%, transparent) 91.7%,
+      transparent 100%
+    );
+    pointer-events: none;
+  }
+
+  /* The tagline, as the row's heading. */
+  .h-stats-title {
+    max-width: 44rem;
+    margin: 0 auto clamp(var(--space-md), 3vw, var(--space-lg));
+    color: var(--color-navy);
+    font-size: clamp(var(--text-size-large), 2.6vw, var(--heading-h4-size));
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+    text-align: center;
+    text-wrap: balance;
+  }
+
+  /* One pane for the four figures. */
+  .h-stats-row {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-xl) 5rem;
-    align-items: center;
-  }
-
-  .stats-copy h2 {
-    margin-bottom: var(--space-sm);
-  }
-
-  .stats-copy p {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     margin: 0;
-    font-size: var(--text-size-medium);
-    color: var(--color-neutral-dark);
+    padding-block: clamp(var(--space-md), 3vw, var(--space-lg));
   }
 
-  .stats-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2.5rem var(--space-lg);
-    margin: 0;
-  }
-
-  /* Vertical divider ahead of each number, matching the live site's stat
-     grid; the value itself stays navy, never orange (DESIGN.md COLOR-1).
-     dt before dd is the valid <dl> source order (label is the term, value
-     the description); column-reverse keeps the big number visually on top. */
-  .stat {
+  /* dt before dd is the valid <dl> order; column-reverse keeps the figure
+     on top. */
+  .h-stat {
+    position: relative;
     display: flex;
     flex-direction: column-reverse;
-    padding-left: 1.25rem;
-    border-left: 1px solid var(--color-neutral-lighter);
+    align-items: center;
+    justify-content: flex-end;
+    min-width: 0;
+    padding-inline: var(--space-sm);
+    text-align: center;
   }
 
-  .stat dd {
+  /*
+   * The rod between two figures: a thin bar of glass standing on the
+   * pane, a bright reflection along one side, clear ice through the
+   * middle and a cyan edge on the other, with a faint glow. It fades out
+   * toward both ends.
+   */
+  .h-stat + .h-stat::before {
+    content: "";
+    position: absolute;
+    inset: 8% auto 8% 0;
+    width: 4px;
+    margin-left: -2px;
+    border-radius: var(--radius-ticket-pill);
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--color-white) 95%, transparent),
+      color-mix(in srgb, var(--color-ticket-sky) 38%, transparent) 45%,
+      color-mix(in srgb, var(--color-ticket-cyan) 80%, transparent) 80%,
+      color-mix(in srgb, var(--color-white) 70%, transparent)
+    );
+    box-shadow:
+      1px 0 2px color-mix(in srgb, var(--color-navy) 26%, transparent),
+      0 0 12px color-mix(in srgb, var(--color-ticket-cyan) 55%, transparent);
+    -webkit-mask: linear-gradient(
+      180deg,
+      transparent,
+      var(--color-black) 22%,
+      var(--color-black) 78%,
+      transparent
+    );
+    mask: linear-gradient(
+      180deg,
+      transparent,
+      var(--color-black) 22%,
+      var(--color-black) 78%,
+      transparent
+    );
+  }
+
+  .h-stat dd {
     margin: 0;
-    font-size: clamp(3rem, 6vw, 4.9rem);
-    font-weight: var(--heading-weight);
-    line-height: 1.1;
-    color: var(--color-heading);
+    line-height: 1;
   }
 
-  .stat dt {
-    margin-top: 0.25rem;
-    font-size: var(--heading-h6-size);
-    font-weight: var(--heading-weight);
-    color: var(--color-heading);
+  /* Plain, heavy navy numerals: nothing on them but the type. */
+  .h-stat-figure {
+    display: inline-block;
+    color: var(--color-navy);
+    font-size: clamp(2.25rem, 5.6vw, 4.25rem);
+    font-weight: var(--font-weight-extrabold);
+    /* Equal-width digits: the running count never changes the line. */
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.04em;
+    line-height: 1;
   }
 
+  /* While it counts, the figure sharpens out of a blur (home.client.ts
+     sets the class for the length of the count). */
+  @media (prefers-reduced-motion: no-preference) {
+    .h-stat-figure.is-counting {
+      animation: h-figure-in var(--duration-reveal) var(--ease-snappy) backwards;
+    }
+  }
+
+  @keyframes h-figure-in {
+    from {
+      opacity: 0;
+      filter: blur(10px);
+    }
+  }
+
+  .h-stat dt {
+    margin-top: var(--space-xs);
+    color: var(--color-navy);
+    font-size: var(--text-size-regular);
+    font-weight: var(--font-weight-extrabold);
+    line-height: 1.3;
+  }
+
+  /* Phones: two by two. The rod stands between the two columns, and a
+     lying rod parts the two rows. */
   @media (max-width: 767px) {
-    .stats-inner {
-      grid-template-columns: 1fr;
-      gap: 2.5rem;
+    .h-stats-row {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      row-gap: var(--space-lg);
+    }
+
+    .h-stat:nth-child(odd)::before {
+      display: none;
+    }
+
+    .h-stat:nth-child(n + 3)::after {
+      content: "";
+      position: absolute;
+      top: calc(var(--space-lg) / -2 - 2px);
+      left: 12%;
+      right: 12%;
+      height: 4px;
+      border-radius: var(--radius-ticket-pill);
+      background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--color-white) 95%, transparent),
+        color-mix(in srgb, var(--color-ticket-sky) 38%, transparent) 45%,
+        color-mix(in srgb, var(--color-ticket-cyan) 80%, transparent)
+      );
+      box-shadow: 0 0 12px
+        color-mix(in srgb, var(--color-ticket-cyan) 55%, transparent);
+    }
+
+    .h-stat dt {
+      font-size: var(--text-size-small);
     }
   }
 </style>

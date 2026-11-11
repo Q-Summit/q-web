@@ -6,14 +6,6 @@
     },
     "apps/web/src/components/home/Hero.astro": {
       "TYPE-2": ["font-size: 2.75rem"]
-    },
-    "apps/web/src/components/home/PartnerLogos.astro": {
-      "MOTION-1": [
-        "animation: partner-marquee var(--marquee-duration, calc(var(--logo-count, 10) * 2.4s)) linear infinite"
-      ]
-    },
-    "apps/web/src/components/home/WhyCards.astro": {
-      "TYPE-2": ["font-size: 1.7rem"]
     }
   }
 }

@@ -12,20 +12,43 @@
 // seamless.
 // Reduced-motion and data-saver users get the poster only; no video bytes
 // are fetched for them. No-JS clients get the 480p progressive fallback.
-import type { PageLink } from "../../lib/content";
+//
+// Copy (DESIGN.md HOME-1): a glass badge with the anniversary, dates and
+// city, the headline, two short lead lines, the countdown, the glass
+// Buy Now. The site tagline now heads the key figures below the hero
+// (StatsBand.astro). The lead lines replace the older announcement
+// lines when they are set; without them, and without countdown wording,
+// the hero falls back to the announcement, so it builds on either content.
+import type { HomeCountdown, PageLink } from "../../lib/content";
 import { EVENTS } from "../../lib/analytics/events";
 import Container from "../ui/Container.astro";
 import IconArrowRight from "../icons/IconArrowRight.astro";
+import HeroCountdown from "./HeroCountdown.astro";
 
 interface Props {
   headline: string;
-  tagline: string;
-  /** Announcement lines shown under the headline. */
+  /** Announcement lines shown under the headline when there are no lead lines. */
   announcement: string[];
   cta: PageLink | undefined;
+  /** Pill above the headline. */
+  badge?: string;
+  /** Short lines under the headline. */
+  leadLines?: string[];
+  /** Countdown wording; the countdown shows only with it. */
+  countdown?: HomeCountdown;
+  /** First conference day (yyyy-mm-dd), the countdown's target. */
+  startDate?: string;
 }
 
-const { headline, tagline, announcement, cta } = Astro.props;
+const {
+  headline,
+  announcement,
+  cta,
+  badge,
+  leadLines = [],
+  countdown,
+  startDate,
+} = Astro.props;
 ---
 
 <header class="section is-dark hero">
@@ -179,9 +202,25 @@ const { headline, tagline, announcement, cta } = Astro.props;
   </script>
   <Container>
     <div class="hero-content">
+      {
+        badge && (
+          <p class="hero-badge" data-lp="hero.badge">
+            {badge}
+          </p>
+        )
+      }
       <h1 data-lp="hero.headline">{headline}</h1>
       {
-        announcement.length > 0 && (
+        leadLines.length > 0 && (
+          <p class="hero-lead" data-lp="hero.leadLines" data-lp-lines>
+            {leadLines.map((line, i) => (
+              <span>{line}</span>
+            ))}
+          </p>
+        )
+      }
+      {
+        leadLines.length === 0 && announcement.length > 0 && (
           <p
             class="hero-announcement"
             data-lp="hero.announcementLines"
@@ -193,7 +232,11 @@ const { headline, tagline, announcement, cta } = Astro.props;
           </p>
         )
       }
-      <p class="hero-tagline" data-lp="hero.tagline">{tagline}</p>
+      {
+        countdown && startDate && (
+          <HeroCountdown startDate={startDate} labels={countdown} />
+        )
+      }
       {
         cta && (
           <a
@@ -216,6 +259,7 @@ const { headline, tagline, announcement, cta } = Astro.props;
       }
     </div>
   </Container>
+  <div class="hero-mist" aria-hidden="true"></div>
 </header>
 
 <style>
@@ -231,7 +275,10 @@ const { headline, tagline, announcement, cta } = Astro.props;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: calc(min(90svh, 52rem) + var(--site-header-height, 0px));
+    min-height: calc(
+      min(90svh, 52rem) + var(--site-header-height, 0px) +
+        var(--hero-dissolve) * 0.5
+    );
     margin-top: calc(-1 * var(--site-header-height, 0px));
     overflow: hidden;
   }
@@ -248,10 +295,96 @@ const { headline, tagline, announcement, cta } = Astro.props;
     object-fit: cover;
   }
 
+  /* Legibility over any video frame without graying the film: no flat
+     black veil (half-black over the whole video made every frame dull and
+     gray), only a thin midnight tint, which keeps the colors, and a deeper
+     pool of the same navy behind the copy, where the white type sits. */
   .hero-overlay {
     position: absolute;
     inset: 0;
-    background-color: var(--color-overlay);
+    background:
+      radial-gradient(
+        64% 58% at 50% 50%,
+        color-mix(in srgb, var(--color-ticket-midnight) 70%, transparent) 0%,
+        color-mix(in srgb, var(--color-ticket-midnight) 52%, transparent) 45%,
+        transparent 100%
+      ),
+      color-mix(in srgb, var(--color-ticket-midnight) 20%, transparent);
+  }
+
+  /*
+   * Into the page. The video stays fully opaque to its lower edge, so the
+   * page ground never shows through it. Over its lower part lies a mist
+   * (.hero-mist): a veil that grows from nothing to the solid ground color
+   * at the hero's edge, with a blur that deepens the same way, so the video
+   * melts away instead of ending. The section below starts on that same
+   * solid color and lets it go (StatsBand.astro), so the edge between the
+   * two is one color on both sides and cannot be seen.
+   */
+  .section.is-dark.hero {
+    --hero-dissolve: clamp(10rem, 26vw, 20rem);
+  }
+
+  .hero-mist {
+    position: absolute;
+    inset: auto 0 0;
+    height: var(--hero-dissolve);
+    /* The veil follows a smoothstep curve in small steps, not two or three
+       straight pieces: a straight piece changes its slope where it meets
+       the next one, and the eye reads every such bend as a band. The
+       curve starts and ends flat, and reaches the solid ground color well
+       above the hero's edge, so the last stretch is one color. */
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      color-mix(in srgb, var(--color-ticket-ground) 2%, transparent) 7%,
+      color-mix(in srgb, var(--color-ticket-ground) 7%, transparent) 14%,
+      color-mix(in srgb, var(--color-ticket-ground) 16%, transparent) 21%,
+      color-mix(in srgb, var(--color-ticket-ground) 26%, transparent) 28%,
+      color-mix(in srgb, var(--color-ticket-ground) 38%, transparent) 35%,
+      color-mix(in srgb, var(--color-ticket-ground) 50%, transparent) 42%,
+      color-mix(in srgb, var(--color-ticket-ground) 62%, transparent) 49%,
+      color-mix(in srgb, var(--color-ticket-ground) 74%, transparent) 56%,
+      color-mix(in srgb, var(--color-ticket-ground) 84%, transparent) 63%,
+      color-mix(in srgb, var(--color-ticket-ground) 93%, transparent) 70%,
+      color-mix(in srgb, var(--color-ticket-ground) 98%, transparent) 77%,
+      var(--color-ticket-ground) 84%,
+      var(--color-ticket-ground) 100%
+    );
+    pointer-events: none;
+    -webkit-backdrop-filter: blur(22px);
+    backdrop-filter: blur(22px);
+    /* The blur fades in along the same kind of curve. */
+    -webkit-mask: linear-gradient(
+      180deg,
+      transparent 0%,
+      color-mix(in srgb, var(--color-black) 3%, transparent) 6.2%,
+      color-mix(in srgb, var(--color-black) 10%, transparent) 12.4%,
+      color-mix(in srgb, var(--color-black) 22%, transparent) 18.6%,
+      color-mix(in srgb, var(--color-black) 35%, transparent) 24.8%,
+      color-mix(in srgb, var(--color-black) 50%, transparent) 31%,
+      color-mix(in srgb, var(--color-black) 65%, transparent) 37.2%,
+      color-mix(in srgb, var(--color-black) 78%, transparent) 43.4%,
+      color-mix(in srgb, var(--color-black) 90%, transparent) 49.6%,
+      color-mix(in srgb, var(--color-black) 97%, transparent) 55.8%,
+      var(--color-black) 62%,
+      var(--color-black) 100%
+    );
+    mask: linear-gradient(
+      180deg,
+      transparent 0%,
+      color-mix(in srgb, var(--color-black) 3%, transparent) 6.2%,
+      color-mix(in srgb, var(--color-black) 10%, transparent) 12.4%,
+      color-mix(in srgb, var(--color-black) 22%, transparent) 18.6%,
+      color-mix(in srgb, var(--color-black) 35%, transparent) 24.8%,
+      color-mix(in srgb, var(--color-black) 50%, transparent) 31%,
+      color-mix(in srgb, var(--color-black) 65%, transparent) 37.2%,
+      color-mix(in srgb, var(--color-black) 78%, transparent) 43.4%,
+      color-mix(in srgb, var(--color-black) 90%, transparent) 49.6%,
+      color-mix(in srgb, var(--color-black) 97%, transparent) 55.8%,
+      var(--color-black) 62%,
+      var(--color-black) 100%
+    );
   }
 
   /* The page width stays .container's --container-large (DESIGN.md
@@ -262,7 +395,13 @@ const { headline, tagline, announcement, cta } = Astro.props;
   .hero-content {
     position: relative;
     z-index: 1;
-    padding-top: var(--site-header-height, 0px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* The copy ends above the dissolve, where the video is still dark
+       enough for white type. */
+    padding-block: var(--site-header-height, 0px)
+      calc(var(--hero-dissolve) * 0.8);
     max-width: var(--container-medium);
     margin-inline: auto;
     text-align: center;
@@ -273,6 +412,95 @@ const { headline, tagline, announcement, cta } = Astro.props;
   .hero h1 {
     font-size: var(--heading-h1-home-size);
     font-weight: var(--heading-weight-home);
+    text-wrap: balance;
+  }
+
+  /*
+   * Entrance: the copy sharpens out of a blur and settles, one part after
+   * the other. Backwards fill, so nothing persists. The headline is never
+   * transparent (only blurred), so the largest paint is not delayed.
+   */
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-content > * {
+      animation: hero-in var(--duration-reveal) var(--ease-emphasized) backwards;
+    }
+
+    .hero-content > h1 {
+      animation-name: hero-in-sharp;
+    }
+
+    .hero-content > :nth-child(2) {
+      animation-delay: calc(var(--duration-glass-stagger) * 3);
+    }
+
+    .hero-content > :nth-child(3) {
+      animation-delay: calc(var(--duration-glass-stagger) * 6);
+    }
+
+    .hero-content > :nth-child(4) {
+      animation-delay: calc(var(--duration-glass-stagger) * 9);
+    }
+
+    .hero-content > :nth-child(5) {
+      animation-delay: calc(var(--duration-glass-stagger) * 12);
+    }
+
+    .hero-content > :nth-child(6) {
+      animation-delay: calc(var(--duration-glass-stagger) * 15);
+    }
+  }
+
+  @keyframes hero-in {
+    from {
+      opacity: 0;
+      filter: blur(12px);
+      transform: translateY(0.75rem);
+    }
+  }
+
+  @keyframes hero-in-sharp {
+    from {
+      filter: blur(12px);
+      transform: translateY(0.75rem);
+    }
+  }
+
+  /* The badge: a pill of clear glass, white type. */
+  .hero-badge {
+    margin: 0 0 var(--space-sm);
+    padding: var(--space-2xs) var(--space-sm);
+    border-radius: var(--radius-ticket-pill);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-white) 22%, transparent),
+      color-mix(in srgb, var(--color-white) 8%, transparent)
+    );
+    box-shadow:
+      inset 0 1px 1px color-mix(in srgb, var(--color-white) 80%, transparent),
+      inset 0 0 0 1px color-mix(in srgb, var(--color-white) 22%, transparent),
+      inset 0 -8px 12px -10px
+        color-mix(in srgb, var(--color-ticket-cyan) 80%, transparent),
+      0 8px 22px -14px
+        color-mix(in srgb, var(--color-ticket-midnight) 70%, transparent);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.14em;
+    line-height: 1.35;
+    text-transform: uppercase;
+    text-wrap: balance;
+    -webkit-backdrop-filter: blur(8px) saturate(130%);
+    backdrop-filter: blur(8px) saturate(130%);
+  }
+
+  .hero-lead {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    max-width: 40rem;
+    margin: var(--space-sm) 0 0;
+    font-size: var(--text-size-large);
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.4;
     text-wrap: balance;
   }
 
@@ -300,16 +528,111 @@ const { headline, tagline, announcement, cta } = Astro.props;
     font-style: normal;
   }
 
-  .hero-tagline {
-    margin: var(--space-md) auto 0;
-    max-width: 36rem;
-    font-size: var(--text-size-large);
-    font-weight: var(--heading-weight);
-    font-style: italic;
+  /*
+   * The one thing to do on the page: a piece of transparent liquid glass.
+   * The film stays visible through it, softened by a light blur; the glass
+   * only tints it, in the light of the ticket page's cards
+   * (tickets/ticket-theme.css .t-field): white pooling in its upper left,
+   * Q27 blue in its lower right, a little cyan at the upper right. It
+   * reads as glass from its edges: the specular rim of the shared glass
+   * button (bright upper left, cyan lower right), a lit top edge, a cyan
+   * line inside the lower edge and a soft shadow on the film. No halo. The
+   * label is white with a navy shadow, so it holds on a bright frame. A
+   * size up from the glass button.
+   */
+  .hero-cta.button.is-glass {
+    min-height: 3.5rem;
+    margin-top: var(--space-md);
+    padding-inline: var(--space-lg);
+    border-radius: var(--radius-ticket-button);
+    background:
+      radial-gradient(
+        75% 120% at 12% 0%,
+        color-mix(in srgb, var(--color-white) 34%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        85% 130% at 92% 110%,
+        color-mix(in srgb, var(--color-ticket-sky) 42%, transparent),
+        transparent 72%
+      ),
+      radial-gradient(
+        50% 90% at 100% 0%,
+        color-mix(in srgb, var(--color-ticket-cyan) 30%, transparent),
+        transparent 70%
+      ),
+      linear-gradient(
+        160deg,
+        color-mix(in srgb, var(--color-white) 8%, transparent) 0%,
+        color-mix(in srgb, var(--color-ticket-ice) 8%, transparent) 55%,
+        color-mix(in srgb, var(--color-ticket-sky) 14%, transparent) 100%
+      );
+    box-shadow:
+      inset 0 1px 1px color-mix(in srgb, var(--color-white) 85%, transparent),
+      inset 0 -10px 14px -10px
+        color-mix(in srgb, var(--color-ticket-cyan) 70%, transparent),
+      0 14px 26px -14px
+        color-mix(in srgb, var(--color-ticket-midnight) 80%, transparent);
+    color: var(--color-white);
+    font-size: var(--text-size-small);
+    font-weight: var(--font-weight-extrabold);
+    text-shadow:
+      0 1px 2px
+        color-mix(in srgb, var(--color-ticket-midnight) 75%, transparent),
+      0 0 10px color-mix(in srgb, var(--color-ticket-midnight) 50%, transparent);
+    -webkit-backdrop-filter: blur(6px) saturate(150%);
+    backdrop-filter: blur(6px) saturate(150%);
   }
 
-  .hero-cta {
-    margin-top: var(--space-md);
+  /* The arrow gets the label's shadow. */
+  .hero-cta :global(svg) {
+    filter: drop-shadow(
+      0 1px 2px
+        color-mix(in srgb, var(--color-ticket-midnight) 75%, transparent)
+    );
+  }
+
+  /* Hover, focus and press: the glass brightens a little; no halo. */
+  .hero-cta.button.is-glass::before {
+    background: color-mix(in srgb, var(--color-white) 14%, transparent);
+    box-shadow: none;
+  }
+
+  @media (hover: hover) {
+    .hero-cta.button.is-glass:hover {
+      background:
+        radial-gradient(
+          75% 120% at 12% 0%,
+          color-mix(in srgb, var(--color-white) 34%, transparent),
+          transparent 70%
+        ),
+        radial-gradient(
+          85% 130% at 92% 110%,
+          color-mix(in srgb, var(--color-ticket-sky) 42%, transparent),
+          transparent 72%
+        ),
+        radial-gradient(
+          50% 90% at 100% 0%,
+          color-mix(in srgb, var(--color-ticket-cyan) 30%, transparent),
+          transparent 70%
+        ),
+        linear-gradient(
+          160deg,
+          color-mix(in srgb, var(--color-white) 8%, transparent) 0%,
+          color-mix(in srgb, var(--color-ticket-ice) 8%, transparent) 55%,
+          color-mix(in srgb, var(--color-ticket-sky) 14%, transparent) 100%
+        );
+      color: var(--color-white);
+    }
+  }
+
+  /* Without backdrop blur the tint alone carries the label. */
+  @supports not (
+    (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+  ) {
+    .hero-cta.button.is-glass {
+      background: color-mix(in srgb, var(--color-navy) 55%, transparent);
+    }
   }
 
   @media (max-width: 767px) {

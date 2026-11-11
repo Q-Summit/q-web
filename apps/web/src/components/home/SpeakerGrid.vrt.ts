@@ -1,7 +1,8 @@
-// VRT variants for the previous-speakers carousel. Covers the 5-speaker set
-// the live homepage ships (see the component's own header comment), a long
-// list, a single speaker (nav/dots hidden below total > 1), and a long bio
-// that must clamp to 3 lines.
+// VRT variants for the home speaker highlights: past speakers alone, past
+// speakers plus a partly filled lineup with placeholders (local review),
+// the same lineup without placeholders (what a live build shows), and long
+// names and roles. Photos are sample filenames that do not exist, so the
+// cards show their light ground. See docs/dev/visual-testing.md.
 import SpeakerGrid from "./SpeakerGrid.astro";
 import type { Speaker } from "../../lib/content";
 
@@ -15,59 +16,67 @@ const speaker = (
   company: null,
   roleLine,
   photoFilename: `speaker-${name.toLowerCase().replace(/\s+/g, "-")}.jpg`,
-  group: "previous",
-  year: 2026,
+  group: "panel",
+  year: null,
   ...overrides,
 });
 
-const LONG_BIO =
-  "Started her first company while still studying computer science, later scaled it to serve customers across twelve European markets before joining an early-stage venture fund to back the next wave of student founders full time.";
+const alumni = [
+  speaker("Anna Keller", "Co-Founder of Northwind Capital"),
+  speaker("David Marsh", "Director DACH & EMEA @Bluepeak Systems"),
+  speaker("Priya Rao", "Founder of Rivertech Labs"),
+  speaker("Tobias Wagner", "Partner at Cedar Ventures"),
+];
+
+const lineup = [
+  speaker("Sample Speaker", "Sample role, Sample company", {
+    group: "current",
+    year: 2027,
+  }),
+];
+
+const base = {
+  eyebrow: "Sample eyebrow",
+  heading: "Sample speaker highlights",
+  cta: { label: "See all sample speakers", href: "#speakers" },
+  alumni,
+  alumniLabel: "Sample alumni",
+};
 
 export default {
   component: SpeakerGrid,
   variants: {
-    default: {
-      heading: "Previous speakers",
-      intro: "A look back at who has taken the stage at Q-Summit.",
-      speakers: [
-        speaker("Anna Keller", "Co-Founder of Northwind Capital", {
-          bio: "Co-founded Northwind Capital after five years building payment infrastructure for European retailers.",
-        }),
-        speaker("David Marsh", "Director DACH & EMEA @Bluepeak Systems"),
-        speaker("Priya Rao", "Founder of Rivertech Labs", {
-          bio: "Built Rivertech Labs from a university side project into a twenty-person logistics startup.",
-        }),
-        speaker("Tobias Wagner", "Partner at Cedar Ventures"),
-        speaker("Lena Fischer", "Head of Product at Solace Bank"),
+    default: base,
+    "lineup-with-placeholders": {
+      ...base,
+      lineup,
+      lineupLabel: "2027",
+      lineupSlots: 4,
+      placeholders: true,
+      placeholderName: "Sample placeholder",
+      placeholderRole: "Placeholder, sample only",
+    },
+    "lineup-live": {
+      ...base,
+      lineup,
+      lineupLabel: "2027",
+      lineupSlots: 4,
+      placeholders: false,
+    },
+    "long-names": {
+      ...base,
+      alumni: [
+        speaker(
+          "Dr. Maximiliane Alexandra von Hohenberg-Sample",
+          "Managing Director and Chief Sample Officer, Sample Holdings International",
+        ),
+        ...alumni.slice(0, 2),
       ],
-      cta: { label: "See all speakers", href: "/speaker" },
     },
-    "many-speakers": {
-      heading: "Previous speakers",
-      intro: "Twelve years of Q-Summit main stage guests.",
-      speakers: Array.from({ length: 12 }, (_, i) =>
-        speaker(`Speaker Number ${i + 1}`, "Founder and Q-Summit alumnus"),
-      ),
-      cta: { label: "See all speakers", href: "/speaker" },
-    },
-    "single-speaker": {
-      heading: "Previous speakers",
-      intro: "Only one highlight has been published so far.",
-      speakers: [speaker("Anna Keller", "Co-Founder of Northwind Capital")],
+    empty: {
+      heading: "No speakers",
       cta: undefined,
-    },
-    "long-bio": {
-      heading: "Previous speakers",
-      intro: "Long CMS bios must clamp instead of overflowing the card.",
-      speakers: [
-        speaker("Anna Keller", "Co-Founder of Northwind Capital", {
-          bio: LONG_BIO,
-        }),
-        speaker("David Marsh", "Director DACH & EMEA @Bluepeak Systems", {
-          bio: LONG_BIO,
-        }),
-      ],
-      cta: undefined,
+      alumni: [],
     },
   },
 };

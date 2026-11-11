@@ -1,0 +1,118 @@
+---
+// /whyq/students/, /whyq/startups/, /whyq/corporates/, /whyq/investors/:
+// one page per audience, the targets of the "Why Q?" submenu and of the
+// home page's audience tiles. Together they are "Why Q?": there is no
+// overview page (/whyq/ redirects to the tiles on the home page,
+// astro.config.mjs).
+//
+// Provisional on purpose: each page shows its audience's section of the
+// page-whyq content (FeatureSection) under a short header, plus the way to
+// the tickets. The real design of these pages is a later task, so this
+// file stays lean and adds no copy of its own: the audience name and the
+// eyebrow come from the site-settings nav (the submenu entry and its
+// parent), the intro and the section from page-whyq, the ticket link's
+// label from the ticket page. The registry of routes and the audience each
+// one shows lives in lib/whyq-audiences.ts.
+import Base from "../../layouts/Base.astro";
+import FeatureSection from "../../components/whyq/FeatureSection.astro";
+import Button from "../../components/ui/Button.astro";
+import Container from "../../components/ui/Container.astro";
+import Section from "../../components/ui/Section.astro";
+import { getPageContent, getSiteSettings } from "../../lib/content";
+import {
+  WHYQ_AUDIENCE_PAGES,
+  whyqAudienceNames,
+} from "../../lib/whyq-audiences";
+import { resolveWhyqImage } from "../../lib/whyq-images";
+
+export function getStaticPaths() {
+  return WHYQ_AUDIENCE_PAGES.map(({ slug, audienceId }) => ({
+    params: { audience: slug },
+    props: { slug, audienceId },
+  }));
+}
+
+interface Props {
+  slug: string;
+  audienceId: string;
+}
+
+const { slug, audienceId } = Astro.props;
+
+const [{ whyq, ticketCategories }, { nav }] = await Promise.all([
+  getPageContent(),
+  getSiteSettings(),
+]);
+
+const { label, parentLabel } = whyqAudienceNames(slug, nav);
+// A nav without a "Why Q?" item still gets an eyebrow from content.
+const eyebrow = parentLabel ?? whyq.heading;
+
+// An audience an editor removed or renamed must not fail the build: the
+// page then renders without its section.
+const audience = whyq.audiences.find((entry) => entry.id === audienceId);
+const image = audience
+  ? await resolveWhyqImage(audience.imageFile, audience.imageAlt)
+  : undefined;
+---
+
+<Base
+  title={`${label} | ${eyebrow}`}
+  description={whyq.metaDescription}
+  livePreviewGlobal="page-whyq"
+>
+  <Section small>
+    <Container>
+      <div class="section-header audience-header">
+        <p class="u-eyebrow">{eyebrow}</p>
+        <h1>{label}</h1>
+        <p class="audience-intro">{whyq.intro}</p>
+      </div>
+    </Container>
+  </Section>
+
+  {
+    audience && image && (
+      <FeatureSection
+        id={audience.id}
+        heading={audience.heading}
+        paragraph={audience.intro}
+        items={audience.items}
+        image={image}
+        imageLeft={audience.imageLeft}
+        eager
+      />
+    )
+  }
+
+  <Section small>
+    <Container>
+      <div class="audience-links">
+        <Button href="/ticket-categories/">
+          {ticketCategories.hero.heading}
+        </Button>
+      </div>
+    </Container>
+  </Section>
+</Base>
+
+<style>
+  /* .section-header colors every paragraph for intro copy; the eyebrow
+     keeps the shared .u-eyebrow color (color is the one property a site
+     may set on it, see global.css). */
+  .audience-header .u-eyebrow {
+    color: var(--color-primary);
+  }
+
+  /* Same scale as the section intro below. */
+  .audience-intro {
+    font-size: var(--text-size-medium);
+  }
+
+  .audience-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-sm);
+  }
+</style>

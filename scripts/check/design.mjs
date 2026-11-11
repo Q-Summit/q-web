@@ -369,8 +369,6 @@ const UNMAPPED_TOKENS = new Map([
   ["--duration-glass-fold", "see --ease-glass-spring"],
   ["--duration-glass-light", "see --ease-glass-spring"],
   ["--duration-glass-stagger", "see --ease-glass-spring"],
-  ["--duration-type-word", "see --ease-glass-spring"],
-  ["--duration-type-fade", "see --ease-glass-spring"],
   [
     "--duration-hack-fall",
     "see --ease-snappy; Q-Hack campaign only (DESIGN.md HACK-1)",

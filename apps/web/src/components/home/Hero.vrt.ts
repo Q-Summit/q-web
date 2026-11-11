@@ -1,6 +1,6 @@
 // VRT variants for Hero. The video/poster are hardcoded in the component (no
 // image prop to control), so every variant here is deterministic markup-only
-// content: headline/tagline copy, the announcement line list, and the CTA.
+// content: headline copy, the announcement line list, and the CTA.
 // See docs/dev/visual-testing.md for the variant conventions.
 import Hero from "./Hero.astro";
 
@@ -9,7 +9,6 @@ export default {
   variants: {
     default: {
       headline: "Germany's largest student-organized startup conference",
-      tagline: "Two days of keynotes, workshops and networking in Munich.",
       announcement: [
         "Registration for the next edition is now open.",
         "May 14 to 15, 2027",
@@ -19,8 +18,6 @@ export default {
     "long-copy": {
       headline:
         "Where ambitious students, founders and investors come together to build the next generation of startups",
-      tagline:
-        "A full two days of keynotes, hands-on workshops, panel discussions and evening networking events, hosted at the heart of Munich's startup scene.",
       announcement: [
         "Tickets for students, founders and corporate partners are now available.",
         "May 14 to 15, 2027, Munich",
@@ -30,15 +27,23 @@ export default {
         href: "#tickets",
       },
     },
+    // Badge and lead lines replace the announcement. No countdown here: a
+    // running clock can never be a stable screenshot (its logic is unit
+    // tested in test/countdown.test.ts).
+    "badge-and-lead": {
+      headline: "Sample headline for the sample edition",
+      announcement: ["Not shown: the lead lines replace it."],
+      cta: { label: "Get your ticket", href: "#tickets" },
+      badge: "Sample badge · Sample dates · Sample city",
+      leadLines: ["A first short sample line.", "A second short sample line."],
+    },
     "no-announcement-no-cta": {
       headline: "Q-Summit 2027",
-      tagline: "Details for the next edition will follow soon.",
       announcement: [],
       cta: undefined,
     },
     german: {
       headline: "Deutschlands größte studentische Startup-Konferenz",
-      tagline: "Zwei Tage Keynotes, Workshops und Networking in München.",
       announcement: [
         "Die Anmeldung für die nächste Ausgabe ist jetzt geöffnet.",
         "14. bis 15. Mai 2027",

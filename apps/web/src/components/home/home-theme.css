@@ -1,0 +1,237 @@
+/*
+ * Shared chrome of the 2027 home page (DESIGN.md HOME-1): page width,
+ * section rhythm, headers, the glass material and the scroll reveal.
+ * The home page has its own visual system: it shares the brand (colors,
+ * type, the Q mark) and proven techniques with the ticket page, not its
+ * surfaces. Only components under home/ import this file. Deviates from
+ * LAYOUT-1, LAYOUT-3, COMP-1, TYPE-1 and DEPTH-1 as HOME-1 allows.
+ */
+
+.h-shell {
+  --h-gutter: clamp(1rem, 5vw, 2.5rem);
+
+  width: min(100% - 2 * var(--h-gutter), var(--container-large));
+  margin-inline: auto;
+}
+
+.h-section {
+  position: relative;
+  padding-block: clamp(var(--space-xl), 9vw, 6.5rem);
+}
+
+.h-section.is-tight {
+  padding-block: clamp(var(--space-lg), 5vw, var(--space-xl));
+}
+
+/* In-page jumps land below the floating header. */
+.h-anchor {
+  scroll-margin-top: 5.5rem;
+}
+
+/* Section header: eyebrow, title, optional intro; a link may sit at its
+   right on wide screens (View all partners, See all speakers). */
+.h-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-sm) var(--space-lg);
+  margin-bottom: clamp(var(--space-md), 4vw, var(--space-xl));
+}
+
+.h-head.is-center {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.h-eyebrow {
+  margin: 0 0 var(--space-2xs);
+  color: var(--color-ticket-sky);
+  font-size: var(--text-size-small);
+  font-weight: var(--font-weight-extrabold);
+  letter-spacing: 0.16em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+@media (min-width: 768px) {
+  .h-eyebrow {
+    font-size: var(--text-size-regular);
+  }
+}
+
+.h-title {
+  margin: 0;
+  color: var(--color-navy);
+  font-size: clamp(2rem, 4.6vw, 3.25rem);
+  font-weight: var(--font-weight-extrabold);
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+.h-intro {
+  max-width: 36rem;
+  margin: var(--space-xs) 0 0;
+  color: color-mix(in srgb, var(--color-navy) 76%, transparent);
+  font-size: var(--text-size-medium);
+  line-height: 1.55;
+}
+
+.h-head.is-center .h-intro {
+  margin-inline: auto;
+}
+
+/* Quiet arrow link beside a section header. */
+.h-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.75rem;
+  color: var(--color-navy);
+  font-size: var(--text-size-small);
+  font-weight: var(--font-weight-extrabold);
+  text-decoration: none;
+}
+
+.h-more svg {
+  width: 1rem;
+  height: 1rem;
+  transition: transform var(--duration-hover) var(--ease-snappy);
+}
+
+@media (hover: hover) {
+  .h-more:hover svg {
+    transform: translateX(3px);
+  }
+}
+
+/*
+ * Glass, in the ticket page's transparent finish: barely any fill and a
+ * light blur, so the page light and the glass Qs behind stay visible as
+ * color and shape. The pane reads from one hairline rim, a lit top edge, a
+ * fine cyan line inside the lower edge and a soft cyan halo; there is no
+ * second border and no bevel band. Text on it stays navy at full strength.
+ */
+.h-glass {
+  position: relative;
+  border-radius: var(--radius-ticket-card);
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--color-white) 16%, transparent) 0%,
+    color-mix(in srgb, var(--color-white) 4%, transparent) 50%,
+    color-mix(in srgb, var(--color-ticket-sky) 8%, transparent) 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--color-white) 60%, transparent),
+    inset 0 1px 1px color-mix(in srgb, var(--color-white) 90%, transparent),
+    inset 0 -10px 16px -16px var(--color-ticket-cyan),
+    0 14px 32px -26px color-mix(in srgb, var(--color-navy) 35%, transparent),
+    0 0 22px -12px color-mix(in srgb, var(--color-ticket-cyan) 30%, transparent);
+  -webkit-backdrop-filter: blur(5px) saturate(110%);
+  backdrop-filter: blur(5px) saturate(110%);
+}
+
+/* Without backdrop blur, a near-opaque fill keeps text on a calm surface. */
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  .h-glass {
+    background: color-mix(in srgb, var(--color-white) 88%, transparent);
+  }
+}
+
+/*
+ * Pointer light (home.client.ts): on a fine pointer, a soft highlight
+ * follows the cursor across a pane marked data-h-light and the pane turns
+ * a degree or two toward it, like a piece of glass picking up a lamp.
+ * --h-lx / --h-ly are the pointer in percent; --h-rx / --h-ry the tilt.
+ */
+.h-glare {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  background: radial-gradient(
+    22rem circle at var(--h-lx, 50%) var(--h-ly, 0%),
+    color-mix(in srgb, var(--color-white) 55%, transparent),
+    color-mix(in srgb, var(--color-ticket-cyan) 14%, transparent) 38%,
+    transparent 62%
+  );
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-open) var(--ease-snappy);
+}
+
+[data-h-light].is-lit-by-pointer > .h-glare {
+  opacity: 1;
+}
+
+/*
+ * Scroll reveal (page-local, HOME-1): what home.client.ts finds below the
+ * fold is held back and then sharpens out of a blur while it rises a
+ * little, once, a few frames apart inside a group (--i). Content is
+ * visible by default, so a page without the script is complete. A
+ * keyframe animation with backwards fill, not a transition: it cannot
+ * clash with a tile's own hover transition and leaves no state behind.
+ */
+[data-h-reveal="held"] {
+  opacity: 0;
+}
+
+[data-h-reveal="in"] {
+  animation: h-blur-in var(--duration-reveal) var(--ease-emphasized) backwards;
+  animation-delay: calc(var(--duration-glass-stagger) * 3 * var(--i, 0));
+}
+
+@keyframes h-blur-in {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+    transform: translateY(1rem);
+  }
+}
+
+/*
+ * Into the footer: the page light fades to the footer's white under a
+ * short veil, so the ground never ends on a hard edge.
+ */
+.h-page-fade {
+  --h-fade: clamp(4rem, 8vw, 6rem);
+
+  position: relative;
+  z-index: 1;
+  height: var(--h-fade);
+  margin-top: calc(-1 * var(--h-fade));
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--color-white) 45%, transparent) 55%,
+    var(--color-background) 100%
+  );
+  pointer-events: none;
+}
+
+body:has(.h-page-fade) .site-footer {
+  border-top-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-h-reveal="held"] {
+    opacity: 1;
+  }
+
+  [data-h-reveal="in"] {
+    animation: none;
+  }
+
+  .h-more svg,
+  .h-glare {
+    transition: none;
+  }
+
+  .h-more:hover svg {
+    transform: none;
+  }
+}

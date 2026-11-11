@@ -1,5 +1,10 @@
 // Builders for /llms.txt and /llms-full.txt. Route tables are hand-curated.
 import type { PageContent, SiteSettings } from "./content";
+import {
+  WHYQ_AUDIENCE_PAGES,
+  whyqAudienceNames,
+  whyqAudiencePath,
+} from "./whyq-audiences";
 
 export interface LlmsLink {
   slug: string;
@@ -39,17 +44,27 @@ export function joinAnnouncement(lines: string[]): string {
     .join(" ");
 }
 
+/** Title of an audience page in both llms surfaces, named from the nav. */
+function whyqAudienceTitle(slug: string, settings?: SiteSettings): string {
+  return `Why Q-Summit: ${whyqAudienceNames(slug, settings?.nav ?? []).label}`;
+}
+
 export function buildRouteTable(
   content: PageContent,
   settings?: SiteSettings,
 ): LlmsRouteTable {
+  // "Why Q?" is the four audience pages under /whyq/ (there is no overview
+  // page; /whyq/ redirects to the homepage, astro.config.mjs). They share
+  // the page-whyq blurb; their names come from the nav.
+  const audiencePages: LlmsLink[] = WHYQ_AUDIENCE_PAGES.map(({ slug }) => ({
+    slug: whyqAudiencePath(slug),
+    label: whyqAudienceTitle(slug, settings),
+    description: content.whyq.metaDescription,
+  }));
+
   const mainPages: LlmsLink[] = [
     { slug: "/", label: "Home", description: content.home.metaDescription },
-    {
-      slug: "/whyq",
-      label: "Why Q-Summit",
-      description: content.whyq.metaDescription,
-    },
+    ...audiencePages,
     {
       slug: "/speaker",
       label: "Speakers",
@@ -60,11 +75,8 @@ export function buildRouteTable(
       label: "Partners",
       description: content.partner.metaDescription,
     },
-    {
-      slug: "/program",
-      label: "Program",
-      description: content.program.metaDescription,
-    },
+    // /program is offline (astro.config.mjs redirects it to the homepage),
+    // so it is listed neither here nor in the full-text corpus below.
     {
       slug: "/hackathon",
       label: "Hackathon",
@@ -209,7 +221,6 @@ export function buildLlmsFullTxt(opts: {
     whyq,
     speaker,
     partner,
-    program,
     hackathon,
     ticketCategories,
     ourTeam,
@@ -254,21 +265,32 @@ export function buildLlmsFullTxt(opts: {
       "---",
       "",
     ],
-    [
-      ...pageHeader(site, "/whyq", whyq.title, whyq.metaDescription),
-      whyq.heading,
-      "",
-      whyq.intro,
-      "",
-      ...whyq.audiences.flatMap((audience) =>
-        section(audience.heading, [
-          audience.intro,
-          ...audience.items.map((item) => bullet(item.title, item.description)),
-        ]),
-      ),
-      "---",
-      "",
-    ],
+    // One block per audience page, as the site shows them: the page-whyq
+    // intro and that audience's section. An audience an editor removed
+    // leaves its page without a section, and its block without one.
+    ...WHYQ_AUDIENCE_PAGES.map(({ slug, audienceId }) => {
+      const audience = whyq.audiences.find((entry) => entry.id === audienceId);
+      return [
+        ...pageHeader(
+          site,
+          whyqAudiencePath(slug),
+          whyqAudienceTitle(slug, siteSettings),
+          whyq.metaDescription,
+        ),
+        whyq.intro,
+        "",
+        ...(audience
+          ? section(audience.heading, [
+              audience.intro,
+              ...audience.items.map((item) =>
+                bullet(item.title, item.description),
+              ),
+            ])
+          : []),
+        "---",
+        "",
+      ];
+    }),
     [
       ...pageHeader(site, "/speaker", speaker.title, speaker.metaDescription),
       speaker.heading,
@@ -290,22 +312,6 @@ export function buildLlmsFullTxt(opts: {
         partner.cta.heading,
         partner.cta.text,
         bullet("CTA", `${partner.cta.buttonLabel} (${partner.cta.buttonHref})`),
-      ]),
-      "---",
-      "",
-    ],
-    [
-      ...pageHeader(site, "/program", program.title, program.metaDescription),
-      ...section("Agenda", [
-        program.agenda.heading,
-        program.agenda.intro,
-        ...program.agenda.items.map(
-          (item) => `- ${item.date}: **${item.title}**: ${item.description}`,
-        ),
-      ]),
-      ...section("Closing", [
-        program.closingCta.heading,
-        program.closingCta.text,
       ]),
       "---",
       "",

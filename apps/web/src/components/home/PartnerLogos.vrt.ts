@@ -1,5 +1,7 @@
-// VRT variants for PartnerLogos. Stresses the marquee's repeat-computation
-// (repeatsFor) with different logo counts and the empty-groups short-circuit.
+// VRT variants for PartnerLogos. Stresses the strip's repeat computation
+// with different logo counts, logos of very different proportions (the
+// equal-area sizing), a row without a description, and the empty
+// short-circuit. See docs/dev/visual-testing.md.
 import PartnerLogos, { type PartnerLogoGroup } from "./PartnerLogos.astro";
 
 const logo = (name: string, width: number, height: number) => ({
@@ -12,8 +14,8 @@ const logo = (name: string, width: number, height: number) => ({
 
 const defaultGroups: PartnerLogoGroup[] = [
   {
-    value: "50",
-    label: "Startup and corporate partners",
+    label: "Sample startups",
+    description: "Sample founders",
     logos: [
       logo("Northwind Capital", 160, 40),
       logo("Bluepeak Systems", 140, 40),
@@ -23,8 +25,16 @@ const defaultGroups: PartnerLogoGroup[] = [
     ],
   },
   {
-    value: "12",
-    label: "Network partners",
+    label: "Sample corporates",
+    description: "Sample companies",
+    logos: [
+      logo("Wide Wordmark Holdings", 400, 40),
+      logo("Square Mark", 80, 80),
+      logo("Tall Mark", 40, 90),
+    ],
+  },
+  {
+    label: "Sample network",
     logos: [
       logo("Founders Guild", 130, 38),
       logo("Startup Alliance Bavaria", 170, 40),
@@ -36,34 +46,18 @@ export default {
   component: PartnerLogos,
   variants: {
     default: {
+      eyebrow: "Sample partners",
+      heading: "Partners of the sample edition",
       groups: defaultGroups,
-      cta: { label: "Become a partner", href: "#partners" },
+      cta: { label: "View all sample partners", href: "#partners" },
     },
-    "many-logos": {
-      groups: [
-        {
-          value: "80",
-          label: "Startup and corporate partners",
-          logos: Array.from({ length: 16 }, (_, i) =>
-            logo(`Partner Company ${i + 1}`, 140, 40),
-          ),
-        },
-      ],
-      cta: undefined,
-    },
-    "single-logo": {
-      groups: [
-        {
-          value: "1",
-          label: "Network partners",
-          logos: [logo("Founders Guild", 130, 38)],
-        },
-      ],
-      cta: undefined,
+    "one-row-no-cta": {
+      heading: "One row",
+      groups: defaultGroups.slice(0, 1),
     },
     empty: {
+      heading: "No partners yet",
       groups: [],
-      cta: undefined,
     },
   },
 };
