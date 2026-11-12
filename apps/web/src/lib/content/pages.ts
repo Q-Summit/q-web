@@ -22,6 +22,8 @@ import { CONTENT_SOURCE, readJson } from "./source";
 export interface PageStat {
   value: string;
   label: string;
+  /** Short line under the label (home partner rows), e.g. "Founders & scale-ups". */
+  description?: string;
   /** Partner names shown in the logo sliders (index page only). */
   logos?: string[];
 }
@@ -104,6 +106,74 @@ export interface FeatureCard {
 export interface WhyCard {
   title: string;
   description: string;
+  /** Small label above the title, e.g. "For founders". */
+  eyebrow?: string;
+  /** Where the tile leads (an audience page). Without it the tile is not a link. */
+  href?: string;
+  /** e.g. "Learn more". */
+  linkLabel?: string;
+  /** Media filename of the tile photo, e.g. "whyq-startups-800.webp". */
+  imageFile?: string;
+  imageAlt?: string;
+}
+
+/**
+ * The home countdown to the first conference day. Only wording lives here:
+ * the target is `event.startDate` at 00:00 Europe/Berlin (the start of the
+ * day, not a doors or program time), so there is one date to maintain.
+ */
+export interface HomeCountdown {
+  /** Accessible name, e.g. "Countdown to Q-Summit 2027". */
+  label: string;
+  daysLabel: string;
+  hoursLabel: string;
+  minutesLabel: string;
+  secondsLabel: string;
+  /** Read out instead of the digits. Contains {days}, {hours}, {minutes}. */
+  spokenLabel: string;
+  /** Shown once the first conference day has begun. */
+  liveLabel: string;
+}
+
+/** A social post shown in the home social section. */
+export interface HomeSocialPost {
+  platform: "linkedin" | "instagram";
+  href: string;
+  /** Media filename of the post image. */
+  imageFile: string;
+  imageAlt: string;
+}
+
+export interface HomeSocial {
+  eyebrow: string;
+  heading: string;
+  intro: string;
+  /** Button labels; the links are the site's LinkedIn and Instagram profiles. */
+  linkedinLabel: string;
+  instagramLabel: string;
+  /**
+   * Posts from oldest to newest: a new post is added at the end. The page
+   * shows the newest four, newest first (lib/social-posts.ts); empty
+   * frames hold the layout until posts exist.
+   */
+  posts: HomeSocialPost[];
+}
+
+/** Next edition's lineup on the home page, fed by published speakers. */
+export interface HomeLineup {
+  /** Badge on each card, e.g. "2027". */
+  label: string;
+  /** Edition whose published "current" speakers fill the slots. */
+  year: number;
+  /** How many cards the row holds. */
+  slots: number;
+  /**
+   * Fill open slots with marked placeholders. For local review only: with
+   * false, open slots are simply not rendered.
+   */
+  showPlaceholders: boolean;
+  placeholderName: string;
+  placeholderRole: string;
 }
 
 export interface HomeContent {
@@ -114,7 +184,13 @@ export interface HomeContent {
     tagline: string;
     announcementLines: string[];
     cta: PageLink;
+    /** Pill above the headline, e.g. the anniversary, dates and city. */
+    badge?: string;
+    /** Short lines under the headline; shown instead of announcementLines. */
+    leadLines?: string[];
   };
+  /** Wording of the countdown; without it no countdown is shown. */
+  countdown?: HomeCountdown;
   /**
    * Machine-readable conference dates for the homepage Event JSON-LD.
    * Kept separate from `hero.announcementLines`, which is display copy an
@@ -133,20 +209,44 @@ export interface HomeContent {
     items: PageStat[];
   };
   partnerBand: {
+    eyebrow?: string;
+    /** e.g. "Partners of Q-Summit 2026": always names the edition shown. */
+    heading?: string;
     items: PageStat[];
     cta: PageLink;
   };
   previousSpeakers: {
+    eyebrow?: string;
     heading: string;
     intro: string;
     cta: PageLink;
+    /**
+     * Badge on past speakers, e.g. "Past Speaker". The name is historical:
+     * they are not Q alumni (those are former team members).
+     */
+    alumniLabel?: string;
+    /** Names of past speakers to show, in order; default: the panel group. */
+    highlights?: string[];
+    lineup?: HomeLineup;
+    /**
+     * Names of earlier speakers shown in the lineup's place while the
+     * lineup's edition has no published speaker yet, in this order. They
+     * are never presented as booked: their cards carry standInLabel, not
+     * the lineup label.
+     */
+    standIns?: string[];
+    /** Badge on a stand-in card, e.g. "Q-Summit 2026". */
+    standInLabel?: string;
   };
   whyAttend: {
+    eyebrow?: string;
     heading: string;
     intro: string;
     cards: WhyCard[];
     cta: PageLink;
   };
+  /** LinkedIn and Instagram section; without it the section is not shown. */
+  social?: HomeSocial;
   faqSection: {
     heading: string;
     intro: string;
@@ -534,16 +634,23 @@ function toIsoDay(value: string | null | undefined): string {
 }
 
 interface CmsPageStat {
-  value: string;
+  /** Optional on partner rows, which no longer show a figure. */
+  value?: string | null;
   label: string;
+  description?: string | null;
   logos?: { text: string }[] | null;
 }
 
 const toPageStat = (stat: CmsPageStat): PageStat => ({
-  value: stat.value,
+  value: stat.value ?? "",
   label: stat.label,
+  ...(stat.description?.trim() ? { description: stat.description } : {}),
   logos: fromTextRows(stat.logos),
 });
+
+/** Drop null / empty optional strings so the web model keeps them undefined. */
+const optionalText = (value: string | null | undefined): string | undefined =>
+  value?.trim() ? value : undefined;
 
 // Hackathon rows may have no description in the CMS (null); the program
 // agenda always has one.
@@ -568,7 +675,10 @@ interface CmsPageHomeDoc {
     tagline: string;
     announcementLines?: { text: string }[] | null;
     cta: CmsPageLink;
+    badge?: string | null;
+    leadLines?: { text: string }[] | null;
   };
+  countdown?: { [K in keyof HomeCountdown]?: string | null } | null;
   event?: { startDate?: string | null; endDate?: string | null } | null;
   stats: {
     heading: string;
@@ -576,20 +686,59 @@ interface CmsPageHomeDoc {
     items?: CmsPageStat[] | null;
   };
   partnerBand: {
+    eyebrow?: string | null;
+    heading?: string | null;
     items?: CmsPageStat[] | null;
     cta: CmsPageLink;
   };
   previousSpeakers: {
+    eyebrow?: string | null;
     heading: string;
     intro: string;
     cta: CmsPageLink;
+    alumniLabel?: string | null;
+    highlights?: { text: string }[] | null;
+    lineup?: {
+      label?: string | null;
+      year?: number | null;
+      slots?: number | null;
+      showPlaceholders?: boolean | null;
+      placeholderName?: string | null;
+      placeholderRole?: string | null;
+    } | null;
+    standIns?: { text: string }[] | null;
+    standInLabel?: string | null;
   };
   whyAttend: {
+    eyebrow?: string | null;
     heading: string;
     intro: string;
-    cards: WhyCard[];
+    cards: {
+      title: string;
+      description: string;
+      eyebrow?: string | null;
+      href?: string | null;
+      linkLabel?: string | null;
+      image?: CmsMediaRef | number | string | null;
+      imageAlt?: string | null;
+    }[];
     cta: CmsPageLink;
   };
+  social?: {
+    eyebrow?: string | null;
+    heading?: string | null;
+    intro?: string | null;
+    linkedinLabel?: string | null;
+    instagramLabel?: string | null;
+    posts?:
+      | {
+          platform: "linkedin" | "instagram";
+          href: string;
+          image?: CmsMediaRef | number | string | null;
+          imageAlt?: string | null;
+        }[]
+      | null;
+  } | null;
   faqSection: {
     heading: string;
     intro: string;
@@ -597,8 +746,64 @@ interface CmsPageHomeDoc {
   };
 }
 
+/** The countdown shows only once every label is filled in. */
+function toHomeCountdown(
+  doc: CmsPageHomeDoc["countdown"],
+): HomeCountdown | undefined {
+  const keys = [
+    "label",
+    "daysLabel",
+    "hoursLabel",
+    "minutesLabel",
+    "secondsLabel",
+    "spokenLabel",
+    "liveLabel",
+  ] as const;
+  if (!doc || keys.some((key) => !doc[key]?.trim())) return undefined;
+  return Object.fromEntries(
+    keys.map((key) => [key, doc[key]]),
+  ) as unknown as HomeCountdown;
+}
+
 async function cmsGetHome(): Promise<HomeContent> {
   const doc = await fetchGlobal<CmsPageHomeDoc>("page-home");
+
+  const cards: WhyCard[] = [];
+  for (const c of doc.whyAttend.cards) {
+    const imageFile = await resolveOptionalUploadFilename(
+      c.image,
+      `home audience ${c.title}`,
+    );
+    cards.push({
+      title: c.title,
+      description: c.description,
+      ...(optionalText(c.eyebrow) ? { eyebrow: c.eyebrow! } : {}),
+      ...(optionalText(c.href) ? { href: c.href! } : {}),
+      ...(optionalText(c.linkLabel) ? { linkLabel: c.linkLabel! } : {}),
+      ...(imageFile ? { imageFile, imageAlt: c.imageAlt ?? "" } : {}),
+    });
+  }
+
+  const posts: HomeSocialPost[] = [];
+  for (const post of doc.social?.posts ?? []) {
+    const imageFile = await resolveOptionalUploadFilename(
+      post.image,
+      `home social post ${post.href}`,
+    );
+    if (!imageFile) continue;
+    posts.push({
+      platform: post.platform,
+      href: post.href,
+      imageFile,
+      imageAlt: post.imageAlt ?? "",
+    });
+  }
+  const social = doc.social;
+  const lineup = doc.previousSpeakers.lineup;
+  const highlights = fromTextRows(doc.previousSpeakers.highlights);
+  const standIns = fromTextRows(doc.previousSpeakers.standIns);
+  const leadLines = fromTextRows(doc.hero.leadLines);
+
   return {
     title: doc.title,
     metaDescription: doc.metaDescription ?? "",
@@ -607,7 +812,12 @@ async function cmsGetHome(): Promise<HomeContent> {
       tagline: doc.hero.tagline,
       announcementLines: fromTextRows(doc.hero.announcementLines),
       cta: toPageLink(doc.hero.cta),
+      ...(optionalText(doc.hero.badge) ? { badge: doc.hero.badge! } : {}),
+      ...(leadLines.length ? { leadLines } : {}),
     },
+    ...(toHomeCountdown(doc.countdown)
+      ? { countdown: toHomeCountdown(doc.countdown) }
+      : {}),
     event: {
       startDate: toIsoDay(doc.event?.startDate),
       endDate: toIsoDay(doc.event?.endDate),
@@ -618,23 +828,53 @@ async function cmsGetHome(): Promise<HomeContent> {
       items: (doc.stats.items ?? []).map(toPageStat),
     },
     partnerBand: {
+      eyebrow: optionalText(doc.partnerBand.eyebrow),
+      heading: optionalText(doc.partnerBand.heading),
       items: (doc.partnerBand.items ?? []).map(toPageStat),
       cta: toPageLink(doc.partnerBand.cta),
     },
     previousSpeakers: {
+      eyebrow: optionalText(doc.previousSpeakers.eyebrow),
       heading: doc.previousSpeakers.heading,
       intro: doc.previousSpeakers.intro,
       cta: toPageLink(doc.previousSpeakers.cta),
+      alumniLabel: optionalText(doc.previousSpeakers.alumniLabel),
+      ...(highlights.length ? { highlights } : {}),
+      ...(standIns.length ? { standIns } : {}),
+      standInLabel: optionalText(doc.previousSpeakers.standInLabel),
+      // The lineup row needs its label and edition; the rest has defaults.
+      ...(lineup?.label?.trim() && lineup.year
+        ? {
+            lineup: {
+              label: lineup.label,
+              year: lineup.year,
+              slots: lineup.slots ?? 4,
+              showPlaceholders: Boolean(lineup.showPlaceholders),
+              placeholderName: lineup.placeholderName ?? "",
+              placeholderRole: lineup.placeholderRole ?? "",
+            },
+          }
+        : {}),
     },
     whyAttend: {
+      eyebrow: optionalText(doc.whyAttend.eyebrow),
       heading: doc.whyAttend.heading,
       intro: doc.whyAttend.intro,
-      cards: doc.whyAttend.cards.map((c) => ({
-        title: c.title,
-        description: c.description,
-      })),
+      cards,
       cta: toPageLink(doc.whyAttend.cta),
     },
+    ...(social?.heading?.trim()
+      ? {
+          social: {
+            eyebrow: social.eyebrow ?? "",
+            heading: social.heading,
+            intro: social.intro ?? "",
+            linkedinLabel: social.linkedinLabel ?? "",
+            instagramLabel: social.instagramLabel ?? "",
+            posts,
+          },
+        }
+      : {}),
     faqSection: {
       heading: doc.faqSection.heading,
       intro: doc.faqSection.intro,

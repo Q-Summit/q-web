@@ -16,9 +16,14 @@ interface SocialLink extends PageLink {
     "tiktok" | "instagram-qsummit" | "instagram-qhack" | "linkedin" | "youtube";
 }
 
+/** Nav item with its optional submenu (NavLink in apps/web site-settings.ts). */
+interface NavLink extends PageLink {
+  children?: PageLink[] | null;
+}
+
 interface SiteSettingsSource {
   siteTitle: string;
-  nav: PageLink[];
+  nav: NavLink[];
   footer: {
     tagline: string;
     links: PageLink[];
@@ -54,7 +59,15 @@ async function run() {
     slug: "site-settings",
     data: {
       siteTitle: data.siteTitle,
-      nav: data.nav,
+      // Sub-items are optional: an item without them seeds as a plain link.
+      nav: data.nav.map((item) => ({
+        label: item.label,
+        href: item.href,
+        children: (item.children ?? []).map((child) => ({
+          label: child.label,
+          href: child.href,
+        })),
+      })),
       footer: {
         tagline: data.footer.tagline,
         links: data.footer.links,
@@ -80,6 +93,9 @@ async function run() {
   console.log("site-settings global: updated and published");
   console.log(` - siteTitle: "${data.siteTitle}"`);
   console.log(` - nav items: ${data.nav.length}`);
+  console.log(
+    ` - nav sub-items: ${data.nav.reduce((sum, item) => sum + (item.children?.length ?? 0), 0)}`,
+  );
   console.log(` - footer links: ${data.footer.links.length}`);
   console.log(` - social links: ${data.footer.socialLinks.length}`);
   console.log(` - llms key facts: ${data.llms?.keyFacts?.length ?? 0}`);

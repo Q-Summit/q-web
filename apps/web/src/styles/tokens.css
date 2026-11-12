@@ -194,8 +194,6 @@
   --duration-glass-fold: 220ms;
   --duration-glass-light: 520ms;
   --duration-glass-stagger: 28ms;
-  --duration-type-word: 150ms;
-  --duration-type-fade: 120ms;
   /* Kickoff glass motion (DESIGN.md KICKOFF-1). Longer than the
      conference 500ms ceiling on purpose: the zip's blob pulse and
      album card snap are the look of this page. */

@@ -61,7 +61,6 @@ const LIGHT = [
                 >
                   <span class="t-liquid" aria-hidden="true">
                     <TicketQBubble class="is-card" />
-                    <TicketQBubble class="is-card-sm" />
                   </span>
                   <header class="t-card-head">
                     <h2 id={`ticket-${ticket.key}`} class="t-card-name">
@@ -210,11 +209,27 @@ const LIGHT = [
     line-height: 1.1;
   }
 
+  /* The line ends before the glass Q floating in the card's upper right
+     corner (ticket-theme.css .t-qb.is-card: 34% of the card wide, plus
+     its drift), so the text wraps beside the Q and never runs across it. */
   .t-card-desc {
+    /* At least two lines high, so a short description and a long one
+       take the same room and the cards keep the same size. */
+    min-height: calc(2 * 1.45em);
     margin: 0.35rem 0 0;
+    padding-inline-end: 36%;
     color: color-mix(in srgb, var(--color-navy) 78%, transparent);
     font-size: var(--text-size-small);
     line-height: 1.45;
+  }
+
+  /* Three cards over two: the cards are narrow here and the longest
+     description takes three lines beside the Q, so every card reserves
+     three, or the two rows of cards would differ in height. */
+  @media (min-width: 900px) and (max-width: 1199px) {
+    .t-card-desc {
+      min-height: calc(3 * 1.45em);
+    }
   }
 
   .t-card-price {
@@ -267,8 +282,8 @@ const LIGHT = [
    *     the first keyframe (ticket-theme.css), so it restarts seamlessly;
    *   - the Save chip has no live backdrop blur: it sits on the card's own
    *     soft light, where the blur changed nothing you can see.
-   * The highlights panel keeps its glass blur, which is what shows the Q
-   * bubbles behind it frosted.
+   * The highlights panel has no live blur either (.t-glass in
+   * ticket-theme.css): only the card's soft light lies behind it.
    */
   .t-save {
     -webkit-backdrop-filter: none;
@@ -277,8 +292,7 @@ const LIGHT = [
 
   .t-slide[data-ticket-still] .t-card::before,
   .t-slide[data-ticket-still] .t-card::after,
-  .t-slide[data-ticket-still] :global(.t-qb),
-  .t-slide[data-ticket-still] :global(.t-qb-flow) {
+  .t-slide[data-ticket-still] :global(.t-qb) {
     animation: none;
   }
 
@@ -504,9 +518,9 @@ const LIGHT = [
   }
 
   /*
-   * The current ticket is marked by a small Q bubble: the original Q mark
-   * as a mask (the same file as the background bubbles), filled with lit
-   * Q27 glass, a cyan halo behind it. It pops in as the pip fades.
+   * The current ticket is marked by a small Q: the original Q mark
+   * (public/icon-512.png) as a mask, filled with lit Q27 glass, a cyan
+   * halo behind it. It pops in as the pip fades.
    */
   .t-dot-q {
     width: 1.25rem;
@@ -604,6 +618,13 @@ const LIGHT = [
     .t-slide > .t-card {
       grid-row: 1 / -1;
       grid-template-rows: subgrid;
+    }
+
+    /* A card without a note keeps the note's line, so a row of cards
+       without one is as high as a row with one. */
+    .t-card-note.is-empty {
+      display: block;
+      min-height: 1.35em;
     }
 
     .t-controls,

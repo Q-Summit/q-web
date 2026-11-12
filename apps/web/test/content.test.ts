@@ -5,7 +5,13 @@
 // run in the Workers pool. This file therefore runs in the "node" vitest
 // project (see ../vitest.config.ts) and is typechecked by
 // ./tsconfig.node.json, which pulls in @types/node.
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -17,7 +23,15 @@ import {
   currentSpeakerEdition,
   speakersForEdition,
 } from "../src/lib/content";
+import type { PageContent, SiteSettings } from "../src/lib/content";
 import { assertTicketPage } from "../src/lib/content/pages";
+import { toNavLink } from "../src/lib/content/site-settings";
+import { buildLlmsFullTxt, buildRouteTable } from "../src/lib/llms";
+import {
+  WHYQ_AUDIENCE_PAGES,
+  whyqAudienceNames,
+  whyqAudiencePath,
+} from "../src/lib/whyq-audiences";
 
 describe("normalizeHrefsDeep", () => {
   it("rewrites href-like keys case-insensitively, recursing objects and arrays", () => {
@@ -283,5 +297,191 @@ describe("assertTicketPage", () => {
     ).toThrow(/{discount}/);
     const { phases: _omit, ...withoutPhases } = page;
     expect(() => assertTicketPage(withoutPhases)).not.toThrow();
+  });
+});
+
+describe("toNavLink (site-settings nav submenu)", () => {
+  it("maps children and keeps the parent's own link", () => {
+    expect(
+      toNavLink({
+        label: "Why Q?",
+        href: "/whyq",
+        children: [{ label: "Fixture audience A", href: "/whyq/students" }],
+      }),
+    ).toEqual({
+      label: "Why Q?",
+      href: "/whyq",
+      children: [{ label: "Fixture audience A", href: "/whyq/students" }],
+    });
+  });
+
+  it("leaves the key off when children are absent, null or empty", () => {
+    // Absent is what a CMS without the field (or an old snapshot) returns.
+    for (const children of [undefined, null, []]) {
+      const link = toNavLink({ label: "Speaker", href: "/speaker", children });
+      expect(link).toEqual({ label: "Speaker", href: "/speaker" });
+      expect("children" in link).toBe(false);
+    }
+  });
+});
+
+describe("whyq audience pages", () => {
+  const readFixture = <T>(file: string): T =>
+    JSON.parse(
+      readFileSync(
+        new URL(`./fixtures/ci-content/${file}`, import.meta.url),
+        "utf-8",
+      ),
+    ) as T;
+  const content = readFixture<PageContent>("page-content.json");
+  // Raw fixture hrefs have no trailing slash; the loader adds it the same way.
+  const settings = normalizeHrefsDeep(
+    readFixture<SiteSettings>("site-settings.json"),
+  );
+
+  it("names a page after its submenu entry and that entry's parent", () => {
+    const nav = [
+      { label: "Speaker", href: "/speaker/" },
+      {
+        label: "Why Q?",
+        href: "/whyq/",
+        // No trailing slash on purpose: matching must not depend on the loader.
+        children: [{ label: "Fixture audience B", href: "/whyq/startups" }],
+      },
+    ];
+    expect(whyqAudienceNames("startups", nav)).toEqual({
+      label: "Fixture audience B",
+      parentLabel: "Why Q?",
+    });
+  });
+
+  it("falls back to the capitalized slug when the nav has no submenu entry", () => {
+    expect(
+      whyqAudienceNames("investors", [{ label: "Why Q?", href: "/whyq/" }]),
+    ).toEqual({ label: "Investors", parentLabel: "Why Q?" });
+    expect(whyqAudienceNames("investors", [])).toEqual({
+      label: "Investors",
+      parentLabel: undefined,
+    });
+  });
+
+  it("every page in the registry has a submenu entry and an audience in the fixture", () => {
+    const children = settings.nav.flatMap((item) => item.children ?? []);
+    const audienceIds = content.whyq.audiences.map((audience) => audience.id);
+    for (const { slug, audienceId } of WHYQ_AUDIENCE_PAGES) {
+      expect(children.map((child) => child.href)).toContain(
+        whyqAudiencePath(slug),
+      );
+      expect(audienceIds).toContain(audienceId);
+    }
+  });
+
+  it("lists the audience pages as main pages of the llms route table, named from the nav", () => {
+    const { mainPages } = buildRouteTable(content, settings);
+    const slugs = mainPages.map((entry) => entry.slug);
+    for (const { slug } of WHYQ_AUDIENCE_PAGES) {
+      expect(slugs).toContain(whyqAudiencePath(slug));
+    }
+    expect(
+      mainPages.find((entry) => entry.slug === "/whyq/students/")?.label,
+    ).toBe("Why Q-Summit: Fixture audience A");
+  });
+
+  it("gives every audience page its own block in the full text", () => {
+    const full = buildLlmsFullTxt({
+      site: "https://q-summit.com",
+      siteSettings: settings,
+      pageContent: content,
+    });
+    for (const { slug, audienceId } of WHYQ_AUDIENCE_PAGES) {
+      expect(full).toContain(
+        `Source: https://q-summit.com${whyqAudiencePath(slug)}`,
+      );
+      const audience = content.whyq.audiences.find(
+        (entry) => entry.id === audienceId,
+      );
+      expect(full).toContain(audience!.heading);
+    }
+  });
+});
+
+describe("/whyq/ has no overview page", () => {
+  const readText = (path: string) =>
+    readFileSync(new URL(path, import.meta.url), "utf-8");
+  const content = JSON.parse(
+    readText("./fixtures/ci-content/page-content.json"),
+  ) as PageContent;
+  const settings = normalizeHrefsDeep(
+    JSON.parse(
+      readText("./fixtures/ci-content/site-settings.json"),
+    ) as SiteSettings,
+  );
+
+  it("is in neither llms surface, only its audience pages are", () => {
+    const { mainPages, optional } = buildRouteTable(content, settings);
+    const slugs = [...mainPages, ...optional].map((entry) => entry.slug);
+    expect(slugs.filter((slug) => /^\/whyq\/?$/.test(slug))).toEqual([]);
+    const full = buildLlmsFullTxt({
+      site: "https://q-summit.com",
+      siteSettings: settings,
+      pageContent: content,
+    });
+    expect(full).not.toContain("Source: https://q-summit.com/whyq/\n");
+  });
+
+  it("has no page file and a redirect to the audience tiles on the homepage", () => {
+    expect(
+      existsSync(new URL("../src/pages/whyq.astro", import.meta.url)),
+    ).toBe(false);
+    const config = readText("../astro.config.mjs");
+    expect(config).toMatch(
+      /"\/whyq":\s*\{\s*status:\s*302,\s*destination:\s*"\/#why-attend"/,
+    );
+    // The target of that redirect exists on the homepage.
+    expect(readText("../src/components/home/WhyCards.astro")).toContain(
+      'id="why-attend"',
+    );
+  });
+});
+
+describe("/program is offline", () => {
+  const readText = (path: string) =>
+    readFileSync(new URL(path, import.meta.url), "utf-8");
+  const content = JSON.parse(
+    readText("./fixtures/ci-content/page-content.json"),
+  ) as PageContent;
+  const settings = JSON.parse(
+    readText("./fixtures/ci-content/site-settings.json"),
+  ) as SiteSettings;
+
+  it("is in neither llms surface", () => {
+    const { mainPages, optional } = buildRouteTable(content, settings);
+    const slugs = [...mainPages, ...optional].map((entry) => entry.slug);
+    expect(slugs.filter((slug) => slug.startsWith("/program"))).toEqual([]);
+    const full = buildLlmsFullTxt({
+      site: "https://q-summit.com",
+      siteSettings: settings,
+      pageContent: content,
+    });
+    expect(full).not.toContain("q-summit.com/program");
+  });
+
+  it("is not linked from the fixture navigation or footer", () => {
+    const links = [
+      ...settings.nav,
+      ...settings.nav.flatMap((item) => item.children ?? []),
+      ...settings.footer.links,
+    ];
+    expect(links.filter((link) => link.href.startsWith("/program"))).toEqual(
+      [],
+    );
+  });
+
+  it("is redirected to the homepage in the site config", () => {
+    // astro.config.mjs is the one source: the dev server answers from it and
+    // its integration writes the same rule to dist/_redirects for production.
+    expect(readText("../astro.config.mjs")).toMatch(
+      /"\/program":\s*\{\s*status:\s*302,\s*destination:\s*"\/"\s*\}/,
+    );
   });
 });

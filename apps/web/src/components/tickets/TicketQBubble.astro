@@ -1,13 +1,14 @@
 ---
-// A Q bubble (DESIGN.md TICKETS-1): the original Q mark as a liquid glass
-// object. The outline is the brand file itself (public/icon-512.png, whose
-// counter is transparent) used as a mask, so the drawing is never redrawn.
-// Inside it, light flows; two crescents cut from the same mask, offset by a
-// pixel or two, light its rim top left and make it glow bottom right; a
-// soft halo sits behind. The Q itself only floats, turns a few degrees and
-// breathes evenly: it is never stretched or skewed. Decorative, aria-hidden.
-// Placement and size come from the caller's modifier class in
-// ticket-theme.css (is-card, is-card-sm, is-summary, is-ground-1..3).
+// The Q in a ticket card and in a ticket summary (DESIGN.md TICKETS-1): the
+// glass Q of the home ground (home/GlassQ.astro), the Q mark rendered in 3D
+// as thick clear glass from the brand file's own outline, so both pages
+// carry the same object and the drawing is never redrawn. The cards use a
+// 400 px copy of that render (public/home/q-glass-s.webp): a card shows the
+// Q at a third of its width, so the full size would only cost decode time
+// and texture memory. It only floats, turns a few
+// degrees and breathes evenly: it is never stretched or skewed. Decorative:
+// empty alt, aria-hidden, no pointer events. Placement and size come from
+// the caller's modifier class in ticket-theme.css (is-card, is-summary).
 interface Props {
   class?: string;
 }
@@ -15,9 +16,12 @@ interface Props {
 const { class: className } = Astro.props;
 ---
 
-<span class:list={["t-qb", className]} aria-hidden="true">
-  <span class="t-qb-halo"></span>
-  <span class="t-qb-glass"><span class="t-qb-flow"></span></span>
-  <span class="t-qb-rim is-light"></span>
-  <span class="t-qb-rim is-glow"></span>
-</span>
+<img
+  class:list={["t-qb", className]}
+  src="/home/q-glass-s.webp"
+  alt=""
+  aria-hidden="true"
+  width="400"
+  height="400"
+  decoding="async"
+/>

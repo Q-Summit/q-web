@@ -50,16 +50,10 @@ const rowStart = included.groups.map((_, gi) =>
         id="included-title"
         class="t-section-title"
         data-lp="included.heading"
-        data-type
       >
         {included.heading}
       </h2>
-      <p
-        class="t-section-intro"
-        data-lp="included.intro"
-        data-type
-        data-type-after="0.6"
-      >
+      <p class="t-section-intro" data-lp="included.intro">
         {included.intro}
       </p>
     </div>
@@ -324,18 +318,21 @@ const rowStart = included.groups.map((_, gi) =>
    * writes itself in; the rows then follow in a quick cascade (--i, set per
    * row) while each status icon pops into place. While a panel unfolds
    * (data-unfold) the cascade waits for the sheet. Transform and opacity
-   * only; the whole change stays under a second.
+   * only; the whole change stays under a second. Fill is backwards only:
+   * both animations end on the element's own style, and a fill that
+   * lasted forwards kept every row and icon on its own compositor layer
+   * (one offscreen pass per visible icon, on every frame) for good.
    */
   @media (prefers-reduced-motion: no-preference) {
     [data-tabs-ready] .t-panel:not([hidden]) .t-row {
       animation: t-row-in var(--duration-ticket-enter) var(--ease-emphasized)
-        both;
+        backwards;
       animation-delay: calc(var(--i, 0) * var(--duration-ticket-stagger));
     }
 
     [data-tabs-ready] .t-panel:not([hidden]) .t-row :global(.t-status-icon) {
       animation: t-icon-pop var(--duration-ticket-enter) var(--ease-emphasized)
-        both;
+        backwards;
       animation-delay: calc(
         var(--i, 0) * var(--duration-ticket-stagger) +
           var(--duration-ticket-press)
@@ -408,10 +405,32 @@ const rowStart = included.groups.map((_, gi) =>
     line-height: 1.1;
   }
 
+  /* Ends before the glass Q in the summary's upper right corner
+     (ticket-theme.css .t-qb.is-summary: 28% wide, plus its drift), so the
+     text wraps beside the Q and never runs across it. */
   .t-summary-desc {
+    /* Always two lines high: a short description takes one line, a long
+       one two, and the summary must be the same size for every ticket. */
+    min-height: calc(2 * 1.45em);
     margin: -0.5rem 0 0;
+    padding-inline-end: 32%;
+    line-height: 1.45;
     color: color-mix(in srgb, var(--color-navy) 78%, transparent);
     font-size: var(--text-size-small);
+  }
+
+  /* The narrowest phones: a smaller Q (ticket-theme.css) leaves the
+     description room for two lines, and the buy button is as high as its
+     longest label needs (two lines), so every ticket's summary keeps the
+     same size here too. */
+  @media (max-width: 359px) {
+    .t-summary-desc {
+      padding-inline-end: 24%;
+    }
+
+    .t-summary :global(.t-btn) {
+      min-height: 3.5rem;
+    }
   }
 
   .t-summary-was {
@@ -436,7 +455,8 @@ const rowStart = included.groups.map((_, gi) =>
     line-height: 1;
   }
 
-  /* Benefit list: a quiet frosted sheet with hairline rows. */
+  /* Benefit list: a quiet, nearly opaque sheet with hairline rows (no
+     live blur: only the soft page light lies behind it). */
   .t-benefits {
     display: flex;
     flex-direction: column;
@@ -448,8 +468,6 @@ const rowStart = included.groups.map((_, gi) =>
     box-shadow:
       inset 0 1px 0 var(--color-white),
       0 20px 44px -30px color-mix(in srgb, var(--color-navy) 40%, transparent);
-    -webkit-backdrop-filter: blur(16px);
-    backdrop-filter: blur(16px);
   }
 
   .t-group-title {

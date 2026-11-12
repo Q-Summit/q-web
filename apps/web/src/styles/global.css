@@ -568,72 +568,8 @@ a {
   }
 }
 
-/*
-  Dynamic type (lib/motion/typewriter.ts): words are laid out at full size
-  from the start and only fade up in turn, so nothing reflows. Inline-block
-  lets each word rise a touch; the spaces between stay real text so lines
-  break exactly as the plain text would.
-*/
-/* Backwards fill only: the word waits invisible through its delay and
-   ends on its own style, so a finished word holds no animation (and no
-   compositor layer). */
-.type-word {
-  display: inline-block;
-  animation: type-word-in var(--duration-type-fade) var(--ease-snappy) backwards;
-}
-
-@keyframes type-word-in {
-  from {
-    opacity: 0;
-    transform: translateY(0.2em);
-  }
-
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-/* Laid out and invisible, waiting to be written (typeOnView). */
-.type-words.is-held .type-word {
-  opacity: 0;
-  animation: none;
-}
-
-/*
-  Text marked data-type stays hidden only while the script is on its way
-  (Base.astro sets html.js-type before first paint); should the script
-  never arrive, it shows after a moment anyway, so it is never lost.
-*/
-@media (prefers-reduced-motion: no-preference) {
-  .js-type [data-type]:not([data-type-ready]) {
-    opacity: 0;
-    animation: type-safety var(--duration-hover) linear
-      calc(var(--duration-reveal) * 3) forwards;
-  }
-}
-
-@keyframes type-safety {
-  to {
-    opacity: 1;
-  }
-}
-
-@media print {
-  .type-word,
-  .type-words.is-held .type-word {
-    opacity: 1;
-    animation: none;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .is-lit > .glass-light::before {
-    animation: none;
-  }
-
-  .type-word {
-    opacity: 1;
     animation: none;
   }
 }

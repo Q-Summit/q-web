@@ -219,7 +219,7 @@
 /*
  * Ghost (the hero's Compare tickets jump link): transparent glass on the
  * light ground. Barely any fill and only a light blur, so the page light
- * and the Q bubbles behind stay visible as shapes; the glass reads from a
+ * behind stays visible as shapes; the glass reads from a
  * lit top edge, a fine caustic cyan line inside the lower edge, a bright
  * hairline rim and a soft cyan halo. Navy ink stays full strength.
  */
@@ -474,13 +474,16 @@
 /*
  * Liquid glass (DESIGN.md TICKETS-1), after the reference images the team
  * picked: clear glass with a specular rim that catches light top left and
- * bottom right, a soft caustic glow along the lower inner edge, a little
- * brightness and saturation lifted from what lies behind, and depth from
- * light rather than from a flat fill.
+ * bottom right, a soft caustic glow along the lower inner edge, and depth
+ * from light rather than from a flat fill. The material has no live
+ * backdrop blur: its surfaces rest on soft, slowly moving light, where a
+ * blur changes nothing you can see but is recomputed on every frame. Blur
+ * stays where content really passes under glass (site header, pinned
+ * compare names, an open picker list).
  *
  *   .t-glass        the material on any positioned surface (rim on ::after)
- *   .t-liquid       a layer inside a .t-field holding Q bubbles and the rim
- *   .t-qb           a Q bubble: the Q mark as liquid glass (TicketQBubble)
+ *   .t-liquid       a layer inside a .t-field holding the glass Q and the rim
+ *   .t-qb           the glass Q: the Q mark as a 3D glass render (TicketQBubble)
  */
 .t-glass {
   position: relative;
@@ -496,8 +499,6 @@
     inset 0 -16px 24px -18px
       color-mix(in srgb, var(--color-ticket-cyan) 60%, transparent),
     0 14px 34px -18px color-mix(in srgb, var(--color-navy) 38%, transparent);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
-  backdrop-filter: blur(16px) saturate(160%);
 }
 
 /* The specular rim: a one pixel ring, bright where light hits the edge. */
@@ -528,24 +529,17 @@
     linear-gradient(var(--color-black) 0 0);
 }
 
-/* Without backdrop blur, a near-opaque fill keeps text on a calm surface. */
-@supports not (
-  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
-) {
-  .t-glass {
-    background: color-mix(in srgb, var(--color-white) 90%, transparent);
-  }
-}
-
 /*
- * Inside a light field: Q bubbles float behind the content and the rim
+ * Inside a light field: the glass Q floats behind the content and the rim
  * lights the field's edge. Content sits above on z-index 1.
  */
 .t-liquid {
   position: absolute;
   inset: 0;
   z-index: 0;
-  overflow: hidden;
+  /* No clip of its own: the field already clips to its rounded edge. A
+     second rounded clip around the floating Q made the compositor draw
+     every card through an extra offscreen pass on each frame. */
   border-radius: inherit;
   box-shadow:
     inset 0 1px 1px color-mix(in srgb, var(--color-white) 95%, transparent),
@@ -560,165 +554,44 @@
 }
 
 /*
- * Q bubbles (TicketQBubble.astro): the original Q mark as liquid glass.
- * The mask is the brand file, so the outline is exact; the Q only floats,
- * turns a few degrees and breathes evenly, never stretched or skewed. The
- * liquid motion is the light flowing inside it.
+ * The glass Q (TicketQBubble.astro): the home ground's 3D render of the Q
+ * mark as clear glass. It only floats, turns a few degrees and breathes
+ * evenly, never stretched or skewed.
  */
 .t-qb {
-  --q-mark: url("/icon-512.png");
-  --q-rim: 2px;
-
   position: absolute;
-  aspect-ratio: 1;
+  display: block;
+  height: auto;
   pointer-events: none;
+  user-select: none;
   /* Resting frame = first keyframe of t-q-float (see .t-field::before). */
   transform: rotate(-5deg);
 }
 
-.t-qb.is-card-sm,
-.t-qb.is-ground-2 {
-  transform: rotate(6deg) scale(0.98);
-}
-
-.t-qb > span {
-  position: absolute;
-  inset: 0;
-}
-
-/* A soft glow behind the Q; a plain gradient, no filter. */
-.t-qb > .t-qb-halo {
-  inset: -22%;
-  border-radius: var(--radius-circle);
-  background: radial-gradient(
-    closest-side,
-    color-mix(in srgb, var(--color-ticket-cyan) 55%, transparent),
-    color-mix(in srgb, var(--color-ticket-sky) 16%, transparent) 62%,
-    transparent
-  );
-}
-
-/* The glass body: clear in the middle, a specular highlight up left, a
-   caustic glow low right, Q27 blue gathering toward the lower edge. */
-.t-qb-glass {
-  overflow: hidden;
-  background:
-    radial-gradient(
-      28% 20% at 30% 20%,
-      color-mix(in srgb, var(--color-white) 95%, transparent),
-      transparent 72%
-    ),
-    radial-gradient(
-      50% 40% at 74% 84%,
-      color-mix(in srgb, var(--color-ticket-cyan) 90%, transparent),
-      transparent 72%
-    ),
-    linear-gradient(
-      160deg,
-      color-mix(in srgb, var(--color-white) 55%, transparent) 0%,
-      color-mix(in srgb, var(--color-ticket-ice) 45%, transparent) 45%,
-      color-mix(in srgb, var(--color-ticket-sky) 55%, transparent) 100%
-    );
-  -webkit-mask: var(--q-mark) center / contain no-repeat;
-  mask: var(--q-mark) center / contain no-repeat;
-}
-
-/* Light flowing inside the Q: pools that turn and stretch. */
-.t-qb-flow {
-  position: absolute;
-  inset: -45%;
-  transform: translate(-5%, -3%) scale(1.08, 0.94);
-  background:
-    radial-gradient(
-      30% 20% at 35% 40%,
-      color-mix(in srgb, var(--color-white) 75%, transparent),
-      transparent
-    ),
-    radial-gradient(
-      26% 34% at 65% 62%,
-      color-mix(in srgb, var(--color-ticket-cyan) 70%, transparent),
-      transparent
-    ),
-    radial-gradient(
-      22% 16% at 58% 28%,
-      color-mix(in srgb, var(--color-ticket-sky) 45%, transparent),
-      transparent
-    );
-}
-
-/* Rim light: the Q minus itself shifted, which leaves a thin crescent
-   along one side of the exact outline. */
-.t-qb-rim {
-  -webkit-mask:
-    var(--q-mark) center / contain no-repeat,
-    var(--q-mark) var(--rim-x) var(--rim-y) / contain no-repeat;
-  -webkit-mask-composite: source-out;
-  mask:
-    var(--q-mark) center / contain no-repeat subtract,
-    var(--q-mark) var(--rim-x) var(--rim-y) / contain no-repeat;
-}
-
-.t-qb-rim.is-light {
-  --rim-x: calc(50% + var(--q-rim));
-  --rim-y: calc(50% + var(--q-rim));
-
-  background: color-mix(in srgb, var(--color-white) 95%, transparent);
-}
-
-.t-qb-rim.is-glow {
-  --rim-x: calc(50% - var(--q-rim));
-  --rim-y: calc(50% - var(--q-rim));
-
-  background: color-mix(in srgb, var(--color-ticket-cyan) 90%, transparent);
-}
-
-/* Placement. In a card: one Q beside the price, where every layout has
-   room, and a small one wholly behind the glass highlights panel, so the
-   panel shows it blurred, as glass would. */
+/* Placement: one Q per field, high in its upper right corner, beside the
+   ticket's name and clear of the price and the highlights panel. No text
+   ever lies over it: the longest name ends before it, and the description
+   beside it keeps that column free (padding-inline-end on .t-card-desc
+   and .t-summary-desc, which has to grow with these widths). */
 .t-qb.is-card {
-  top: 21%;
-  right: 5%;
-  width: 26%;
-  opacity: 0.95;
-}
-
-.t-qb.is-card-sm {
-  top: 52%;
-  right: 16%;
-  width: 24%;
-  opacity: 0.75;
+  top: 0;
+  right: -2%;
+  width: 34%;
 }
 
 .t-qb.is-summary {
-  top: 7%;
-  right: 7%;
-  width: 30%;
-  opacity: 0.9;
+  top: 2%;
+  right: 3%;
+  width: 28%;
 }
 
-.t-qb.is-ground-1 {
-  --q-rim: 3px;
-
-  top: 10vh;
-  right: 6vw;
-  width: 28vmax;
-  opacity: 0.85;
-}
-
-.t-qb.is-ground-2 {
-  --q-rim: 3px;
-
-  top: 48vh;
-  left: 4vw;
-  width: 20vmax;
-  opacity: 0.65;
-}
-
-.t-qb.is-ground-3 {
-  bottom: 6vh;
-  right: 32vw;
-  width: 13vmax;
-  opacity: 0.55;
+/* The narrowest phones: smaller, so the description beside it keeps room
+   (TicketIncluded.astro). */
+@media (max-width: 359px) {
+  .t-qb.is-summary {
+    right: 2%;
+    width: 22%;
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -727,23 +600,7 @@
       alternate;
   }
 
-  .t-qb.is-card-sm,
-  .t-qb.is-ground-2 {
-    animation: t-q-float-alt var(--duration-ticket-drift-alt) ease-in-out
-      infinite alternate;
-  }
-
-  .t-qb.is-ground-3 {
-    animation-direction: alternate-reverse;
-  }
-
-  .t-qb-flow {
-    animation: t-morph var(--duration-ticket-drift-alt) ease-in-out infinite
-      alternate;
-  }
-
-  [data-ticket-still] .t-qb,
-  [data-ticket-still] .t-qb-flow {
+  [data-ticket-still] .t-qb {
     animation-play-state: paused;
   }
 }
@@ -760,20 +617,6 @@
 
   100% {
     transform: translate3d(-2%, -5%, 0) rotate(7deg) scale(0.97);
-  }
-}
-
-@keyframes t-q-float-alt {
-  0% {
-    transform: translate3d(0, 0, 0) rotate(6deg) scale(0.98);
-  }
-
-  50% {
-    transform: translate3d(7%, -6%, 0) rotate(-3deg) scale(1.03);
-  }
-
-  100% {
-    transform: translate3d(3%, 5%, 0) rotate(-7deg) scale(1);
   }
 }
 

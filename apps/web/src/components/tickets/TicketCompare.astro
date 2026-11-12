@@ -66,16 +66,10 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
             id="compare-title"
             class="t-compare-title"
             data-lp="compare.heading"
-            data-type
           >
             {compare.heading}
           </h2>
-          <p
-            class="t-compare-intro"
-            data-lp="compare.intro"
-            data-type
-            data-type-after="0.6"
-          >
+          <p class="t-compare-intro" data-lp="compare.intro">
             {compare.intro}
           </p>
         </header>
@@ -254,13 +248,15 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
     position: relative;
     isolation: isolate;
     /* A large liquid glass sheet, in the home Buy Now's material: clear at
-       the top where the pickers sit, so the page light glows through the
-       blur, and a little denser further down so the rows read on a calm
+       the top where the pickers sit, so the page light glows through,
+       and a little denser further down so the rows read on a calm
        surface. Depth from light only: a lit top edge, a caustic cyan glow
        inside the lower edge, a specular rim (::after) and a soft shadow.
-       The fill and blur live on ::before, not on the sheet: an element with
-       its own backdrop-filter is a backdrop root, and the sticky names
-       inside it could then not blur the rows passing under them. */
+       The fill lives on ::before and has no backdrop blur (only the soft
+       page light lies behind the sheet, and a blur this large was
+       recomputed on every frame). The sheet itself must never get a
+       backdrop-filter: it would become a backdrop root, and the sticky
+       names inside it could then not blur the rows passing under them. */
     box-shadow:
       inset 0 1px 1px var(--color-white),
       inset 0 24px 40px -30px
@@ -284,8 +280,6 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
       color-mix(in srgb, var(--color-white) 50%, transparent) 100%
     );
     pointer-events: none;
-    -webkit-backdrop-filter: blur(24px) saturate(150%);
-    backdrop-filter: blur(24px) saturate(150%);
   }
 
   /* Wide screens: the opener sits in the label column, left of the

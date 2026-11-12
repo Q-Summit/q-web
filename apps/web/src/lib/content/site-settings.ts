@@ -22,9 +22,16 @@ export interface SocialLink extends PageLink {
   platform: string;
 }
 
+/**
+ * One entry of the main navigation. `children` is the optional submenu
+ * under the item (the audience pages under "Why Q?"); an item without
+ * children is a plain link, and the parent link itself always navigates.
+ */
+export type NavLink = PageLink & { children?: PageLink[] };
+
 export interface SiteSettings {
   siteTitle: string;
-  nav: PageLink[];
+  nav: NavLink[];
   footer: {
     tagline: string;
     links: PageLink[];
@@ -54,9 +61,17 @@ interface CmsSocialLink extends CmsPageLink {
   platform: string;
 }
 
+/**
+ * `children` is optional in Payload (and absent from a CMS that predates the
+ * field): missing, null or empty all read as a plain link.
+ */
+export interface CmsNavLink extends CmsPageLink {
+  children?: CmsPageLink[] | null;
+}
+
 interface CmsSiteSettingsDoc {
   siteTitle: string;
-  nav: CmsPageLink[];
+  nav: CmsNavLink[];
   footer: {
     tagline: string;
     links: CmsPageLink[];
@@ -80,11 +95,22 @@ export const toPageLink = (link: CmsPageLink): PageLink => ({
   href: link.href,
 });
 
+/**
+ * Nav item with its optional submenu. A missing, null or empty `children`
+ * leaves the key off entirely, so "has a submenu" is one test everywhere.
+ */
+export const toNavLink = (link: CmsNavLink): NavLink => {
+  const children = (link.children ?? []).map(toPageLink);
+  return children.length > 0
+    ? { ...toPageLink(link), children }
+    : toPageLink(link);
+};
+
 async function cmsGetSiteSettings(): Promise<SiteSettings> {
   const doc = await fetchGlobal<CmsSiteSettingsDoc>("site-settings");
   return {
     siteTitle: doc.siteTitle,
-    nav: doc.nav.map(toPageLink),
+    nav: doc.nav.map(toNavLink),
     footer: {
       tagline: doc.footer.tagline,
       links: doc.footer.links.map(toPageLink),
@@ -111,14 +137,20 @@ async function cmsGetSiteSettings(): Promise<SiteSettings> {
   };
 }
 
-/** Old JSON snapshots omit kickoff; keep / as home until a fixture sets flags. */
-function withJsonKickoffDefaults(
-  settings: Omit<SiteSettings, "kickoff"> & {
+/**
+ * Old JSON snapshots omit kickoff; keep / as home until a fixture sets flags.
+ * Nav items go through the same mapper as CMS mode, so a snapshot with no,
+ * null or empty `children` reads exactly like one from Payload.
+ */
+function withJsonDefaults(
+  settings: Omit<SiteSettings, "kickoff" | "nav"> & {
+    nav: CmsNavLink[];
     kickoff?: { pageEnabled?: boolean; redirectRoot?: boolean };
   },
 ): SiteSettings {
   return {
     ...settings,
+    nav: settings.nav.map(toNavLink),
     kickoff: {
       pageEnabled: settings.kickoff?.pageEnabled ?? false,
       redirectRoot: settings.kickoff?.redirectRoot ?? false,
@@ -130,8 +162,8 @@ export async function getSiteSettings(): Promise<SiteSettings> {
   const settings =
     CONTENT_SOURCE === "cms"
       ? memoizeCms("site-settings", cmsGetSiteSettings)
-      : readJson<SiteSettings>("site-settings.json").then(
-          withJsonKickoffDefaults,
-        );
+      : readJson<Parameters<typeof withJsonDefaults>[0]>(
+          "site-settings.json",
+        ).then(withJsonDefaults);
   return normalizeHrefsDeep(await settings);
 }

@@ -89,6 +89,8 @@ async function ensureMedia(
   payload: Payload,
   href: string | null | undefined,
   alt: string | null | undefined,
+  // Names the caller in the soft-miss warning below.
+  context = "kickoff",
 ): Promise<number | null> {
   const filename = localMediaFilename(href);
   if (!filename) return null;
@@ -103,7 +105,7 @@ async function ensureMedia(
   const sourcePath = path.join(webMediaDir, filename);
   if (!fs.existsSync(sourcePath)) {
     console.warn(
-      `  kickoff media missing on disk (${filename}); leaving upload unset until the file is added through Payload`,
+      `  ${context} media missing on disk (${filename}); leaving upload unset until the file is added through Payload`,
     );
     return null;
   }
@@ -121,23 +123,84 @@ async function run() {
   const payload = await getPayload({ config });
   const content = readJson("page-content");
 
-  // page-home
+  // page-home. The 2027 fields (hero badge and lead lines, countdown, partner
+  // row descriptions, audience tile links and photos, speaker highlights and
+  // lineup, social) are optional in the fixture and in the schema. A field
+  // the fixture does not carry is written as empty rather than skipped, so a
+  // re-seed always ends on exactly what the fixture says.
   {
     const home = content.home;
+
+    // JSON carries a tile photo as a media filename (WhyCard.imageFile); the
+    // CMS field is the upload `image`. Soft-miss like the kickoff images.
+    const cards = [];
+    for (const card of home.whyAttend.cards) {
+      const image = card.imageFile
+        ? await ensureMedia(
+            payload,
+            `/media/${card.imageFile}`,
+            card.imageAlt,
+            "home audience tile",
+          )
+        : null;
+      cards.push({
+        title: card.title,
+        description: card.description,
+        eyebrow: card.eyebrow ?? null,
+        href: card.href ?? null,
+        linkLabel: card.linkLabel ?? null,
+        ...(image !== null ? { image } : {}),
+        imageAlt: card.imageAlt ?? null,
+      });
+    }
+
+    // A post row requires its image, so a post whose file is not on disk is
+    // left out instead of failing the whole seed.
+    const posts = [];
+    for (const post of home.social?.posts ?? []) {
+      const image = post.imageFile
+        ? await ensureMedia(
+            payload,
+            `/media/${post.imageFile}`,
+            post.imageAlt,
+            "home social post",
+          )
+        : null;
+      if (image === null) continue;
+      posts.push({
+        platform: post.platform,
+        href: post.href,
+        image,
+        imageAlt: post.imageAlt ?? null,
+      });
+    }
+
+    const speakers = home.previousSpeakers;
     await payload.updateGlobal({
       slug: "page-home",
       data: {
         title: home.title,
         metaDescription: home.metaDescription,
         hero: {
+          badge: home.hero.badge ?? null,
           headline: home.hero.headline,
           tagline: home.hero.tagline,
+          leadLines: toTextRows(home.hero.leadLines ?? []),
           announcementLines: toTextRows(home.hero.announcementLines),
           cta: home.hero.cta,
         },
         event: {
           startDate: home.event.startDate,
           endDate: home.event.endDate,
+        },
+        countdown: {
+          label: home.countdown?.label ?? null,
+          daysLabel: home.countdown?.daysLabel ?? null,
+          hoursLabel: home.countdown?.hoursLabel ?? null,
+          minutesLabel: home.countdown?.minutesLabel ?? null,
+          secondsLabel: home.countdown?.secondsLabel ?? null,
+          spokenLabel: home.countdown?.spokenLabel ?? null,
+          liveLabel: home.countdown?.liveLabel ?? null,
         },
         stats: {
           heading: home.stats.heading,
@@ -149,19 +212,49 @@ async function run() {
           })),
         },
         partnerBand: {
+          eyebrow: home.partnerBand.eyebrow ?? null,
+          heading: home.partnerBand.heading ?? null,
           items: home.partnerBand.items.map((item: any) => ({
-            value: item.value,
+            // May be empty: the 2027 partner rows show no count.
+            value: item.value ?? null,
             label: item.label,
+            description: item.description ?? null,
             logos: toTextRows(item.logos ?? []),
           })),
           cta: home.partnerBand.cta,
         },
-        previousSpeakers: home.previousSpeakers,
+        previousSpeakers: {
+          eyebrow: speakers.eyebrow ?? null,
+          heading: speakers.heading,
+          intro: speakers.intro,
+          alumniLabel: speakers.alumniLabel ?? null,
+          highlights: toTextRows(speakers.highlights ?? []),
+          lineup: {
+            label: speakers.lineup?.label ?? null,
+            year: speakers.lineup?.year ?? null,
+            slots: speakers.lineup?.slots ?? 4,
+            showPlaceholders: speakers.lineup?.showPlaceholders ?? false,
+            placeholderName: speakers.lineup?.placeholderName ?? null,
+            placeholderRole: speakers.lineup?.placeholderRole ?? null,
+          },
+          standIns: toTextRows(speakers.standIns ?? []),
+          standInLabel: speakers.standInLabel ?? null,
+          cta: speakers.cta,
+        },
         whyAttend: {
+          eyebrow: home.whyAttend.eyebrow ?? null,
           heading: home.whyAttend.heading,
           intro: home.whyAttend.intro,
-          cards: home.whyAttend.cards,
+          cards,
           cta: home.whyAttend.cta,
+        },
+        social: {
+          eyebrow: home.social?.eyebrow ?? null,
+          heading: home.social?.heading ?? null,
+          intro: home.social?.intro ?? null,
+          linkedinLabel: home.social?.linkedinLabel ?? null,
+          instagramLabel: home.social?.instagramLabel ?? null,
+          posts,
         },
         faqSection: home.faqSection,
         _status: "published",
@@ -169,7 +262,9 @@ async function run() {
       user: seedUser,
       overrideAccess: true,
     });
-    console.log("page-home: updated and published");
+    console.log(
+      `page-home: updated and published (${cards.length} audience tiles, ${posts.length} social posts)`,
+    );
   }
 
   // page-whyq (resolves each audience's photo to a media doc when present)

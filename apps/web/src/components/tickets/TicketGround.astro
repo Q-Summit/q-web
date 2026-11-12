@@ -1,22 +1,18 @@
 ---
 // The page ground behind the 2027 ticket page (DESIGN.md TICKETS-1): the
-// pale cool base of the Join Q quiz panel, glowing pools of ice, cyan and
-// Q27 blue light, and three Q bubbles (the Q mark as liquid glass) that
-// float, turn and glow. Fixed behind the content, so the glass header,
+// pale cool base of the Join Q quiz panel and glowing pools of ice, cyan and
+// Q27 blue light that drift slowly (no Q marks: the Q appears in the cards,
+// not behind the page). Fixed behind the content, so the glass header,
 // cards and panels have living light to refract. Decorative only:
 // aria-hidden, no pointer events, transform-only motion, paused by
 // tickets.client.ts while no lit section is on screen, and a finished still
 // for reduced motion.
-import TicketQBubble from "./TicketQBubble.astro";
 ---
 
 <div class="t-ground" aria-hidden="true" data-ticket-ground>
   <span class="t-ground-light is-one"></span>
   <span class="t-ground-light is-two"></span>
   <span class="t-ground-light is-three"></span>
-  <TicketQBubble class="is-ground-1" />
-  <TicketQBubble class="is-ground-2" />
-  <TicketQBubble class="is-ground-3" />
 </div>
 
 <style>

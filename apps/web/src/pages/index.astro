@@ -1,26 +1,29 @@
 ---
-// Homepage, ported from the Webflow index page. All content loads at build
-// time from the content layer (src/lib/content.ts): semantic page copy from
-// page-content.json, speakers from speakers.json, FAQs from faqs.json.
-// Client JS is minimal: the old counter animation renders as static numbers
-// and the FAQ uses details/summary (both JS-free); Hero streams its
-// background video via a bundled hls.js import (no CDN), and the speaker
-// carousel is native scroll-snap with a small progressive-enhancement script.
+// Homepage for the 10th edition (DESIGN.md HOME-1): video hero with the
+// anniversary message, a countdown and Buy Now, then key figures,
+// partner rows, the four audience tiles, speaker highlights and the
+// LinkedIn / Instagram section, on a ground of light with clear glass
+// panes and glass Q objects.
+// All content loads at build time from the content layer
+// (src/lib/content.ts). The page is complete without JavaScript; scripts
+// only add the video stream, the countdown and the motion
+// (components/home/home.client.ts).
 import Base from "../layouts/Base.astro";
 import Hero from "../components/home/Hero.astro";
 import StatsBand from "../components/home/StatsBand.astro";
 import PartnerLogos from "../components/home/PartnerLogos.astro";
 import SpeakerGrid from "../components/home/SpeakerGrid.astro";
 import WhyCards from "../components/home/WhyCards.astro";
-import FaqAccordion from "../components/home/FaqAccordion.astro";
+import SocialSection from "../components/home/SocialSection.astro";
+import HomeGround from "../components/home/HomeGround.astro";
 import JsonLd from "../components/seo/JsonLd.astro";
 import logoManifest from "../components/partner/logo-manifest.json";
 import {
-  getFaqs,
   getPageContent,
   getPartners,
   getSiteSettings,
   getSpeakers,
+  speakersForEdition,
 } from "../lib/content";
 import type { PageStat, Partner } from "../lib/content";
 import {
@@ -35,11 +38,10 @@ if (kickoff.pageEnabled && kickoff.redirectRoot) {
 
 const partnerLogoManifest = logoManifest as Record<string, PartnerLogoMeta>;
 
-const [pageContent, allSpeakers, allFaqs, allPartners, { siteTitle, footer }] =
+const [pageContent, allSpeakers, allPartners, { siteTitle, footer }] =
   await Promise.all([
     getPageContent(),
     getSpeakers(),
-    getFaqs(),
     getPartners(),
     getSiteSettings(),
   ]);
@@ -67,8 +69,8 @@ function findPartner(name: string): Partner | undefined {
 function resolvePartnerLogoGroups(stats: PageStat[]) {
   return stats
     .map((stat) => ({
-      value: stat.value,
       label: stat.label,
+      description: stat.description,
       logos: (stat.logos ?? []).flatMap((name) => {
         const partner = findPartner(name);
         if (!partner) {
@@ -90,12 +92,56 @@ function resolvePartnerLogoGroups(stats: PageStat[]) {
 
 const partnerLogoGroups = resolvePartnerLogoGroups(home.partnerBand.items);
 
-// The old site inlined these speakers in a client-side carousel script;
-// its slides are the "panel" (main stage highlight) group (verified against
-// raw/index.html), rendered here as a static grid.
-const speakers = allSpeakers.filter((s) => s.group === "panel");
+// Past speakers: the names the content lists, in that order, looked up in
+// the speakers collection (photo and role come from there, never from this
+// page). A name with no published speaker is skipped with a warning.
+// Without a list, the "panel" group (the main stage highlights) is shown.
+const speakerHighlights = home.previousSpeakers.highlights;
+const alumni = speakerHighlights
+  ? speakerHighlights.flatMap((name) => {
+      const speaker =
+        allSpeakers.find((s) => s.name === name && s.group === "panel") ??
+        allSpeakers.find((s) => s.name === name);
+      if (!speaker) {
+        console.warn(
+          `[index] speaker highlights: no speaker named "${name}" found; skipped`,
+        );
+      }
+      return speaker ? [speaker] : [];
+    })
+  : allSpeakers.filter((s) => s.group === "panel");
 
-const faqs = allFaqs.filter((f) => f.page === "index");
+// The next edition's lineup: its published "current" speakers. While it
+// has none, the content may name earlier speakers to show in its place
+// (stand-ins); they keep their own badge and are never shown as booked.
+const lineupConfig = home.previousSpeakers.lineup;
+const booked = lineupConfig
+  ? speakersForEdition(allSpeakers, "current", lineupConfig.year)
+  : [];
+const standIns =
+  booked.length === 0
+    ? (home.previousSpeakers.standIns ?? []).flatMap((name) => {
+        // The same person may be listed under several groups; take the
+        // edition entry first (it carries the current role and photo).
+        const speaker =
+          allSpeakers.find((s) => s.name === name && s.group === "current") ??
+          allSpeakers.find((s) => s.name === name && s.group === "panel") ??
+          allSpeakers.find((s) => s.name === name);
+        if (!speaker) {
+          console.warn(
+            `[index] lineup stand-ins: no speaker named "${name}" found; skipped`,
+          );
+        }
+        return speaker ? [speaker] : [];
+      })
+    : [];
+const lineup = booked.length > 0 ? booked : standIns;
+const lineupLabel =
+  booked.length > 0 ? lineupConfig?.label : home.previousSpeakers.standInLabel;
+
+// Profile links are the ones Site Settings already holds.
+const socialHref = (platform: string) =>
+  footer.socialLinks.find((link) => link.platform === platform)?.href;
 
 /* Structured data (homepage only; see SEO spec s4). Every value traces to a
  * content field: no invented facts. URLs are absolute, built from Astro.site
@@ -202,32 +248,60 @@ const eventLd = {
   </Fragment>
   <Hero
     headline={home.hero.headline}
-    tagline={home.hero.tagline}
     announcement={home.hero.announcementLines}
     cta={home.hero.cta}
+    badge={home.hero.badge}
+    leadLines={home.hero.leadLines}
+    countdown={home.countdown}
+    startDate={home.event.startDate}
   />
-  <StatsBand
-    heading={home.stats.heading}
-    intro={home.stats.intro}
-    stats={home.stats.items}
-  />
-  <PartnerLogos groups={partnerLogoGroups} cta={home.partnerBand.cta} />
-  <SpeakerGrid
-    heading={home.previousSpeakers.heading}
-    intro={home.previousSpeakers.intro}
-    speakers={speakers}
-    cta={home.previousSpeakers.cta}
-  />
-  <WhyCards
-    heading={home.whyAttend.heading}
-    intro={home.whyAttend.intro}
-    cards={home.whyAttend.cards}
-    cta={home.whyAttend.cta}
-  />
-  <FaqAccordion
-    heading={home.faqSection.heading}
-    intro={home.faqSection.intro}
-    faqs={faqs}
-    cta={home.faqSection.cta}
-  />
+  <div class="home-page">
+    <HomeGround />
+    <StatsBand
+      tagline={home.hero.tagline}
+      heading={home.stats.heading}
+      stats={home.stats.items}
+    />
+    <PartnerLogos
+      eyebrow={home.partnerBand.eyebrow}
+      heading={home.partnerBand.heading}
+      groups={partnerLogoGroups}
+      cta={home.partnerBand.cta}
+    />
+    <WhyCards
+      eyebrow={home.whyAttend.eyebrow}
+      heading={home.whyAttend.heading}
+      intro={home.whyAttend.intro}
+      cards={home.whyAttend.cards}
+    />
+    <SpeakerGrid
+      eyebrow={home.previousSpeakers.eyebrow}
+      heading={home.previousSpeakers.heading}
+      cta={home.previousSpeakers.cta}
+      alumni={alumni}
+      alumniLabel={home.previousSpeakers.alumniLabel}
+      lineup={lineup}
+      lineupLabel={lineupLabel}
+      lineupSlots={Math.max(lineupConfig?.slots ?? 0, standIns.length)}
+      placeholders={standIns.length === 0 && lineupConfig?.showPlaceholders}
+      placeholderName={lineupConfig?.placeholderName}
+      placeholderRole={lineupConfig?.placeholderRole}
+    />
+    {
+      home.social && (
+        <SocialSection
+          social={home.social}
+          linkedinHref={socialHref("linkedin")}
+          instagramHref={socialHref("instagram-qsummit")}
+        />
+      )
+    }
+    <div class="h-page-fade" aria-hidden="true"></div>
+  </div>
 </Base>
+
+<script>
+  import { initHomePage } from "../components/home/home.client";
+
+  initHomePage();
+</script>

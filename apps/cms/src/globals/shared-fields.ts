@@ -155,15 +155,46 @@ export function pageLinkGroup(name: string, description?: string): Field {
   };
 }
 
-/** PageStat = { value, label, logos?: string[] } (home hero/partner stats). */
-export function pageStatArrayField(name: string, description?: string): Field {
+/**
+ * PageStat = { value, label, description?, logos?: string[] } (home stats
+ * and partner rows).
+ *
+ * Every array stores its rows in its own table, so a field added here for
+ * all callers would also add a column to arrays that never show it. The two
+ * options are therefore opt-in per array:
+ * - `rowDescription` adds the optional `description` line under the label
+ *   and is its help text.
+ * - `optionalValue` lets `value` stay empty and is its help text, for rows
+ *   whose number the page does not show (the home partner rows show the
+ *   label, the description and the logos only).
+ */
+export function pageStatArrayField(
+  name: string,
+  description?: string,
+  opts: { rowDescription?: string; optionalValue?: string } = {},
+): Field {
   return {
     name,
     type: "array",
     admin: arrayAdmin(description),
     fields: [
-      { name: "value", type: "text", required: true },
+      opts.optionalValue
+        ? {
+            name: "value",
+            type: "text",
+            admin: { description: opts.optionalValue },
+          }
+        : { name: "value", type: "text", required: true },
       { name: "label", type: "text", required: true },
+      ...(opts.rowDescription
+        ? [
+            {
+              name: "description",
+              type: "text",
+              admin: { description: opts.rowDescription },
+            } satisfies Field,
+          ]
+        : []),
       stringArrayField("logos", {
         label: "Logo",
         description:
@@ -205,10 +236,17 @@ export function agendaItemsField(
   };
 }
 
-/** { title, description } cards (WhyCard / FeatureCard). */
+/**
+ * { title, description } cards (WhyCard / FeatureCard).
+ *
+ * `extraFields` are appended to the rows of that one array (the home
+ * audience tiles). Every array has its own table, so a caller that passes
+ * none (the hackathon benefits) gains no column.
+ */
 export function titleDescriptionArrayField(
   name: string,
   description?: string,
+  { extraFields = [] }: { extraFields?: Field[] } = {},
 ): Field {
   return {
     name,
@@ -217,6 +255,7 @@ export function titleDescriptionArrayField(
     fields: [
       { name: "title", type: "text", required: true },
       { name: "description", type: "textarea", required: true },
+      ...extraFields,
     ],
   };
 }

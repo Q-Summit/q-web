@@ -1,0 +1,300 @@
+---
+// The home hero countdown (DESIGN.md HOME-1): days, hours, minutes and
+// seconds until the first conference day begins in Mannheim, as a neon
+// display after the reference the team picked: every figure is a tube of
+// light drawn as an outline (two thin glowing lines around a hollow,
+// rounded stroke) and a colon of two small rings stands between two
+// units. There is no pane and no rule under it: the figures stand directly
+// on the film, on a soft pool of darkness, and glow in the Q27 blues.
+//
+// A figure is one centerline path on a 60 by 100 grid (the same rounded
+// rectangle skeleton for all ten), stroked wide. Its outline is what a
+// mask leaves of that stroke once a narrower stroke of the same path is
+// taken out of it; the ten masks are defined once (the zero-sized SVG
+// below) and a figure is a rectangle of light seen through one of them,
+// so changing a figure is changing which mask it uses.
+//
+// The target is home.event.startDate at 00:00 Europe/Berlin, turned into
+// one UTC instant at build time (lib/countdown.ts), so the visitor's time
+// zone and daylight saving never matter. No number is rendered at build:
+// the page ships hidden figures of the right size (no layout shift) and
+// countdown.client.ts fills them from the real clock, after a short start
+// in which the figures run through random numbers and settle from left to
+// right. Without JavaScript the display is hidden; the date is in the
+// badge above it.
+//
+// Screen readers get one sentence (refreshed once a minute, not
+// announced), never the figures. At zero the display gives way to the
+// live label.
+import type { HomeCountdown } from "../../lib/content";
+import {
+  COUNTDOWN_UNITS,
+  EVENT_TIME_ZONE,
+  remainingUntil,
+  zonedDayStart,
+} from "../../lib/countdown";
+
+interface Props {
+  /** First conference day, yyyy-mm-dd. */
+  startDate: string;
+  labels: HomeCountdown;
+}
+
+const { startDate, labels } = Astro.props;
+const target = zonedDayStart(startDate, EVENT_TIME_ZONE);
+
+// Size the display for the day count at build time; the client corrects it
+// if the page is served long after the build.
+const dayDigits = Math.max(
+  2,
+  String(remainingUntil(target, Date.now()).days).length,
+);
+const unitLabels = {
+  days: labels.daysLabel,
+  hours: labels.hoursLabel,
+  minutes: labels.minutesLabel,
+  seconds: labels.secondsLabel,
+};
+const units = COUNTDOWN_UNITS.map((unit) => ({
+  unit,
+  digits: unit === "days" ? dayDigits : 2,
+  label: unitLabels[unit],
+}));
+const totalDigits = units.reduce((sum, u) => sum + u.digits, 0);
+
+// The centerline of each of the ten figures: a rounded rectangle between x 14 and 46,
+// y 14 and 86, with the middle bar at y 50; corners are quarter curves.
+const FIGURES: Record<string, string> = {
+  "0": "M14,28 Q14,14 28,14 H32 Q46,14 46,28 V72 Q46,86 32,86 H28 Q14,86 14,72 Z",
+  "1": "M21,25 L33,14 V86",
+  "2": "M14,28 Q14,14 28,14 H32 Q46,14 46,28 V36 Q46,50 32,50 H28 Q14,50 14,64 V86 H46",
+  "3": "M14,14 H32 Q46,14 46,28 V36 Q46,50 32,50 H23 M32,50 Q46,50 46,64 V72 Q46,86 32,86 H14",
+  "4": "M14,14 V36 Q14,50 28,50 H46 M46,14 V86",
+  "5": "M46,14 H14 V50 H32 Q46,50 46,64 V72 Q46,86 32,86 H14",
+  "6": "M46,14 H28 Q14,14 14,28 V72 Q14,86 28,86 H32 Q46,86 46,72 V64 Q46,50 32,50 H14",
+  "7": "M14,14 H32 Q46,14 46,28 V86",
+  "8": "M28,14 H32 Q46,14 46,28 V36 Q46,50 32,50 H28 Q14,50 14,36 V28 Q14,14 28,14 Z M28,50 H32 Q46,50 46,64 V72 Q46,86 32,86 H28 Q14,86 14,72 V64 Q14,50 28,50 Z",
+  "9": "M46,50 H28 Q14,50 14,36 V28 Q14,14 28,14 H32 Q46,14 46,28 V72 Q46,86 32,86 H14",
+};
+---
+
+<div
+  class="hcd"
+  role="group"
+  aria-label={labels.label}
+  data-countdown
+  data-target={target}
+  data-spoken={labels.spokenLabel}
+>
+  <p class="u-visually-hidden" data-countdown-spoken></p>
+  {
+    /* The ten outlines. Zero-sized, not display:none: a mask inside a
+       hidden SVG does not render in every browser. */
+  }
+  <svg class="hcd-defs" width="0" height="0" aria-hidden="true">
+    <defs>
+      {
+        Object.entries(FIGURES).map(([figure, path]) => (
+          <mask
+            id={`hcd-figure-${figure}`}
+            maskUnits="userSpaceOnUse"
+            x="0"
+            y="0"
+            width="60"
+            height="100"
+          >
+            <path class="hcd-tube" d={path} />
+            <path class="hcd-core" d={path} />
+          </mask>
+        ))
+      }
+    </defs>
+  </svg>
+  <div
+    class="hcd-row"
+    aria-hidden="true"
+    data-countdown-row
+    style={`--digits: ${totalDigits}`}
+  >
+    {
+      units.map(({ unit, digits, label }, i) => (
+        <>
+          {i > 0 && (
+            <svg class="hcd-colon" viewBox="0 0 24 100">
+              <circle cx="12" cy="36" r="6.5" />
+              <circle cx="12" cy="66" r="6.5" />
+            </svg>
+          )}
+          <div class="hcd-unit" data-unit={unit}>
+            <div class="hcd-digits" data-digits>
+              {Array.from({ length: digits }).map(() => (
+                <svg class="hcd-digit" viewBox="0 0 60 100" data-digit>
+                  <rect width="60" height="100" mask="url(#hcd-figure-0)" />
+                </svg>
+              ))}
+            </div>
+            <span class="hcd-label">{label}</span>
+          </div>
+        </>
+      ))
+    }
+  </div>
+  <p class="hcd-live" data-countdown-live hidden>{labels.liveLabel}</p>
+</div>
+<noscript>
+  <style is:inline>
+    .hcd {
+      display: none !important;
+    }
+  </style>
+</noscript>
+
+<script>
+  import "./countdown.client";
+</script>
+
+<style>
+  /*
+   * DESIGN.md HOME-1. No pane: the neon stands on the film. A soft pool
+   * of midnight behind it (a plain gradient, no blur) keeps the thin lines
+   * of light readable on a bright frame.
+   */
+  .hcd {
+    position: relative;
+    isolation: isolate;
+    display: inline-block;
+    max-width: 100%;
+    margin-top: var(--space-md);
+    padding: var(--space-2xs) var(--space-sm) var(--space-xs);
+    container-type: inline-size;
+    /* inline-block shrinks to the row; the row needs a width to query. */
+    width: min(100%, 31rem);
+  }
+
+  .hcd::before {
+    content: "";
+    position: absolute;
+    inset: -18% -8%;
+    z-index: -1;
+    background: radial-gradient(
+      closest-side,
+      color-mix(in srgb, var(--color-ticket-midnight) 62%, transparent),
+      color-mix(in srgb, var(--color-ticket-midnight) 38%, transparent) 55%,
+      transparent
+    );
+    pointer-events: none;
+  }
+
+  .hcd-defs {
+    position: absolute;
+  }
+
+  /* A figure's mask: the wide stroke shows, the narrower one inside it
+     hides, which leaves the outline of the tube. */
+  .hcd-tube,
+  .hcd-core {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .hcd-tube {
+    stroke: var(--color-white);
+    stroke-width: 18;
+  }
+
+  .hcd-core {
+    stroke: var(--color-black);
+    stroke-width: 12;
+  }
+
+  /*
+   * One figure height for the whole display, from its width: a figure is
+   * 0.6 of its height wide plus a little air, and the three colons take
+   * about 1.5 figure heights more. Capped, so the display stays a detail
+   * of the hero on a wide screen and still fits a 320px phone.
+   */
+  .hcd-row {
+    --digit-h: min(4rem, calc(100cqi / (var(--digits) * 0.66 + 1.5)));
+
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  .hcd-row[hidden] {
+    display: none;
+  }
+
+  .hcd-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0;
+  }
+
+  /* The light: nearly white in the line itself, Q27 blue in the glow
+     around it (one filter per unit). */
+  .hcd-digits,
+  .hcd-colon {
+    filter: drop-shadow(
+        0 0 calc(var(--digit-h) * 0.05)
+          color-mix(in srgb, var(--color-ticket-sky) 95%, transparent)
+      )
+      drop-shadow(0 0 calc(var(--digit-h) * 0.28) var(--color-ticket-sky));
+  }
+
+  .hcd-digits {
+    display: flex;
+    gap: calc(var(--digit-h) * 0.06);
+  }
+
+  .hcd-digit {
+    display: block;
+    width: auto;
+    height: var(--digit-h);
+    fill: color-mix(in srgb, var(--color-white) 35%, var(--color-ticket-cyan));
+  }
+
+  /* The colon: two small rings of the same light. */
+  .hcd-colon {
+    display: block;
+    flex: 0 0 auto;
+    width: auto;
+    height: var(--digit-h);
+    margin-inline: calc(var(--digit-h) * 0.1);
+    fill: none;
+    stroke: color-mix(
+      in srgb,
+      var(--color-white) 35%,
+      var(--color-ticket-cyan)
+    );
+    stroke-width: 3;
+  }
+
+  /* Until the script has the real time, the figures only hold their
+     place. */
+  .hcd:not([data-state]) .hcd-digits {
+    visibility: hidden;
+  }
+
+  .hcd-label {
+    margin-top: var(--space-2xs);
+    color: color-mix(in srgb, var(--color-white) 70%, var(--color-ticket-cyan));
+    font-size: min(var(--text-size-tiny), 3.1cqi);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.14em;
+    line-height: 1.2;
+    text-transform: uppercase;
+  }
+
+  .hcd-live {
+    margin: var(--space-2xs) 0 var(--space-xs);
+    color: var(--color-white);
+    font-size: var(--text-size-large);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.01em;
+    text-align: center;
+    text-wrap: balance;
+  }
+</style>

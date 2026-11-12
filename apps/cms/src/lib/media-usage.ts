@@ -60,6 +60,16 @@ export type MediaGlobalRef = {
  */
 export const MEDIA_GLOBAL_FIELDS = [
   {
+    slug: "page-home",
+    label: "Home",
+    path: "/",
+    refs: [
+      { fieldPath: "whyAttend.cards[].image", titleField: "title" },
+      // A post row has no title; its link is the one text that names it.
+      { fieldPath: "social.posts[].image", titleField: "href" },
+    ],
+  },
+  {
     slug: "page-whyq",
     label: "Why Q?",
     path: "/whyq/",

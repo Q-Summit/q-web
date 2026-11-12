@@ -1,169 +1,312 @@
 ---
-// "Why Everyone's at Q-Summit" cards, ported from the Webflow
-// section_why_attend (layout249). Prefer Astro <Picture> when the
-// gitignored src/assets/media/ copy exists (local: `pnpm picture:sync`);
-// otherwise fall back to the R2 /media/ -800 webp (CI/prod).
-import type { PageLink } from "../../lib/content";
-import { EVENTS } from "../../lib/analytics/events";
-import { Picture } from "../../lib/astro-assets";
-import { resolveContentImage } from "../../lib/images";
-import Button from "../ui/Button.astro";
-import Container from "../ui/Container.astro";
-import Section from "../ui/Section.astro";
-import SectionHeader from "../ui/SectionHeader.astro";
+// "Why Q?" on the home page (DESIGN.md HOME-1): one tile per audience
+// (students and young professionals, startups, corporates, investors) as an
+// entry point, not a summary of the audience pages. Each tile is a pane of
+// clear glass with a photo set into it and a short pitch; the whole tile is
+// one link (the title is the link, stretched over the tile), so the link's
+// name is the audience, not "Learn more" four times. On a fine pointer the
+// tile turns a degree or two toward the cursor and a small light follows it
+// across the glass, never across the photo (home.client.ts); a press gives a little and springs back (MOTION-6).
+//
+// A tile without an href renders as plain content, and one without a photo
+// keeps its shape with a pool of light, so older content still builds.
+import type { WhyCard as WhyCardContent } from "../../lib/content";
+import { photoSrc } from "../../lib/media-filename";
+import IconArrowRight from "../icons/IconArrowRight.astro";
+import "./home-theme.css";
 
-export interface WhyCard {
-  title: string;
-  description: string;
-}
+export type WhyCard = WhyCardContent;
 
 interface Props {
+  eyebrow?: string;
   heading: string;
   intro: string;
   cards: WhyCard[];
-  cta: PageLink | undefined;
 }
 
-const { heading, intro, cards, cta } = Astro.props;
-
-// Same order as the live page: speakers, formats, partners.
-const imageFiles = [
-  {
-    filename: "home-why-speakers-800.webp",
-    width: 800,
-    height: 800,
-  },
-  {
-    filename: "home-why-formats-800.webp",
-    width: 800,
-    height: 533,
-  },
-  {
-    filename: "home-why-partners-800.webp",
-    width: 800,
-    height: 1200,
-  },
-] as const;
-
-const images = await Promise.all(
-  imageFiles.map(async (image) => ({
-    ...image,
-    asset: await resolveContentImage(image.filename, "why-attend card", {
-      quiet: true,
-    }),
-  })),
-);
+const { eyebrow, heading, intro, cards } = Astro.props;
 ---
 
-<Section id="why-attend" small class="why">
-  <Container>
-    <SectionHeader>
-      <h2 data-lp="whyAttend.heading">{heading}</h2>
-      <p data-lp="whyAttend.intro">{intro}</p>
-    </SectionHeader>
-    <div class="why-grid" data-lp-list="whyAttend.cards">
+<section
+  id="why-attend"
+  class="h-section h-why h-anchor"
+  aria-labelledby="home-why-title"
+>
+  <div class="h-shell">
+    <div class="h-head is-center">
       {
-        cards.map((card, index) => {
-          const image = images[index % images.length];
-          return (
-            <article class="why-card" data-lp-list-item>
-              {image.asset ? (
-                <Picture
-                  src={image.asset}
-                  alt=""
-                  widths={[400, 600, 800]}
-                  sizes="(max-width: 991px) 90vw, 30vw"
-                  formats={["avif", "webp"]}
-                  fallbackFormat="webp"
-                  quality={80}
-                  loading="lazy"
-                  decoding="async"
-                />
-              ) : (
+        eyebrow && (
+          <p class="h-eyebrow" data-lp="whyAttend.eyebrow">
+            {eyebrow}
+          </p>
+        )
+      }
+      <h2
+        id="home-why-title"
+        class="h-title"
+        data-lp="whyAttend.heading"
+        data-h-reveal
+      >
+        {heading}
+      </h2>
+      <p class="h-intro" data-lp="whyAttend.intro" data-h-reveal>
+        {intro}
+      </p>
+    </div>
+
+    <ul class="h-why-grid" data-lp-list="whyAttend.cards">
+      {
+        cards.map((card, i) => (
+          <li
+            class="h-aud h-glass"
+            style={`--i: ${i}`}
+            data-h-reveal
+            data-h-light
+            data-h-tilt
+            data-glass-press={card.href ? "" : undefined}
+            data-lp-list-item
+          >
+            <span class="glass-light" aria-hidden="true" />
+            <span class="h-glare" aria-hidden="true" />
+            <div class="h-aud-media">
+              {card.imageFile && (
                 <img
-                  src={`/media/${image.filename}`}
-                  alt=""
-                  width={image.width}
-                  height={image.height}
+                  src={photoSrc(card.imageFile)}
+                  alt={card.imageAlt ?? ""}
+                  width="800"
+                  height="533"
                   loading="lazy"
                   decoding="async"
                 />
               )}
-              <h3 data-lp-list-title>{card.title}</h3>
-              <p data-lp-list-description>{card.description}</p>
-            </article>
-          );
-        })
+            </div>
+            <div class="h-aud-body">
+              {card.eyebrow && <p class="h-eyebrow">{card.eyebrow}</p>}
+              <h3>
+                {card.href ? (
+                  <a
+                    class="h-aud-link"
+                    href={card.href}
+                    data-astro-prefetch="hover"
+                  >
+                    <span data-lp-list-label>{card.title}</span>
+                  </a>
+                ) : (
+                  <span data-lp-list-label>{card.title}</span>
+                )}
+              </h3>
+              <p class="h-aud-text" data-lp-list-value>
+                {card.description}
+              </p>
+              {card.href && card.linkLabel && (
+                <span class="h-aud-more" aria-hidden="true">
+                  {card.linkLabel}
+                  <IconArrowRight />
+                </span>
+              )}
+            </div>
+          </li>
+        ))
       }
-    </div>
-    {
-      cta && (
-        <div class="u-section-cta why-cta">
-          <Button
-            href={cta.href}
-            data-lp="whyAttend.cta"
-            data-lp-href="whyAttend.cta.href"
-            data-ph-event={EVENTS.why_attend_cta_clicked}
-            data-ph-prop-cta-href={cta.href}
-          >
-            {cta.label}
-          </Button>
-        </div>
-      )
-    }
-  </Container>
-</Section>
+    </ul>
+  </div>
+</section>
 
 <style>
-  .why-grid {
+  /* DESIGN.md HOME-1 */
+  .h-why-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 4rem var(--space-xl);
-  }
-
-  .why-card img,
-  .why-card picture {
-    width: 100%;
-  }
-
-  .why-card img {
-    aspect-ratio: 16 / 9;
-    height: auto;
-    object-fit: cover;
-    border-radius: var(--radius-card);
-    margin-bottom: var(--space-md);
-    background-color: var(--color-neutral-lightest);
-  }
-
-  /* Card titles run well below the global h3 scale on the live site (a
-     small card caption, not a section-level heading); size kept local per
-     DESIGN.md TYPE-1. It stays a raw value (DESIGN.md TYPE-2) because 1.7rem
-     falls between the h5 (1.5rem) and h4 (2rem) steps and both read wrong
-     against the live card: h5 shrinks the caption, h4 competes with the
-     section opener. */
-  .why-card h3 {
-    margin-bottom: var(--space-xs);
-    font-size: 1.7rem;
-    line-height: var(--heading-line-height-normal);
-    text-align: center;
-  }
-
-  .why-card p {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-sm);
     margin: 0;
-    color: var(--color-neutral-dark);
+    padding: 0;
+    list-style: none;
   }
 
-  /* Shared .u-section-cta (DESIGN.md COMP-3); the live section runs a
-     wider gap than the --section-gap default, so only margin is local. */
-  .why-cta {
-    margin-top: 4rem;
+  .h-aud {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: var(--space-2xs);
+    /* Tilt toward the pointer (--h-rx / --h-ry) and the hover lift, in one
+       transform so they never fight. */
+    transform: perspective(64rem) rotateX(var(--h-rx, 0deg))
+      rotateY(var(--h-ry, 0deg)) translateY(var(--h-lift, 0))
+      scale(var(--h-press, 1));
+    transition: transform var(--duration-glass-release) var(--ease-glass-spring);
   }
 
-  @media (max-width: 991px) {
-    .why-grid {
-      grid-template-columns: 1fr;
-      max-width: 32rem;
-      margin-inline: auto;
+  /* The pointer light on a tile: a small pool in the glass, not a wash
+     over the whole tile. It lies under the tile's content (the tile is a
+     stacking context, so a negative layer still paints above the glass
+     itself): the light never falls on the photo and never dims the type. */
+  .h-aud > .h-glare {
+    z-index: -1;
+    background: radial-gradient(
+      7rem circle at var(--h-lx, 50%) var(--h-ly, 0%),
+      color-mix(in srgb, var(--color-white) 45%, transparent),
+      color-mix(in srgb, var(--color-ticket-cyan) 12%, transparent) 45%,
+      transparent 70%
+    );
+  }
+
+  /* The audience line inside a tile stays small; the larger eyebrow is
+     for section headers. */
+  .h-aud .h-eyebrow {
+    font-size: var(--text-size-tiny);
+  }
+
+  /* The photo: an inlay in the glass, with the tile's inner radius. */
+  .h-aud-media {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    border-radius: var(--radius-ticket-panel);
+    background: linear-gradient(
+      150deg,
+      color-mix(in srgb, var(--color-ticket-ice) 70%, transparent),
+      color-mix(in srgb, var(--color-ticket-sky) 30%, transparent)
+    );
+  }
+
+  /* Out of flow, so a photo's own proportions never stretch the box. */
+  .h-aud-media img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    object-fit: cover;
+  }
+
+  /* Light on the photo's upper edge and a blue cast toward the glass, so
+     the photo reads as lying under the same glass as the tile. */
+  .h-aud-media::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-white) 22%, transparent) 0%,
+      transparent 30%,
+      color-mix(in srgb, var(--color-ticket-deep) 34%, transparent) 100%
+    );
+    box-shadow: inset 0 1px 0
+      color-mix(in srgb, var(--color-white) 80%, transparent);
+    pointer-events: none;
+  }
+
+  .h-aud-body {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    padding: var(--space-sm) var(--space-xs) var(--space-xs);
+  }
+
+  .h-aud h3 {
+    margin: 0;
+    color: var(--color-navy);
+    font-size: var(--heading-h4-size);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    text-wrap: balance;
+  }
+
+  .h-aud-link {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  /* The title link covers the whole tile. */
+  .h-aud-link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    border-radius: var(--radius-ticket-card);
+  }
+
+  .h-aud-link:focus-visible {
+    outline: none;
+  }
+
+  .h-aud-link:focus-visible::after {
+    outline: 2px solid var(--color-navy);
+    outline-offset: 3px;
+  }
+
+  .h-aud-text {
+    flex: 1 1 auto;
+    margin: var(--space-xs) 0 var(--space-sm);
+    color: color-mix(in srgb, var(--color-navy) 80%, transparent);
+    font-size: var(--text-size-small);
+    line-height: 1.5;
+  }
+
+  .h-aud-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: var(--color-navy);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .h-aud-more :global(svg) {
+    width: 0.95rem;
+    height: 0.95rem;
+    transition: transform var(--duration-hover) var(--ease-snappy);
+  }
+
+  /* Hover lifts the tile and nudges the arrow; a press gives a little
+     (MOTION-6: at once, then the spring back). */
+  @media (hover: hover) {
+    .h-aud:has(.h-aud-link:hover) {
+      --h-lift: -5px;
+    }
+
+    .h-aud:has(.h-aud-link:hover) .h-aud-more :global(svg) {
+      transform: translateX(3px);
+    }
+  }
+
+  .h-aud:has(.h-aud-link:active),
+  .h-aud.is-pressed {
+    --h-press: 0.985;
+
+    transition-duration: var(--duration-glass-press);
+  }
+
+  @media (max-width: 1023px) {
+    .h-why-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 599px) {
+    .h-why-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    /* One column: photo beside the copy would crowd it; keep it on top
+       but shallower. */
+    .h-aud-media {
+      aspect-ratio: 16 / 8;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .h-aud,
+    .h-aud-more :global(svg) {
+      transition: none;
+    }
+
+    .h-aud,
+    .h-aud:has(.h-aud-link:hover) .h-aud-more :global(svg) {
+      transform: none;
     }
   }
 </style>

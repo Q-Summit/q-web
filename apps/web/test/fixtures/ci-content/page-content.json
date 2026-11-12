@@ -13,7 +13,9 @@
       "cta": {
         "label": "Learn more",
         "href": "#why-attend"
-      }
+      },
+      "badge": "Fixture badge · Fixture dates · Fixture city",
+      "leadLines": ["Fixture lead line one.", "Fixture lead line two."]
     },
     "event": {
       "startDate": "2027-04-01",
@@ -44,46 +46,42 @@
     "partnerBand": {
       "items": [
         {
-          "value": "50+",
-          "label": "Startup and Corporate Partners",
+          "value": "",
+          "label": "Fixture startups",
+          "description": "Fixture founders",
           "logos": [
             "Fixture Platinum Partner 1",
             "Fixture Gold Partner 2",
-            "Fixture Silver Partner 3",
-            "Fixture Starter Partner 4",
-            "Fixture Knowledge Partner 5",
-            "Fixture Event Partner 6",
-            "Fixture Mobility Partner 7",
-            "Fixture University and Network Partner 8",
-            "Fixture Media Partner 9",
-            "Fixture Platinum Partner 1",
-            "Fixture Gold Partner 2",
-            "Fixture Silver Partner 3",
-            "Fixture Starter Partner 4",
-            "Fixture Knowledge Partner 5",
-            "Fixture Event Partner 6",
-            "Fixture Mobility Partner 7",
-            "Fixture University and Network Partner 8"
+            "Fixture Silver Partner 3"
           ]
         },
         {
-          "value": "20+",
-          "label": "Network Partners",
+          "value": "",
+          "label": "Fixture corporates",
+          "description": "Fixture companies",
           "logos": [
-            "Fixture Media Partner 9",
-            "Fixture Platinum Partner 1",
-            "Fixture Gold Partner 2",
-            "Fixture Silver Partner 3",
             "Fixture Starter Partner 4",
             "Fixture Knowledge Partner 5",
             "Fixture Event Partner 6"
+          ]
+        },
+        {
+          "value": "",
+          "label": "Fixture network",
+          "description": "Fixture community",
+          "logos": [
+            "Fixture Mobility Partner 7",
+            "Fixture University and Network Partner 8",
+            "Fixture Media Partner 9"
           ]
         }
       ],
       "cta": {
         "label": "View all our Partners",
         "href": "/partner"
-      }
+      },
+      "eyebrow": "Fixture partners",
+      "heading": "Partners of the fixture edition"
     },
     "previousSpeakers": {
       "heading": "Previous Speakers",
@@ -91,29 +89,58 @@
       "cta": {
         "label": "View more Speakers",
         "href": "/speaker"
-      }
+      },
+      "eyebrow": "Fixture stage",
+      "alumniLabel": "Fixture past speaker",
+      "lineup": {
+        "label": "Fixture lineup",
+        "year": 2099,
+        "slots": 4,
+        "showPlaceholders": true,
+        "placeholderName": "Fixture placeholder",
+        "placeholderRole": "Placeholder, fixture only"
+      },
+      "standIns": [],
+      "standInLabel": "Fixture earlier edition"
     },
     "whyAttend": {
       "heading": "Why Everyone's at Q‑Summit",
       "intro": "Whether participants, companies, startups or investors, Q-Summit brings together people from a wide variety of regions and professions.",
       "cards": [
         {
-          "title": "Inspiring Speakers!",
-          "description": "At Q-Summit, inspiring speakers ignite passion and spark bold ideas. Hear from visionaries who empower you to think bigger and make an impact!"
+          "eyebrow": "Fixture talents",
+          "title": "Fixture audience A",
+          "description": "Sample pitch for fixture audience a used in CI builds.",
+          "href": "/whyq/students",
+          "linkLabel": "Fixture more"
         },
         {
-          "title": "Insightful Formats!",
-          "description": "Q-Summit’s engaging formats turn ideas into action. From hands-on workshops to thought-provoking panels, every moment is designed for meaningful growth and real-world impact!"
+          "eyebrow": "Fixture founders",
+          "title": "Fixture audience B",
+          "description": "Sample pitch for fixture audience b used in CI builds.",
+          "href": "/whyq/startups",
+          "linkLabel": "Fixture more"
         },
         {
-          "title": "Innovative Partners!",
-          "description": "Q-Summit connects you with innovative partners shaping the future. Discover cutting-edge ideas, build lasting connections, and unlock opportunities with industry leaders!"
+          "eyebrow": "Fixture companies",
+          "title": "Fixture audience C",
+          "description": "Sample pitch for fixture audience c used in CI builds.",
+          "href": "/whyq/corporates",
+          "linkLabel": "Fixture more"
+        },
+        {
+          "eyebrow": "Fixture investors",
+          "title": "Fixture audience D",
+          "description": "Sample pitch for fixture audience d used in CI builds.",
+          "href": "/whyq/investors",
+          "linkLabel": "Fixture more"
         }
       ],
       "cta": {
         "label": "Why Q-Summit?",
         "href": "/whyq"
-      }
+      },
+      "eyebrow": "Fixture why"
     },
     "faqSection": {
       "heading": "FAQs",
@@ -122,6 +149,23 @@
         "label": "Contact",
         "href": "/contact"
       }
+    },
+    "countdown": {
+      "label": "Fixture countdown",
+      "daysLabel": "Fixture days",
+      "hoursLabel": "Fixture hours",
+      "minutesLabel": "Fixture min",
+      "secondsLabel": "Fixture sec",
+      "spokenLabel": "{days} fixture days, {hours} fixture hours and {minutes} fixture minutes left.",
+      "liveLabel": "The fixture event is on"
+    },
+    "social": {
+      "eyebrow": "Fixture social",
+      "heading": "Fixture social heading",
+      "intro": "Sample copy for the social section used in CI builds.",
+      "linkedinLabel": "Fixture channel one",
+      "instagramLabel": "Fixture channel two",
+      "posts": []
     }
   },
   "whyq": {

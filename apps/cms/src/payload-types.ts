@@ -836,10 +836,23 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
 export interface PageHome {
   id: number;
   hero: {
+    /**
+     * Small pill above the headline, e.g. "10th edition · April 1 to 2, 2027 · Mannheim". Leave empty to hide it.
+     */
+    badge?: string | null;
     headline: string;
     tagline: string;
     /**
-     * Rotating banner lines (e.g. thank-you message, next date). Each row is one line.
+     * Short lines under the headline, one per row. When filled, they are shown instead of the announcement lines.
+     */
+    leadLines?:
+      | {
+          text: string;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Banner lines (e.g. thank-you message, next date). Each row is one line. Shown only while there are no lead lines.
      */
     announcementLines?:
       | {
@@ -868,6 +881,36 @@ export interface PageHome {
      */
     endDate: string;
   };
+  countdown?: {
+    /**
+     * Name of the countdown for screen readers, e.g. "Countdown to Q-Summit 2027".
+     */
+    label?: string | null;
+    /**
+     * e.g. "Days".
+     */
+    daysLabel?: string | null;
+    /**
+     * e.g. "Hours".
+     */
+    hoursLabel?: string | null;
+    /**
+     * e.g. "Minutes".
+     */
+    minutesLabel?: string | null;
+    /**
+     * e.g. "Seconds".
+     */
+    secondsLabel?: string | null;
+    /**
+     * Sentence screen readers hear instead of the digits. Keep {days}, {hours} and {minutes}; the site replaces them with the numbers, e.g. "{days} days, {hours} hours and {minutes} minutes until Q-Summit 2027".
+     */
+    spokenLabel?: string | null;
+    /**
+     * Shown in place of the countdown once the first conference day has begun, e.g. "Q-Summit 2027 is live".
+     */
+    liveLabel?: string | null;
+  };
   stats: {
     heading: string;
     intro: string;
@@ -893,12 +936,27 @@ export interface PageHome {
   };
   partnerBand: {
     /**
-     * One entry per logo group (Startup/Corporate, Network, ...).
+     * Small label above the heading. Leave empty to hide it.
+     */
+    eyebrow?: string | null;
+    /**
+     * Heading of the section. Always name the edition the logos are from, e.g. "Partners of Q-Summit 2026".
+     */
+    heading?: string | null;
+    /**
+     * One row of logos per entry (e.g. Startups, Corporates, Network), in display order.
      */
     items?:
       | {
-          value: string;
+          /**
+           * Count beside the label on the previous homepage, e.g. "50+". The new homepage does not show it, so it may stay empty.
+           */
+          value?: string | null;
           label: string;
+          /**
+           * Short line under the label, e.g. "Founders & scale-ups". Leave empty to show the label alone.
+           */
+          description?: string | null;
           /**
            * Partner/company names shown in the logo band (index page only).
            */
@@ -920,8 +978,67 @@ export interface PageHome {
     };
   };
   previousSpeakers: {
+    /**
+     * Small label above the heading. Leave empty to hide it.
+     */
+    eyebrow?: string | null;
     heading: string;
     intro: string;
+    /**
+     * Badge on past speakers, e.g. "Q-Summit Alumni", so nobody reads them as booked for the next edition. Leave empty for no badge.
+     */
+    alumniLabel?: string | null;
+    /**
+     * Names of past speakers to show, in this order. Write each name exactly as it reads in the Speakers list. Leave empty to show every speaker in the group "Main stage highlight (homepage)".
+     */
+    highlights?:
+      | {
+          text: string;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Speakers of the next edition, shown after the past speakers. The cards are the published speakers in the group "Current edition speakers" with the year set here, so publishing a speaker fills a slot. The lineup appears once Label and Year are filled.
+     */
+    lineup?: {
+      /**
+       * Badge on each lineup card, e.g. "2027".
+       */
+      label?: string | null;
+      /**
+       * Conference year whose speakers fill the lineup, e.g. 2027.
+       */
+      year?: number | null;
+      /**
+       * How many cards the lineup holds, 1 to 8.
+       */
+      slots?: number | null;
+      /**
+       * For previews only. Fills open lineup slots with clearly marked placeholder cards, so the layout can be checked before speakers are announced. Keep this off for the live site: with it off, open slots are simply not shown.
+       */
+      showPlaceholders?: boolean | null;
+      /**
+       * Name on a placeholder card, e.g. "Speaker to be announced". Only used while Show Placeholders is on.
+       */
+      placeholderName?: string | null;
+      /**
+       * Line under the name on a placeholder card. Only used while Show Placeholders is on.
+       */
+      placeholderRole?: string | null;
+    };
+    /**
+     * Earlier speakers to show in the lineup's place while no speaker of the lineup year is published yet. Write each name exactly as it reads in the Speakers list. They disappear on their own as soon as the first speaker of that year is published.
+     */
+    standIns?:
+      | {
+          text: string;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Badge on a stand-in card, e.g. "Q-Summit 2026". It must say where the person spoke, so nobody reads them as booked for the next edition.
+     */
+    standInLabel?: string | null;
     cta: {
       label: string;
       /**
@@ -931,15 +1048,39 @@ export interface PageHome {
     };
   };
   whyAttend: {
+    /**
+     * Small label above the heading. Leave empty to hide it.
+     */
+    eyebrow?: string | null;
     heading: string;
     intro: string;
     /**
-     * One card per reason to attend.
+     * One tile per audience (e.g. students, startups, corporates, investors), in display order.
      */
     cards?:
       | {
           title: string;
           description: string;
+          /**
+           * Small label above the title, e.g. "For founders".
+           */
+          eyebrow?: string | null;
+          /**
+           * Where the tile leads: an internal path (e.g. "/whyq/students") or a full URL (https://...). Leave empty and the tile is not a link.
+           */
+          href?: string | null;
+          /**
+           * Text of the link on the tile, e.g. "Learn more".
+           */
+          linkLabel?: string | null;
+          /**
+           * Photo on the tile. Upload the sharp original. Leave empty and the tile shows without a photo.
+           */
+          image?: (number | null) | Media;
+          /**
+           * Short description of the photo for screen readers. Leave empty only while there is no photo.
+           */
+          imageAlt?: string | null;
           id?: string | null;
         }[]
       | null;
@@ -950,6 +1091,49 @@ export interface PageHome {
        */
       href: string;
     };
+  };
+  social?: {
+    /**
+     * Small label above the heading.
+     */
+    eyebrow?: string | null;
+    /**
+     * Heading of the section. Filling it switches the section on.
+     */
+    heading?: string | null;
+    /**
+     * Short text under the heading.
+     */
+    intro?: string | null;
+    /**
+     * Text of the LinkedIn profile link, e.g. "Follow us on LinkedIn".
+     */
+    linkedinLabel?: string | null;
+    /**
+     * Text of the Instagram profile link, e.g. "Follow us on Instagram".
+     */
+    instagramLabel?: string | null;
+    /**
+     * Up to four posts, shown as image tiles that open the post. Without posts the section shows empty frames.
+     */
+    posts?:
+      | {
+          platform: 'linkedin' | 'instagram';
+          /**
+           * Full address of the post, starting with https://.
+           */
+          href: string;
+          /**
+           * Image of the post, served from our own media library. Upload the sharp original.
+           */
+          image: number | Media;
+          /**
+           * Short description of the post image for screen readers.
+           */
+          imageAlt?: string | null;
+          id?: string | null;
+        }[]
+      | null;
   };
   faqSection: {
     heading: string;
@@ -1987,6 +2171,19 @@ export interface SiteSetting {
      * A full URL (https://...), a mailto: address, an internal path (e.g. "/whyq"), or an in-page anchor (e.g. "#why-attend").
      */
     href: string;
+    /**
+     * Optional links shown in a menu under this item, in display order (e.g. the audience pages under Why Q?). Leave empty for a plain link. The item itself always stays a link.
+     */
+    children?:
+      | {
+          label: string;
+          /**
+           * A full URL (https://...), a mailto: address, an internal path (e.g. "/whyq"), or an in-page anchor (e.g. "#why-attend").
+           */
+          href: string;
+          id?: string | null;
+        }[]
+      | null;
     id?: string | null;
   }[];
   footer: {
@@ -2099,8 +2296,15 @@ export interface PageHomeSelect<T extends boolean = true> {
   hero?:
     | T
     | {
+        badge?: T;
         headline?: T;
         tagline?: T;
+        leadLines?:
+          | T
+          | {
+              text?: T;
+              id?: T;
+            };
         announcementLines?:
           | T
           | {
@@ -2119,6 +2323,17 @@ export interface PageHomeSelect<T extends boolean = true> {
     | {
         startDate?: T;
         endDate?: T;
+      };
+  countdown?:
+    | T
+    | {
+        label?: T;
+        daysLabel?: T;
+        hoursLabel?: T;
+        minutesLabel?: T;
+        secondsLabel?: T;
+        spokenLabel?: T;
+        liveLabel?: T;
       };
   stats?:
     | T
@@ -2142,11 +2357,14 @@ export interface PageHomeSelect<T extends boolean = true> {
   partnerBand?:
     | T
     | {
+        eyebrow?: T;
+        heading?: T;
         items?:
           | T
           | {
               value?: T;
               label?: T;
+              description?: T;
               logos?:
                 | T
                 | {
@@ -2165,8 +2383,33 @@ export interface PageHomeSelect<T extends boolean = true> {
   previousSpeakers?:
     | T
     | {
+        eyebrow?: T;
         heading?: T;
         intro?: T;
+        alumniLabel?: T;
+        highlights?:
+          | T
+          | {
+              text?: T;
+              id?: T;
+            };
+        lineup?:
+          | T
+          | {
+              label?: T;
+              year?: T;
+              slots?: T;
+              showPlaceholders?: T;
+              placeholderName?: T;
+              placeholderRole?: T;
+            };
+        standIns?:
+          | T
+          | {
+              text?: T;
+              id?: T;
+            };
+        standInLabel?: T;
         cta?:
           | T
           | {
@@ -2177,6 +2420,7 @@ export interface PageHomeSelect<T extends boolean = true> {
   whyAttend?:
     | T
     | {
+        eyebrow?: T;
         heading?: T;
         intro?: T;
         cards?:
@@ -2184,6 +2428,11 @@ export interface PageHomeSelect<T extends boolean = true> {
           | {
               title?: T;
               description?: T;
+              eyebrow?: T;
+              href?: T;
+              linkLabel?: T;
+              image?: T;
+              imageAlt?: T;
               id?: T;
             };
         cta?:
@@ -2191,6 +2440,24 @@ export interface PageHomeSelect<T extends boolean = true> {
           | {
               label?: T;
               href?: T;
+            };
+      };
+  social?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+        intro?: T;
+        linkedinLabel?: T;
+        instagramLabel?: T;
+        posts?:
+          | T
+          | {
+              platform?: T;
+              href?: T;
+              image?: T;
+              imageAlt?: T;
+              id?: T;
             };
       };
   faqSection?:
@@ -2957,6 +3224,13 @@ export interface SiteSettingsSelect<T extends boolean = true> {
     | {
         label?: T;
         href?: T;
+        children?:
+          | T
+          | {
+              label?: T;
+              href?: T;
+              id?: T;
+            };
         id?: T;
       };
   footer?:

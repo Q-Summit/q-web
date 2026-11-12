@@ -4,7 +4,7 @@ What to do when the live site, the CMS, or published content is down or wrong. S
 
 ## Detection
 
-- **External uptime monitor.** A dedicated external service, deliberately not a workflow in this repo. At go-live, point it (owner picks the service; any plain HTTPS checker works, no vendor config enters the repo) at `https://q-summit.com/`, `/whyq/`, `/llms.txt`, and `/media/hero-poster.jpg` (stable ops-controlled key; a 404 there means R2 seeding regressed, see [`go-live.md`](go-live.md)), treat any non-2xx as down, and alert to email or the team channel. On an alert, open or update one tracking issue titled "Uptime: production is failing" (label `area: infra`) and run the response in it.
+- **External uptime monitor.** A dedicated external service, deliberately not a workflow in this repo. At go-live, point it (owner picks the service; any plain HTTPS checker works, no vendor config enters the repo) at `https://q-summit.com/`, `/whyq/students/` (not `/whyq/`, which is a redirect and so never a 2xx), `/llms.txt`, and `/media/hero-poster.jpg` (stable ops-controlled key; a 404 there means R2 seeding regressed, see [`go-live.md`](go-live.md)), treat any non-2xx as down, and alert to email or the team channel. On an alert, open or update one tracking issue titled "Uptime: production is failing" (label `area: infra`) and run the response in it.
 - **Human report.** Someone reports that a page is down or broken. Capture the URL, the time, what they saw, and whether it reproduces from another network, then open or comment on that same tracking issue.
 
 ## Triage
