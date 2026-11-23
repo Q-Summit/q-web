@@ -1,0 +1,98 @@
+---
+// Key figures of a /whyq/<audience>/ page (DESIGN.md WHYQ-1): the
+// team's template as four cards, in the homepage's dark glass (HOME-1),
+// each a large heavy figure with its suffix in ice and an uppercase
+// label. Unlike the homepage it prints every figure exactly
+// as the copy gives it ("2 pitch formats", "60+ startups"), so it is its
+// own component and the homepage's stays untouched. The final figure is in
+// the HTML; whyq.client.ts counts it up once.
+import { brandHtml, type WhyqStat } from "../../lib/whyq-pages";
+import "../home/home-theme.css";
+
+interface Props {
+  heading: string;
+  stats: WhyqStat[];
+}
+
+const { heading, stats } = Astro.props;
+const fmt = new Intl.NumberFormat("en-US");
+
+const items = stats.map((stat) => {
+  const match = /^([\d.,]+)(.*)$/.exec(stat.value.trim());
+  const number = match ? Number(match[1]!.replace(/[.,]/g, "")) : NaN;
+  const finite = Number.isFinite(number);
+  return {
+    label: stat.label,
+    number: finite ? number : null,
+    text: finite ? fmt.format(number) : stat.value,
+    suffix: match ? match[2]!.trim() : "",
+  };
+});
+---
+
+<section class="wq-stats" aria-labelledby="whyq-stats-title">
+  <h2 id="whyq-stats-title" class="u-visually-hidden">{heading}</h2>
+  <ul class="h-shell wq-stats-row">
+    {
+      items.map((item, i) => (
+        <li class="wq-stat h-glass" data-h-reveal style={`--h-i: ${i}`}>
+          <span class="wq-stat-figure">
+            <span data-count-to={item.number ?? undefined}>{item.text}</span>
+            {item.suffix && <span class="h-accent">{item.suffix}</span>}
+          </span>
+          <span class="wq-stat-label" set:html={brandHtml(item.label)} />
+        </li>
+      ))
+    }
+  </ul>
+</section>
+
+<style>
+  /* DESIGN.md WHYQ-1: the template's four figure cards in the homepage's
+     dark glass (HOME-1 .h-glass), with its heavy figures and ice suffix. */
+  .wq-stats {
+    padding-block: var(--space-md) clamp(var(--space-lg), 5vw, var(--space-xl));
+  }
+
+  .wq-stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-sm);
+    margin-block: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .wq-stat {
+    display: grid;
+    align-content: start;
+    gap: var(--space-xs);
+    container-type: inline-size;
+    padding: clamp(var(--space-md), 2.4vw, var(--space-lg));
+    border-radius: var(--radius-ticket-card);
+  }
+
+  .wq-stat-figure {
+    font-size: min(clamp(2.5rem, 4.6vw, 4.25rem), 30cqi);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.045em;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .wq-stat-label {
+    color: var(--h-text-soft);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.16em;
+    line-height: 1.4;
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 767px) {
+    .wq-stats-row {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>

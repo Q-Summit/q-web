@@ -41,6 +41,10 @@ export const EVENTS = {
   kickoff_apply_clicked: "kickoff_apply_clicked",
   /** Hackathon apply CTA to the external event page (hero or closing band). Props: cta_placement, cta_href. */
   hackathon_apply_clicked: "hackathon_apply_clicked",
+  /** A Why Q audience page viewed (students, startups, corporates or investors); top of that audience's ticket funnel. Props: audience. */
+  whyq_audience_viewed: "whyq_audience_viewed",
+  /** Ticket CTA on a Why Q audience page (hero button or ticket card), on its way to the ticket page. Props: audience, placement, tier_name (ticket card only). */
+  whyq_ticket_clicked: "whyq_ticket_clicked",
 } as const;
 
 export type EventName = keyof typeof EVENTS;

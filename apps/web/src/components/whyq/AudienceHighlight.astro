@@ -1,0 +1,504 @@
+---
+// The section between the activities and the ticket on a /whyq/<audience>/
+// page (DESIGN.md WHYQ-1), in the homepage's material (HOME-1). One
+// opener, then one of four bodies, as the page templates have them:
+//   cards   two white cards with a photo (Students: InnoVillage, goodie bag)
+//   winner  one large picture with the winner's name on a plate of dark
+//           glass, three moments under it (Startups: last year's Pitch
+//           Battle)
+//   logos   the companies on small slabs of dark glass (Corporates)
+//   qube    a picture beside a pane of investors (Investors)
+// Where the partners collection has a company's logo, the slab carries it
+// on a light plate, as the homepage's partner strip does (the logo never
+// recolored), and links to the partner's site; otherwise the name stands.
+// A missing picture, or one that fails to load (whyq.client.ts), leaves
+// the ticket page's blue to white wash in its place; nothing is labelled as a
+// placeholder.
+import "../home/home-theme.css";
+import "./whyq-theme.css";
+import {
+  brandHtml,
+  type WhyqHighlight,
+  type WhyqImage,
+} from "../../lib/whyq-pages";
+
+/** A partner logo, as the homepage's strip resolves it (lib/partner-logos). */
+export interface WhyqLogo {
+  name: string;
+  href: string;
+  src: string;
+  width: number;
+  height: number;
+}
+
+interface Props {
+  id: string;
+  highlight: WhyqHighlight;
+  /** Logos of the named companies, keyed by the name the copy gives. */
+  logos?: Record<string, WhyqLogo>;
+}
+
+const { id, highlight, logos = {} } = Astro.props;
+const image: WhyqImage | undefined =
+  highlight.kind === "winner" || highlight.kind === "qube"
+    ? highlight.image
+    : undefined;
+---
+
+<section id={id} class="h-section wq-hl" aria-labelledby={`${id}-heading`}>
+  <div class="h-shell">
+    <div class="wq-head">
+      <div class="wq-head-copy" data-h-reveal>
+        <p class="h-eyebrow">{highlight.eyebrow}</p>
+        <h2
+          class="h-title"
+          id={`${id}-heading`}
+          set:html={brandHtml(highlight.heading)}
+        />
+        <p class="h-intro" set:html={brandHtml(highlight.intro)} />
+      </div>
+    </div>
+
+    {
+      highlight.kind === "cards" && (
+        <ul class="wq-hl-cards" role="list">
+          {highlight.cards.map((card, i) => (
+            <li
+              class:list={["wq-hl-card", { "has-photo": !!card.image }]}
+              data-h-reveal
+              style={`--h-i: ${i}`}
+            >
+              <div class="wq-media">
+                {card.image && (
+                  <img
+                    src={card.image.src}
+                    width={card.image.width}
+                    height={card.image.height}
+                    alt={card.image.alt}
+                    loading="lazy"
+                    decoding="async"
+                    data-wq-img
+                  />
+                )}
+              </div>
+              <div class="wq-hl-body">
+                <p class="wq-kicker">{card.kicker}</p>
+                <h3>{card.title}</h3>
+                <p set:html={brandHtml(card.text)} />
+              </div>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+
+    {
+      highlight.kind === "winner" && (
+        <Fragment>
+          <div
+            class:list={["wq-stage", { "has-photo": !!image }]}
+            data-h-reveal
+          >
+            <div class="wq-media">
+              {image && (
+                <img
+                  src={image.src}
+                  width={image.width}
+                  height={image.height}
+                  alt={image.alt}
+                  loading="lazy"
+                  decoding="async"
+                  data-wq-img
+                />
+              )}
+            </div>
+            <div class="wq-plate h-glass">
+              <p class="h-eyebrow">{highlight.winnerLabel}</p>
+              <p class="wq-plate-name">{highlight.winnerName}</p>
+              {highlight.winnerLine && (
+                <p class="wq-plate-line">{highlight.winnerLine}</p>
+              )}
+            </div>
+          </div>
+          <ul class="wq-moments" role="list">
+            {highlight.moments.map((moment, i) => (
+              <li
+                class:list={["wq-moment", { "has-photo": !!moment.image }]}
+                data-h-reveal
+                style={`--h-i: ${i + 1}`}
+              >
+                <div class="wq-media">
+                  {moment.image && (
+                    <img
+                      src={moment.image.src}
+                      width={moment.image.width}
+                      height={moment.image.height}
+                      alt={moment.image.alt}
+                      loading="lazy"
+                      decoding="async"
+                      data-wq-img
+                    />
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Fragment>
+      )
+    }
+
+    {
+      highlight.kind === "logos" && (
+        <ul class="wq-names" role="list">
+          {highlight.names.map((name, i) => {
+            const logo = logos[name];
+            return (
+              <li class="wq-name h-glass" data-h-reveal style={`--h-i: ${i}`}>
+                {logo ? (
+                  <a
+                    class="wq-logo"
+                    href={logo.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <img
+                      src={logo.src}
+                      width={logo.width}
+                      height={logo.height}
+                      alt={name}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </a>
+                ) : (
+                  name
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )
+    }
+
+    {
+      highlight.kind === "qube" && (
+        <div class="wq-qube">
+          <div
+            class:list={["wq-stage", "is-side", { "has-photo": !!image }]}
+            data-h-reveal
+          >
+            <div class="wq-media">
+              {image && (
+                <img
+                  src={image.src}
+                  width={image.width}
+                  height={image.height}
+                  alt={image.alt}
+                  loading="lazy"
+                  decoding="async"
+                  data-wq-img
+                />
+              )}
+            </div>
+          </div>
+          <div class="wq-qube-side h-glass" data-h-reveal style="--h-i: 1">
+            <p class="h-eyebrow">{highlight.logosEyebrow}</p>
+            <h3>{highlight.logosHeading}</h3>
+            <ul class="wq-qube-names" role="list">
+              {highlight.names.map((name) => {
+                const logo = logos[name];
+                return (
+                  <li>
+                    {logo && (
+                      <span class="wq-qube-logo" aria-hidden="true">
+                        <img
+                          src={logo.src}
+                          width={logo.width}
+                          height={logo.height}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      </span>
+                    )}
+                    {name}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </div>
+      )
+    }
+  </div>
+</section>
+
+<style>
+  /* DESIGN.md WHYQ-1: white cards and dark glass of HOME-1. */
+
+  /* A picture slot: the photo over the ticket page's blue to white wash
+     (no Q in the background, as on the ticket page). */
+  .wq-media {
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(
+        80% 70% at 78% 18%,
+        color-mix(in srgb, var(--color-white) 55%, transparent),
+        transparent 62%
+      ),
+      linear-gradient(
+        160deg,
+        var(--color-ticket-deep) 0%,
+        var(--color-ticket-sky) 58%,
+        var(--color-ticket-ice) 100%
+      );
+  }
+
+  .wq-media img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .wq-media img[hidden] {
+    display: none;
+  }
+
+  /* --- cards: white, as the homepage's picker card --- */
+  .wq-hl-cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(var(--space-sm), 2.4vw, var(--space-lg));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .wq-hl-card {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    overflow: hidden;
+    border-radius: var(--radius-ticket-card);
+    background: var(--color-white);
+    box-shadow: 0 30px 60px -36px
+      color-mix(in srgb, var(--color-ticket-midnight) 95%, transparent);
+    color: var(--color-navy);
+  }
+
+  .wq-hl-card .wq-media {
+    aspect-ratio: 16 / 9;
+  }
+
+  .wq-hl-body {
+    display: grid;
+    align-content: start;
+    gap: var(--space-xs);
+    padding: clamp(var(--space-md), 3vw, 2.25rem);
+  }
+
+  .wq-kicker {
+    margin: 0;
+    color: var(--color-ticket-sky);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .wq-hl-body h3,
+  .wq-qube-side h3 {
+    margin: 0;
+    font-size: clamp(1.5rem, 2.4vw, 2.1rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+  }
+
+  .wq-hl-body p:last-child {
+    margin: 0;
+    color: color-mix(in srgb, var(--color-navy) 82%, transparent);
+    line-height: 1.6;
+  }
+
+  /* --- winner: a large picture, the name on dark glass --- */
+  .wq-stage {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-ticket-card);
+    box-shadow: 0 30px 60px -36px
+      color-mix(in srgb, var(--color-ticket-midnight) 95%, transparent);
+  }
+
+  .wq-stage .wq-media {
+    min-height: clamp(18rem, 42vw, 32rem);
+    height: 100%;
+  }
+
+  /* The template's three moments under the stage photo (jury, audience,
+     prize handover), each in the same rounded frame. */
+  .wq-moments {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(var(--space-sm), 2.4vw, var(--space-lg));
+    margin: clamp(var(--space-sm), 2.4vw, var(--space-lg)) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .wq-moment {
+    overflow: hidden;
+    border-radius: var(--radius-ticket-card);
+  }
+
+  .wq-moment .wq-media {
+    aspect-ratio: 16 / 10;
+  }
+
+  /* Phones keep the three in one row, as small squares under the stage. */
+  @media (max-width: 767px) {
+    .wq-moments {
+      gap: var(--space-xs);
+    }
+
+    .wq-moment .wq-media {
+      aspect-ratio: 1;
+    }
+  }
+
+  .wq-plate {
+    position: absolute;
+    bottom: clamp(var(--space-sm), 2.4vw, var(--space-lg));
+    left: clamp(var(--space-sm), 2.4vw, var(--space-lg));
+    display: grid;
+    gap: var(--space-2xs);
+    max-width: min(32rem, calc(100% - 2 * var(--space-sm)));
+    padding: var(--space-md) var(--space-lg);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    backdrop-filter: blur(14px) saturate(140%);
+  }
+
+  .wq-plate-name {
+    margin: 0;
+    font-size: clamp(2rem, 4vw, 3.25rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+
+  .wq-plate-line {
+    margin: 0;
+    color: var(--h-text-soft);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  /* --- logos: names on small slabs of dark glass --- */
+  .wq-names {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+    gap: var(--space-sm);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .wq-name {
+    display: grid;
+    place-items: center;
+    min-height: 6.5rem;
+    padding: var(--space-md);
+    font-size: var(--text-size-medium);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.01em;
+    text-align: center;
+  }
+
+  /* A logo on a light plate inside the slab (most logos are drawn dark
+     for light ground), never recolored or cropped. */
+  .wq-logo {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    min-height: 4.5rem;
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-ticket-panel);
+    background: var(--color-white);
+  }
+
+  .wq-logo img {
+    width: auto;
+    max-width: 100%;
+    height: 2.5rem;
+    object-fit: contain;
+  }
+
+  .wq-logo:focus-visible {
+    outline: 2px solid var(--color-ticket-ice);
+    outline-offset: 3px;
+  }
+
+  /* --- qube: picture and a pane of names --- */
+  .wq-qube {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    gap: clamp(var(--space-sm), 2.4vw, var(--space-lg));
+  }
+
+  .wq-qube-side {
+    display: grid;
+    align-content: start;
+    gap: var(--space-sm);
+    padding: clamp(var(--space-md), 3vw, var(--space-xl));
+  }
+
+  .wq-qube-names {
+    margin: var(--space-xs) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .wq-qube-names li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) 0;
+    border-top: 1px solid;
+    border-image: var(--h-fade-x) 1;
+    font-size: var(--text-size-medium);
+    font-weight: var(--font-weight-extrabold);
+  }
+
+  .wq-qube-logo {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 4.5rem;
+    height: 2.5rem;
+    padding: var(--space-2xs);
+    border-radius: var(--radius-ticket-pill);
+    background: var(--color-white);
+  }
+
+  .wq-qube-logo img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  @media (max-width: 860px) {
+    .wq-hl-cards,
+    .wq-qube {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .wq-plate {
+      position: relative;
+      inset: auto;
+      max-width: none;
+      margin: calc(-1 * var(--space-xl)) var(--space-sm) var(--space-sm);
+    }
+  }
+</style>

@@ -29,6 +29,7 @@
     "./content.test.ts",
     "./media-filename.test.ts",
     "./media-match.test.ts",
-    "./tickets.test.ts"
+    "./tickets.test.ts",
+    "./whyq-pages.test.ts"
   ]
 }

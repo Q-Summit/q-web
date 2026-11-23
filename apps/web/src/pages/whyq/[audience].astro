@@ -1,29 +1,51 @@
 ---
 // /whyq/students/, /whyq/startups/, /whyq/corporates/, /whyq/investors/:
 // one page per audience, the targets of the "Why Q?" submenu and of the
-// home page's audience tiles. Together they are "Why Q?": there is no
-// overview page (/whyq/ redirects to the tiles on the home page,
+// homepage's audience picker. Together they are "Why Q?": there is no
+// overview page (/whyq/ redirects to the picker on the homepage,
 // astro.config.mjs).
 //
-// Provisional on purpose: each page shows its audience's section of the
-// page-whyq content (FeatureSection) under a short header, plus the way to
-// the tickets. The real design of these pages is a later task, so this
-// file stays lean and adds no copy of its own: the audience name and the
-// eyebrow come from the site-settings nav (the submenu entry and its
-// parent), the intro and the section from page-whyq, the ticket link's
-// label from the ticket page. The registry of routes and the audience each
-// one shows lives in lib/whyq-audiences.ts.
+// Each page follows the team's page template in structure and wording
+// (hero, key figures, activities, one highlight, the audience's ticket, a
+// short FAQ) and is drawn in the 2027 homepage's system (DESIGN.md WHYQ-1,
+// HOME-1): its navy night, type, liquid glass and reveals; the ticket card
+// is the ticket page's. The registry of routes lives in
+// lib/whyq-audiences.ts and the pages' copy in lib/whyq-pages.ts; the
+// page's name and the breadcrumb's first step come from the site-settings
+// nav, and tickets, prices and the sale phase from page-tickets, the
+// source of /ticket-categories/.
 import Base from "../../layouts/Base.astro";
-import FeatureSection from "../../components/whyq/FeatureSection.astro";
-import Button from "../../components/ui/Button.astro";
-import Container from "../../components/ui/Container.astro";
-import Section from "../../components/ui/Section.astro";
-import { getPageContent, getSiteSettings } from "../../lib/content";
+import AudienceHero from "../../components/whyq/AudienceHero.astro";
+import AudienceStats from "../../components/whyq/AudienceStats.astro";
+import AudienceActivities from "../../components/whyq/AudienceActivities.astro";
+import AudienceHighlight from "../../components/whyq/AudienceHighlight.astro";
+import AudienceTicket from "../../components/whyq/AudienceTicket.astro";
+import AudienceFaq from "../../components/whyq/AudienceFaq.astro";
+import { euro, salePriceLabel } from "../../components/tickets/ticket-model";
+import {
+  getPageContent,
+  getPartners,
+  getSiteSettings,
+} from "../../lib/content";
+import logoManifest from "../../components/partner/logo-manifest.json";
+import {
+  resolvePartnerLogoDisplay,
+  type PartnerLogoMeta,
+} from "../../lib/partner-logos";
+import type { WhyqLogo } from "../../components/whyq/AudienceHighlight.astro";
+import type { Faq, TicketOffer } from "../../lib/content";
+import { EVENTS } from "../../lib/analytics/events";
 import {
   WHYQ_AUDIENCE_PAGES,
   whyqAudienceNames,
 } from "../../lib/whyq-audiences";
-import { resolveWhyqImage } from "../../lib/whyq-images";
+import {
+  WHYQ_PAGE_COPY,
+  WHYQ_SHARED,
+  fillTicketTokens,
+} from "../../lib/whyq-pages";
+import JsonLd from "../../components/seo/JsonLd.astro";
+import { breadcrumbLd } from "../../lib/seo";
 
 export function getStaticPaths() {
   return WHYQ_AUDIENCE_PAGES.map(({ slug, audienceId }) => ({
@@ -32,87 +54,189 @@ export function getStaticPaths() {
   }));
 }
 
-interface Props {
-  slug: string;
-  audienceId: string;
+const { slug } = Astro.props as { slug: string };
+const copy = WHYQ_PAGE_COPY[slug];
+if (!copy) {
+  throw new Error(
+    `[whyq] no page copy for "${slug}". Add it to WHYQ_PAGE_COPY in src/lib/whyq-pages.ts.`,
+  );
 }
 
-const { slug, audienceId } = Astro.props;
-
-const [{ whyq, ticketCategories }, { nav }] = await Promise.all([
-  getPageContent(),
-  getSiteSettings(),
-]);
+const [{ whyq, ticketCategories, contact }, { nav }, partners] =
+  await Promise.all([getPageContent(), getSiteSettings(), getPartners()]);
 
 const { label, parentLabel } = whyqAudienceNames(slug, nav);
-// A nav without a "Why Q?" item still gets an eyebrow from content.
-const eyebrow = parentLabel ?? whyq.heading;
+// A nav without a "Why Q?" item still gets a name from content.
+const section = parentLabel ?? whyq.heading;
 
-// An audience an editor removed or renamed must not fail the build: the
-// page then renders without its section.
-const audience = whyq.audiences.find((entry) => entry.id === audienceId);
-const image = audience
-  ? await resolveWhyqImage(audience.imageFile, audience.imageAlt)
-  : undefined;
+// The breadcrumb trail Google shows instead of the bare URL.
+const crumbs = breadcrumbLd(Astro.site, [
+  { name: "Home", path: "/" },
+  { name: label, path: `/whyq/${slug}/` },
+]);
+
+const { phases } = ticketCategories;
+
+// The audience's tickets, in the order the page names them. A ticket an
+// editor removed must not fail the build: the section shows what is left,
+// or is left out.
+const tickets = copy.ticket.keys
+  .map((key) => ticketCategories.offer.tickets.find((t) => t.key === key))
+  .filter((t): t is TicketOffer => t !== undefined);
+
+const escapeHtml = (value: string) =>
+  value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+// An answer that quotes a price takes it from the offer; one whose ticket
+// is gone is dropped rather than printed with a hole in it.
+// The day the Early Bird price ends ("November 22"), from the sale phases
+// of page-tickets: the "early-bird" phase, else the phase on sale. An
+// answer that names it is left out while no phase has an end date.
+const earlyBird =
+  phases?.items.find((item) => item.key === "early-bird") ??
+  phases?.items.find((item) => item.key === phases.activeKey);
+const saleEnd =
+  earlyBird?.endsAt && !Number.isNaN(Date.parse(earlyBird.endsAt))
+    ? new Intl.DateTimeFormat("en-US", {
+        month: "long",
+        day: "numeric",
+        timeZone: "Europe/Berlin",
+      }).format(new Date(earlyBird.endsAt))
+    : undefined;
+
+const faqs: Faq[] = copy.faq.items.flatMap((item) => {
+  if (item.answer.includes("{saleEnd}") && !saleEnd) return [];
+  const answer = fillTicketTokens(
+    item.answer.replaceAll("{saleEnd}", saleEnd ?? ""),
+    ticketCategories.offer.tickets,
+    euro,
+  );
+  return answer === undefined
+    ? []
+    : [
+        {
+          question: item.question,
+          answerHtml: `<p>${escapeHtml(answer)}</p>`,
+          page: "index" as const,
+          topic: "",
+        },
+      ];
+});
+
+// "Still have a question? Write to ...": the contact page's general
+// address (its reach-out entry for contacting us), else the contact page.
+const contactEmail =
+  contact.reachOut.items.find(
+    (item) => item.email && /contact/i.test(item.details.join(" ")),
+  )?.email ?? contact.reachOut.items.find((item) => item.email)?.email;
+const faqMore = contactEmail
+  ? {
+      text: WHYQ_SHARED.faqMore.text,
+      linkLabel: contactEmail,
+      href: `mailto:${contactEmail}`,
+    }
+  : WHYQ_SHARED.faqMore;
+
+// Logos for the companies the highlight names, from the partners
+// collection, matched as the homepage's strip matches them (exact, case
+// and punctuation aside; "&" reads as "and"). A name without a logo stays
+// a name.
+const normalizeName = (name: string) =>
+  name
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]/g, "");
+const highlightNames =
+  copy.highlight.kind === "logos" || copy.highlight.kind === "qube"
+    ? copy.highlight.names
+    : [];
+const logos: Record<string, WhyqLogo> = {};
+for (const name of highlightNames) {
+  const partner = partners.find(
+    (entry) => normalizeName(entry.name) === normalizeName(name),
+  );
+  const logo = partner
+    ? resolvePartnerLogoDisplay(
+        partner,
+        logoManifest as Record<string, PartnerLogoMeta>,
+        "[whyq] highlight logos",
+      )
+    : null;
+  if (logo) logos[name] = logo;
+}
 ---
 
 <Base
-  title={`${label} | ${eyebrow}`}
-  description={whyq.metaDescription}
-  livePreviewGlobal="page-whyq"
+  title={`${label} | ${section}`}
+  description={copy.metaDescription}
+  pageEvent={{
+    name: EVENTS.whyq_audience_viewed,
+    props: { audience: slug },
+  }}
 >
-  <Section small>
-    <Container>
-      <div class="section-header audience-header">
-        <p class="u-eyebrow">{eyebrow}</p>
-        <h1>{label}</h1>
-        <p class="audience-intro">{whyq.intro}</p>
-      </div>
-    </Container>
-  </Section>
-
-  {
-    audience && image && (
-      <FeatureSection
-        id={audience.id}
-        heading={audience.heading}
-        paragraph={audience.intro}
-        items={audience.items}
-        image={image}
-        imageLeft={audience.imageLeft}
-        eager
-      />
-    )
-  }
-
-  <Section small>
-    <Container>
-      <div class="audience-links">
-        <Button href="/ticket-categories/">
-          {ticketCategories.hero.heading}
-        </Button>
-      </div>
-    </Container>
-  </Section>
+  <Fragment slot="jsonld">
+    <JsonLd data={crumbs} />
+  </Fragment>
+  <script is:inline>
+    document.documentElement.classList.add("h-js");
+  </script>
+  <div class="h-home whyq-page">
+    <AudienceHero
+      parentLabel={section}
+      parentHref="/#why-attend"
+      crumb={copy.crumb}
+      heading={copy.hero.heading}
+      intro={copy.hero.intro}
+      ctaLabel={copy.hero.ctaLabel}
+      ctaHref="#ticket"
+      jumpLabel={WHYQ_SHARED.jumpLabel}
+      jumpHref="#activities"
+      eventLine={WHYQ_SHARED.eventLine}
+      audience={slug}
+    />
+    <AudienceStats heading={`${copy.crumb} in numbers`} stats={copy.stats} />
+    <AudienceActivities
+      id="activities"
+      eyebrow={WHYQ_SHARED.activitiesEyebrow}
+      heading={copy.activities.heading}
+      intro={copy.activities.intro}
+      activities={copy.activities.items}
+    />
+    <AudienceHighlight
+      id="highlight"
+      highlight={copy.highlight}
+      logos={logos}
+    />
+    {
+      tickets.length > 0 && (
+        <AudienceTicket
+          id="ticket"
+          eyebrow={WHYQ_SHARED.ticketEyebrow}
+          copy={copy.ticket}
+          tickets={tickets}
+          offer={ticketCategories.offer}
+          included={ticketCategories.included}
+          phases={phases}
+          priceLabel={salePriceLabel(phases)}
+          allTicketsLabel={WHYQ_SHARED.allTicketsLabel}
+          ticketsHref={WHYQ_SHARED.ticketsHref}
+          audience={slug}
+        />
+      )
+    }
+    <AudienceFaq
+      id="faq"
+      eyebrow={WHYQ_SHARED.faqEyebrow}
+      heading={copy.faq.heading}
+      faqs={faqs}
+      more={faqMore}
+    />
+    <div class="h-page-fade" aria-hidden="true"></div>
+  </div>
 </Base>
 
-<style>
-  /* .section-header colors every paragraph for intro copy; the eyebrow
-     keeps the shared .u-eyebrow color (color is the one property a site
-     may set on it, see global.css). */
-  .audience-header .u-eyebrow {
-    color: var(--color-primary);
-  }
+<script>
+  import { initWhyq } from "../../components/whyq/whyq.client";
 
-  /* Same scale as the section intro below. */
-  .audience-intro {
-    font-size: var(--text-size-medium);
-  }
-
-  .audience-links {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: var(--space-sm);
-  }
-</style>
+  initWhyq();
+</script>
