@@ -16,11 +16,11 @@ export const PARTNER_INQUIRY_PATH = "/partnersheet/";
 export const INQUIRY_TYPE_PARAM = "type";
 
 /**
- * PLACEHOLDER (open question): the real address of the partner team is not
- * decided. example.com is reserved for documentation, so this can never
- * reach a real inbox.
+ * The partner relations inbox behind "Prefer email?". The same address as the
+ * contact card on /partner/ (CMS page-partner, cta.contact.email); keep the two
+ * in step.
  */
-export const PARTNER_TEAM_EMAIL = "partner-team@example.com";
+export const PARTNER_TEAM_EMAIL = "vorstandpartnerrelations@q-summit.com";
 
 /** The existing privacy policy page of the site. */
 export const PRIVACY_POLICY_PATH = "/privacy-policy/";
