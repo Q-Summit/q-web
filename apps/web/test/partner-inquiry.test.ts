@@ -7,8 +7,14 @@ import {
   INQUIRY_TOPICS,
   INQUIRY_TYPES,
   isValidEmail,
+  INQUIRY_MESSAGE_MAX,
+  PARTNER_TEAM_EMAIL,
+  emailLabel,
+  inquiryEmail,
+  inquiryMailto,
   inquirySummary,
   keystrokeDelay,
+  parseInquiryTopics,
   topicLabel,
   typeLabel,
   parseInquiryType,
@@ -215,5 +221,86 @@ describe("inquirySummary", () => {
   it("leaves out a topic it does not know", () => {
     const rows = inquirySummary({ ...base, topics: ["hackathon", "nope"] });
     expect(rows[1]?.value).toBe("Hackathon");
+  });
+});
+
+describe("parseInquiryTopics", () => {
+  it("ticks the named topics the type shows, in the type's order", () => {
+    expect(parseInquiryTopics("hackathon", "company")).toEqual(["hackathon"]);
+    expect(parseInquiryTopics(" Recruiting,HACKATHON ", "company")).toEqual([
+      "hackathon",
+      "recruiting",
+    ]);
+  });
+
+  it("uses the default set without a type", () => {
+    expect(parseInquiryTopics("hackathon", null)).toEqual(["hackathon"]);
+  });
+
+  it("drops unknown topics and topics of another type", () => {
+    expect(parseInquiryTopics("speaking,nope", "company")).toEqual([]);
+    expect(parseInquiryTopics("", "company")).toEqual([]);
+    expect(parseInquiryTopics(null, "company")).toEqual([]);
+  });
+});
+
+describe("inquiryEmail", () => {
+  const values: InquiryValues = {
+    type: "company",
+    topics: ["hackathon"],
+    name: "  Jane Doe ",
+    email: " jane@example.com ",
+    message: "Hello & welcome?\nSecond line",
+    consent: true,
+  };
+
+  it("names the type and the sender in the subject", () => {
+    expect(inquiryEmail(values).subject).toBe(
+      "Partner inquiry: Company (Jane Doe)",
+    );
+  });
+
+  it("carries every row of the preview as plain text", () => {
+    const { body } = inquiryEmail(values);
+    for (const row of inquirySummary({
+      ...values,
+      name: "Jane Doe",
+      email: "jane@example.com",
+    })) {
+      expect(body).toContain(`${emailLabel(row.label)}\n${row.value}`);
+    }
+  });
+
+  it("ends a label with a colon, or with its own question mark", () => {
+    expect(emailLabel("Full name")).toBe("Full name:");
+    expect(emailLabel("Anything we should know?")).toBe(
+      "Anything we should know?",
+    );
+  });
+
+  it("cuts an overlong message to the form's limit", () => {
+    const long = "x".repeat(INQUIRY_MESSAGE_MAX + 50);
+    const { body } = inquiryEmail({ ...values, message: long });
+    expect(body).toContain("x".repeat(INQUIRY_MESSAGE_MAX));
+    expect(body).not.toContain("x".repeat(INQUIRY_MESSAGE_MAX + 1));
+  });
+});
+
+describe("inquiryMailto", () => {
+  it("addresses the partner team and encodes subject and body", () => {
+    const href = inquiryMailto({
+      type: "media",
+      topics: [],
+      name: "Jane",
+      email: "jane@example.com",
+      message: "a+b & c?",
+      consent: true,
+    });
+    expect(href.startsWith(`mailto:${PARTNER_TEAM_EMAIL}?subject=`)).toBe(true);
+    const params = new URLSearchParams(href.split("?")[1]);
+    expect(params.get("subject")).toBe("Partner inquiry: Media (Jane)");
+    expect(params.get("body")).toContain("a+b & c?");
+    // Spaces are %20, never "+", which some mail apps show literally.
+    expect(href).not.toMatch(/\+/);
   });
 });

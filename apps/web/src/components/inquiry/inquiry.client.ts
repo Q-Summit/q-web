@@ -10,17 +10,24 @@
  *     under its field and focuses the first one (which reads its message
  *     aloud through its ARIA description).
  *
- * FRONTEND ONLY: a complete form moves on to the thank-you screen, with a
- * preview of what was filled in ("View your inquiry"). Nothing is sent: no
- * fetch, no mailto, no storage, no analytics event.
+ *   - `&topic=hackathon` (comma separated) ticks those topic chips of the
+ *     chosen type, so the hackathon page lands with Hackathon picked.
+ *
+ * NO SERVER: a complete form opens the visitor's email app with the inquiry
+ * addressed to the partner team (inquiryMailto) and moves on to the "ready to
+ * send" screen, with a preview of what was filled in ("View your inquiry").
+ * No fetch, no storage, no analytics event.
  */
 import {
   TYPING,
   TYPING_ORDER,
   keystrokeDelay,
   INQUIRY_REQUIRED_FIELDS,
+  INQUIRY_TOPIC_PARAM,
   INQUIRY_TYPE_PARAM,
+  inquiryMailto,
   inquirySummary,
+  parseInquiryTopics,
   parseInquiryType,
   topicsForType,
   validateInquiry,
@@ -47,17 +54,24 @@ function isRequiredField(value: string | undefined): value is InquiryField {
 }
 
 /**
- * The thank-you screen: after a complete, valid send the form leaves and the
- * card shows "Thank you" in its place. The card keeps the height the form
+ * The "ready to send" screen: after a complete, valid form the form leaves
+ * and the card says the email is ready, with a link that opens it again. The card keeps the height the form
  * had, up to a calm cap set in CSS (a long form on a phone would otherwise
  * leave a tall, empty card), and the heading takes focus so a keyboard or
  * screen reader user lands on the message instead of on a control that is
  * gone. The form is only hidden, not reset.
  */
-function showThanks(form: HTMLFormElement, values: InquiryValues): void {
+function showThanks(
+  form: HTMLFormElement,
+  values: InquiryValues,
+  mailto: string,
+): void {
   const card = form.closest<HTMLElement>(".inq-card");
   const thanks = card?.querySelector<HTMLElement>("[data-thanks]");
   if (!card || !thanks) return;
+  thanks
+    .querySelector<HTMLAnchorElement>("[data-mail-again]")
+    ?.setAttribute("href", mailto);
   card.style.setProperty("--inq-sent-height", `${card.offsetHeight}px`);
   card.classList.add("is-sent");
   form.hidden = true;
@@ -193,6 +207,17 @@ function initInquiryForm(form: HTMLFormElement): void {
     if (radio) radio.checked = true;
   }
   syncTopics();
+  // Topics the link asks for, among those the chosen type shows.
+  const presetTopics = parseInquiryTopics(
+    new URLSearchParams(window.location.search).get(INQUIRY_TOPIC_PARAM),
+    preset,
+  );
+  for (const key of presetTopics) {
+    const box = form.querySelector<HTMLInputElement>(
+      `input[name="topics"][value="${key}"]`,
+    );
+    if (box) box.checked = true;
+  }
 
   form.addEventListener("change", (event) => {
     const target = event.target;
@@ -236,12 +261,15 @@ function initInquiryForm(form: HTMLFormElement): void {
       return;
     }
 
-    // TODO(backend): hand `values` to whatever receives an inquiry once form
-    // handling is decided (owed ADR, architecture/09). Until then nothing is
-    // sent: a complete form only moves on to the thank-you screen.
-    showThanks(form, values);
-    // The details now live only in the preview, not in hidden fields.
+    // TODO(backend): once form handling is decided (owed ADR,
+    // architecture/09), hand `values` to the server here instead. Until then
+    // the visitor's email app carries the inquiry to the partner team.
+    const mailto = inquiryMailto(values);
+    showThanks(form, values, mailto);
+    // The details now live only in the preview and the email, not in hidden
+    // fields.
     form.reset();
+    window.location.href = mailto;
   });
 }
 
