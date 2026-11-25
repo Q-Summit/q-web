@@ -369,7 +369,7 @@ const audiencePageFields: Field[] = [
               {
                 name: "href",
                 type: "text",
-                admin: { width: "50%", placeholder: "/partner/" },
+                admin: { width: "50%", placeholder: "/partnersheet/" },
               },
             ],
           },

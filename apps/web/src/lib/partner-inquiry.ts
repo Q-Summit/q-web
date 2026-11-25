@@ -10,7 +10,7 @@
  */
 
 /** The one place the page URL is written; links to the form import this. */
-export const PARTNER_INQUIRY_PATH = "/partner-inquiry/";
+export const PARTNER_INQUIRY_PATH = "/partnersheet/";
 
 /** Query parameter that preselects the type tile, e.g. `?type=media`. */
 export const INQUIRY_TYPE_PARAM = "type";
