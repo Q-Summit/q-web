@@ -248,6 +248,7 @@ words:
   - OLED
   - pageleave
   - passwordless
+  - partnersheet
   - payloadcms
   - persp
   - PGDATABASE
@@ -339,6 +340,7 @@ words:
   - vitest
   - vivenu
   - vmax
+  - vorstandpartnerrelations
   - vulns
   - WCAG
   - Webflow

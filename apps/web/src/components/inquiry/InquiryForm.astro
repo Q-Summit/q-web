@@ -1,0 +1,237 @@
+---
+// The partner inquiry form (DESIGN.md INQUIRY-1): one liquid glass card with
+// a radio group for the type, a checkbox group for the topics, the contact
+// fields, the privacy consent and the send button.
+//
+// FRONTEND ONLY. The submit handler (inquiry.client.ts) validates and, for a
+// complete form, shows the thank-you screen; it sends nothing and makes no
+// network request. The later mail hand-off plugs in at the marked spot in that
+// file.
+//
+// Semantics: a real <form>, <fieldset> + <legend> for both groups, real
+// <label> links, native radios and checkboxes (Tab, arrow keys, Space). Each
+// error sits right under its field and is wired with aria-describedby, so it
+// is text, never only a color. Without JavaScript the browser's own
+// validation still runs (the script switches it off to show its own messages).
+import IconArrowRight from "../icons/IconArrowRight.astro";
+import IconCheck from "../icons/IconCheck.astro";
+import {
+  INQUIRY_TOPICS,
+  INQUIRY_TYPES,
+  PARTNER_TEAM_EMAIL,
+  PRIVACY_POLICY_PATH,
+} from "../../lib/partner-inquiry";
+---
+
+<section class="inq-card" aria-labelledby="inq-form-title">
+  <h2 id="inq-form-title" class="u-visually-hidden">Partner inquiry form</h2>
+
+  <form
+    class="inq-form"
+    id="partner-inquiry-form"
+    method="post"
+    data-inquiry-form
+    data-typing-pending
+  >
+    <fieldset
+      class="inq-group"
+      data-field="type"
+      aria-describedby="inq-type-error"
+    >
+      <legend class="inq-legend">You’re reaching out as …</legend>
+      <div class="inq-tiles">
+        {
+          INQUIRY_TYPES.map((type) => (
+            <label class="inq-tile">
+              <input
+                class="u-visually-hidden"
+                type="radio"
+                name="type"
+                value={type.key}
+                required
+              />
+              <span class="inq-tile-body">
+                <span class="inq-tile-title">{type.label}</span>
+                <span class="inq-tile-copy">{type.description}</span>
+                <span class="inq-tile-check" aria-hidden="true">
+                  <IconCheck size={16} />
+                </span>
+              </span>
+            </label>
+          ))
+        }
+      </div>
+      <p class="inq-error" id="inq-type-error" data-error hidden>
+        <span class="inq-error-icon" aria-hidden="true">!</span>
+        <span data-error-text></span>
+      </p>
+    </fieldset>
+
+    <fieldset
+      class="inq-group"
+      data-field="topics"
+      aria-describedby="inq-topics-hint"
+    >
+      <legend class="inq-legend">What matters most to you?</legend>
+      <p class="inq-hint" id="inq-topics-hint">Pick as many as you like.</p>
+      <div class="inq-chips" data-topics>
+        {
+          INQUIRY_TOPICS.map((topic) => (
+            <label class="inq-chip" data-topic={topic.key}>
+              <input
+                class="u-visually-hidden"
+                type="checkbox"
+                name="topics"
+                value={topic.key}
+              />
+              <span class="inq-chip-body">
+                <span class="inq-chip-check" aria-hidden="true">
+                  <IconCheck size={14} />
+                </span>
+                {topic.label}
+              </span>
+            </label>
+          ))
+        }
+      </div>
+    </fieldset>
+
+    <fieldset class="inq-group">
+      <legend class="inq-legend">Your details</legend>
+      <div class="inq-fields">
+        <div class="inq-field" data-field="name">
+          <label class="inq-label" for="inq-name">Full name</label>
+          <input
+            class="inq-input"
+            id="inq-name"
+            name="name"
+            type="text"
+            autocomplete="name"
+            placeholder="Jane Doe"
+            required
+            aria-describedby="inq-name-error"
+          />
+          <p class="inq-error" id="inq-name-error" data-error hidden>
+            <span class="inq-error-icon" aria-hidden="true">!</span>
+            <span data-error-text></span>
+          </p>
+        </div>
+
+        <div class="inq-field" data-field="email">
+          <label class="inq-label" for="inq-email">Work email</label>
+          <input
+            class="inq-input"
+            id="inq-email"
+            name="email"
+            type="email"
+            autocomplete="email"
+            placeholder="jane@company.com"
+            required
+            aria-describedby="inq-email-error"
+          />
+          <p class="inq-error" id="inq-email-error" data-error hidden>
+            <span class="inq-error-icon" aria-hidden="true">!</span>
+            <span data-error-text></span>
+          </p>
+        </div>
+
+        <div class="inq-field is-wide" data-field="message">
+          <label class="inq-label" for="inq-message">
+            Anything we should know? <span class="inq-optional">(optional)</span
+            >
+          </label>
+          <textarea
+            class="inq-input inq-textarea"
+            id="inq-message"
+            name="message"
+            rows="4"
+            placeholder="Goals, timing, ideas …"></textarea>
+        </div>
+      </div>
+    </fieldset>
+
+    <div class="inq-consent" data-field="consent">
+      <label class="inq-check">
+        <input
+          class="u-visually-hidden"
+          type="checkbox"
+          name="consent"
+          required
+          aria-describedby="inq-consent-error"
+        />
+        <span class="inq-check-box" aria-hidden="true">
+          <span class="inq-bubbles">
+            <i></i><i></i><i></i><i></i>
+          </span>
+          <IconCheck size={16} />
+        </span>
+        <span>
+          I agree that Q-Summit stores my details to answer this inquiry.{" "}
+          <a href={PRIVACY_POLICY_PATH} target="_blank" rel="noopener">
+            Privacy policy<span class="u-visually-hidden">
+              (opens in a new tab)</span
+            >
+          </a>
+        </span>
+      </label>
+      <p class="inq-error" id="inq-consent-error" data-error hidden>
+        <span class="inq-error-icon" aria-hidden="true">!</span>
+        <span data-error-text></span>
+      </p>
+    </div>
+
+    <div class="inq-actions">
+      <button class="button is-glass inq-submit" type="submit" data-glass-press>
+        <span class="glass-light" aria-hidden="true"></span>
+        <span>Send inquiry</span>
+        <span class="button-arrow" aria-hidden="true">
+          <IconArrowRight />
+        </span>
+      </button>
+      <p class="inq-alt">
+        Prefer email?{" "}
+        <a href={`mailto:${PARTNER_TEAM_EMAIL}`}>Write to our partner team</a>
+      </p>
+    </div>
+
+    <noscript>
+      <p class="inq-noscript">
+        This form needs JavaScript to check your answers. Without it, please
+        write to our partner team instead.
+      </p>
+    </noscript>
+  </form>
+
+  <div class="inq-thanks" data-thanks hidden>
+    <span class="inq-thanks-mark" aria-hidden="true">
+      <IconCheck size={34} />
+    </span>
+    <h2
+      class="inq-thanks-title"
+      id="inq-thanks-title"
+      tabindex="-1"
+      data-thanks-title
+    >
+      Thank you for submitting your inquiry.
+    </h2>
+    <p class="inq-thanks-copy">
+      The partner division will get in touch with you.
+    </p>
+    <button
+      class="inq-thanks-link"
+      type="button"
+      aria-expanded="false"
+      aria-controls="inq-summary"
+      data-summary-toggle
+    >
+      View your inquiry
+    </button>
+    <div class="inq-summary" id="inq-summary" data-summary hidden>
+      <dl class="inq-summary-list" data-summary-list></dl>
+    </div>
+  </div>
+</section>
+
+<script>
+  import "./inquiry.client";
+</script>

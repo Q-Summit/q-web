@@ -19,6 +19,7 @@ import type {
   WhyqAudiencePageContent,
   WhyqPhoto,
 } from "./content";
+import { PARTNER_INQUIRY_PATH } from "./partner-inquiry";
 
 /** In the ticket, or something to apply for with the ticket. */
 export type ActivityKind = "included" | "apply";
@@ -319,7 +320,7 @@ export function toWhyqPageCopy(page: WhyqAudiencePageContent): WhyqPageCopy {
               text: panel.text,
               perks: panel.perks,
               linkLabel: panel.linkLabel,
-              href: panel.href || "/partner/",
+              href: panel.href || PARTNER_INQUIRY_PATH,
             },
           }
         : {}),

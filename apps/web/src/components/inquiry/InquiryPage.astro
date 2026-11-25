@@ -1,0 +1,14 @@
+---
+// Partner inquiry page shell (DESIGN.md INQUIRY-1): the 2027 night ground that
+// runs up under the site header, and one page width. The header itself is the
+// shared COMP-6 bar rendered by Base.astro; this page does not draw its own.
+import "./inquiry-theme.css";
+---
+
+<div class="inq-page">
+  <div class="inq-shell">
+    <div class="inq-layout">
+      <slot />
+    </div>
+  </div>
+</div>
