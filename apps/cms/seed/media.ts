@@ -36,6 +36,12 @@ function collectRefs(): Ref[] {
   for (const t of readJson("team")) {
     if (t.photoFilename) refs.push({ filename: t.photoFilename, alt: t.name });
   }
+  for (const topic of readJson("hot-topics")) {
+    if (topic.imageFilename)
+      refs.push({ filename: topic.imageFilename, alt: topic.imageAlt });
+    if (topic.thumbFilename)
+      refs.push({ filename: topic.thumbFilename, alt: topic.imageAlt });
+  }
   for (const test of readJson("partner-testimonials")) {
     if (test.photoFilename)
       refs.push({ filename: test.photoFilename, alt: test.attribution });

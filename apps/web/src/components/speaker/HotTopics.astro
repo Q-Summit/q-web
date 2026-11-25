@@ -1,0 +1,607 @@
+---
+// The hot topics of the next edition at the top of /speaker (DESIGN.md
+// SPEAKER-1): one white card that shows one topic at a time, stepped by two
+// arrows and three small numbered spheres, looping. Every topic is in the
+// HTML; the script (hot-topics.client.ts) only switches which one shows,
+// so without JavaScript the first topic stands alone.
+//
+// Two layouts until the team decides (see HOT_TOPICS_LAYOUT):
+//  "option2"  the sphere rises out of the card onto the night, the arrows
+//             and the small spheres sit in one row under it.
+//  "option8"  a larger keyword, the sphere stays inside the card and the
+//             arrows stand left and right of it.
+import type { HotTopic } from "../../lib/content";
+
+/** The one switch between the two layouts. */
+export const HOT_TOPICS_LAYOUT: "option2" | "option8" = "option2";
+
+interface Props {
+  topics: HotTopic[];
+  /** Small label over the heading, e.g. "Hot topics 2027". */
+  label: string;
+  heading: string;
+  intro: string;
+  layout?: "option2" | "option8";
+}
+
+const {
+  topics,
+  label,
+  heading,
+  intro,
+  layout = HOT_TOPICS_LAYOUT,
+} = Astro.props;
+const total = topics.length;
+const pad = (n: number) => String(n).padStart(2, "0");
+const src = (filename: string) => `/media/${filename}`;
+// A long keyword steps down a size so it stays on one line in the column.
+const keywordSize = (keyword: string) =>
+  keyword.length > 9 ? "is-long" : keyword.length > 6 ? "is-mid" : "";
+const hint = (n: number) =>
+  `Topic ${n} of ${total} · Tap a sphere or use the arrows`;
+
+const arrow = (dir: "prev" | "next") =>
+  dir === "prev" ? "M15 5l-7 7 7 7" : "M9 5l7 7-7 7";
+---
+
+<section
+  class:list={["ht", `is-${layout}`]}
+  aria-labelledby="ht-title"
+  data-hot-topics
+>
+  <header class="ht-head">
+    <p class="ht-label" data-lp="hotTopics.label">{label}</p>
+    <h2 id="ht-title" class="ht-title" data-lp="hotTopics.heading">
+      {heading}
+    </h2>
+    <p class="ht-sub" data-lp="hotTopics.intro">{intro}</p>
+  </header>
+
+  <div class="ht-card">
+    <div class="ht-visual">
+      <div class="ht-sphere-row">
+        {
+          layout === "option8" && (
+            <button
+              type="button"
+              class="ht-arrow is-prev"
+              aria-label="Previous topic"
+              data-ht-prev
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path d={arrow("prev")} />
+              </svg>
+            </button>
+          )
+        }
+        <div class="ht-sphere">
+          {
+            topics.map((topic, i) => (
+              <img
+                class="ht-sphere-img"
+                src={src(topic.imageFilename)}
+                alt={topic.imageAlt}
+                width="1200"
+                height="1200"
+                loading={i === 0 ? "eager" : "lazy"}
+                fetchpriority={i === 0 ? "high" : undefined}
+                decoding="async"
+                data-ht-item={i}
+                data-active={i === 0 ? "" : undefined}
+                aria-hidden={i === 0 ? undefined : "true"}
+              />
+            ))
+          }
+        </div>
+        {
+          layout === "option8" && (
+            <button
+              type="button"
+              class="ht-arrow is-next"
+              aria-label="Next topic"
+              data-ht-next
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path d={arrow("next")} />
+              </svg>
+            </button>
+          )
+        }
+      </div>
+
+      <div class="ht-nav">
+        {
+          layout === "option2" && (
+            <button
+              type="button"
+              class="ht-arrow is-prev"
+              aria-label="Previous topic"
+              data-ht-prev
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path d={arrow("prev")} />
+              </svg>
+            </button>
+          )
+        }
+        <ul class="ht-minis" role="list">
+          {
+            topics.map((topic, i) => (
+              <li>
+                <button
+                  type="button"
+                  class="ht-mini"
+                  aria-label={`Show topic ${i + 1}: ${topic.keyword}`}
+                  aria-pressed={i === 0 ? "true" : "false"}
+                  data-ht-mini={i}
+                >
+                  <span class="ht-mini-pic">
+                    <img
+                      class:list={[!topic.thumbFilename && "is-zoomed"]}
+                      src={src(topic.thumbFilename || topic.imageFilename)}
+                      alt=""
+                      width="124"
+                      height="124"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </span>
+                </button>
+              </li>
+            ))
+          }
+        </ul>
+        {
+          layout === "option2" && (
+            <button
+              type="button"
+              class="ht-arrow is-next"
+              aria-label="Next topic"
+              data-ht-next
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path d={arrow("next")} />
+              </svg>
+            </button>
+          )
+        }
+      </div>
+      <p class="ht-hint" aria-hidden="true" data-ht-hint>{hint(1)}</p>
+    </div>
+
+    <div class="ht-texts">
+      {
+        topics.map((topic, i) => (
+          <article
+            class="ht-text"
+            data-ht-item={i}
+            data-active={i === 0 ? "" : undefined}
+            aria-hidden={i === 0 ? undefined : "true"}
+          >
+            <p class="ht-count">
+              Topic {pad(i + 1)} of {pad(total)}
+            </p>
+            <h3 class:list={["ht-keyword", keywordSize(topic.keyword)]}>
+              {topic.keyword}
+            </h3>
+            <p class="ht-topic-title">{topic.title}</p>
+            <p class="ht-field">{topic.field}</p>
+            <p class="ht-desc">{topic.description}</p>
+          </article>
+        ))
+      }
+    </div>
+  </div>
+  <p class="u-visually-hidden" aria-live="polite" data-ht-live></p>
+</section>
+
+<script>
+  import "./hot-topics.client";
+</script>
+
+<style>
+  /* DESIGN.md SPEAKER-1: the hot topics section skips .section/.container
+     (LAYOUT-1, LAYOUT-3), sets display type above the heading scale
+     (TYPE-1), paints its own glow (COLOR-2) and builds the card's shadow
+     from tinted layers instead of the --shadow-* steps (DEPTH-1). */
+  .ht {
+    --ht-sphere: 310px;
+    /* Share of the sphere above the card on a phone (option 2). */
+    --ht-rise: 0.62;
+
+    position: relative;
+    padding: clamp(var(--space-xl), 7vw, 6rem) var(--padding-global)
+      clamp(var(--space-xl), 6vw, 5rem);
+    background: radial-gradient(
+      ellipse 70% 45% at 50% 52%,
+      var(--color-speaker-glow) 0%,
+      var(--color-speaker-dusk) 45%,
+      var(--color-speaker-night) 100%
+    );
+    color: var(--color-white);
+  }
+
+  @media (min-width: 992px) {
+    .ht {
+      --ht-sphere: 560px;
+    }
+  }
+
+  .ht-head {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2xs);
+    max-width: 44rem;
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .ht-label {
+    margin: 0;
+    color: var(--color-ticket-ice);
+    font-size: var(--text-size-small);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .ht-title {
+    margin: 0;
+    color: var(--color-white);
+    font-size: clamp(1.75rem, 4vw, 2.75rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    text-wrap: balance;
+  }
+
+  .ht-sub {
+    margin: 0;
+    color: color-mix(in srgb, var(--color-white) 75%, transparent);
+  }
+
+  /* The white card. In option 2 its top leaves room for the part of the
+     sphere that rises above it. */
+  .ht-card {
+    position: relative;
+    display: grid;
+    gap: var(--space-md);
+    max-width: 72rem;
+    margin: calc(var(--ht-sphere) * var(--ht-rise) + var(--space-lg)) auto 0;
+    padding: var(--space-md) var(--space-md) var(--space-lg);
+    border-radius: var(--radius-speaker-card);
+    background: var(--color-white);
+    color: var(--color-speaker-text);
+    box-shadow:
+      0 40px 90px -30px color-mix(in srgb, var(--color-black) 70%, transparent),
+      0 12px 30px -12px
+        color-mix(in srgb, var(--color-speaker-glow) 60%, transparent);
+  }
+
+  .is-option8 .ht-card {
+    margin-top: clamp(var(--space-lg), 5vw, var(--space-xl));
+  }
+
+  @media (min-width: 992px) {
+    .ht-card {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      align-items: center;
+      gap: var(--space-xl);
+      margin-top: calc(var(--ht-sphere) * 0.42 + var(--space-xl));
+      padding: var(--space-xl) clamp(var(--space-xl), 5vw, 4.5rem);
+    }
+
+    .is-option2 .ht-visual {
+      align-self: start;
+    }
+  }
+
+  .ht-visual {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-sm);
+    min-width: 0;
+  }
+
+  .ht-sphere-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    width: 100%;
+  }
+
+  /* The sphere: all topics stacked in one place, the active one shown, so
+     switching never moves the card. A soft oval shadow lies under it. */
+  .ht-sphere {
+    position: relative;
+    display: grid;
+    flex: none;
+    width: min(var(--ht-sphere), 100%);
+    aspect-ratio: 1;
+    /* The artwork's transparent margin overlaps the arrows below it. */
+    pointer-events: none;
+  }
+
+  .is-option2 .ht-sphere {
+    margin-top: calc(var(--ht-sphere) * var(--ht-rise) * -1 - var(--space-md));
+  }
+
+  @media (min-width: 992px) {
+    .is-option2 .ht-sphere {
+      margin-top: calc(var(--ht-sphere) * -0.42 - var(--space-xl));
+    }
+  }
+
+  /* The sphere artwork keeps a transparent margin of about a seventh of
+     its size under the ball; pull the arrows up into it. */
+  .is-option2 .ht-sphere {
+    margin-bottom: calc(var(--ht-sphere) * -0.14);
+  }
+
+  .is-option8 .ht-sphere {
+    width: min(calc(var(--ht-sphere) * 0.72), 70%);
+  }
+
+  .ht-sphere::after {
+    content: "";
+    position: absolute;
+    left: 18%;
+    right: 18%;
+    bottom: 2%;
+    z-index: -1;
+    height: 9%;
+    border-radius: var(--radius-circle);
+    background: radial-gradient(
+      closest-side,
+      color-mix(in srgb, var(--color-speaker-night) 45%, transparent),
+      transparent
+    );
+    filter: blur(6px);
+  }
+
+  .ht-sphere-img {
+    grid-area: 1 / 1;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    opacity: 0;
+    transition: opacity var(--duration-reveal) var(--ease-emphasized);
+  }
+
+  .ht-sphere-img[data-active] {
+    opacity: 1;
+  }
+
+  .ht-nav {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+  }
+
+  .ht-arrow {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    padding: 0;
+    border: 2px solid var(--color-speaker-ink);
+    border-radius: var(--radius-circle);
+    background: var(--color-white);
+    color: var(--color-speaker-ink);
+    cursor: pointer;
+    transition: transform var(--duration-hover) var(--ease-snappy);
+  }
+
+  .ht-arrow.is-next {
+    background: var(--color-speaker-ink);
+    color: var(--color-white);
+  }
+
+  .ht-arrow path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  @media (hover: hover) {
+    .ht-arrow:hover {
+      transform: scale(1.06);
+    }
+  }
+
+  .ht-minis {
+    display: flex;
+    gap: var(--space-2xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ht-mini {
+    position: relative;
+    display: block;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border: 2px solid transparent;
+    border-radius: var(--radius-circle);
+    background: var(--color-speaker-dusk);
+    cursor: pointer;
+    opacity: 0.55;
+    transition: opacity var(--duration-hover) var(--ease-snappy);
+  }
+
+  @media (min-width: 768px) {
+    .ht-mini {
+      width: 62px;
+      height: 62px;
+    }
+  }
+
+  .ht-mini[aria-pressed="true"] {
+    border-color: var(--color-speaker-ink);
+    opacity: 1;
+  }
+
+  @media (hover: hover) {
+    .ht-mini:hover {
+      opacity: 0.85;
+    }
+  }
+
+  /* The picture fills the whole round button. A thumb is cropped to the
+     ball already; without one the full sphere artwork (with its transparent
+     margin and anything around the ball) is zoomed onto the ball. */
+  .ht-mini-pic {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: var(--radius-circle);
+  }
+
+  .ht-mini-pic img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .ht-mini-pic img.is-zoomed {
+    transform: scale(1.8);
+  }
+
+  .ht-hint {
+    margin: 0;
+    color: var(--color-speaker-field);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.12em;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  /* All texts stacked in one grid cell: the card is as tall as the
+     longest topic, so switching never makes it jump. */
+  .ht-texts {
+    display: grid;
+    min-width: 0;
+  }
+
+  .ht-text {
+    grid-area: 1 / 1;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity var(--duration-reveal) var(--ease-emphasized);
+  }
+
+  .ht-text[data-active] {
+    visibility: visible;
+    opacity: 1;
+  }
+
+  .ht-count {
+    margin: 0 0 var(--space-2xs);
+    color: var(--color-speaker-field);
+    font-size: var(--text-size-small);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .ht-keyword {
+    margin: 0;
+    color: var(--color-speaker-ink);
+    font-size: clamp(3rem, 9vw, 5.5rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    overflow-wrap: anywhere;
+  }
+
+  .ht-keyword.is-mid {
+    font-size: clamp(2.5rem, 7vw, 4.25rem);
+  }
+
+  .ht-keyword.is-long {
+    font-size: clamp(2rem, 5.5vw, 3.25rem);
+  }
+
+  .is-option8 .ht-keyword {
+    font-size: clamp(3.5rem, 7vw, 6rem);
+  }
+
+  .is-option8 .ht-keyword.is-mid {
+    font-size: clamp(2.75rem, 5.5vw, 4.5rem);
+  }
+
+  .is-option8 .ht-keyword.is-long {
+    font-size: clamp(2.25rem, 4.25vw, 3.5rem);
+  }
+
+  .ht-topic-title {
+    margin: var(--space-xs) 0 0;
+    color: var(--color-speaker-blue);
+    font-size: clamp(1.25rem, 2.4vw, 1.75rem);
+    font-weight: var(--font-weight-extrabold);
+    line-height: 1.2;
+  }
+
+  .ht-field {
+    margin: var(--space-2xs) 0 0;
+    color: var(--color-speaker-field);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .ht-desc {
+    max-width: 34rem;
+    margin: var(--space-sm) 0 0;
+    color: var(--color-speaker-text);
+    line-height: 1.6;
+  }
+
+  /* Focus: baby blue on the night, the topic blue on the white card. */
+  .ht :focus-visible {
+    outline: 3px solid var(--color-speaker-blue);
+    outline-offset: 3px;
+    box-shadow: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ht-sphere-img,
+    .ht-text,
+    .ht-arrow,
+    .ht-mini {
+      transition: none;
+    }
+  }
+</style>

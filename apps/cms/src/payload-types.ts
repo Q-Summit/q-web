@@ -70,6 +70,7 @@ export interface Config {
     partners: Partner;
     jobs: Job;
     speakers: Speaker;
+    'hot-topics': HotTopic;
     team: Team;
     'past-teams': PastTeam;
     faqs: Faq;
@@ -86,6 +87,7 @@ export interface Config {
     partners: PartnersSelect<false> | PartnersSelect<true>;
     jobs: JobsSelect<false> | JobsSelect<true>;
     speakers: SpeakersSelect<false> | SpeakersSelect<true>;
+    'hot-topics': HotTopicsSelect<false> | HotTopicsSelect<true>;
     team: TeamSelect<false> | TeamSelect<true>;
     'past-teams': PastTeamsSelect<false> | PastTeamsSelect<true>;
     faqs: FaqsSelect<false> | FaqsSelect<true>;
@@ -325,6 +327,18 @@ export interface Speaker {
    */
   bio?: string | null;
   /**
+   * Title of the talk. Keep it under about 45 characters so it fits on phones.
+   */
+  talkTitle?: string | null;
+  /**
+   * One short sentence from the talk, without quotation marks.
+   */
+  quote?: string | null;
+  /**
+   * Optional. Picture for the stage of the speakers page only, best a 1057 x 754 cutout of the stage photo with the speaker on the middle screen. Any other picture is fitted into the screen. Leave empty to use the photo above. The homepage always shows the photo above.
+   */
+  stagePhoto?: (number | null) | Media;
+  /**
    * Where the speaker appears on the site.
    */
   group: 'current' | 'moderation' | 'panel' | 'previous';
@@ -334,6 +348,50 @@ export interface Speaker {
   year?: number | null;
   /**
    * Sort position within its group, ascending. Lower numbers appear higher. Decimals are allowed (7.5 slots between 7 and 8), so inserting never means renumbering. New entries land after the current last one.
+   */
+  order?: number | null;
+  lastEditedBy?: string | null;
+  lastEditedAt?: string | null;
+  lastPublishedBy?: string | null;
+  lastPublishedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * The hot topics at the top of the speakers page (/speaker/), shown one at a time. Owned by PR + Concept.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "hot-topics".
+ */
+export interface HotTopic {
+  id: number;
+  /**
+   * One word in capitals, set very large on the card. Each topic needs a different one.
+   */
+  keyword: string;
+  /**
+   * Short title under the keyword.
+   */
+  title: string;
+  /**
+   * The industries the topic covers, shown under the title.
+   */
+  field: string;
+  /**
+   * Two to three sentences, about 250 characters.
+   */
+  description: string;
+  /**
+   * The sphere: a square image with a transparent background.
+   */
+  image: number | Media;
+  /**
+   * Optional. A square close-up cropped to the ball, without anything around it; it fills the small round button. Leave empty to use a zoomed-in sphere.
+   */
+  thumb?: (number | null) | Media;
+  /**
+   * Sort position, ascending. Lower numbers appear higher. Decimals are allowed (7.5 slots between 7 and 8), so inserting never means renumbering. New entries land after the current last one.
    */
   order?: number | null;
   lastEditedBy?: string | null;
@@ -559,6 +617,10 @@ export interface PayloadLockedDocument {
         value: number | Speaker;
       } | null)
     | ({
+        relationTo: 'hot-topics';
+        value: number | HotTopic;
+      } | null)
+    | ({
         relationTo: 'team';
         value: number | Team;
       } | null)
@@ -677,8 +739,31 @@ export interface SpeakersSelect<T extends boolean = true> {
   company?: T;
   roleLine?: T;
   bio?: T;
+  talkTitle?: T;
+  quote?: T;
+  stagePhoto?: T;
   group?: T;
   year?: T;
+  order?: T;
+  lastEditedBy?: T;
+  lastEditedAt?: T;
+  lastPublishedBy?: T;
+  lastPublishedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "hot-topics_select".
+ */
+export interface HotTopicsSelect<T extends boolean = true> {
+  keyword?: T;
+  title?: T;
+  field?: T;
+  description?: T;
+  image?: T;
+  thumb?: T;
   order?: T;
   lastEditedBy?: T;
   lastEditedAt?: T;
@@ -1746,10 +1831,31 @@ export interface PageWhyq {
  */
 export interface PageSpeaker {
   id: number;
+  hotTopics?: {
+    /**
+     * Small label in capitals over the heading.
+     */
+    label?: string | null;
+    heading?: string | null;
+    /**
+     * One line under the heading.
+     */
+    intro?: string | null;
+  };
+  /**
+   * Main heading over the stage, e.g. Voices on the main stage.
+   */
   heading: string;
+  /**
+   * One sentence under the heading.
+   */
   intro: string;
   /**
-   * Main-stage panel topic cards.
+   * The small pill under the stage. Leave empty to keep the standard wording.
+   */
+  lineupPill?: string | null;
+  /**
+   * Main-stage panel topics. Not shown on the speakers page at the moment; the hot topics under Lists & people are.
    */
   panels: {
     title: string;
@@ -3635,8 +3741,16 @@ export interface PageWhyqSelect<T extends boolean = true> {
  * via the `definition` "page-speaker_select".
  */
 export interface PageSpeakerSelect<T extends boolean = true> {
+  hotTopics?:
+    | T
+    | {
+        label?: T;
+        heading?: T;
+        intro?: T;
+      };
   heading?: T;
   intro?: T;
+  lineupPill?: T;
   panels?:
     | T
     | {

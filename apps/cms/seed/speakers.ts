@@ -17,6 +17,8 @@ type SpeakerData = {
   group: string;
   roleLine?: string;
   bio?: string;
+  talkTitle?: string;
+  quote?: string;
 };
 
 function readJson(name: string): any[] {
@@ -111,6 +113,8 @@ async function run() {
       company: speaker.company ?? undefined,
       roleLine: speaker.roleLine ?? undefined,
       bio: speaker.bio ?? undefined,
+      talkTitle: speaker.talkTitle ?? undefined,
+      quote: speaker.quote ?? undefined,
       photo: mediaId ?? undefined,
       group: mappedGroup,
       ...(year !== null && { year }),

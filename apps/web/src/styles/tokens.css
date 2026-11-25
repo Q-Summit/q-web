@@ -82,6 +82,19 @@
      (its brightest zone) and ticket-midnight (its deepest). */
   --color-home-ground: #0b115e;
 
+  /* Speaker page 2027 only (DESIGN.md SPEAKER-1), from the speaker page
+     mockup: the page's deep night, the two blues of the hot topics glow,
+     the ink ramp on the white topic card, and the near-white of the stage
+     screens' text. Q-blue is --color-navy, baby blue --color-ticket-ice. */
+  --color-speaker-night: #0a0030;
+  --color-speaker-glow: #13227e;
+  --color-speaker-dusk: #0b1559;
+  --color-speaker-ink: #13207a;
+  --color-speaker-blue: #2a3bbf;
+  --color-speaker-field: #5d6390;
+  --color-speaker-text: #3c4470;
+  --color-speaker-screen: #e3f3ff;
+
   /* Q-Hack 2027, /hackathon only (DESIGN.md HACK-1). The Hack CI ships a
      background artwork, not a palette: the violet ramp is sampled from
      that artwork (the Hack 2027 CI reference). Derived, not official hex
@@ -243,6 +256,9 @@
   /* Partner page intro (DESIGN.md PARTNER-1): the logos of the first two
      tiers rise in one after the other, this far apart, once per load. */
   --duration-partner-stagger: 60ms;
+  /* Speaker stage (DESIGN.md SPEAKER-1): the typing cursor blinks on this
+     loop; reduced motion hides it. */
+  --duration-speaker-blink: 1s;
   /* Q-Hack motion (DESIGN.md HACK-1). The loops are small and slow: the
      caret blinks, the status dot and the play button pulse, the partner
      band passes once in --duration-hack-band, a light line breathes. The
@@ -319,6 +335,10 @@
 
   /* Q-Hack radius (DESIGN.md HACK-1): the terminal windows. */
   --radius-hack-cta: 16px;
+  /* Speaker page (DESIGN.md SPEAKER-1): the white hot topic card and the
+     phone stage's glass info card. */
+  --radius-speaker-card: 28px;
+  --radius-speaker-glass: 16px;
 }
 
 /* Breakpoints (from the Webflow stylesheet):

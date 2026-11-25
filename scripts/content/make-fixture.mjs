@@ -10,7 +10,7 @@
  *  - verbatim: page-content.json and site-settings.json (their copy already
  *    lives in the committed generator apps/web/scripts/build-page-content.mjs),
  *    and faqs.json (public marketing copy; any email addresses scrubbed)
- *  - faked: speakers, team, partners, testimonials, jobs, past-teams (people
+ *  - faked: speakers, hot topics, team, partners, testimonials, jobs, past-teams (people
  *    data and photo filenames from the scrape; obviously fake replacements,
  *    real registry/enum values kept so every page and validator still
  *    exercises its real code path)
@@ -174,9 +174,33 @@ write(
       // Carry the year through: /speaker selects the newest edition from the
       // data, so a fixture with no year would render an empty lineup.
       year: s.year ?? null,
+      // The /speaker stage shows a talk per speaker; the second of each pair
+      // has none, so the stage's empty-talk branch is exercised too.
+      ...(n === 1
+        ? {
+            talkTitle: "Fixture talk title for CI builds",
+            quote: "A placeholder quote so the stage screens render text.",
+          }
+        : {}),
       photoFilename: "fixture-missing-photo.webp",
     })),
   ),
+);
+
+// Hot topics on /speaker: three fixed fake topics (no snapshot input), the
+// third with a long keyword so the smaller keyword size is exercised.
+write(
+  "hot-topics.json",
+  ["ALPHA", "BETA", "SUSTAINABILITY"].map((keyword, i) => ({
+    keyword,
+    title: `Fixture topic ${i + 1}`,
+    field: "Example field & example industry",
+    description:
+      "Placeholder description for CI fixture builds. Two or three sentences about the topic.",
+    imageFilename: "fixture-missing-sphere.webp",
+    imageAlt: `Fixture sphere for topic ${keyword}`,
+    ...(i === 1 ? { thumbFilename: "fixture-missing-thumb.webp" } : {}),
+  })),
 );
 
 // Team: one fake member per real division, current year set preserved.

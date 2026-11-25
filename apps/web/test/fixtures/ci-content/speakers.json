@@ -6,6 +6,8 @@
     "company": "Example Co",
     "group": "current",
     "year": 2026,
+    "talkTitle": "Fixture talk title for CI builds",
+    "quote": "A placeholder quote so the stage screens render text.",
     "photoFilename": "fixture-missing-photo.webp"
   },
   {
@@ -24,6 +26,8 @@
     "company": "Example Co",
     "group": "moderation",
     "year": 2026,
+    "talkTitle": "Fixture talk title for CI builds",
+    "quote": "A placeholder quote so the stage screens render text.",
     "photoFilename": "fixture-missing-photo.webp"
   },
   {
@@ -42,6 +46,8 @@
     "company": "Example Co",
     "group": "previous",
     "year": null,
+    "talkTitle": "Fixture talk title for CI builds",
+    "quote": "A placeholder quote so the stage screens render text.",
     "photoFilename": "fixture-missing-photo.webp"
   },
   {
@@ -60,6 +66,8 @@
     "company": "Example Co",
     "group": "panel",
     "year": null,
+    "talkTitle": "Fixture talk title for CI builds",
+    "quote": "A placeholder quote so the stage screens render text.",
     "photoFilename": "fixture-missing-photo.webp"
   },
   {

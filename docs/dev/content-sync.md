@@ -66,6 +66,7 @@ Pull and export do not write per-collection sidecar files under `collections/` /
 | partners     | `name`                                                   |
 | jobs         | `slug`                                                   |
 | speakers     | `name` + `group`                                         |
+| hot-topics   | `keyword`                                                |
 | team         | `name` + `year`                                          |
 | past-teams   | `year` (one group photo per past board year)             |
 | faqs         | `question` + `page` (`home` \| `program` \| `hackathon`) |
@@ -74,7 +75,7 @@ Pull and export do not write per-collection sidecar files under `collections/` /
 
 Renaming a key field creates a new draft; the old doc remains until a human deletes it.
 
-Upsert keys are schema-enforced unique. Single-field keys (`partners.name`, `jobs.slug`, `past-teams.year`, `testimonials.attribution`) carry a database unique index; compound keys (`speakers` name+group, `team` name+year, `faqs` question+page) are enforced by a validation hook. An editor cannot save a duplicate through the admin: Payload rejects the save with an error naming the conflicting document; propose's find-by-key cannot silently match the wrong one of two same-key docs.
+Upsert keys are schema-enforced unique. Single-field keys (`partners.name`, `jobs.slug`, `hot-topics.keyword`, `past-teams.year`, `testimonials.attribution`) carry a database unique index; compound keys (`speakers` name+group, `team` name+year, `faqs` question+page) are enforced by a validation hook. An editor cannot save a duplicate through the admin: Payload rejects the save with an error naming the conflicting document; propose's find-by-key cannot silently match the wrong one of two same-key docs.
 
 ## Loops
 

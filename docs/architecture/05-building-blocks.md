@@ -16,4 +16,4 @@ Set by [ADR-0001](../decisions/0001-astro-static-site.md) and [ADR-0002](../deci
 
 ## Content collections
 
-Nine collections in `apps/cms/src/collections/`: Users, Media, Partners, Jobs, Speakers, Team, PastTeams, Faqs, Testimonials. Page and site settings live as **globals**, not collections. Expected volumes are the scraped-site order of magnitude (for example partners ~137, jobs ~70, speakers ~36, team ~32, faqs ~19). Exact schemas live in `apps/cms/src/collections/`; [section 8](08-concepts.md) holds the rules they implement.
+Ten collections in `apps/cms/src/collections/`: Users, Media, Partners, Jobs, Speakers, HotTopics, Team, PastTeams, Faqs, Testimonials. Page and site settings live as **globals**, not collections. Expected volumes are the scraped-site order of magnitude (for example partners ~137, jobs ~70, speakers ~36, team ~32, faqs ~19). Exact schemas live in `apps/cms/src/collections/`; [section 8](08-concepts.md) holds the rules they implement.

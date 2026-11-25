@@ -24,7 +24,12 @@ import {
   currentSpeakerEdition,
   speakersForEdition,
 } from "../src/lib/content";
-import type { PageContent, SiteSettings } from "../src/lib/content";
+import type {
+  HotTopic,
+  PageContent,
+  SiteSettings,
+  Speaker,
+} from "../src/lib/content";
 import {
   assertTicketPage,
   normalizeTicketPrices,
@@ -32,6 +37,17 @@ import {
 import { toNavLink } from "../src/lib/content/site-settings";
 import { buildLlmsFullTxt, buildRouteTable } from "../src/lib/llms";
 import { partnerAudiencePages } from "../src/lib/partner-audiences";
+import {
+  NEXT_EDITION,
+  STAGE_EDITION,
+  homepageStageSpeakers,
+  isStageShot,
+  stageEdition,
+  stageEditionSpeakers,
+  stageLabel,
+  stagePhotoFilename,
+  stageSpeakers,
+} from "../src/lib/speaker-page";
 import {
   WHYQ_AUDIENCE_PAGES,
   whyqAudienceNames,
@@ -709,5 +725,145 @@ describe("/program is offline", () => {
     expect(readText("../astro.config.mjs")).toMatch(
       /"\/program":\s*\{\s*status:\s*302,\s*destination:\s*"\/"\s*\}/,
     );
+  });
+});
+
+describe("/speaker in the LLM corpus", () => {
+  const readText = (path: string) =>
+    readFileSync(new URL(path, import.meta.url), "utf-8");
+  const content = JSON.parse(
+    readText("./fixtures/ci-content/page-content.json"),
+  ) as PageContent;
+  const settings = normalizeHrefsDeep(
+    JSON.parse(
+      readText("./fixtures/ci-content/site-settings.json"),
+    ) as SiteSettings,
+  );
+
+  it("describes /speaker as hot topics plus the stage, not the old panels", () => {
+    const hotTopics = JSON.parse(
+      readText("./fixtures/ci-content/hot-topics.json"),
+    ) as HotTopic[];
+    const speakers = JSON.parse(
+      readText("./fixtures/ci-content/speakers.json"),
+    ) as Speaker[];
+    const full = buildLlmsFullTxt({
+      site: "https://q-summit.com",
+      siteSettings: settings,
+      pageContent: content,
+      hotTopics,
+      speakers,
+    });
+    const block = full.slice(
+      full.indexOf("Source: https://q-summit.com/speaker/"),
+      full.indexOf("Source: https://q-summit.com/partner/"),
+    );
+    expect(block).toContain(`## Hot topics ${NEXT_EDITION}`);
+    for (const topic of hotTopics) expect(block).toContain(topic.keyword);
+    expect(block).toContain(`## ${stageLabel()}`);
+    for (const s of stageSpeakers(content.home.previousSpeakers, speakers))
+      expect(block).toContain(`- ${s.name}:`);
+    for (const panel of content.speaker.panels)
+      expect(block).not.toContain(panel.title);
+  });
+});
+
+describe("stage photos", () => {
+  const speaker = (extra?: Partial<Speaker>) =>
+    ({
+      name: "Alex Example",
+      role: "CEO",
+      company: "Example Co",
+      roleLine: "CEO, Example Co",
+      photoFilename: "alex.webp",
+      group: "current",
+      year: 2026,
+      ...extra,
+    }) as Speaker;
+
+  it("lays a screen-look cutout over the stage, fits any other photo into the screen", () => {
+    expect(isStageShot(speaker({ photoWidth: 1057, photoHeight: 754 }))).toBe(
+      true,
+    );
+    expect(isStageShot(speaker({ photoWidth: 2114, photoHeight: 1508 }))).toBe(
+      true,
+    );
+    expect(isStageShot(speaker({ photoWidth: 1200, photoHeight: 800 }))).toBe(
+      false,
+    );
+    expect(isStageShot(speaker({ photoWidth: 800, photoHeight: 1000 }))).toBe(
+      false,
+    );
+    // Without a recorded size the homepage photo is not taken for a cutout.
+    expect(isStageShot(speaker())).toBe(false);
+  });
+
+  it("prefers the stage picture and never needs the homepage photo for it", () => {
+    const own = speaker({
+      stagePhotoFilename: "alex-stage.webp",
+      stagePhotoWidth: 1057,
+      stagePhotoHeight: 754,
+      photoWidth: 1000,
+      photoHeight: 1000,
+    });
+    expect(stagePhotoFilename(own)).toBe("alex-stage.webp");
+    expect(isStageShot(own)).toBe(true);
+    // JSON mode records no size: a stage picture counts as a cutout.
+    expect(isStageShot(speaker({ stagePhotoFilename: "a.webp" }))).toBe(true);
+    expect(stagePhotoFilename(speaker())).toBe("alex.webp");
+  });
+});
+
+describe("stage speakers", () => {
+  const person = (name: string, group: Speaker["group"], year: number | null) =>
+    ({
+      name,
+      role: "Role",
+      company: null,
+      roleLine: "Role",
+      photoFilename: "",
+      group,
+      year,
+    }) as Speaker;
+  const speakers = [
+    person("Ada", "panel", null),
+    person("Ben", "current", 2026),
+    person("Ben", "panel", null),
+    person("Cleo", "panel", null),
+    person("Dan", "current", 2026),
+  ];
+
+  it("shows the homepage's highlights, then its stand-ins, each once", () => {
+    const names = homepageStageSpeakers(
+      { highlights: ["Cleo", "Ada", "Nobody"], standIns: ["Ben", "Ada"] },
+      speakers,
+    ).map((s) => `${s.name}/${s.group}`);
+    expect(names).toEqual(["Cleo/panel", "Ada/panel", "Ben/current"]);
+  });
+
+  it("takes the booked line-up over the stand-ins", () => {
+    const lineup = [...speakers, person("Eve", "current", 2027)];
+    const names = homepageStageSpeakers(
+      { highlights: ["Ada"], standIns: ["Ben"], lineup: { year: 2027 } },
+      lineup,
+    ).map((s) => s.name);
+    expect(names).toEqual(["Ada", "Eve"]);
+  });
+
+  it("falls back to every panel speaker without a highlight list", () => {
+    expect(homepageStageSpeakers({}, speakers).map((s) => s.name)).toEqual([
+      "Ada",
+      "Ben",
+      "Cleo",
+    ]);
+  });
+
+  it("switches to the edition and names its year", () => {
+    expect(stageSpeakers({}, speakers, "edition").map((s) => s.name)).toEqual(
+      stageEditionSpeakers(speakers).map((s) => s.name),
+    );
+    expect(stageEdition("edition")).toBe(STAGE_EDITION);
+    expect(stageEdition("homepage")).toBeUndefined();
+    expect(stageLabel("edition")).toBe(`Speakers ${STAGE_EDITION}`);
   });
 });

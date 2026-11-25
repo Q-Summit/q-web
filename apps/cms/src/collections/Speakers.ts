@@ -135,6 +135,49 @@ export const Speakers: CollectionConfig = draftCollection({
       },
     },
     {
+      // Shown on the right screen of the /speaker/ stage. Both optional, so
+      // past editions without talk data stay valid.
+      type: "collapsible",
+      label: "Talk",
+      admin: {
+        initCollapsed: false,
+        description:
+          "Shown on the stage of the speakers page next to the speaker's photo.",
+      },
+      fields: [
+        {
+          name: "talkTitle",
+          type: "text",
+          admin: {
+            placeholder: "Why Europe needs its own launchers",
+            description:
+              "Title of the talk. Keep it under about 45 characters so it fits on phones.",
+          },
+        },
+        {
+          name: "quote",
+          type: "textarea",
+          admin: {
+            description:
+              "One short sentence from the talk, without quotation marks.",
+          },
+        },
+        {
+          // Separate from `photo`, which the homepage cards use: the stage
+          // takes its own picture, so a stage cutout never replaces a
+          // portrait elsewhere on the site.
+          name: "stagePhoto",
+          type: "upload",
+          relationTo: "media",
+          admin: {
+            sortOptions: "-createdAt",
+            description:
+              "Optional. Picture for the stage of the speakers page only, best a 1057 x 754 cutout of the stage photo with the speaker on the middle screen. Any other picture is fitted into the screen. Leave empty to use the photo above. The homepage always shows the photo above.",
+          },
+        },
+      ],
+    },
+    {
       name: "group",
       type: "select",
       required: true,

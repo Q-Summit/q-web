@@ -33,6 +33,24 @@ export const MEDIA_UPLOAD_FIELDS = [
   },
   { slug: "jobs", field: "logo", label: "Jobs", titleField: "title" },
   { slug: "speakers", field: "photo", label: "Speakers", titleField: "name" },
+  {
+    slug: "speakers",
+    field: "stagePhoto",
+    label: "Speakers",
+    titleField: "name",
+  },
+  {
+    slug: "hot-topics",
+    field: "image",
+    label: "Hot topics",
+    titleField: "keyword",
+  },
+  {
+    slug: "hot-topics",
+    field: "thumb",
+    label: "Hot topics",
+    titleField: "keyword",
+  },
   { slug: "team", field: "photo", label: "Team", titleField: "name" },
   {
     slug: "past-teams",

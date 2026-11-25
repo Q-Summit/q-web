@@ -1,0 +1,773 @@
+---
+// The speakers of the last edition on the real Q-Summit main stage
+// (DESIGN.md SPEAKER-1). The stage photo stands still; only what is on its
+// three screens changes: left the typed name and role, middle the photo,
+// right the talk and a quote. Screens are placed in percent of the photo
+// and their text is sized in container units (cqw) of the stage, so
+// everything scales with the photo and stays on the real screens.
+//
+// Phones (under 768px) see the whole stage too, cropped to y 110 to 1330 of
+// the photo (measured on a 2576 x 1449 scale; the file is the same 16:9
+// at 3840 x 2160), with only what is legible that small on the
+// screens (name, photo, talk title); role and quote move into a glass card
+// under it. The crop is the same scene with a negative top margin inside a
+// box of the cropped ratio, so photo and screens can never drift apart.
+//
+// The first speaker is in the HTML; speaker-stage.client.ts steps through
+// the rest (arrows, arrow keys on the focused stage, swipe), types each name
+// and preloads the neighbors' photos.
+import { Picture } from "../../lib/astro-assets";
+import stagePhoto from "./stage.jpg";
+
+export interface StageSpeaker {
+  name: string;
+  /** "Role · Company" as shown under the name. */
+  role: string;
+  talkTitle?: string;
+  quote?: string;
+  /** Root-relative photo URL; none shows a silhouette on the screen. */
+  photo?: string;
+  /**
+   * The photo is a "screen look" image: a cutout of this very stage photo
+   * (STAGE_SHOT below) with the speaker already projected onto the middle
+   * screen and soft edges, so it lies over the stage photo seamlessly. Any
+   * other photo is fitted into the screen with the CSS screen look instead.
+   */
+  photoLook?: boolean;
+}
+
+interface Props {
+  speakers: StageSpeaker[];
+  /** The year the screens name; none when the stage mixes editions. */
+  edition?: number | undefined;
+}
+
+const { speakers, edition } = Astro.props;
+// " 2026", or nothing when the stage spans several editions.
+const year = edition ? ` ${edition}` : "";
+const total = speakers.length;
+const first = speakers[0];
+const pad = (n: number) => String(n).padStart(2, "0");
+// JSON inside <script>: escape "<" so a name can never close the tag.
+const data = JSON.stringify(speakers).replace(/</g, "\\u003c");
+const STAGE_ALT =
+  "Q-Summit main stage seen from the audience, with three large blue screens above the Q-Summit lectern and the banner Innovation. Inspiration. Entrepreneurship.";
+const photoMode = (s: StageSpeaker) =>
+  s.photo ? (s.photoLook ? "look" : "screen") : "none";
+const arrow = (dir: "prev" | "next") =>
+  dir === "prev" ? "M15 5l-7 7 7 7" : "M9 5l7 7-7 7";
+---
+
+{
+  first && (
+    <section
+      class="stage"
+      aria-roledescription="carousel"
+      aria-label={`Speakers${year}`}
+      tabindex="0"
+      data-stage
+      data-edition={edition}
+    >
+      <script
+        is:inline
+        type="application/json"
+        data-stage-data
+        set:html={data}
+      />
+
+      <div class="stage-frame" data-stage-swipe>
+        <div class="stage-scene" data-photo={photoMode(first)} data-stage-scene>
+          <Picture
+            class="stage-photo"
+            src={stagePhoto}
+            alt={STAGE_ALT}
+            widths={[768, 1280, 1920, 2576, 3840]}
+            sizes="100vw"
+            formats={["avif", "webp"]}
+            fallbackFormat="jpg"
+            quality={78}
+            loading="lazy"
+            decoding="async"
+          />
+
+          <div class="screen is-left">
+            <p class="scr-kicker">
+              Speaker <span data-stage-num>{pad(1)}</span>/{pad(total)}
+            </p>
+            <p class="scr-name">
+              <span aria-hidden="true" data-stage-typed>
+                {first.name}
+              </span>
+              <span class="scr-cursor" aria-hidden="true">
+                |
+              </span>
+            </p>
+            <span class="scr-rule" aria-hidden="true" />
+            <p class="scr-role" data-stage-role>
+              {first.role}
+            </p>
+            <p class="scr-edition">Q-Summit{edition ? ` · ${edition}` : ""}</p>
+          </div>
+
+          <div class="screen is-center" aria-hidden="true">
+            <svg class="scr-silhouette" viewBox="0 0 120 80">
+              <circle cx="60" cy="30" r="14" />
+              <path d="M32 80c0-17 12.5-28 28-28s28 11 28 28z" />
+            </svg>
+          </div>
+          <img
+            class="stage-shot"
+            src={first.photo ?? ""}
+            alt=""
+            width="1057"
+            height="754"
+            loading="lazy"
+            decoding="async"
+            data-stage-photo
+            hidden={first.photo ? undefined : true}
+          />
+          <span class="stage-glass" aria-hidden="true" />
+
+          <div class="screen is-right">
+            <p class="scr-kicker">
+              Talk<span class="scr-desktop"> · Q-Summit{year}</span>
+            </p>
+            <p class="scr-talk" data-stage-talk>
+              {first.talkTitle}
+            </p>
+            <div
+              class="scr-quote scr-desktop"
+              data-stage-quote-wrap
+              hidden={first.quote ? undefined : true}
+            >
+              <span class="scr-quote-mark" aria-hidden="true">
+                “
+              </span>
+              <p class="scr-quote-text" data-stage-quote>
+                {first.quote}
+              </p>
+            </div>
+          </div>
+
+          <span class="stage-fade is-top" aria-hidden="true" />
+          <span class="stage-fade is-bottom" aria-hidden="true" />
+
+          {total > 1 && (
+            <div class="stage-controls is-desktop">
+              <button
+                type="button"
+                class="stage-arrow"
+                aria-label="Previous speaker"
+                data-stage-prev
+              >
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path d={arrow("prev")} />
+                </svg>
+              </button>
+              <p class="stage-hint">Speakers{year} · Use the arrows</p>
+              <button
+                type="button"
+                class="stage-arrow"
+                aria-label="Next speaker"
+                data-stage-next
+              >
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path d={arrow("next")} />
+                </svg>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div class="stage-mobile">
+        <div class="stage-card">
+          <p class="stage-card-kicker">
+            Speaker <span data-stage-num>{pad(1)}</span>/{pad(total)} · Q-Summit
+            {year}
+          </p>
+          <p class="stage-card-role" data-stage-role>
+            {first.role}
+          </p>
+          <p
+            class="stage-card-quote"
+            data-stage-quote-wrap
+            hidden={first.quote ? undefined : true}
+          >
+            “<span data-stage-quote>{first.quote}</span>”
+          </p>
+        </div>
+        {total > 1 && (
+          <div class="stage-controls is-mobile">
+            <button
+              type="button"
+              class="stage-arrow"
+              aria-label="Previous speaker"
+              data-stage-prev
+            >
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path d={arrow("prev")} />
+              </svg>
+            </button>
+            <p class="stage-hint">
+              Speakers{year}
+              <span>Swipe or tap the arrows</span>
+            </p>
+            <button
+              type="button"
+              class="stage-arrow"
+              aria-label="Next speaker"
+              data-stage-next
+            >
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path d={arrow("next")} />
+              </svg>
+            </button>
+          </div>
+        )}
+      </div>
+
+      <p class="u-visually-hidden" aria-live="polite" data-stage-live>
+        {`Speaker 1 of ${total}: ${first.name}, ${first.role}`}
+      </p>
+    </section>
+  )
+}
+
+<script>
+  import "./speaker-stage.client";
+</script>
+
+<style>
+  /* DESIGN.md SPEAKER-1: the stage skips .section/.container (LAYOUT-1,
+     LAYOUT-3), sizes its screen text in container units of the stage
+     (TYPE-1), paints with the speaker-* tokens (COLOR-2) and builds the
+     screens' glow and the glass from tinted layers instead of the
+     --shadow-* steps (DEPTH-1). */
+  .stage {
+    position: relative;
+    color: var(--color-white);
+  }
+
+  .stage:focus-visible {
+    outline: 3px solid var(--color-ticket-ice);
+    outline-offset: -3px;
+    box-shadow: none;
+  }
+
+  .stage :focus-visible {
+    outline: 3px solid var(--color-ticket-ice);
+    outline-offset: 3px;
+    box-shadow: none;
+  }
+
+  /* On a phone the frame shows y 110 to 1330 of the 1449px tall photo:
+     the box has the cropped ratio, the scene inside it the full one and
+     is pulled up by 110/2576 of the width (margins resolve against the
+     width). */
+  .stage-frame {
+    overflow: hidden;
+    aspect-ratio: 2576 / 1220;
+    touch-action: pan-y;
+  }
+
+  .stage-scene {
+    position: relative;
+    container-type: inline-size;
+    width: 100%;
+    aspect-ratio: 2576 / 1449;
+    margin-top: -4.2702%;
+    background: var(--color-speaker-night);
+  }
+
+  @media (min-width: 768px) {
+    .stage-frame {
+      aspect-ratio: auto;
+    }
+
+    .stage-scene {
+      margin-top: 0;
+    }
+  }
+
+  .stage-photo,
+  .stage-scene :global(picture) {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .stage-scene :global(img.stage-photo) {
+    object-fit: cover;
+  }
+
+  /* The stage melts into the page: 11% at the top, 16% at the foot. */
+  .stage-fade {
+    position: absolute;
+    left: 0;
+    right: 0;
+    z-index: 4;
+    pointer-events: none;
+  }
+
+  .stage-fade.is-top {
+    top: 0;
+    height: 11%;
+    background: linear-gradient(
+      180deg,
+      var(--color-speaker-night),
+      transparent
+    );
+  }
+
+  .stage-fade.is-bottom {
+    bottom: 0;
+    height: 16%;
+    background: linear-gradient(0deg, var(--color-speaker-night), transparent);
+  }
+
+  /* The three screens, in percent of the photo (left / top / width /
+     height measured on a 2576 x 1449 scale of the 16:9 photo). */
+  .screen {
+    position: absolute;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+    padding: 2cqw;
+    background: radial-gradient(
+      ellipse at 50% 45%,
+      color-mix(in srgb, var(--color-navy) 5%, transparent),
+      color-mix(in srgb, var(--color-navy) 32%, transparent)
+    );
+    color: var(--color-white);
+    text-shadow: 0 0 0.6cqw
+      color-mix(in srgb, var(--color-ticket-ice) 55%, transparent);
+  }
+
+  .screen.is-left {
+    left: 2.52%;
+    top: 13.46%;
+    width: 26.51%;
+    height: 44.93%;
+  }
+
+  .screen.is-center {
+    left: 33%;
+    top: 16.7%;
+    width: 34.04%;
+    height: 39.61%;
+    padding: 0;
+    background: linear-gradient(
+      160deg,
+      var(--color-navy),
+      var(--color-speaker-ink)
+    );
+  }
+
+  .screen.is-right {
+    left: 70.96%;
+    top: 13.46%;
+    width: 26.51%;
+    height: 44.93%;
+  }
+
+  :where(.screen p) {
+    margin: 0;
+  }
+
+  .scr-kicker {
+    color: var(--color-ticket-ice);
+    font-size: 0.8cqw;
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .scr-name {
+    display: -webkit-box;
+    overflow: hidden;
+    margin-top: 1cqw;
+    font-size: 2.5cqw;
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.01em;
+    line-height: 1.08;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+
+  .scr-cursor {
+    margin-left: 0.1em;
+    color: var(--color-ticket-ice);
+    font-weight: var(--font-weight-regular);
+    animation: stage-blink var(--duration-speaker-blink) steps(1) infinite;
+  }
+
+  @keyframes stage-blink {
+    50% {
+      opacity: 0;
+    }
+  }
+
+  .scr-rule {
+    display: block;
+    flex: none;
+    width: 3cqw;
+    height: 0.18cqw;
+    margin: 1.2cqw 0;
+    background: var(--color-ticket-ice);
+  }
+
+  .scr-role {
+    color: var(--color-speaker-screen);
+    font-size: 1.05cqw;
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.35;
+  }
+
+  .scr-edition {
+    margin-top: 1.4cqw;
+    color: var(--color-ticket-ice);
+    font-size: 0.75cqw;
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .scr-talk {
+    display: -webkit-box;
+    overflow: hidden;
+    margin-top: 1cqw;
+    font-size: 1.7cqw;
+    font-weight: var(--font-weight-extrabold);
+    line-height: 1.15;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+
+  .scr-quote-mark {
+    display: block;
+    height: 2.4cqw;
+    margin-top: 1cqw;
+    color: var(--color-ticket-ice);
+    font-size: 5cqw;
+    font-weight: var(--font-weight-extrabold);
+    line-height: 1;
+  }
+
+  .scr-quote-text {
+    display: -webkit-box;
+    overflow: hidden;
+    color: var(--color-speaker-screen);
+    font-size: 1.15cqw;
+    font-style: italic;
+    line-height: 1.45;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 6;
+    line-clamp: 6;
+  }
+
+  [data-stage-quote-wrap][hidden] {
+    display: none;
+  }
+
+  /* Middle screen. Without a photo a light silhouette stands on the blue.
+     A screen-look photo (data-photo="look") is a cutout of this stage photo
+     with the speaker on the screen and soft edges, laid over the stage at
+     the place it was cut from: x 760-1817, y 152-906 of 2576 x 1449. It
+     carries its own projection look, so the CSS screen and glass step
+     aside. Any other photo (data-photo="screen") fills the screen with a
+     slight screen look: a gloss from the top left, a vignette, a tint
+     toward navy and ice. */
+  .scr-silhouette {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 60%;
+    fill: color-mix(in srgb, var(--color-ticket-ice) 55%, transparent);
+    transform: translateX(-50%);
+  }
+
+  [data-photo="screen"] .scr-silhouette,
+  [data-photo="look"] .screen.is-center {
+    visibility: hidden;
+  }
+
+  .stage-shot,
+  .stage-glass {
+    position: absolute;
+    left: 33%;
+    top: 16.7%;
+    z-index: 2;
+    width: 34.04%;
+    height: 39.61%;
+  }
+
+  .stage-shot {
+    object-fit: cover;
+  }
+
+  /* The cutouts were made from the centered version of the stage photo,
+     whose curtain is pleated differently from this one's. Both photos are
+     identical down to y 800 of 1449 (the screen frame), so the cutout fades
+     out there, between y 800 and 848 (85.9% to 92.3% of its height), and
+     the curtain below is always this photo's own. */
+  [data-photo="look"] .stage-shot {
+    left: 29.503%;
+    top: 10.49%;
+    width: 41.033%;
+    height: 52.036%;
+    object-fit: fill;
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      var(--color-black) 85.9%,
+      transparent 92.3%
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      var(--color-black) 85.9%,
+      transparent 92.3%
+    );
+  }
+
+  /* global.css sets display on img, which would beat the hidden attribute. */
+  .stage-shot[hidden] {
+    display: none;
+  }
+
+  .stage-shot[data-fade] {
+    animation: stage-fade-in var(--duration-reveal) var(--ease-emphasized);
+  }
+
+  @keyframes stage-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  .stage-glass {
+    z-index: 3;
+    display: none;
+    background:
+      linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--color-white) 16%, transparent) 0%,
+        transparent 38%
+      ),
+      radial-gradient(
+        ellipse at 50% 50%,
+        transparent 55%,
+        color-mix(in srgb, var(--color-speaker-night) 55%, transparent) 100%
+      ),
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--color-ticket-ice) 10%, transparent),
+        color-mix(in srgb, var(--color-navy) 22%, transparent)
+      );
+    pointer-events: none;
+  }
+
+  [data-photo="screen"] .stage-glass {
+    display: block;
+  }
+
+  /* Desktop controls: two round glass buttons over the audience. */
+  .stage-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+  }
+
+  .stage-controls.is-desktop {
+    position: absolute;
+    left: 50%;
+    bottom: 3.2%;
+    z-index: 5;
+    display: none;
+    transform: translateX(-50%);
+  }
+
+  .stage-arrow {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    padding: 0;
+    border: 1px solid color-mix(in srgb, var(--color-white) 60%, transparent);
+    border-radius: var(--radius-circle);
+    background: color-mix(in srgb, var(--color-speaker-night) 55%, transparent);
+    color: var(--color-white);
+    cursor: pointer;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    transition: background-color var(--duration-hover) var(--ease-snappy);
+  }
+
+  .stage-arrow path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  @media (hover: hover) {
+    .stage-arrow:hover {
+      background: color-mix(in srgb, var(--color-navy) 70%, transparent);
+    }
+  }
+
+  .stage-hint {
+    margin: 0;
+    color: var(--color-ticket-ice);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.16em;
+    text-align: center;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .stage-hint span {
+    display: block;
+    margin-top: 0.25rem;
+    color: color-mix(in srgb, var(--color-white) 70%, transparent);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  /* Phone: name, photo and talk title on the screens; the rest in the
+     glass card under the stage. */
+  .stage-mobile {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-md);
+    padding: 0 var(--padding-global);
+  }
+
+  .stage-controls.is-mobile .stage-hint {
+    min-width: 0;
+    white-space: normal;
+  }
+
+  .stage-card {
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid
+      color-mix(in srgb, var(--color-ticket-ice) 28%, transparent);
+    border-radius: var(--radius-speaker-glass);
+    background: linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--color-navy) 70%, transparent),
+      color-mix(in srgb, var(--color-speaker-night) 80%, transparent)
+    );
+  }
+
+  :where(.stage-card p) {
+    margin: 0;
+  }
+
+  .stage-card-kicker {
+    color: var(--color-ticket-ice);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .stage-card-role {
+    margin-top: var(--space-2xs);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .stage-card-quote {
+    margin-top: var(--space-2xs);
+    color: var(--color-speaker-screen);
+    font-style: italic;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 767px) {
+    .scr-desktop,
+    .screen.is-left .scr-kicker,
+    .scr-role,
+    .scr-edition {
+      display: none;
+    }
+
+    .screen {
+      padding: 2.6cqw;
+    }
+
+    .scr-name {
+      margin-top: 0;
+      font-size: 4.66cqw;
+    }
+
+    .scr-rule {
+      width: 5cqw;
+      height: 0.4cqw;
+      margin-bottom: 0;
+    }
+
+    .screen.is-right .scr-kicker {
+      font-size: 2.2cqw;
+    }
+
+    .scr-talk {
+      margin-top: 1.4cqw;
+      font-size: 3.1cqw;
+      -webkit-line-clamp: 4;
+      line-clamp: 4;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .stage-mobile {
+      display: none;
+    }
+
+    .stage-controls.is-desktop {
+      display: flex;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .scr-cursor {
+      display: none;
+    }
+
+    .stage-shot[data-fade] {
+      animation: none;
+    }
+
+    .stage-arrow {
+      transition: none;
+    }
+  }
+</style>

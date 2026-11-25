@@ -763,12 +763,24 @@ export interface SpeakerPanel {
   iconKey: string;
 }
 
+/** Texts above the hot topics card; each falls back to the page's own
+ * wording when empty (speaker.astro). */
+export interface SpeakerHotTopicsCopy {
+  label?: string;
+  heading?: string;
+  intro?: string;
+}
+
 export interface SpeakerPageContent {
   title: string;
   metaDescription: string;
   heading: string;
   intro: string;
+  /** Stored, no longer rendered on /speaker (kept for the CMS rows). */
   panels: SpeakerPanel[];
+  hotTopics?: SpeakerHotTopicsCopy;
+  /** The pill under the stage, e.g. "Line-up 2027 · Coming soon". */
+  lineupPill?: string;
 }
 
 export interface JobsPageContent {
@@ -2165,6 +2177,12 @@ interface CmsSpeakerPageDoc {
   heading: string;
   intro: string;
   panels: SpeakerPanel[];
+  hotTopics?: {
+    label?: string | null;
+    heading?: string | null;
+    intro?: string | null;
+  } | null;
+  lineupPill?: string | null;
 }
 
 async function cmsGetSpeakerPage(): Promise<SpeakerPageContent> {
@@ -2179,6 +2197,12 @@ async function cmsGetSpeakerPage(): Promise<SpeakerPageContent> {
       description: p.description,
       iconKey: p.iconKey,
     })),
+    hotTopics: {
+      label: optionalText(doc.hotTopics?.label),
+      heading: optionalText(doc.hotTopics?.heading),
+      intro: optionalText(doc.hotTopics?.intro),
+    },
+    lineupPill: optionalText(doc.lineupPill),
   };
 }
 

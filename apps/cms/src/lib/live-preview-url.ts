@@ -63,6 +63,7 @@ const PATH_BY_COLLECTION: Record<
 > = {
   partners: "/partner/",
   speakers: "/speaker/",
+  "hot-topics": "/speaker/",
   team: "/our-team/",
   "past-teams": "/past-teams/",
   jobs: (doc) =>

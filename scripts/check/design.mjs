@@ -195,6 +195,14 @@ const ALLOWED_WARNINGS = new Map([
   ["warning colors.ticket-ground", UNREFERENCED],
   ["warning colors.ticket-press", UNREFERENCED],
   ["warning colors.home-ground", UNREFERENCED],
+  ["warning colors.speaker-night", UNREFERENCED],
+  ["warning colors.speaker-glow", UNREFERENCED],
+  ["warning colors.speaker-dusk", UNREFERENCED],
+  ["warning colors.speaker-ink", UNREFERENCED],
+  ["warning colors.speaker-blue", UNREFERENCED],
+  ["warning colors.speaker-field", UNREFERENCED],
+  ["warning colors.speaker-text", UNREFERENCED],
+  ["warning colors.speaker-screen", UNREFERENCED],
   ["warning colors.hack-night", UNREFERENCED],
   ["warning colors.hack-ink", UNREFERENCED],
   ["warning colors.hack-deep", UNREFERENCED],
@@ -364,6 +372,10 @@ const UNMAPPED_TOKENS = new Map([
   [
     "--duration-partner-stagger",
     "see --ease-snappy; partner page intro only (DESIGN.md PARTNER-1)",
+  ],
+  [
+    "--duration-speaker-blink",
+    "see --ease-snappy; speaker stage cursor only (DESIGN.md SPEAKER-1)",
   ],
   [
     "--ease-glass-spring",

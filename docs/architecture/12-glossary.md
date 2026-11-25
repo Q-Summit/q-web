@@ -12,7 +12,7 @@ The terms the docs and issues assume you know. Domain terms land here when the f
 | **Editor** | A division member with a personal, scoped Payload account. Edits drafts; cannot publish without approval. |
 | **Approver** | Someone with publish rights; the gate between drafts and the live site. |
 | **Edition** | One conference year's content. Year fields exist on some collections; the full create/archive rollover mechanism is still owed ([section 9](09-architecture-decisions.md)). |
-| **Collection** | A content type in Payload (Users, Media, Partners, Jobs, Speakers, Team, PastTeams, Faqs, Testimonials). Pages and site settings are globals. |
+| **Collection** | A content type in Payload (Users, Media, Partners, Jobs, Speakers, HotTopics, Team, PastTeams, Faqs, Testimonials). Pages and site settings are globals. |
 | **Content package** | Versioned JSON transfer artifact (`bundle.json`) under `scripts/content-packages/`; not the git source of truth. Procedure: [`../dev/content-sync.md`](../dev/content-sync.md). |
 | **Content sync / propose** | `POST /api/content-sync`: draft-only upserts as the operator's own Workspace user, stamped `@agent.q-summit.com` so the changelog reads "(agent)". Never publishes or deploys. |
 

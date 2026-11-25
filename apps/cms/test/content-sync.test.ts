@@ -262,8 +262,8 @@ describe('no collection or global declares a user field named "id"', () => {
 
   it("discovers every registered collection and global", () => {
     // Guard against the glob silently matching nothing (which would make the
-    // assertion below vacuously pass). 9 collections + 14 globals = 23.
-    expect(configs.length).toBe(23);
+    // assertion below vacuously pass). 10 collections + 14 globals = 24.
+    expect(configs.length).toBe(24);
   });
 
   it('has no field literally named "id" anywhere in the field trees', () => {

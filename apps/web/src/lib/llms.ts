@@ -1,6 +1,12 @@
 // Builders for /llms.txt and /llms-full.txt. Route tables are hand-curated.
-import type { PageContent, SiteSettings } from "./content";
+import type { HotTopic, PageContent, SiteSettings, Speaker } from "./content";
 import { partnerAudiencePages } from "./partner-audiences";
+import {
+  speakerPageCopy,
+  stageLabel,
+  stageRole,
+  stageSpeakers as pickStageSpeakers,
+} from "./speaker-page";
 import {
   WHYQ_AUDIENCE_PAGES,
   whyqAudienceNames,
@@ -226,8 +232,16 @@ export function buildLlmsFullTxt(opts: {
   site: string;
   siteSettings: SiteSettings;
   pageContent: PageContent;
+  /** /speaker's lists; without them its block has the intro only. */
+  hotTopics?: HotTopic[];
+  speakers?: Speaker[];
 }): string {
   const { site, siteSettings, pageContent } = opts;
+  const hotTopics = opts.hotTopics ?? [];
+  const stageSpeakers = pickStageSpeakers(
+    pageContent.home.previousSpeakers,
+    opts.speakers ?? [],
+  );
   const indexUrl = new URL("/llms.txt", site).href;
   const summary = oneLine(
     siteSettings.llms?.summary?.trim() || siteSettings.footer.tagline,
@@ -246,6 +260,7 @@ export function buildLlmsFullTxt(opts: {
     kickoff,
   } = pageContent;
   const partnerAudiences = partnerAudiencePages(partner);
+  const speakerCopy = speakerPageCopy(speaker);
 
   const blocks: string[][] = [
     [
@@ -327,15 +342,33 @@ export function buildLlmsFullTxt(opts: {
       ];
     }),
     [
+      // The page in its order: the hot topics of the next edition (the
+      // CMS texts above the card, or the page's built-in wording), then
+      // the stage with its speakers and their talks (STAGE_SOURCE). The
+      // old page-speaker panels stay stored but are no longer on the page.
       ...pageHeader(site, "/speaker", speaker.title, speaker.metaDescription),
-      speaker.heading,
-      "",
-      speaker.intro,
-      "",
-      ...section(
-        "Panels",
-        speaker.panels.map((panel) => bullet(panel.title, panel.description)),
-      ),
+      ...section(speakerCopy.hotTopicsLabel, [
+        // One entry: section() drops blank lines, and heading and intro
+        // are two paragraphs.
+        `${speakerCopy.hotTopicsHeading}\n\n${speakerCopy.hotTopicsIntro}\n`,
+        ...hotTopics.map((topic) =>
+          bullet(
+            `${topic.keyword}, ${topic.title}`,
+            oneLine(`${topic.field}. ${topic.description}`),
+          ),
+        ),
+      ]),
+      ...section(stageLabel(), [
+        `${speaker.heading}\n\n${oneLine(speaker.intro)}\n`,
+        ...stageSpeakers.map((s) =>
+          bullet(
+            s.name,
+            s.talkTitle
+              ? `${stageRole(s)}. Talk: ${oneLine(s.talkTitle)}`
+              : stageRole(s),
+          ),
+        ),
+      ]),
       "---",
       "",
     ],

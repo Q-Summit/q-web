@@ -1,52 +1,72 @@
 ---
-// /speaker: the speakers page ported from the live Webflow site.
-// Three sections: the current-edition lineup (speakers + moderation), the Main Stage
-// Panels, and the Previous Highlights scroller. Speaker/moderation/highlight
-// people come from getSpeakers() at build time, grouped by the `group`
-// field; the header and Main Stage Panel copy come from getPageContent()
-// (page-content.json's `speaker` entry).
+// /speaker: the 2027 speaker page (DESIGN.md SPEAKER-1), on the deep night
+// from the site header down to the footer. In order: the hot topics of the
+// next edition (hot-topics list), the intro (page-speaker heading and intro),
+// the speakers on the main stage (speakers list), and the pill announcing
+// the next line-up. Until that line-up is out the stage shows the homepage's
+// speakers; STAGE_SOURCE and STAGE_EDITION in lib/speaker-page.ts switch it
+// to the edition (shared with the LLM corpus in lib/llms.ts).
 import Base from "../layouts/Base.astro";
+import { getHotTopics, getPageContent, getSpeakers } from "../lib/content";
+import { isFixtureMediaSentinel } from "../lib/media-filename";
 import {
-  currentSpeakerEdition,
-  getPageContent,
-  getSpeakers,
-  speakersForEdition,
-} from "../lib/content";
-import SpeakerCard from "../components/speaker/SpeakerCard.astro";
-import ModeratorCard from "../components/speaker/ModeratorCard.astro";
-import PanelCard from "../components/speaker/PanelCard.astro";
-import HighlightCard from "../components/speaker/HighlightCard.astro";
-import Section from "../components/ui/Section.astro";
-import Container from "../components/ui/Container.astro";
+  speakerPageCopy,
+  isStageShot,
+  stageEdition,
+  stageLabel,
+  stagePhotoFilename,
+  stageRole,
+  stageSpeakers,
+} from "../lib/speaker-page";
+import HotTopics from "../components/speaker/HotTopics.astro";
+import SpeakerStage from "../components/speaker/SpeakerStage.astro";
+import type { StageSpeaker } from "../components/speaker/SpeakerStage.astro";
 
-const [{ speaker: page }, speakers] = await Promise.all([
+/** Placeholder speakers while the list is still empty, in `astro dev` only. */
+const DEV_PLACEHOLDERS = 20;
+
+const [{ speaker: page, home }, speakers, topics] = await Promise.all([
   getPageContent(),
   getSpeakers(),
+  getHotTopics(),
 ]);
-// Edition comes from the data, never a literal. Filtering on a hardcoded
-// "speakers-2026" meant publishing the next edition exactly as the CMS
-// instructs (group "current", year 2027) emptied this page with no warning.
-const edition = currentSpeakerEdition(speakers);
-const lineup = speakersForEdition(speakers, "current", edition);
-const moderation = speakersForEdition(speakers, "moderation", edition);
-const highlights = speakers.filter((s) => s.group === "previous");
 
-// Icon files are asset management, not editorial content, so they stay
-// code-side keyed by the content layer's iconKey field.
-const PANEL_ICONS: Record<string, string> = {
-  globe: "/media/69c8edb560be67670f6c3cd8_globe.png",
-  refund: "/media/69e8a18e688b095f97b6f6f4_icons8-ruckerstattung-50.webp",
-  ai: "/media/69e8a17fc01662484d8f36ed_icons8-barde-48.webp",
-};
+const photoUrl = (filename: string) =>
+  filename && !isFixtureMediaSentinel(filename)
+    ? `/media/${filename}`
+    : undefined;
 
-const panels = page.panels.map(({ title, description, iconKey }) => {
-  const icon = PANEL_ICONS[iconKey];
-  if (!icon)
-    throw new Error(
-      `speaker.astro: no icon registered for iconKey "${iconKey}"`,
-    );
-  return { icon, title, description };
-});
+const edition = stageEdition();
+let stage: StageSpeaker[] = stageSpeakers(home.previousSpeakers, speakers).map(
+  (s) => {
+    const photo = photoUrl(stagePhotoFilename(s));
+    return {
+      name: s.name,
+      role: stageRole(s),
+      ...(s.talkTitle ? { talkTitle: s.talkTitle } : {}),
+      ...(s.quote ? { quote: s.quote } : {}),
+      ...(photo ? { photo, photoLook: isStageShot(s) } : {}),
+    };
+  },
+);
+
+// Until the real line-up is in the CMS, `astro dev` fills the stage with
+// numbered placeholders so layout and navigation can be tested. A build
+// never ships them: an empty list leaves the stage out.
+if (stage.length === 0 && import.meta.env.DEV) {
+  stage = Array.from({ length: DEV_PLACEHOLDERS }, (_, i) => {
+    const n = String(i + 1).padStart(2, "0");
+    return {
+      name: `Speaker Name ${n}`,
+      role: "CEO · Company",
+      talkTitle: "Talk title placeholder",
+      quote: "A short quote from the talk goes here.",
+    };
+  });
+}
+
+// Editable in the CMS (page-speaker); empty fields keep the built-in wording.
+const copy = speakerPageCopy(page);
 ---
 
 <Base
@@ -54,282 +74,97 @@ const panels = page.panels.map(({ title, description, iconKey }) => {
   description={page.metaDescription}
   livePreviewGlobal="page-speaker"
 >
-  <Section>
-    <Container>
-      <header class="speakers__header">
-        {edition && <p class="u-eyebrow is-kicker">Conference {edition}</p>}
-        <h1 class="speakers__title" data-lp="heading">{page.heading}</h1>
-        <p class="speakers__intro" data-lp="intro">{page.intro}</p>
-      </header>
+  <div class="sp-page">
+    {
+      topics.length > 0 && (
+        <HotTopics
+          topics={topics}
+          label={copy.hotTopicsLabel}
+          heading={copy.hotTopicsHeading}
+          intro={copy.hotTopicsIntro}
+        />
+      )
+    }
 
-      <div class="rule-heading">
-        <h2>Speakers</h2>
-        <span class="rule-heading__line" aria-hidden="true"></span>
-      </div>
-      <ul class="speaker-grid" role="list">
-        {
-          lineup.map((speaker, i) => (
-            <li>
-              <SpeakerCard speaker={speaker} eager={i < 5} priority={i === 0} />
-            </li>
-          ))
-        }
-      </ul>
+    <header class="sp-intro">
+      <p class="sp-label">{stageLabel()}</p>
+      <h1 class="sp-title" data-lp="heading">{page.heading}</h1>
+      <p class="sp-lead" data-lp="intro">{page.intro}</p>
+    </header>
 
-      {
-        moderation.length > 0 && (
-          <>
-            <div class="rule-heading">
-              <h2>Moderation</h2>
-              <span class="rule-heading__line" aria-hidden="true" />
-            </div>
-            <ul class="moderation-grid" role="list">
-              {moderation.map((speaker) => (
-                <li>
-                  <ModeratorCard speaker={speaker} />
-                </li>
-              ))}
-            </ul>
-          </>
-        )
-      }
-    </Container>
-  </Section>
+    <SpeakerStage speakers={stage} edition={edition} />
 
-  <Section variant="dark" small>
-    <Container>
-      <!-- Live page left-aligns this opener (DESIGN.md LAYOUT-4 exception); heading
-           color comes from .section.is-dark, not restated here. -->
-      <header class="panels__header">
-        <p class="u-eyebrow is-kicker panels__eyebrow">Core Discussions</p>
-        <h2>Main Stage Panels</h2>
-      </header>
-      <ul class="panels__grid" role="list">
-        {
-          panels.map((panel) => (
-            <li>
-              <PanelCard {...panel} />
-            </li>
-          ))
-        }
-      </ul>
-    </Container>
-  </Section>
-
-  <Section variant="alternate" small>
-    <div class="container highlights__top">
-      <!-- Left-aligned with a trailing hint, per the live page (DESIGN.md LAYOUT-4
-           exception); not a centered .section-header opener. -->
-      <h2 class="highlights__title">Previous Highlights</h2>
-      <p class="highlights__hint">Scroll for more</p>
-    </div>
-    <div
-      class="highlights__scroller"
-      tabindex="0"
-      role="region"
-      aria-label="Previous highlight speakers, scrollable list"
-    >
-      <ul class="highlights__track" role="list">
-        {
-          highlights.map((speaker) => (
-            <li class="highlights__slide">
-              <HighlightCard speaker={speaker} />
-            </li>
-          ))
-        }
-      </ul>
-    </div>
-  </Section>
+    <p class="sp-pill" data-lp="lineupPill">{copy.lineupPill}</p>
+  </div>
 </Base>
 
 <style>
-  /* Shared sub-heading row within the lineup section: heading on the left,
-     rule filling the rest. A compact left-aligned sub-heading, not a
-     .section-header page opener (DESIGN.md LAYOUT-4 exception). */
-  .rule-heading {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-    margin: var(--space-xl) 0 var(--space-md);
+  /* DESIGN.md SPEAKER-1: the page shell skips .section/.container
+     (LAYOUT-1, LAYOUT-3), stands on the speaker night instead of
+     .section.is-dark (COLOR-2) and pulls itself up under the fixed site
+     header, so the page is dark from its first pixel. */
+  .sp-page {
+    margin-top: calc(var(--site-header-height) * -1);
+    padding-top: var(--site-header-height);
+    padding-bottom: clamp(var(--space-xl), 8vw, 6rem);
+    background: var(--color-speaker-night);
+    color: var(--color-white);
   }
 
-  .rule-heading h2 {
-    font-size: var(--heading-h4-size);
-    line-height: var(--heading-line-height-normal);
+  :global(body:has(.sp-page)) {
+    background: var(--color-speaker-night);
   }
 
-  .rule-heading__line {
-    flex: 1;
-    height: 1px;
-    background-color: var(--color-neutral-lighter);
-  }
-
-  /* Bare list helpers for the card grids */
-  ul[role="list"] {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  /* Section 1: the current-edition lineup. Section shell/padding now comes from
-     .section on the wrapping element; only the hero copy is styled here. */
-  .speakers__header {
+  .sp-intro {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-bottom: var(--space-sm);
+    gap: var(--space-xs);
+    max-width: 48rem;
+    margin: 0 auto;
+    padding: clamp(var(--space-xl), 6vw, 5rem) var(--padding-global)
+      var(--space-md);
     text-align: center;
   }
 
-  /* The live page renders this h1 smaller and heavier than the default
-     h1 scale/weight (matches the h2 size, like the partner page's h1). */
-  .speakers__title {
-    margin-top: var(--space-sm);
-    font-size: var(--heading-h2-size);
-    font-weight: var(--font-weight-extrabold);
-  }
-
-  .speakers__intro {
-    max-width: 600px;
-    margin: var(--space-sm) 0 0;
-    color: var(--color-neutral-darker);
-  }
-
-  .speaker-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-lg);
-  }
-
-  .speaker-grid > li {
-    width: min(100%, 20rem);
-    margin-inline: auto;
-  }
-
-  .moderation-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-lg);
-  }
-
-  .moderation-grid > li {
-    width: min(100%, 24rem);
-    margin-inline: auto;
-  }
-
-  @media (min-width: 768px) {
-    .speaker-grid {
-      grid-template-columns: repeat(3, 1fr);
-      gap: var(--space-lg);
-    }
-
-    .speaker-grid > li,
-    .moderation-grid > li {
-      width: 100%;
-    }
-
-    .moderation-grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
-  }
-
-  @media (min-width: 992px) {
-    .speaker-grid {
-      grid-template-columns: repeat(5, 1fr);
-      gap: 2.5rem var(--space-lg);
-    }
-
-    .moderation-grid {
-      gap: var(--space-xl);
-    }
-  }
-
-  /* Section 2: Main Stage Panels. Dark background and heading color come
-     from .section.is-dark on the wrapping element. */
-  .panels__header {
-    margin-bottom: var(--space-xl);
-  }
-
-  /* Only the ground-dependent color overrides the shared .u-eyebrow
-     (DESIGN.md COMP-3): this opener sits on .section.is-dark, where the
-     navy default would be invisible (DESIGN.md COLOR-2). */
-  .panels__eyebrow {
-    color: var(--color-neutral-lightest);
-  }
-
-  .panels__grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-lg);
-  }
-
-  @media (min-width: 992px) {
-    .panels__grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
-  }
-
-  /* Section 3: Previous Highlights scroller (CSS scroll snap, no JS).
-     Background and section padding come from .section.is-alternate on
-     the wrapping element; the scroller itself is a breakout band that runs
-     past the container to the viewport edge (see .highlights__scroller and
-     .highlights__track below). */
-  .highlights__top {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-sm);
-    margin-bottom: 2.5rem;
-  }
-
-  /* The live page sets this h2 at h3 scale with a lighter weight. */
-  .highlights__title {
-    font-size: var(--heading-h3-size);
-    font-weight: var(--font-weight-semibold);
-  }
-
-  .highlights__hint {
+  .sp-label {
     margin: 0;
+    color: var(--color-ticket-ice);
     font-size: var(--text-size-small);
-    color: var(--color-neutral);
-    white-space: nowrap;
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
   }
 
-  /* Breakout band, the same treatment DESIGN.md LAYOUT-1 requires of the
-     partner marquee: the rail runs to the actual browser edge on any
-     viewport up to --container-marquee (120rem, a full 1080p window) and
-     caps, centered rather than full-bleed, only on wider monitors. Below
-     that cap min() resolves to 100%, so nothing moves. */
-  .highlights__scroller {
-    width: min(100%, var(--container-marquee));
-    margin-inline: auto;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scroll-snap-type: x mandatory;
-    scroll-padding-inline: var(--padding-global);
-    -webkit-overflow-scrolling: touch;
-    scrollbar-color: var(--color-neutral-lighter) transparent;
-    scrollbar-width: thin;
+  .sp-title {
+    margin: 0;
+    color: var(--color-white);
+    font-size: clamp(2.25rem, 5.5vw, 4rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    text-wrap: balance;
   }
 
-  .highlights__track {
-    display: flex;
-    gap: 2.5rem;
-    width: max-content;
-    /* First and last card line up with .container's text column: the
-       centered max-width column plus the global inset. Both percentages
-       resolve against the band, the same reference .container's own math
-       uses (as in the partner marquee's label inset), so the cards keep
-       tracking the content column now that the band itself caps. */
-    padding-inline: calc(
-      max((100% - var(--container-large)) / 2, 0px) + var(--padding-global)
-    );
-    padding-bottom: var(--space-sm);
+  .sp-lead {
+    margin: 0;
+    color: color-mix(in srgb, var(--color-white) 78%, transparent);
+    font-size: var(--text-size-medium);
+    line-height: 1.6;
   }
 
-  .highlights__slide {
-    flex: 0 0 auto;
-    width: 250px;
-    scroll-snap-align: start;
+  .sp-pill {
+    width: fit-content;
+    margin: clamp(var(--space-md), 4vw, var(--space-xl)) auto 0;
+    padding: var(--space-2xs) var(--space-md);
+    border: 1px solid
+      color-mix(in srgb, var(--color-ticket-ice) 45%, transparent);
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--color-navy) 45%, transparent);
+    color: var(--color-ticket-ice);
+    font-size: var(--text-size-small);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
   }
 </style>

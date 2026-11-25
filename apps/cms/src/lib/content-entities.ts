@@ -11,6 +11,7 @@ export const DRAFT_COLLECTIONS: {
   { slug: "partners", label: "Partners", titleField: "name" },
   { slug: "jobs", label: "Jobs", titleField: "title" },
   { slug: "speakers", label: "Speakers", titleField: "name" },
+  { slug: "hot-topics", label: "Hot topics", titleField: "keyword" },
   { slug: "team", label: "Team", titleField: "name" },
   { slug: "past-teams", label: "Past Teams", titleField: "year" },
   { slug: "faqs", label: "FAQs", titleField: "question" },

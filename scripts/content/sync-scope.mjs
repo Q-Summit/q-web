@@ -3,6 +3,7 @@ export const SYNC_COLLECTIONS = [
   "partners",
   "jobs",
   "speakers",
+  "hot-topics",
   "team",
   "past-teams",
   "faqs",

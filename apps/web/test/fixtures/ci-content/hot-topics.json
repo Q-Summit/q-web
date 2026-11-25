@@ -1,0 +1,27 @@
+[
+  {
+    "keyword": "ALPHA",
+    "title": "Fixture topic 1",
+    "field": "Example field & example industry",
+    "description": "Placeholder description for CI fixture builds. Two or three sentences about the topic.",
+    "imageFilename": "fixture-missing-sphere.webp",
+    "imageAlt": "Fixture sphere for topic ALPHA"
+  },
+  {
+    "keyword": "BETA",
+    "title": "Fixture topic 2",
+    "field": "Example field & example industry",
+    "description": "Placeholder description for CI fixture builds. Two or three sentences about the topic.",
+    "imageFilename": "fixture-missing-sphere.webp",
+    "imageAlt": "Fixture sphere for topic BETA",
+    "thumbFilename": "fixture-missing-thumb.webp"
+  },
+  {
+    "keyword": "SUSTAINABILITY",
+    "title": "Fixture topic 3",
+    "field": "Example field & example industry",
+    "description": "Placeholder description for CI fixture builds. Two or three sentences about the topic.",
+    "imageFilename": "fixture-missing-sphere.webp",
+    "imageAlt": "Fixture sphere for topic SUSTAINABILITY"
+  }
+]

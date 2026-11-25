@@ -9,6 +9,7 @@ import sharp from "sharp";
 
 import { googleOAuthPlugin } from "./auth/google";
 import { Faqs } from "./collections/Faqs";
+import { HotTopics } from "./collections/HotTopics";
 import { Jobs } from "./collections/Jobs";
 import { Media } from "./collections/Media";
 import { Partners } from "./collections/Partners";
@@ -205,6 +206,7 @@ export default buildConfig({
     Partners,
     Jobs,
     Speakers,
+    HotTopics,
     Team,
     PastTeams,
     Faqs,
