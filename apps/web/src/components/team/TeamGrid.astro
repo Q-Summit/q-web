@@ -241,7 +241,11 @@ const layouts = [4, 3, 2].map((cap) => ({
     box-shadow:
       inset 0 0 0 1px color-mix(in srgb, var(--color-white) 18%, transparent),
       0 22px 40px -24px var(--color-black);
-    transform: translateZ(0);
+    /* Keeps the zoomed photo inside the rounded corners. No forced
+       compositing layer (the old translateZ(0)): Chromium left a lazily
+       loaded portrait in such a layer unpainted until a hover repainted
+       it. */
+    isolation: isolate;
     transition:
       transform var(--duration-reveal) var(--ease-snappy),
       box-shadow var(--duration-open) var(--ease-snappy);

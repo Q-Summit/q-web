@@ -8,17 +8,56 @@ import { existsSync } from "node:fs";
 import { MEDIA_DIR, variant } from "./media-filename";
 
 /**
- * Group photo of the hero on both team pages (the LCP element there). It
- * lives in the CMS media library in three widths, each under its own
- * filename, so the hero and the page preload share one srcset.
+ * Group photo of the hero on both team pages (the LCP element there). The
+ * photo is set in the CMS (Our Team > heroImage); until it is, the hero
+ * shows the 2027 photo below. A photo uploaded in the three widths, each
+ * under its own name ending in -p-1280, -p-1920 and -p-2560 (pick the
+ * 2560 one in the CMS), is served as a srcset, so each screen loads only
+ * the size it needs; any other file is served as it is.
  */
 export const TEAM_HERO_WIDTHS = [1280, 1920, 2560] as const;
-export const TEAM_HERO_SIZE = { width: 2560, height: 1707 } as const;
-const teamHeroFile = (width: number) => `team-2027-hero-p-${width}.webp`;
-export const TEAM_HERO_PHOTO = teamHeroFile(1920);
-export const TEAM_HERO_SRCSET = TEAM_HERO_WIDTHS.map(
-  (width) => `/media/${teamHeroFile(width)} ${width}w`,
-).join(", ");
+
+export interface TeamHeroSources {
+  src: string;
+  srcset: string | undefined;
+  width: number;
+  height: number;
+}
+
+const BUILT_IN_HERO = {
+  file: "team-2027-hero-p-2560.webp",
+  width: 2560,
+  height: 1707,
+};
+
+export function teamHeroSources(photo?: {
+  file: string;
+  width?: number;
+  height?: number;
+}): TeamHeroSources {
+  const hero = photo?.file ? photo : BUILT_IN_HERO;
+  const width = hero.width ?? BUILT_IN_HERO.width;
+  const height = hero.height ?? BUILT_IN_HERO.height;
+  const sized = /^(.*)-p-(\d+)(\.[a-z0-9]+)$/i.exec(hero.file);
+  const largest = sized ? Number(sized[2]) : 0;
+  const widths = sized ? TEAM_HERO_WIDTHS.filter((w) => w <= largest) : [];
+  if (!sized || widths.at(-1) !== largest) {
+    return {
+      src: `/media/${encodeURIComponent(hero.file)}`,
+      srcset: undefined,
+      width,
+      height,
+    };
+  }
+  const at = (w: number) =>
+    `/media/${encodeURIComponent(`${sized[1]}-p-${w}${sized[3]}`)}`;
+  return {
+    src: at(widths.length > 1 ? widths[widths.length - 2] : largest),
+    srcset: widths.map((w) => `${at(w)} ${w}w`).join(", "),
+    width,
+    height,
+  };
+}
 
 export interface ResponsivePhoto {
   src: string;

@@ -9,13 +9,16 @@
 // the normal tab order (both stay real, reachable links either way).
 interface Props {
   active: "current" | "past";
+  /** The two labels from the CMS (Our Team / Past Teams tabLabel). */
+  currentLabel: string;
+  pastLabel: string;
 }
 
-const { active } = Astro.props;
+const { active, currentLabel, pastLabel } = Astro.props;
 
 const tabs = [
-  { key: "current", label: "Current Team", href: "/our-team/" },
-  { key: "past", label: "History", href: "/past-teams/" },
+  { key: "current", label: currentLabel, href: "/our-team/" },
+  { key: "past", label: pastLabel, href: "/past-teams/" },
 ] as const;
 ---
 

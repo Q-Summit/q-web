@@ -2103,6 +2103,18 @@ export interface PageOurTeam {
   id: number;
   heading: string;
   /**
+   * The group photo behind the heading, on Our Team and on History. Upload it in three widths with the same name ending in -p-1280, -p-1920 and -p-2560 (for example team-2027-hero-p-2560.webp) and pick the 2560 one here: each screen then loads only the size it needs. A single photo works too, but every screen loads it in full.
+   */
+  heroImage?: (number | null) | Media;
+  /**
+   * The "Current Team" side of the switch above the team. Empty shows "Current Team".
+   */
+  tabLabel?: string | null;
+  /**
+   * The heading above each division, with {division} for its name. Empty shows "{division} Division".
+   */
+  divisionHeading?: string | null;
+  /**
    * Browser tab and social-share title for the our team page (shown as "Q-Summit | …").
    */
   title: string;
@@ -2506,6 +2518,18 @@ export interface PagePastTeam {
   id: number;
   heading: string;
   intro: string;
+  /**
+   * The "History" side of the switch above the team. Empty shows "History".
+   */
+  tabLabel?: string | null;
+  /**
+   * The heading above each year's team photo, with {year} for the year. Empty shows "Year {year}".
+   */
+  yearHeading?: string | null;
+  /**
+   * What each year's team photo shows, for screen readers, with {year} for the year. Empty uses "The Q-Summit team of {year}".
+   */
+  photoAlt?: string | null;
   /**
    * Browser tab and social-share title for the past teams page (shown as "Q-Summit | …").
    */
@@ -3503,6 +3527,9 @@ export interface PageHackathonSelect<T extends boolean = true> {
  */
 export interface PageOurTeamSelect<T extends boolean = true> {
   heading?: T;
+  heroImage?: T;
+  tabLabel?: T;
+  divisionHeading?: T;
   title?: T;
   metaDescription?: T;
   lastEditedBy?: T;
@@ -3781,6 +3808,9 @@ export interface PageContactSelect<T extends boolean = true> {
 export interface PagePastTeamsSelect<T extends boolean = true> {
   heading?: T;
   intro?: T;
+  tabLabel?: T;
+  yearHeading?: T;
+  photoAlt?: T;
   title?: T;
   metaDescription?: T;
   lastEditedBy?: T;

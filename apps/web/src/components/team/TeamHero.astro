@@ -3,19 +3,19 @@
 // behind a dark overlay with a centered white H1 (the live header7/header65
 // section), framed like the team's history page mockup and melting softly
 // into the 2027 navy below (DESIGN.md NAVY-1).
-import {
-  TEAM_HERO_PHOTO,
-  TEAM_HERO_SIZE,
-  TEAM_HERO_SRCSET,
-} from "../../lib/team-media";
+import type { TeamHeroPhoto } from "../../lib/content";
+import { teamHeroSources } from "../../lib/team-media";
 
 interface Props {
   title: string;
   /** Payload Live Preview path for the title, e.g. "heading". */
   lpTitle?: string;
+  /** The group photo from the CMS (Our Team); unset keeps the built-in one. */
+  photo?: TeamHeroPhoto;
 }
 
-const { title, lpTitle } = Astro.props;
+const { title, lpTitle, photo } = Astro.props;
+const hero = teamHeroSources(photo);
 ---
 
 <header class="team-hero">
@@ -25,12 +25,12 @@ const { title, lpTitle } = Astro.props;
   }
   <img
     class="team-hero__image"
-    src={`/media/${TEAM_HERO_PHOTO}`}
-    srcset={TEAM_HERO_SRCSET}
+    src={hero.src}
+    srcset={hero.srcset}
     sizes="100vw"
     alt=""
-    width={TEAM_HERO_SIZE.width}
-    height={TEAM_HERO_SIZE.height}
+    width={hero.width}
+    height={hero.height}
     loading="eager"
     fetchpriority="high"
     decoding="async"
@@ -41,7 +41,6 @@ const { title, lpTitle } = Astro.props;
     <h1 class="team-hero__title" data-lp={lpTitle}>{title}</h1>
   </div>
 </header>
-<div class="team-hero__seam" aria-hidden="true"></div>
 
 <style>
   /* DESIGN.md NAVY-1: the live team hero (the 50% scrim, the centered
@@ -54,10 +53,37 @@ const { title, lpTitle } = Astro.props;
   .team-hero {
     --crop-top: 0.28;
     --crop-bottom: 0.12;
+    --melt: 42%;
+    /* The site header's height (home-theme.css --h-header-height): the
+       photo runs on up behind the glass header, as on the mockup. */
+    --header: 4.5rem;
     position: relative;
     height: min(100svh, 52rem);
+    margin-top: calc(-1 * var(--header));
     overflow: hidden;
-    background: var(--q-night);
+    /* No ground of its own: the hero fades out to transparent over its
+       lower --melt, so the photo dissolves into the page's own navy and
+       its pools of light (.n-ground) and never ends on an edge, whatever
+       color lies behind it. */
+    -webkit-mask: linear-gradient(var(--fade));
+    mask: linear-gradient(var(--fade));
+    --fade:
+      var(--color-black) calc(100% - var(--melt)),
+      color-mix(in srgb, var(--color-black) 96%, transparent)
+        calc(100% - var(--melt) * 0.9),
+      color-mix(in srgb, var(--color-black) 85%, transparent)
+        calc(100% - var(--melt) * 0.78),
+      color-mix(in srgb, var(--color-black) 66%, transparent)
+        calc(100% - var(--melt) * 0.65),
+      color-mix(in srgb, var(--color-black) 43%, transparent)
+        calc(100% - var(--melt) * 0.52),
+      color-mix(in srgb, var(--color-black) 22%, transparent)
+        calc(100% - var(--melt) * 0.4),
+      color-mix(in srgb, var(--color-black) 8%, transparent)
+        calc(100% - var(--melt) * 0.26),
+      color-mix(in srgb, var(--color-black) 2%, transparent)
+        calc(100% - var(--melt) * 0.12),
+      transparent 100%;
   }
 
   .team-hero__image {
@@ -80,10 +106,9 @@ const { title, lpTitle } = Astro.props;
     background-color: var(--color-overlay);
   }
 
-  /* The melt: the photo goes soft and dark towards its lower edge in one
-     long eased band (a single blur under an eased mask, with a navy wash
-     on the same curve), so it melts into the page instead of ending on a
-     line. */
+  /* The melt: over the same band the photo also goes soft, one blur
+     under an eased mask, so it blurs and fades at once instead of ending
+     on a line. */
   .team-hero__melt {
     --ease:
       transparent, color-mix(in srgb, var(--color-black) 4%, transparent) 10%,
@@ -94,35 +119,14 @@ const { title, lpTitle } = Astro.props;
       color-mix(in srgb, var(--color-black) 92%, transparent) 71%,
       var(--color-black) 82%;
     position: absolute;
-    inset: auto 0 -2px;
+    inset: auto 0 0;
     z-index: 2;
-    height: 42%;
+    height: var(--melt);
     pointer-events: none;
     -webkit-backdrop-filter: blur(16px);
     backdrop-filter: blur(16px);
     -webkit-mask: linear-gradient(var(--ease));
     mask: linear-gradient(var(--ease));
-    background: linear-gradient(
-      in oklab 180deg,
-      transparent 0%,
-      color-mix(in oklab, var(--q-night) 6%, transparent) 14%,
-      color-mix(in oklab, var(--q-night) 20%, transparent) 28%,
-      color-mix(in oklab, var(--q-night) 40%, transparent) 42%,
-      color-mix(in oklab, var(--q-night) 62%, transparent) 56%,
-      color-mix(in oklab, var(--q-night) 81%, transparent) 70%,
-      color-mix(in oklab, var(--q-night) 94%, transparent) 84%,
-      var(--q-night) 100%
-    );
-  }
-
-  /* A strip of the ground over the photo's clipped lower edge: the
-     backdrop blur leaves a faint line on that sub-pixel row. */
-  .team-hero__seam {
-    position: relative;
-    z-index: 4;
-    height: 16px;
-    margin-block: -8px;
-    background: var(--q-night);
   }
 
   .team-hero__content {
@@ -134,8 +138,13 @@ const { title, lpTitle } = Astro.props;
     text-align: center;
   }
 
+  /* The mockup's display title: larger than the H1 scale (NAVY-1 allows
+     display type above the heading scale). */
   .team-hero__title {
     color: var(--color-text-inverse);
+    font-size: clamp(2.2rem, 5vw, 4rem);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
     text-wrap: balance;
   }
 
@@ -143,6 +152,7 @@ const { title, lpTitle } = Astro.props;
      below the feet. */
   @media (max-width: 767px) {
     .team-hero {
+      --header: 4rem;
       --crop-top: 0.25;
       --crop-bottom: 0.13;
       height: min(62svh, 30rem);
@@ -152,12 +162,8 @@ const { title, lpTitle } = Astro.props;
       top: 60%;
     }
 
-    .team-hero__melt {
-      height: 17%;
-    }
-
-    .team-hero__title {
-      font-size: clamp(1.5rem, 4.2vw, 2.5rem);
+    .team-hero {
+      --melt: 17%;
     }
   }
 

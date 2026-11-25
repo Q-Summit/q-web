@@ -86,6 +86,12 @@ export const MEDIA_GLOBAL_FIELDS = [
     ],
   },
   {
+    slug: "page-our-team",
+    label: "Our Team",
+    path: "/our-team/",
+    refs: [{ fieldPath: "heroImage", title: "Hero photo" }],
+  },
+  {
     slug: "page-hackathon",
     label: "Hackathon",
     path: "/hackathon/",

@@ -612,10 +612,23 @@ export interface HackathonContent {
   };
 }
 
+/** The team hero photo from the CMS: its /media filename and size. */
+export interface TeamHeroPhoto {
+  file: string;
+  width?: number;
+  height?: number;
+}
+
 export interface OurTeamContent {
   title: string;
   metaDescription: string;
   heading: string;
+  /** Shared by /our-team and /past-teams; unset keeps the built-in photo. */
+  heroImage?: TeamHeroPhoto;
+  /** The "Current Team" side of the team switch. */
+  tabLabel?: string;
+  /** Heading above each division, with {division} for its name. */
+  divisionHeading?: string;
 }
 
 export interface PastTeamsContent {
@@ -623,6 +636,12 @@ export interface PastTeamsContent {
   metaDescription: string;
   heading: string;
   intro: string;
+  /** The "History" side of the team switch. */
+  tabLabel?: string;
+  /** Heading above each year's team photo, with {year}. */
+  yearHeading?: string;
+  /** Alt text of each year's team photo, with {year}. */
+  photoAlt?: string;
 }
 
 export interface PartnerPageContent {
@@ -1805,14 +1824,26 @@ interface CmsOurTeamDoc {
   title: string;
   metaDescription?: string | null;
   heading: string;
+  heroImage?: CmsMediaRef | number | string | null;
+  tabLabel?: string | null;
+  divisionHeading?: string | null;
 }
 
 async function cmsGetOurTeam(): Promise<OurTeamContent> {
   const doc = await fetchGlobal<CmsOurTeamDoc>("page-our-team");
+  const heroFile = await resolveOptionalUploadFilename(
+    doc.heroImage,
+    "page-our-team heroImage",
+  );
   return {
     title: doc.title,
     metaDescription: doc.metaDescription ?? "",
     heading: doc.heading,
+    ...(heroFile && {
+      heroImage: { file: heroFile, ...uploadDimensions(doc.heroImage) },
+    }),
+    ...(doc.tabLabel && { tabLabel: doc.tabLabel }),
+    ...(doc.divisionHeading && { divisionHeading: doc.divisionHeading }),
   };
 }
 
@@ -1821,6 +1852,9 @@ interface CmsPastTeamsDoc {
   metaDescription?: string | null;
   heading: string;
   intro: string;
+  tabLabel?: string | null;
+  yearHeading?: string | null;
+  photoAlt?: string | null;
 }
 
 async function cmsGetPastTeams(): Promise<PastTeamsContent> {
@@ -1830,6 +1864,9 @@ async function cmsGetPastTeams(): Promise<PastTeamsContent> {
     metaDescription: doc.metaDescription ?? "",
     heading: doc.heading,
     intro: doc.intro,
+    ...(doc.tabLabel && { tabLabel: doc.tabLabel }),
+    ...(doc.yearHeading && { yearHeading: doc.yearHeading }),
+    ...(doc.photoAlt && { photoAlt: doc.photoAlt }),
   };
 }
 

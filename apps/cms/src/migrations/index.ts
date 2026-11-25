@@ -15,6 +15,7 @@ import * as migration_20261117_140507_ticket_phase_ends from './20261117_140507_
 import * as migration_20261121_003544_qhack_2027 from './20261121_003544_qhack_2027';
 import * as migration_20261124_075209_ticket_phase_on_sale from './20261124_075209_ticket_phase_on_sale';
 import * as migration_20261124_193538_whyq_audience_pages from './20261124_193538_whyq_audience_pages';
+import * as migration_20261125_103005_team_page_cms_fields from './20261125_103005_team_page_cms_fields';
 
 export const migrations = [
   {
@@ -100,6 +101,11 @@ export const migrations = [
   {
     up: migration_20261124_193538_whyq_audience_pages.up,
     down: migration_20261124_193538_whyq_audience_pages.down,
-    name: '20261124_193538_whyq_audience_pages'
+    name: '20261124_193538_whyq_audience_pages',
+  },
+  {
+    up: migration_20261125_103005_team_page_cms_fields.up,
+    down: migration_20261125_103005_team_page_cms_fields.down,
+    name: '20261125_103005_team_page_cms_fields'
   },
 ];

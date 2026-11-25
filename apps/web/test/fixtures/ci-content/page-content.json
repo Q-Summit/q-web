@@ -1441,13 +1441,18 @@
   "ourTeam": {
     "title": "Our Team",
     "metaDescription": "Get to know the current Q-Summit organizing team: the students behind Germany's largest student-organized startup conference.",
-    "heading": "Get to know our Team!"
+    "heading": "Get to know our Team!",
+    "tabLabel": "Current Team",
+    "divisionHeading": "{division} Division"
   },
   "pastTeams": {
     "title": "Past Teams",
     "metaDescription": "A thank you to the former Q-Summit teams whose dedication since 2016 laid the foundation for Germany's largest student-organized startup conference.",
     "heading": "Get to know our Team!",
-    "intro": "Our former teams have been an integral part of Q-Summit’s journey. We are deeply grateful for their commitment, passion, and shared belief in our vision. Since 2016, their dedication laid the foundation for what Q-Summit is today, and their collective efforts continue to inspire our growth and future success."
+    "intro": "Our former teams have been an integral part of Q-Summit’s journey. We are deeply grateful for their commitment, passion, and shared belief in our vision. Since 2016, their dedication laid the foundation for what Q-Summit is today, and their collective efforts continue to inspire our growth and future success.",
+    "tabLabel": "History",
+    "yearHeading": "Year {year}",
+    "photoAlt": "The Q-Summit team of {year}"
   },
   "partner": {
     "title": "Partner",

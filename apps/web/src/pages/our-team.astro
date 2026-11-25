@@ -14,7 +14,7 @@ import {
 } from "../lib/content";
 import { groupDivisions, groupPastYears } from "../lib/team";
 import TeamHero from "../components/team/TeamHero.astro";
-import { TEAM_HERO_SRCSET } from "../lib/team-media";
+import { teamHeroSources } from "../lib/team-media";
 import TeamPanels from "../components/team/TeamPanels.astro";
 import "../components/ui/navy-glass.css";
 
@@ -32,24 +32,36 @@ const pastYears = await groupPastYears(pastTeamPhotos);
 // Preload the team hero: it is the LCP element on this route, so the
 // browser fetches the same srcset TeamHero.astro renders before it parses
 // the page.
+const hero = teamHeroSources(ourTeam.heroImage);
 ---
 
 <Base
   title={ourTeam.title}
   description={ourTeam.metaDescription}
-  preloadImageSrcset={TEAM_HERO_SRCSET}
+  preloadImage={hero.srcset ? undefined : hero.src}
+  preloadImageSrcset={hero.srcset}
   preloadImageSizes="100vw"
-  preloadImageType="image/webp"
   livePreviewGlobal="page-our-team"
 >
   <div class="n-page">
     <div class="n-ground" aria-hidden="true"></div>
-    <TeamHero title={ourTeam.heading} lpTitle="heading" />
+    <TeamHero
+      title={ourTeam.heading}
+      lpTitle="heading"
+      photo={ourTeam.heroImage}
+    />
     <TeamPanels
       active="current"
       divisions={divisions}
       pastYears={pastYears}
       pastIntro={pastTeams.intro}
+      labels={{
+        currentTab: ourTeam.tabLabel,
+        pastTab: pastTeams.tabLabel,
+        divisionHeading: ourTeam.divisionHeading,
+        yearHeading: pastTeams.yearHeading,
+        photoAlt: pastTeams.photoAlt,
+      }}
       currentTitle={`${siteTitle} | ${ourTeam.title}`}
       pastTitle={`${siteTitle} | ${pastTeams.title}`}
     />

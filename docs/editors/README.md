@@ -97,6 +97,8 @@ Two separate lists, two different jobs:
 - **Team** holds the people currently organizing Q-Summit: one entry per member with name, role, division, photo, the board year, and an optional LinkedIn profile. This fills the division grid on the Our Team page.
 - **Past Teams** holds one group photo per finished board year (e.g. `25/26`). This fills the year-by-year history panel.
 
+The pages around them are set under **Website pages**. **Our Team** holds the heading and the group photo at the top of both team pages (**Hero Image**: upload it in three widths with the same name ending in `-p-1280`, `-p-1920` and `-p-2560` and pick the 2560 one, so every screen loads only the size it needs), the **Current Team** label of the switch, and the heading above each division (**Division Heading**, `{division}` stands for the name). **Past Teams** holds the **History** label, the heading above each year (`{year}` stands for the year) and the description of each year's photo for screen readers. An empty field shows the current wording.
+
 At board handover (Chair or PR, then a Head publishes):
 
 1. In **Past Teams**, add one entry for the retiring board: its year and the group photo. Never overwrite or delete an older year.

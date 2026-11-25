@@ -33,15 +33,43 @@ interface Props {
   /** Fully composed <title> text (siteTitle | page title) for each panel. */
   currentTitle: string;
   pastTitle: string;
+  /** Texts from the CMS (Our Team / Past Teams); each has a default. */
+  labels?: {
+    currentTab?: string;
+    pastTab?: string;
+    /** With {division} for the division's name. */
+    divisionHeading?: string;
+    /** With {year} for the year. */
+    yearHeading?: string;
+    /** With {year} for the year. */
+    photoAlt?: string;
+  };
 }
 
-const { active, divisions, pastYears, pastIntro, currentTitle, pastTitle } =
-  Astro.props;
+const {
+  active,
+  divisions,
+  pastYears,
+  pastIntro,
+  currentTitle,
+  pastTitle,
+  labels = {},
+} = Astro.props;
+
+const fill = (template: string, key: string, value: string | number) =>
+  template.replaceAll(`{${key}}`, String(value));
+const divisionHeading = labels.divisionHeading ?? "{division} Division";
+const yearHeading = labels.yearHeading ?? "Year {year}";
+const photoAlt = labels.photoAlt ?? "The Q-Summit team of {year}";
 ---
 
 <div class="team-body n-shell">
   <div class="team-controls">
-    <TeamToggle active={active} />
+    <TeamToggle
+      active={active}
+      currentLabel={labels.currentTab ?? "Current Team"}
+      pastLabel={labels.pastTab ?? "History"}
+    />
   </div>
 
   <div
@@ -57,7 +85,9 @@ const { active, divisions, pastYears, pastIntro, currentTitle, pastTitle } =
     {
       divisions.map((group) => (
         <section class="division">
-          <h2 class="division__title">{group.division} Division</h2>
+          <h2 class="division__title">
+            {fill(divisionHeading, "division", group.division)}
+          </h2>
           <TeamGrid members={group.members} />
         </section>
       ))
@@ -78,12 +108,14 @@ const { active, divisions, pastYears, pastIntro, currentTitle, pastTitle } =
     {
       pastYears.map((entry, i) => (
         <section class="history__year">
-          <h2 class="history__year-title">Year {entry.year}</h2>
+          <h2 class="history__year-title">
+            {fill(yearHeading, "year", entry.year)}
+          </h2>
           {entry.image ? (
             <Picture
               class="history__photo"
               src={entry.image}
-              alt={`The Q-Summit team of ${entry.year}`}
+              alt={fill(photoAlt, "year", entry.year)}
               widths={[500, 850, 1200]}
               sizes="(max-width: 950px) 90vw, 850px"
               formats={["avif", "webp"]}
@@ -98,7 +130,7 @@ const { active, divisions, pastYears, pastIntro, currentTitle, pastTitle } =
               src={entry.photo.src}
               srcset={entry.photo.srcset}
               sizes="(max-width: 950px) 90vw, 850px"
-              alt={`The Q-Summit team of ${entry.year}`}
+              alt={fill(photoAlt, "year", entry.year)}
               width={entry.size.width}
               height={entry.size.height}
               loading={active === "past" && i === 0 ? "eager" : "lazy"}

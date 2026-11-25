@@ -57,6 +57,7 @@ export { getSiteSettings } from "./content/site-settings";
 
 export type {
   PageStat,
+  TeamHeroPhoto,
   AgendaItem,
   TicketKey,
   TicketOffer,
