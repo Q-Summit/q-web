@@ -3,10 +3,11 @@
  * validation. Pure functions, shared by the page (build time) and the
  * browser (components/inquiry/inquiry.client.ts), and unit tested.
  *
- * The form is frontend only for now: nothing here talks to a network. When
- * the mail hand-off lands (form handling on a static site is an owed ADR,
- * docs/architecture/09-architecture-decisions.md), it plugs into the submit
- * handler in inquiry.client.ts and reuses `validateInquiry` as is.
+ * Nothing here talks to a network. Until form handling on a static site is
+ * decided (an owed ADR, docs/architecture/09-architecture-decisions.md), a
+ * complete form hands the inquiry to the visitor's email app (`inquiryMailto`).
+ * A later server hand-off plugs into the submit handler in inquiry.client.ts
+ * and reuses `validateInquiry` and `inquiryEmail` as they are.
  */
 
 /** The one place the page URL is written; links to the form import this. */
@@ -14,6 +15,15 @@ export const PARTNER_INQUIRY_PATH = "/partnersheet/";
 
 /** Query parameter that preselects the type tile, e.g. `?type=media`. */
 export const INQUIRY_TYPE_PARAM = "type";
+
+/**
+ * Query parameter that ticks topic chips, comma separated, e.g.
+ * `?type=company&topic=hackathon` from the hackathon page.
+ */
+export const INQUIRY_TOPIC_PARAM = "topic";
+
+/** Longest message the form takes; keeps the email link short enough for every mail app. */
+export const INQUIRY_MESSAGE_MAX = 1500;
 
 /**
  * The partner relations inbox behind "Prefer email?". The same address as the
@@ -101,6 +111,23 @@ export function parseInquiryType(
 ): InquiryTypeKey | null {
   const value = raw?.trim().toLowerCase();
   return INQUIRY_TYPES.find((type) => type.key === value)?.key ?? null;
+}
+
+/**
+ * Reads a `?topic=` value: the keys it names that the chosen type shows, in
+ * the type's order. Unknown keys and topics of other types are dropped.
+ */
+export function parseInquiryTopics(
+  raw: string | null | undefined,
+  type: string | null | undefined,
+): string[] {
+  const wanted = new Set(
+    (raw ?? "")
+      .split(",")
+      .map((key) => key.trim().toLowerCase())
+      .filter(Boolean),
+  );
+  return topicsForType(type).filter((key) => wanted.has(key));
 }
 
 /** Topic keys to show for a type (the default set when no type is chosen). */
@@ -223,4 +250,39 @@ export function inquirySummary(
     { label: "Work email", value: values.email },
     { label: "Anything we should know?", value: values.message || "Not given" },
   ];
+}
+
+/**
+ * The hand-off to the partner team until form handling is decided (owed ADR,
+ * docs/architecture/09-architecture-decisions.md): a complete form opens the
+ * visitor's email app with this message to PARTNER_TEAM_EMAIL, ready to send.
+ * Nothing leaves the browser on its own. The body is the preview's rows as
+ * plain text, so what the visitor checked is exactly what the team reads.
+ */
+export function inquiryEmail(values: InquiryValues): {
+  subject: string;
+  body: string;
+} {
+  const name = values.name.trim();
+  const type = typeLabel(values.type);
+  const subject = `Partner inquiry${type ? `: ${type}` : ""}${name ? ` (${name})` : ""}`;
+  const rows = inquirySummary({
+    ...values,
+    name,
+    email: values.email.trim(),
+    message: values.message.trim().slice(0, INQUIRY_MESSAGE_MAX),
+  });
+  const body = `${rows.map((row) => `${emailLabel(row.label)}\n${row.value}`).join("\n\n")}\n`;
+  return { subject, body };
+}
+
+/** A row label as a heading line in the email: a colon, unless it ends in a question mark. */
+export function emailLabel(label: string): string {
+  return label.endsWith("?") ? label : `${label}:`;
+}
+
+/** The `mailto:` link that opens the email above; spaces stay %20, never `+`. */
+export function inquiryMailto(values: InquiryValues): string {
+  const { subject, body } = inquiryEmail(values);
+  return `mailto:${PARTNER_TEAM_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }

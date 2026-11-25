@@ -3,10 +3,11 @@
 // a radio group for the type, a checkbox group for the topics, the contact
 // fields, the privacy consent and the send button.
 //
-// FRONTEND ONLY. The submit handler (inquiry.client.ts) validates and, for a
-// complete form, shows the thank-you screen; it sends nothing and makes no
-// network request. The later mail hand-off plugs in at the marked spot in that
-// file.
+// No server. The submit handler (inquiry.client.ts) validates and, for a
+// complete form, opens the visitor's email app with the inquiry addressed to
+// the partner team (lib/partner-inquiry.ts, inquiryMailto) and shows the
+// "ready to send" screen; it makes no network request. A server hand-off,
+// once form handling is decided, plugs in at the marked spot in that file.
 //
 // Semantics: a real <form>, <fieldset> + <legend> for both groups, real
 // <label> links, native radios and checkboxes (Tab, arrow keys, Space). Each
@@ -15,7 +16,9 @@
 // validation still runs (the script switches it off to show its own messages).
 import IconArrowRight from "../icons/IconArrowRight.astro";
 import IconCheck from "../icons/IconCheck.astro";
+import IconMail from "../icons/IconMail.astro";
 import {
+  INQUIRY_MESSAGE_MAX,
   INQUIRY_TOPICS,
   INQUIRY_TYPES,
   PARTNER_TEAM_EMAIL,
@@ -145,6 +148,7 @@ import {
             id="inq-message"
             name="message"
             rows="4"
+            maxlength={INQUIRY_MESSAGE_MAX}
             placeholder="Goals, timing, ideas …"></textarea>
         </div>
       </div>
@@ -189,22 +193,25 @@ import {
         </span>
       </button>
       <p class="inq-alt">
-        Prefer email?{" "}
-        <a href={`mailto:${PARTNER_TEAM_EMAIL}`}>Write to our partner team</a>
+        Sending opens your email app with your inquiry filled in. Or write to{
+          " "
+        }
+        <a href={`mailto:${PARTNER_TEAM_EMAIL}`}>{PARTNER_TEAM_EMAIL}</a>
       </p>
     </div>
 
     <noscript>
       <p class="inq-noscript">
         This form needs JavaScript to check your answers. Without it, please
-        write to our partner team instead.
+        write to{" "}
+        <a href={`mailto:${PARTNER_TEAM_EMAIL}`}>{PARTNER_TEAM_EMAIL}</a>.
       </p>
     </noscript>
   </form>
 
   <div class="inq-thanks" data-thanks hidden>
     <span class="inq-thanks-mark" aria-hidden="true">
-      <IconCheck size={34} />
+      <IconMail />
     </span>
     <h2
       class="inq-thanks-title"
@@ -212,20 +219,34 @@ import {
       tabindex="-1"
       data-thanks-title
     >
-      Thank you for submitting your inquiry.
+      Your email is ready to send.
     </h2>
     <p class="inq-thanks-copy">
-      The partner division will get in touch with you.
+      Your email app opened with your inquiry to our partner team. Send it
+      there, and we get back to you personally.
     </p>
-    <button
-      class="inq-thanks-link"
-      type="button"
-      aria-expanded="false"
-      aria-controls="inq-summary"
-      data-summary-toggle
-    >
-      View your inquiry
-    </button>
+    <div class="inq-thanks-actions">
+      <a
+        class="inq-thanks-link"
+        href={`mailto:${PARTNER_TEAM_EMAIL}`}
+        data-mail-again
+      >
+        Open the email again
+      </a>
+      <button
+        class="inq-thanks-link is-quiet"
+        type="button"
+        aria-expanded="false"
+        aria-controls="inq-summary"
+        data-summary-toggle
+      >
+        View your inquiry
+      </button>
+    </div>
+    <p class="inq-alt">
+      No email app? Send your inquiry to{" "}
+      <a href={`mailto:${PARTNER_TEAM_EMAIL}`}>{PARTNER_TEAM_EMAIL}</a>
+    </p>
     <div class="inq-summary" id="inq-summary" data-summary hidden>
       <dl class="inq-summary-list" data-summary-list></dl>
     </div>

@@ -1,9 +1,11 @@
 ---
 // /partnersheet: the form where interested companies reach the partner
-// team (DESIGN.md INQUIRY-1). Frontend only for now: the form validates and
-// reports, it does not send (see InquiryForm.astro). The URL is written once,
-// as PARTNER_INQUIRY_PATH in lib/partner-inquiry.ts; `?type=company`,
-// `media`, `initiative` or `speaker` preselects the matching tile.
+// team (DESIGN.md INQUIRY-1). No server yet: a complete form opens the
+// visitor's email app with the inquiry to the partner team (see
+// InquiryForm.astro). The URL is written once, as PARTNER_INQUIRY_PATH in
+// lib/partner-inquiry.ts; `?type=company`, `media`, `initiative` or `speaker`
+// preselects the matching tile, and `&topic=hackathon` (comma separated)
+// ticks topic chips of that type.
 //
 // The header is the shared floating glass bar from Base.astro (COMP-6).
 import Base from "../layouts/Base.astro";
@@ -18,9 +20,10 @@ import InquiryPage from "../components/inquiry/InquiryPage.astro";
   noindex
 >
   {
-    /* noindex while the form is not connected: a page that cannot send must
-       not appear in search. Remove this prop when the mail hand-off ships;
-       the sitemap and the route table in lib/llms.ts follow then too. */
+    /* noindex while the form only hands over to the visitor's email app:
+       the page is reached from the site's partner buttons, not from search.
+       Remove this prop once form handling is decided; the sitemap and the
+       route table in lib/llms.ts follow then too. */
   }
   <InquiryPage>
     <InquiryIntro />

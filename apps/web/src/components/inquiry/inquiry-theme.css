@@ -799,6 +799,39 @@ body:has(.inq-page) {
   outline-offset: 3px;
 }
 
+/* "Open the email again" is a link styled as the navy button. */
+a.inq-thanks-link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+/* "View your inquiry" next to it: the quiet twin, white with a navy hairline
+   like the topic chips, so the email stays the one main action. */
+.inq-thanks-link.is-quiet {
+  border: 1px solid var(--inq-line-strong);
+  background: var(--color-white);
+  box-shadow: none;
+  color: var(--inq-ink);
+}
+
+.inq-thanks-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-sm);
+}
+
+.inq-thanks-mark svg {
+  width: 2rem;
+  height: 2rem;
+}
+
+.inq-thanks .inq-alt {
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
 .inq-summary {
   box-sizing: border-box;
   width: 100%;
