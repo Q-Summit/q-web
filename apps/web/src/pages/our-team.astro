@@ -3,9 +3,10 @@
 // Full-height group-photo hero, then the Current Team / History toggle and
 // both team panels (see components/team/TeamPanels.astro): rendering both
 // datasets on both team routes is what lets the toggle switch instantly,
-// client-side, instead of a full page navigation. All people data comes
-// from getTeam() / getPastTeamPhotos() at build time.
-import { getImage } from "../lib/astro-assets";
+// client-side, instead of a full page navigation. Once the history story is
+// published, the History panel is that story (DESIGN.md HISTORY-1); it waits
+// hidden here and starts the first time the toggle shows it. All people data
+// comes from getTeam() / getPastTeamPhotos() at build time.
 import Base from "../layouts/Base.astro";
 import {
   getPageContent,
@@ -14,12 +15,11 @@ import {
   getTeam,
 } from "../lib/content";
 import { groupDivisions, groupPastYears } from "../lib/team";
-import { resolveContentImage } from "../lib/images";
 import TeamHero from "../components/team/TeamHero.astro";
-import { TEAM_HERO_PHOTO } from "../lib/team-media";
+import { teamHeroSources } from "../lib/team-media";
+import { buildHistoryAlbum } from "../lib/history-album";
 import TeamPanels from "../components/team/TeamPanels.astro";
-import Section from "../components/ui/Section.astro";
-import Container from "../components/ui/Container.astro";
+import "../components/ui/navy-glass.css";
 
 const [{ ourTeam, pastTeams }, { siteTitle }, team, pastTeamPhotos] =
   await Promise.all([
@@ -32,46 +32,49 @@ const [{ ourTeam, pastTeams }, { siteTitle }, team, pastTeamPhotos] =
 const divisions = groupDivisions(team);
 const pastYears = await groupPastYears(pastTeamPhotos);
 
-// Preload the team hero (TeamHero's <Picture>): it is the LCP element on this
-// route, and a <Picture> does not self-preload. Resolve the exact avif
-// candidates the browser will paint by calling getImage() with the SAME
-// filename and widths/format/quality TeamHero.astro renders (keep the two in
-// sync); avif is the first <source>, so preloading it targets the format
-// every current browser will pick.
-const heroImage = await resolveContentImage(
-  TEAM_HERO_PHOTO,
-  "team hero background",
-);
-const heroPreload = heroImage
-  ? await getImage({
-      src: heroImage,
-      widths: [800, 1200, 1600],
-      format: "avif",
-      quality: 80,
-    })
-  : undefined;
+// Preload the team hero: it is the LCP element on this route, so the
+// browser fetches the same srcset TeamHero.astro renders before it parses
+// the page.
+const hero = teamHeroSources(ourTeam.heroImage);
+const story = pastTeams.story;
+const album = story
+  ? await buildHistoryAlbum(pastYears, hero, pastTeams.photoAlt)
+  : [];
 ---
 
 <Base
   title={ourTeam.title}
   description={ourTeam.metaDescription}
-  preloadImageSrcset={heroPreload?.srcSet.attribute}
+  preloadImage={hero.srcset ? undefined : hero.src}
+  preloadImageSrcset={hero.srcset}
   preloadImageSizes="100vw"
-  preloadImageType="image/avif"
   livePreviewGlobal="page-our-team"
 >
-  <TeamHero title={ourTeam.heading} lpTitle="heading" />
-
-  <Section small>
-    <Container>
-      <TeamPanels
-        active="current"
-        divisions={divisions}
-        pastYears={pastYears}
-        pastIntro={pastTeams.intro}
-        currentTitle={`${siteTitle} | ${ourTeam.title}`}
-        pastTitle={`${siteTitle} | ${pastTeams.title}`}
-      />
-    </Container>
-  </Section>
+  <div class="n-page">
+    <div class="n-ground" aria-hidden="true"></div>
+    <TeamHero
+      title={ourTeam.heading}
+      lpTitle="heading"
+      photo={ourTeam.heroImage}
+      titles={{ current: ourTeam.heading, past: pastTeams.heading }}
+    />
+    <TeamPanels
+      active="current"
+      story={story}
+      album={album}
+      divisions={divisions}
+      pastYears={pastYears}
+      pastIntro={pastTeams.intro}
+      labels={{
+        currentTab: ourTeam.tabLabel,
+        pastTab: pastTeams.tabLabel,
+        divisionHeading: ourTeam.divisionHeading,
+        yearHeading: pastTeams.yearHeading,
+        photoAlt: pastTeams.photoAlt,
+      }}
+      currentTitle={`${siteTitle} | ${ourTeam.title}`}
+      pastTitle={`${siteTitle} | ${pastTeams.title}`}
+    />
+    {!story && <div class="h-page-fade" aria-hidden="true" />}
+  </div>
 </Base>

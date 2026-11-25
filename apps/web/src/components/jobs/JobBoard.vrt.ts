@@ -18,6 +18,8 @@ export default {
   component: JobBoard,
   variants: {
     default: {
+      heading: "Scroll through the Best Opportunities from our Partner Network",
+      intro: "Get to know the job openings of our supporters and partners.",
       jobs: [
         job({
           slug: "backend-engineer",

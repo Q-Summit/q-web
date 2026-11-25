@@ -1,0 +1,468 @@
+---
+// "What's in it for ..." of a /whyq/<audience>/ page (DESIGN.md WHYQ-1),
+// laid out as the team's page template: the eyebrow, the title and the
+// intro, beside them the filter (All / Included / Apply with ticket), then
+// the formats as a row of cards that scrolls sideways. Each card is the
+// homepage's white glass (HOME-1 .h-pane .h-frost): the format's photo (or,
+// without one, the ticket page's blue to white wash), its status chip
+// in words, its name and what it is. The filter is radio inputs and CSS
+// (:has), so it works without JavaScript; whyq.client.ts adds the arrows
+// that page the row and hides a photo that fails to load.
+import "../home/home-theme.css";
+import "./whyq-theme.css";
+import {
+  ACTIVITY_KIND_LABEL,
+  brandHtml,
+  type ActivityKind,
+  type WhyqActivity,
+} from "../../lib/whyq-pages";
+
+interface Props {
+  id: string;
+  eyebrow: string;
+  heading: string;
+  intro: string;
+  activities: WhyqActivity[];
+}
+
+const { id, eyebrow, heading, intro, activities } = Astro.props;
+
+// The filter offers only the kinds this page has; with one kind only
+// (Corporates: everything included) there is nothing to filter, so it is
+// left out.
+const kinds = (["included", "apply"] as const).filter((kind) =>
+  activities.some((activity) => activity.kind === kind),
+);
+const filters: { key: "all" | ActivityKind; label: string }[] =
+  kinds.length > 1
+    ? [
+        { key: "all", label: "All" },
+        ...kinds.map((kind) => ({
+          key: kind,
+          label: ACTIVITY_KIND_LABEL[kind],
+        })),
+      ]
+    : [];
+---
+
+<section id={id} class="h-section wq-act" aria-labelledby={`${id}-heading`}>
+  <div class="h-shell">
+    <div class="wq-head wq-act-head">
+      <div class="wq-head-copy" data-h-reveal>
+        <p class="h-eyebrow">{eyebrow}</p>
+        <h2 class="h-title" id={`${id}-heading`}>{heading}</h2>
+        <p class="h-intro">{intro}</p>
+      </div>
+      {
+        filters.length > 0 && (
+          <div
+            class="wq-filter"
+            role="group"
+            aria-label="Filter activities"
+            data-h-reveal
+          >
+            {filters.map((filter, i) => (
+              <input
+                type="radio"
+                class="wq-filter-radio"
+                name={`${id}-filter`}
+                id={`${id}-filter-${filter.key}`}
+                data-key={filter.key}
+                checked={i === 0}
+              />
+            ))}
+            {filters.map((filter) => (
+              <label for={`${id}-filter-${filter.key}`}>{filter.label}</label>
+            ))}
+          </div>
+        )
+      }
+    </div>
+
+    <div class="wq-rail">
+      <ul class="wq-cards" role="list" aria-label={heading} data-wq-scroller>
+        {
+          activities.map((activity, i) => (
+            <li data-kind={activity.kind} data-h-reveal style={`--h-i: ${i}`}>
+              <article
+                class:list={[
+                  "wq-card h-pane h-frost",
+                  { "has-photo": !!activity.image },
+                ]}
+              >
+                <div class="wq-card-media">
+                  {activity.image && (
+                    <img
+                      src={activity.image.src}
+                      width={activity.image.width}
+                      height={activity.image.height}
+                      alt={activity.image.alt}
+                      loading="lazy"
+                      decoding="async"
+                      data-wq-img
+                    />
+                  )}
+                  <span
+                    class:list={[
+                      "wq-chip",
+                      "wq-card-chip",
+                      { "is-included": activity.kind === "included" },
+                    ]}
+                  >
+                    {ACTIVITY_KIND_LABEL[activity.kind]}
+                  </span>
+                </div>
+                <div class="wq-card-body">
+                  <h3>{activity.title}</h3>
+                  <p set:html={brandHtml(activity.text)} />
+                </div>
+              </article>
+            </li>
+          ))
+        }
+      </ul>
+      <button
+        type="button"
+        class="h-glass-btn wq-arrow is-prev"
+        aria-label="Previous activities"
+        data-wq-scroll="-1"
+        hidden
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M15 5l-7 7 7 7"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.4"
+            stroke-linecap="round"
+            stroke-linejoin="round"></path>
+        </svg>
+      </button>
+      <button
+        type="button"
+        class="h-glass-btn wq-arrow is-next"
+        aria-label="Next activities"
+        data-wq-scroll="1"
+        hidden
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M9 5l7 7-7 7"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.4"
+            stroke-linecap="round"
+            stroke-linejoin="round"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* DESIGN.md WHYQ-1: the homepage's glass cards and pills (HOME-1). */
+
+  /* The filter: glass pills, the chosen one ice with navy ink. */
+  .wq-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs);
+  }
+
+  .wq-filter-radio {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* The pills in the homepage's liquid glass (HOME-1 .h-glass-btn, .h-ice):
+     a lit top edge, a darker foot and a soft drop, so they read as
+     buttons, not as outlines. The label sits in the optical middle: the
+     tracking after the last letter is taken off its right padding. */
+  .wq-filter label {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.5rem;
+    padding: 0 calc(var(--space-md) - 0.1em) 0 var(--space-md);
+    border-radius: var(--radius-ticket-pill);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-white) 18%, transparent),
+      color-mix(in srgb, var(--color-white) 6%, transparent)
+    );
+    box-shadow:
+      inset 0 1px 1px color-mix(in srgb, var(--color-white) 60%, transparent),
+      inset 0 -1px 1px color-mix(in srgb, var(--color-white) 14%, transparent),
+      inset 0 0 0 1px color-mix(in srgb, var(--color-white) 14%, transparent),
+      0 10px 20px -14px var(--color-ticket-midnight);
+    color: var(--color-white);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.1em;
+    line-height: 1;
+    text-transform: uppercase;
+    cursor: pointer;
+    user-select: none;
+    transition:
+      background-color var(--duration-hover) var(--ease-snappy),
+      transform var(--duration-glass-release) var(--ease-glass-spring);
+  }
+
+  @media (hover: hover) {
+    .wq-filter label:hover {
+      background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--color-white) 26%, transparent),
+        color-mix(in srgb, var(--color-white) 10%, transparent)
+      );
+    }
+  }
+
+  /* Phones: a little tighter, so the three pills share one line. */
+  @media (max-width: 479px) {
+    .wq-filter label {
+      min-height: 2.25rem;
+      padding: 0 calc(var(--space-xs) - 0.06em) 0 var(--space-xs);
+      letter-spacing: 0.06em;
+    }
+  }
+
+  .wq-filter label:active {
+    transform: scale(0.97);
+    transition-duration: var(--duration-glass-press);
+  }
+
+  .wq-filter-radio[data-key="all"]:checked ~ label[for$="-filter-all"],
+  .wq-filter-radio[data-key="included"]:checked
+    ~ label[for$="-filter-included"],
+  .wq-filter-radio[data-key="apply"]:checked ~ label[for$="-filter-apply"] {
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-ticket-ice) 86%, var(--color-white)) 0%,
+      color-mix(in srgb, var(--color-ticket-ice) 88%, transparent) 52%,
+      color-mix(in srgb, var(--color-ticket-cyan) 74%, transparent) 100%
+    );
+    box-shadow:
+      inset 0 1px 1px var(--color-white),
+      inset 0 -1px 2px
+        color-mix(in srgb, var(--color-ticket-sky) 45%, transparent),
+      inset 0 -10px 14px -12px
+        color-mix(in srgb, var(--color-ticket-sky) 70%, transparent),
+      0 12px 22px -14px var(--color-ticket-midnight);
+    color: var(--color-navy);
+  }
+
+  .wq-filter-radio[data-key="all"]:focus-visible ~ label[for$="-filter-all"],
+  .wq-filter-radio[data-key="included"]:focus-visible
+    ~ label[for$="-filter-included"],
+  .wq-filter-radio[data-key="apply"]:focus-visible
+    ~ label[for$="-filter-apply"] {
+    outline: 2px solid var(--color-ticket-ice);
+    outline-offset: 2px;
+  }
+
+  /* The cards: one row that scrolls sideways and snaps to each card. */
+  .wq-cards {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: clamp(16rem, 24vw, 20rem);
+    gap: var(--space-sm);
+    margin: 0;
+    padding: var(--space-2xs) 0 var(--space-md);
+    list-style: none;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-color: var(--h-line-strong) transparent;
+  }
+
+  .wq-cards li {
+    display: flex;
+    scroll-snap-align: start;
+  }
+
+  .wq-act:has(.wq-filter-radio[data-key="included"]:checked)
+    .wq-cards
+    li:not([data-kind="included"]),
+  .wq-act:has(.wq-filter-radio[data-key="apply"]:checked)
+    .wq-cards
+    li:not([data-kind="apply"]) {
+    display: none;
+  }
+
+  .wq-card {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    width: 100%;
+    overflow: hidden;
+    transition: transform var(--duration-hover) var(--ease-snappy);
+  }
+
+  @media (hover: hover) {
+    .wq-card:hover {
+      transform: translateY(-4px);
+    }
+  }
+
+  /* The opener and the filter stacked, the filter always under the
+     intro at the left, whatever the heading's length. */
+  .wq-act-head {
+    display: grid;
+    justify-content: start;
+    gap: var(--space-md);
+  }
+
+  /* The arrows sit on the row's sides, over the cards' edges, in the
+     page's round clear glass, as on the homepage's speaker rail
+     (home-theme.css .h-glass-btn). whyq.client.ts shows them while the
+     row overflows; swiping and the scrollbar work without them. */
+  .wq-rail {
+    position: relative;
+  }
+
+  .wq-arrow {
+    position: absolute;
+    top: 40%;
+    z-index: 2;
+    width: 3.25rem;
+    translate: 0 -50%;
+  }
+
+  .wq-arrow.is-prev {
+    left: calc(-1 * var(--space-sm));
+  }
+
+  .wq-arrow.is-next {
+    right: calc(-1 * var(--space-sm));
+  }
+
+  .wq-arrow[hidden] {
+    display: none;
+  }
+
+  .wq-arrow:disabled {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .wq-arrow:focus-visible {
+    outline: 2px solid var(--color-ticket-ice);
+    outline-offset: 3px;
+  }
+
+  /* The photo, over the ticket page's blue to white wash, which is all a
+     card without a photo shows (no Q in the background). */
+  .wq-card-media {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    margin: var(--space-2xs);
+    overflow: hidden;
+    border-radius: var(--radius-ticket-panel);
+    background:
+      radial-gradient(
+        80% 70% at 78% 18%,
+        color-mix(in srgb, var(--color-white) 55%, transparent),
+        transparent 62%
+      ),
+      linear-gradient(
+        160deg,
+        var(--color-ticket-deep) 0%,
+        var(--color-ticket-sky) 58%,
+        var(--color-ticket-ice) 100%
+      );
+  }
+
+  .wq-card-media img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .wq-card-media img[hidden] {
+    display: none;
+  }
+
+  .wq-card-chip {
+    position: absolute;
+    top: var(--space-xs);
+    left: var(--space-xs);
+  }
+
+  /* "Apply with ticket" on a photo: a navy veil under the outline. */
+  .wq-card-chip:not(.is-included) {
+    background: color-mix(in srgb, var(--color-navy) 60%, transparent);
+  }
+
+  .wq-card-body {
+    display: grid;
+    align-content: start;
+    gap: var(--space-2xs);
+    padding: var(--space-xs) var(--space-md) var(--space-md);
+  }
+
+  .wq-card-body h3 {
+    margin: 0;
+    color: var(--hg-ink);
+    font-size: clamp(1.25rem, 1.8vw, 1.5rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+
+  .wq-card-body p {
+    margin: 0;
+    color: var(--hg-ink-soft);
+    font-size: var(--text-size-small);
+    line-height: 1.55;
+  }
+
+  /* The row fades out at an edge while more cards lie beyond it, so a
+     card is never cut off hard. */
+  .wq-cards {
+    --wq-fade-start: var(--color-black);
+    --wq-fade-end: var(--color-black);
+  }
+
+  .wq-cards.has-more {
+    --wq-fade-end: transparent;
+  }
+
+  .wq-cards.has-before {
+    --wq-fade-start: transparent;
+  }
+
+  .wq-cards.has-more,
+  .wq-cards.has-before {
+    -webkit-mask-image: linear-gradient(
+      90deg,
+      var(--wq-fade-start),
+      var(--color-black) 6%,
+      var(--color-black) 88%,
+      var(--wq-fade-end)
+    );
+    mask-image: linear-gradient(
+      90deg,
+      var(--wq-fade-start),
+      var(--color-black) 6%,
+      var(--color-black) 88%,
+      var(--wq-fade-end)
+    );
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .wq-filter label,
+    .wq-card {
+      transition: none;
+    }
+
+    .wq-card:hover,
+    .wq-filter label:active {
+      transform: none;
+    }
+  }
+</style>

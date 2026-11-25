@@ -8,6 +8,7 @@ import type { TicketBenefitGroup, TicketPhases } from "../src/lib/content";
 import {
   euro,
   fillLabel,
+  isDiscounted,
   isPositive,
   phaseStates,
   salePriceLabel,
@@ -137,5 +138,22 @@ describe("discount phases", () => {
 
   it("names no phase while the current one is only coming", () => {
     expect(salePriceLabel({ ...phases, onSale: false })).toBe("Current price");
+  });
+});
+
+describe("isDiscounted", () => {
+  const ticket = (price: number) => ({
+    key: "student" as const,
+    name: "Student",
+    description: "",
+    regularPrice: 79,
+    price,
+    highlights: [],
+  });
+
+  it("is true only below the regular price", () => {
+    expect(isDiscounted(ticket(55))).toBe(true);
+    expect(isDiscounted(ticket(79))).toBe(false);
+    expect(isDiscounted(ticket(99))).toBe(false);
   });
 });

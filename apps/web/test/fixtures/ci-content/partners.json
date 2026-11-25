@@ -3,13 +3,15 @@
     "name": "Fixture Platinum Partner 1",
     "tier": "Platinum",
     "websiteUrl": "https://example.com",
-    "logoFilename": "fixture-missing-logo.webp"
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Platinum Partner 1. Two or three sentences on what the company does and what it offers at Q-Summit."
   },
   {
     "name": "Fixture Gold Partner 2",
     "tier": "Gold",
     "websiteUrl": "https://example.com",
-    "logoFilename": "fixture-missing-logo.webp"
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Gold Partner 2. Two or three sentences on what the company does and what it offers at Q-Summit."
   },
   {
     "name": "Fixture Silver Partner 3",
@@ -21,13 +23,15 @@
     "name": "Fixture Starter Partner 4",
     "tier": "Starter",
     "websiteUrl": "https://example.com",
-    "logoFilename": "fixture-missing-logo.webp"
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Starter Partner 4. Two or three sentences on what the company does and what it offers at Q-Summit."
   },
   {
     "name": "Fixture Knowledge Partner 5",
     "tier": "Knowledge",
     "websiteUrl": "https://example.com",
-    "logoFilename": "fixture-missing-logo.webp"
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Knowledge Partner 5. Two or three sentences on what the company does and what it offers at Q-Summit."
   },
   {
     "name": "Fixture Event Partner 6",
@@ -39,18 +43,447 @@
     "name": "Fixture Mobility Partner 7",
     "tier": "Mobility",
     "websiteUrl": "https://example.com",
-    "logoFilename": "fixture-missing-logo.webp"
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Mobility Partner 7. Two or three sentences on what the company does and what it offers at Q-Summit."
   },
   {
     "name": "Fixture University and Network Partner 8",
     "tier": "University and Network",
     "websiteUrl": "https://example.com",
-    "logoFilename": "fixture-missing-logo.webp"
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture University and Network Partner 8. Two or three sentences on what the company does and what it offers at Q-Summit."
   },
   {
     "name": "Fixture Media Partner 9",
     "tier": "Media",
     "websiteUrl": "https://example.com",
     "logoFilename": "fixture-missing-logo.webp"
+  },
+  {
+    "name": "Fixture Platinum Partner 10",
+    "tier": "Platinum",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Platinum Partner 10. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Platinum Partner 11",
+    "tier": "Platinum",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Platinum Partner 11. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Platinum Partner 12",
+    "tier": "Platinum",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp"
+  },
+  {
+    "name": "Fixture Gold Partner 13",
+    "tier": "Gold",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Gold Partner 13. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Gold Partner 14",
+    "tier": "Gold",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Gold Partner 14. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Gold Partner 15",
+    "tier": "Gold",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp"
+  },
+  {
+    "name": "Fixture Gold Partner 16",
+    "tier": "Gold",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Gold Partner 16. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Gold Partner 17",
+    "tier": "Gold",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Gold Partner 17. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Gold Partner 18",
+    "tier": "Gold",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp"
+  },
+  {
+    "name": "Fixture Gold Partner 19",
+    "tier": "Gold",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Gold Partner 19. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Gold Partner 20",
+    "tier": "Gold",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Gold Partner 20. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Gold Partner 21",
+    "tier": "Gold",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp"
+  },
+  {
+    "name": "Fixture Gold Partner 22",
+    "tier": "Gold",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Gold Partner 22. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Gold Partner 23",
+    "tier": "Gold",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Gold Partner 23. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Silver Partner 24",
+    "tier": "Silver",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp"
+  },
+  {
+    "name": "Fixture Silver Partner 25",
+    "tier": "Silver",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Silver Partner 25. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Silver Partner 26",
+    "tier": "Silver",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Silver Partner 26. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Silver Partner 27",
+    "tier": "Silver",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp"
+  },
+  {
+    "name": "Fixture Silver Partner 28",
+    "tier": "Silver",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Silver Partner 28. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Silver Partner 29",
+    "tier": "Silver",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Silver Partner 29. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Silver Partner 30",
+    "tier": "Silver",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp"
+  },
+  {
+    "name": "Fixture Silver Partner 31",
+    "tier": "Silver",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Silver Partner 31. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Silver Partner 32",
+    "tier": "Silver",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Silver Partner 32. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Silver Partner 33",
+    "tier": "Silver",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp"
+  },
+  {
+    "name": "Fixture Silver Partner 34",
+    "tier": "Silver",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Silver Partner 34. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Silver Partner 35",
+    "tier": "Silver",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Silver Partner 35. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Silver Partner 36",
+    "tier": "Silver",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp"
+  },
+  {
+    "name": "Fixture Silver Partner 37",
+    "tier": "Silver",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Silver Partner 37. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Silver Partner 38",
+    "tier": "Silver",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Silver Partner 38. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Silver Partner 39",
+    "tier": "Silver",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp"
+  },
+  {
+    "name": "Fixture Silver Partner 40",
+    "tier": "Silver",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Silver Partner 40. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Silver Partner 41",
+    "tier": "Silver",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Silver Partner 41. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Silver Partner 42",
+    "tier": "Silver",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp"
+  },
+  {
+    "name": "Fixture Silver Partner 43",
+    "tier": "Silver",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Silver Partner 43. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Silver Partner 44",
+    "tier": "Silver",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Silver Partner 44. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Silver Partner 45",
+    "tier": "Silver",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp"
+  },
+  {
+    "name": "Fixture Silver Partner 46",
+    "tier": "Silver",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Silver Partner 46. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Starter Partner 47",
+    "tier": "Starter",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Starter Partner 47. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Starter Partner 48",
+    "tier": "Starter",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp"
+  },
+  {
+    "name": "Fixture Starter Partner 49",
+    "tier": "Starter",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Starter Partner 49. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Starter Partner 50",
+    "tier": "Starter",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Starter Partner 50. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Starter Partner 51",
+    "tier": "Starter",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp"
+  },
+  {
+    "name": "Fixture Starter Partner 52",
+    "tier": "Starter",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Starter Partner 52. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Starter Partner 53",
+    "tier": "Starter",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Starter Partner 53. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Knowledge Partner 54",
+    "tier": "Knowledge",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp"
+  },
+  {
+    "name": "Fixture Knowledge Partner 55",
+    "tier": "Knowledge",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Knowledge Partner 55. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Event Partner 56",
+    "tier": "Event",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Event Partner 56. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Event Partner 57",
+    "tier": "Event",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp"
+  },
+  {
+    "name": "Fixture Event Partner 58",
+    "tier": "Event",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Event Partner 58. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Event Partner 59",
+    "tier": "Event",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Event Partner 59. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Event Partner 60",
+    "tier": "Event",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp"
+  },
+  {
+    "name": "Fixture Mobility Partner 61",
+    "tier": "Mobility",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Mobility Partner 61. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture University and Network Partner 62",
+    "tier": "University and Network",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture University and Network Partner 62. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture University and Network Partner 63",
+    "tier": "University and Network",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp"
+  },
+  {
+    "name": "Fixture University and Network Partner 64",
+    "tier": "University and Network",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture University and Network Partner 64. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture University and Network Partner 65",
+    "tier": "University and Network",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture University and Network Partner 65. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture University and Network Partner 66",
+    "tier": "University and Network",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp"
+  },
+  {
+    "name": "Fixture University and Network Partner 67",
+    "tier": "University and Network",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture University and Network Partner 67. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture University and Network Partner 68",
+    "tier": "University and Network",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture University and Network Partner 68. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture University and Network Partner 69",
+    "tier": "University and Network",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp"
+  },
+  {
+    "name": "Fixture Media Partner 70",
+    "tier": "Media",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Media Partner 70. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Media Partner 71",
+    "tier": "Media",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Media Partner 71. Two or three sentences on what the company does and what it offers at Q-Summit."
+  },
+  {
+    "name": "Fixture Media Partner 72",
+    "tier": "Media",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp"
+  },
+  {
+    "name": "Fixture Media Partner 73",
+    "tier": "Media",
+    "websiteUrl": "https://example.com",
+    "logoFilename": "fixture-missing-logo.webp",
+    "description": "Fixture description for Fixture Media Partner 73. Two or three sentences on what the company does and what it offers at Q-Summit."
   }
 ]

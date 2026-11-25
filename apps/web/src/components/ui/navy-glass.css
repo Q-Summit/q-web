@@ -1,0 +1,199 @@
+/*
+ * The 2027 navy pages beyond the homepage and the ticket page: /our-team,
+ * /past-teams, /job-listings and every job's own page (DESIGN.md NAVY-1).
+ * They stand on the homepage's navy (--q-night, home-theme.css) with soft
+ * pools of its blues, use its liquid glass buttons (.h-btn with .h-ice or
+ * .h-frost, the header's Tickets button) and melt into the white footer
+ * through the homepage's own fade (.h-page-fade). This file holds only
+ * what those four pages share on top of that: the page wrapper, its
+ * ground, and the radiant white glass of the ticket page's light surfaces
+ * (ticket-theme.css .t-light) for the toggle, the search, the filter, the
+ * job cards and the job sheet. Deviates from LAYOUT-1, COLOR-2, TYPE-1
+ * and DEPTH-1 as NAVY-1 allows.
+ */
+
+.n-page {
+  /* The homepage's grid gutter (home-theme.css .h-shell). */
+  --n-gutter: clamp(1rem, 4vw, 3rem);
+  /* Secondary navy text on white glass: navy toward the neutral grey. */
+  --n-ink-soft: color-mix(in srgb, var(--color-navy) 62%, var(--color-neutral));
+  /* The white glass (ticket-theme.css --t-white-shadow, with a black
+     shadow so it lifts off the navy as on the mockups). */
+  --n-white-edge: color-mix(
+    in srgb,
+    var(--color-neutral-lighter) 55%,
+    var(--color-ticket-ice)
+  );
+  --n-white-fill: linear-gradient(
+    180deg,
+    var(--color-white) 0%,
+    var(--color-white) 60%,
+    color-mix(in srgb, var(--color-white) 92%, var(--color-ticket-ice)) 100%
+  );
+  --n-white-shadow:
+    inset 0 1.5px 1px var(--color-white),
+    inset 0 0 28px -8px var(--n-white-edge),
+    inset 0 -42px 52px -38px var(--n-white-edge),
+    inset 0 -1.5px 2px
+      color-mix(in srgb, var(--color-ticket-sky) 25%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--color-white) 55%, transparent),
+    0 30px 60px -32px var(--color-black);
+  --n-white-rim: linear-gradient(
+    140deg,
+    var(--color-white) 0%,
+    color-mix(in srgb, var(--color-white) 70%, transparent) 30%,
+    color-mix(in srgb, var(--color-ticket-ice) 70%, transparent) 65%,
+    var(--color-white) 100%
+  );
+
+  position: relative;
+  isolation: isolate;
+  color: var(--color-white);
+}
+
+/* Headings take the page color (global.css sets navy for light pages). */
+.n-page :where(h1, h2, h3, h4) {
+  color: inherit;
+}
+
+/* The page under the content keeps the same navy, so overscroll and the
+   header spacer never flash white; the fade replaces the footer's
+   hairline, as on the homepage. */
+body:has(.n-page) {
+  background: var(--q-night);
+}
+
+body:has(.n-page) .site-footer {
+  border-top-color: transparent;
+}
+
+/* Soft pools of the homepage's deep blue and a little sky that scroll
+   with the page; sized in px and vw, not in % of the page, so a long and
+   a short page are lit alike. They die out before the page ends, so the
+   fade into the footer starts from the plain navy. */
+.n-ground {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    radial-gradient(
+      70vw 520px at 50% 420px,
+      color-mix(in srgb, var(--color-ticket-deep) 55%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      60vw 700px at 88% 1500px,
+      color-mix(in srgb, var(--color-ticket-deep) 70%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      50vw 600px at 0% 2300px,
+      color-mix(in srgb, var(--color-ticket-sky) 16%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      55vw 650px at 5% 55%,
+      color-mix(in srgb, var(--color-ticket-deep) 55%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      60vw 700px at 90% 72%,
+      color-mix(in srgb, var(--color-ticket-sky) 14%, transparent),
+      transparent 70%
+    );
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    var(--color-black) 0,
+    var(--color-black) calc(100% - 420px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    var(--color-black) 0,
+    var(--color-black) calc(100% - 420px),
+    transparent 100%
+  );
+}
+
+/* One page width with an even gutter, centered. */
+.n-shell {
+  width: 100%;
+  max-width: 76rem;
+  margin-inline: auto;
+  padding-inline: var(--n-gutter);
+}
+
+/* Radiant white glass: a plain white body (navy type at full contrast),
+   the glass and its depth only at the edges: a lit top line, cool
+   grey-ice shading inside the edges, deepest along the foot, a white rim
+   against the navy, a one-pixel specular rim and a deep shadow. */
+.n-white {
+  position: relative;
+  isolation: isolate;
+  background: var(--n-white-fill);
+  box-shadow: var(--n-white-shadow);
+  color: var(--color-navy);
+}
+
+.n-white::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--n-white-rim);
+  pointer-events: none;
+  -webkit-mask:
+    linear-gradient(var(--color-black) 0 0) content-box,
+    linear-gradient(var(--color-black) 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(var(--color-black) 0 0) content-box exclude,
+    linear-gradient(var(--color-black) 0 0);
+}
+
+/* The sliding drop of a segmented control (the team toggle, the job
+   filter): the Tickets button's icy glass exactly (home-theme.css .h-ice),
+   its fill, shadow and rim, nothing more. */
+.n-drop {
+  position: absolute;
+  z-index: 0;
+  left: 0;
+  width: 0;
+  border-radius: var(--radius-ticket-pill);
+  background: var(--hg-fill);
+  box-shadow: var(--hg-shadow);
+  transition:
+    transform var(--duration-glass-unfold) var(--ease-snappy),
+    width var(--duration-glass-unfold) var(--ease-snappy);
+  will-change: transform;
+}
+
+.n-drop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--hg-rim);
+  -webkit-mask:
+    linear-gradient(var(--color-black) 0 0) content-box,
+    linear-gradient(var(--color-black) 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(var(--color-black) 0 0) content-box exclude,
+    linear-gradient(var(--color-black) 0 0);
+}
+
+/* Until the script has measured the drop it stays unseen; the chosen
+   option carries the ice itself (also the no-JS look). */
+.n-drop:not(.is-placed) {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .n-drop {
+    transition: none;
+  }
+}

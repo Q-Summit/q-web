@@ -1,0 +1,218 @@
+---
+// One partner audience page (/partner/startup/, /partner/corporate/,
+// /partner/investor/): a short opener, the benefits as cards and the
+// people to write to. All copy, benefits and contacts come from the
+// page-partner global (audiences.<key>), so the three pages share this
+// layout and differ only in content. Conference primitives throughout:
+// .section/.container, .section-header, .button, COMP-2 cards.
+import Button from "../ui/Button.astro";
+import Container from "../ui/Container.astro";
+import PersonPhoto from "../ui/PersonPhoto.astro";
+import Section from "../ui/Section.astro";
+import SectionHeader from "../ui/SectionHeader.astro";
+import type { PartnerAudience } from "../../lib/content";
+import { EVENTS } from "../../lib/analytics/events";
+
+interface Props {
+  /** Key under page-partner audiences, for live preview paths. */
+  audienceKey: string;
+  audience: PartnerAudience;
+  /** Label and href of the parent page, for the breadcrumb. */
+  parent: { label: string; href: string };
+}
+
+const { audienceKey, audience, parent } = Astro.props;
+const lp = (field: string) => `audiences.${audienceKey}.${field}`;
+---
+
+<Section small aria-labelledby="audience-heading">
+  <Container>
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <ol>
+        <li><a href={parent.href}>{parent.label}</a></li>
+        <li aria-current="page">{audience.label}</li>
+      </ol>
+    </nav>
+    <div class="audience-opener">
+      <h1 id="audience-heading" data-lp={lp("heading")}>{audience.heading}</h1>
+      <p data-lp={lp("intro")}>{audience.intro}</p>
+    </div>
+  </Container>
+</Section>
+
+{
+  audience.benefits.length > 0 && (
+    <Section variant="alternate" aria-labelledby="audience-benefits-heading">
+      <Container>
+        <SectionHeader>
+          <h2 id="audience-benefits-heading" data-lp={lp("benefitsHeading")}>
+            {audience.benefitsHeading}
+          </h2>
+        </SectionHeader>
+        <ul class="benefits">
+          {audience.benefits.map((benefit, i) => (
+            <li class="benefit">
+              <h3 data-lp={lp(`benefits.${i}.title`)}>{benefit.title}</h3>
+              <p data-lp={lp(`benefits.${i}.description`)}>
+                {benefit.description}
+              </p>
+            </li>
+          ))}
+        </ul>
+      </Container>
+    </Section>
+  )
+}
+
+{
+  audience.contacts.length > 0 && (
+    <Section aria-labelledby="audience-contacts-heading">
+      <Container>
+        <SectionHeader>
+          <h2 id="audience-contacts-heading" data-lp={lp("contactsHeading")}>
+            {audience.contactsHeading}
+          </h2>
+        </SectionHeader>
+        <ul class="contacts">
+          {audience.contacts.map((contact) => (
+            <li class="contact">
+              <div class="contact-photo">
+                <PersonPhoto
+                  name={contact.name}
+                  filename={contact.photoFilename}
+                  widths={[128, 256]}
+                  sizes="8rem"
+                />
+              </div>
+              <div class="contact-copy">
+                <h3>{contact.name}</h3>
+                {contact.role && <p>{contact.role}</p>}
+              </div>
+              <Button
+                small
+                href={`mailto:${contact.email}`}
+                data-ph-event={EVENTS.partner_cta_clicked}
+                data-ph-prop-cta-label={audience.contactLabel}
+              >
+                {audience.contactLabel}
+              </Button>
+            </li>
+          ))}
+        </ul>
+      </Container>
+    </Section>
+  )
+}
+
+<style>
+  .breadcrumb ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs);
+    margin: 0 0 var(--space-lg);
+    padding: 0;
+    list-style: none;
+    color: var(--color-neutral-dark);
+    font-size: var(--text-size-small);
+  }
+
+  .breadcrumb li + li::before {
+    content: "/";
+    margin-right: var(--space-2xs);
+    color: var(--color-neutral-light);
+  }
+
+  .breadcrumb a {
+    color: var(--color-heading);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  /* Left-aligned opener, like the program FAQ header (LAYOUT-4): it reads
+     on from the breadcrumb above it, which is left-aligned too. */
+  .audience-opener {
+    max-width: var(--container-medium);
+  }
+
+  /* No balanced wrapping: it splits "Q-Summit" at its hyphen. The h1 sits
+     at the h2 size, a sub-page opener under its breadcrumb (TYPE-1, as
+     PARTNER-1 allows). */
+  .audience-opener h1 {
+    margin-bottom: var(--space-sm);
+    font-size: var(--heading-h2-size);
+  }
+
+  .audience-opener p {
+    max-width: var(--container-small);
+    margin: 0;
+    color: var(--color-neutral-dark);
+    font-size: var(--text-size-large);
+  }
+
+  .benefits {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+    gap: var(--space-md);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* COMP-2 card: card radius and the neutral hairline. */
+  .benefit {
+    padding: var(--space-lg);
+    background-color: var(--color-background);
+    border: 1px solid var(--color-neutral-lighter);
+    border-radius: var(--radius-card);
+  }
+
+  /* Card titles at the h6 size (TYPE-1, as PARTNER-1 allows). */
+  .benefit h3 {
+    margin-bottom: var(--space-xs);
+    font-size: var(--heading-h6-size);
+  }
+
+  .benefit p {
+    margin: 0;
+    color: var(--color-neutral-dark);
+  }
+
+  .contacts {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-lg);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .contact {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-sm);
+    width: min(100%, 16rem);
+    padding: var(--space-lg) var(--space-md);
+    text-align: center;
+    border: 1px solid var(--color-neutral-lighter);
+    border-radius: var(--radius-card);
+  }
+
+  .contact-photo {
+    width: 8rem;
+    height: 8rem;
+    border-radius: var(--radius-circle);
+  }
+
+  /* Same card-title size as the benefits (TYPE-1). */
+  .contact-copy h3 {
+    margin: 0;
+    font-size: var(--heading-h6-size);
+  }
+
+  .contact-copy p {
+    margin: 0;
+    color: var(--color-neutral-dark);
+    font-size: var(--text-size-small);
+  }
+</style>

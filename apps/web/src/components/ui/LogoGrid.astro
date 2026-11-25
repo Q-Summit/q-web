@@ -1,7 +1,10 @@
 ---
 // Shared pattern component (COMP-3, PRIM-3): the centered flex-wrap wall of
-// logo cards that the partner tier walls (partner/LogoWall) render, capped at
+// logo cards that the partner tier walls rendered, capped at
 // --container-medium with fixed-size cards, a hover lift and contained logos.
+// Since /partner/ shows its tiers in its own logo grid (DESIGN.md
+// PARTNER-1), the `tier` skin has no page consumer either; LogoGrid.vrt.ts
+// keeps it covered until a cleanup removes the component or a page reuses it.
 //
 // Like Timeline, and unlike the style-less shells next to it, this primitive
 // owns its CSS. PRIM-2's boundary is about scoped CSS reaching elements the

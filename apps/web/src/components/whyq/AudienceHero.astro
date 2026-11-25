@@ -1,0 +1,292 @@
+---
+// Opener of a /whyq/<audience>/ page (DESIGN.md WHYQ-1), laid out as the
+// team's page template (centered): the breadcrumb, the headline with its
+// last words in ice, the intro, the event line on a dark glass pill, the
+// ticket link in icy glass and under it the jump to the activities. Drawn
+// in the 2027 homepage's system (HOME-1): its display type, its glass and
+// the hero's pool of light (home-theme.css .hx-light). The parts rise in
+// once when the page loads (whyq.client.ts).
+import IconArrowRight from "../icons/IconArrowRight.astro";
+import { EVENTS } from "../../lib/analytics/events";
+import "../home/home-theme.css";
+import "./whyq-theme.css";
+
+interface Props {
+  /** Label of the nav item the pages belong to ("Why Q?"). */
+  parentLabel: string;
+  /** Where the breadcrumb's first step leads. */
+  parentHref: string;
+  crumb: string;
+  heading: string;
+  intro: string;
+  eventLine: string;
+  ctaLabel: string;
+  ctaHref: string;
+  jumpLabel: string;
+  jumpHref: string;
+  /** Audience slug, for the click event. */
+  audience: string;
+}
+
+const {
+  parentLabel,
+  parentHref,
+  crumb,
+  heading,
+  intro,
+  eventLine,
+  ctaLabel,
+  ctaHref,
+  jumpLabel,
+  jumpHref,
+  audience,
+} = Astro.props;
+
+// The last words of the headline carry the ice accent, as on the homepage.
+const words = heading.trim().split(/\s+/);
+const accentCount = words.length > 3 ? 2 : 1;
+const headLead = words.slice(0, -accentCount).join(" ");
+const headAccent = words.slice(-accentCount).join(" ");
+---
+
+<section class="wq-hero" aria-labelledby="whyq-hero-title">
+  <span class="hx-light wq-hero-light" aria-hidden="true"></span>
+  <div class="h-shell wq-hero-grid">
+    <nav class="wq-crumb" aria-label="Breadcrumb" data-wq-in>
+      <a href={parentHref}>{parentLabel}</a>
+      <span aria-hidden="true">›</span>
+      <span aria-current="page">{crumb}</span>
+    </nav>
+
+    <h1 class="wq-title" id="whyq-hero-title" data-wq-in>
+      {headLead}{" "}<span class="h-accent">{headAccent}</span>
+    </h1>
+
+    <p class="wq-lead" data-wq-in>{intro}</p>
+
+    {
+      eventLine && (
+        <p class="wq-event h-glass" data-wq-in>
+          {eventLine}
+        </p>
+      )
+    }
+
+    <div class="wq-actions" data-wq-in>
+      <a
+        class="h-btn h-ice wq-buy"
+        href={ctaHref}
+        data-ph-event={EVENTS.whyq_ticket_clicked}
+        data-ph-prop-audience={audience}
+        data-ph-prop-placement="hero"
+      >
+        {ctaLabel}
+        <IconArrowRight />
+      </a>
+      <a class="wq-jump" href={jumpHref}>
+        {jumpLabel}
+        <span aria-hidden="true">↓</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* DESIGN.md WHYQ-1: the homepage hero's type, glass and light (HOME-1),
+     centered as in the team's template. */
+  .wq-hero {
+    --hx-spot-x: 50%;
+    --hx-spot-y: 38%;
+    --hx-spot-size: 52%;
+
+    position: relative;
+    isolation: isolate;
+    padding-block: clamp(var(--space-xl), 8vw, 7rem)
+      clamp(var(--space-lg), 5vw, 4rem);
+    text-align: center;
+  }
+
+  .wq-hero-light {
+    position: absolute;
+    inset: calc(-1 * var(--h-header-height)) 0 0;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .wq-hero-grid {
+    display: grid;
+    justify-items: center;
+  }
+
+  .wq-crumb {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: baseline;
+    gap: var(--space-2xs);
+    margin: 0 0 var(--space-md);
+    color: var(--h-text-soft);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .wq-crumb a {
+    color: var(--h-text-soft);
+    text-decoration: none;
+  }
+
+  .wq-crumb span[aria-current] {
+    color: var(--color-ticket-ice);
+  }
+
+  @media (hover: hover) {
+    .wq-crumb a:hover {
+      color: var(--color-white);
+      text-decoration: underline;
+      text-underline-offset: 0.3em;
+    }
+  }
+
+  .wq-title {
+    max-width: min(16ch, 100%);
+    margin: 0;
+    font-size: clamp(3rem, 7vw, 6.75rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.045em;
+    line-height: 0.95;
+    text-wrap: balance;
+  }
+
+  .wq-lead {
+    max-width: min(40rem, 100%);
+    margin: var(--space-md) 0 0;
+    color: var(--h-text-soft);
+    font-size: clamp(1.0625rem, 1.3vw, 1.1875rem);
+    line-height: 1.6;
+    text-wrap: pretty;
+  }
+
+  /* The event line on a small dark glass pill. */
+  .wq-event {
+    margin: var(--space-md) 0 0;
+    padding: var(--space-2xs) var(--space-md);
+    border-radius: var(--radius-ticket-pill);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .wq-actions {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-sm);
+    margin-top: var(--space-lg);
+  }
+
+  .wq-buy {
+    min-height: 3.75rem;
+    padding-inline: var(--space-lg);
+  }
+
+  /* On the narrowest phones the ticket link and the event line may wrap
+     rather than push the page wider than the screen (as the homepage's
+     sale link does, home/SalePhases.astro). */
+  .wq-event,
+  .wq-actions,
+  .wq-actions > * {
+    max-width: 100%;
+  }
+
+  @media (max-width: 479px) {
+    .wq-buy,
+    .wq-event {
+      white-space: normal;
+      text-align: center;
+      text-wrap: balance;
+    }
+
+    .wq-buy {
+      padding-inline: var(--space-md);
+    }
+
+    /* The headline in four lines at most, across the whole width. */
+    .wq-title {
+      max-width: none;
+      font-size: clamp(2.25rem, 10.5vw, 3rem);
+    }
+
+    .wq-event {
+      padding-inline: var(--space-sm);
+      letter-spacing: 0.08em;
+    }
+  }
+
+  .wq-jump {
+    display: inline-flex;
+    gap: var(--space-2xs);
+    color: var(--h-text-soft);
+    font-size: var(--text-size-small);
+    font-weight: var(--font-weight-semibold);
+    text-decoration: none;
+  }
+
+  @media (hover: hover) {
+    .wq-jump:hover {
+      color: var(--color-white);
+    }
+  }
+
+  .wq-jump:focus-visible {
+    outline: 2px solid var(--color-ticket-ice);
+    outline-offset: 3px;
+  }
+
+  @media (max-width: 767px) {
+    .wq-hero {
+      --hx-spot-y: 30%;
+      --hx-spot-size: 70%;
+    }
+  }
+
+  /* The entrance: each part rises in, a little apart (whyq.client.ts sets
+     .is-in on the hero once the page is ready; a failsafe shows it if the
+     script never runs). */
+  :global(.h-js) .wq-hero [data-wq-in] {
+    opacity: 0;
+    transform: translateY(1rem);
+    animation: h-failsafe var(--duration-hover) steps(1, end)
+      calc(var(--duration-reveal) * 6) forwards;
+  }
+
+  :global(.h-js) .wq-hero.is-in [data-wq-in] {
+    animation: h-rise var(--duration-reveal) var(--ease-emphasized) both;
+  }
+
+  :global(.h-js) .wq-hero.is-in [data-wq-in]:nth-child(2) {
+    animation-delay: calc(var(--duration-ticket-stagger) * 4);
+  }
+
+  :global(.h-js) .wq-hero.is-in [data-wq-in]:nth-child(3) {
+    animation-delay: calc(var(--duration-ticket-stagger) * 8);
+  }
+
+  :global(.h-js) .wq-hero.is-in [data-wq-in]:nth-child(4) {
+    animation-delay: calc(var(--duration-ticket-stagger) * 12);
+  }
+
+  :global(.h-js) .wq-hero.is-in [data-wq-in]:nth-child(5) {
+    animation-delay: calc(var(--duration-ticket-stagger) * 16);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(.h-js) .wq-hero [data-wq-in],
+    :global(.h-js) .wq-hero.is-in [data-wq-in] {
+      opacity: 1;
+      transform: none;
+      animation: none;
+    }
+  }
+</style>

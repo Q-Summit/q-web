@@ -65,7 +65,9 @@
   /* Ticket page 2027 only (DESIGN.md TICKETS-1). The Q27 CI guide's
      circular gradient (#3875df, #1b2284, #080739) plus its ice #bbe4ff,
      the cyan light fields of the Join Q quiz panel, and a light blue for
-     the pressed buy button. */
+     the pressed buy button. The home page (HOME-1) and the partner page
+     (PARTNER-1: midnight as its dark ground, deep and sky as its pools of
+     light, ice for the toned logos) use them too. */
   --color-ticket-ice: #bbe4ff;
   --color-ticket-cyan: #8fd8ff;
   --color-ticket-sky: #3875df;
@@ -234,6 +236,13 @@
   --duration-ticket-drift-alt: 19s;
   --duration-ticket-enter: 460ms;
   --duration-ticket-stagger: 18ms;
+
+  /* /past-teams history story (DESIGN.md HISTORY-1): the wheel of the scroll
+     cue's mouse rolls on a slow loop that stops for reduced motion. */
+  --duration-history-wheel: 1.6s;
+  /* Partner page intro (DESIGN.md PARTNER-1): the logos of the first two
+     tiers rise in one after the other, this far apart, once per load. */
+  --duration-partner-stagger: 60ms;
   /* Q-Hack motion (DESIGN.md HACK-1). The loops are small and slow: the
      caret blinks, the status dot and the play button pulse, the partner
      band passes once in --duration-hack-band, a light line breathes. The
@@ -305,6 +314,8 @@
   --radius-ticket-button: 10px;
   --radius-ticket-tile: 22px;
   --radius-ticket-pill: 999px;
+  /* The job text's sheet of white glass (DESIGN.md NAVY-1). */
+  --radius-ticket-sheet: 28px;
 
   /* Q-Hack radius (DESIGN.md HACK-1): the terminal windows. */
   --radius-hack-cta: 16px;

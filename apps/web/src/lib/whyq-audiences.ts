@@ -2,11 +2,11 @@
  * The audience pages under /whyq/<audience>/ (pages/whyq/[audience].astro).
  *
  * Together they are "Why Q?": there is no overview page any more (/whyq/
- * redirects to the audience tiles on the home page). They are provisional:
- * each one shows its audience's section of the page-whyq content on a
- * route of its own. The registry below is the one place that knows which routes
- * exist and which `whyq.audiences[].id` each one shows; the page, the llms
- * route table (lib/llms.ts) and the tests all read it.
+ * redirects to the audience tiles on the home page). Each one shows its row
+ * of the page-whyq "Audience pages" (`whyq.pages[]`, matched by slug). The
+ * registry below is the one place that knows which routes may exist; the
+ * page, the llms route table (lib/llms.ts) and the tests all read it, and a
+ * route whose row is missing is not built.
  *
  * Pure (no node:fs, no astro imports), so it is unit tested.
  */
@@ -16,7 +16,8 @@ import { normalizeInternalHref } from "./href";
 export interface WhyqAudiencePage {
   /** URL segment: the page lives at /whyq/<slug>/. */
   slug: string;
-  /** `whyq.audiences[].id` of the section this page shows. */
+  /** `whyq.audiences[].id` of the earlier section for this audience (kept
+   * for the record; the page shows its `whyq.pages[]` row). */
   audienceId: string;
 }
 

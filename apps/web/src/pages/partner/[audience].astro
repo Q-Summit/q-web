@@ -1,0 +1,33 @@
+---
+// The three partner audience pages: /partner/startup/, /partner/corporate/
+// and /partner/investor/. Each "Become a Partner" field on /partner/ leads
+// here. Copy, benefits and contacts come from the page-partner global
+// (audiences.<key>); an audience the CMS has not filled in yet is not
+// built (partnerAudiencePages warns), and its field on /partner/ is
+// dropped with it.
+import Base from "../../layouts/Base.astro";
+import AudienceDetail from "../../components/partner/AudienceDetail.astro";
+import { getPageContent, partnerAudiencePages } from "../../lib/content";
+
+export async function getStaticPaths() {
+  const { partner } = await getPageContent();
+  return partnerAudiencePages(partner).map(({ key, audience }) => ({
+    params: { audience: key },
+    props: { audienceKey: key, audience, parentLabel: partner.title },
+  }));
+}
+
+const { audienceKey, audience, parentLabel } = Astro.props;
+---
+
+<Base
+  title={audience.heading}
+  description={audience.intro}
+  livePreviewGlobal="page-partner"
+>
+  <AudienceDetail
+    audienceKey={audienceKey}
+    audience={audience}
+    parent={{ label: parentLabel, href: "/partner/" }}
+  />
+</Base>

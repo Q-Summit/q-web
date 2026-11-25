@@ -259,6 +259,490 @@
         "imageAlt": "A founder speaking on stage at Q-Summit",
         "imageLeft": false
       }
+    ],
+    "eventLine": "Fixture date · Fixture city · Fixture edition",
+    "pages": [
+      {
+        "audience": "students",
+        "crumb": "For Fixture Students",
+        "metaDescription": "Fixture description of the students page.",
+        "hero": {
+          "heading": "Fixture headline for students.",
+          "intro": "Sample copy for the hero used in CI builds.",
+          "ctaLabel": "Fixture ticket button"
+        },
+        "stats": [
+          {
+            "value": "1500+",
+            "label": "Fixture participants"
+          },
+          {
+            "value": "30+",
+            "label": "Fixture figure two"
+          },
+          {
+            "value": "60+",
+            "label": "Fixture figure three"
+          },
+          {
+            "value": "80+",
+            "label": "Fixture figure four"
+          }
+        ],
+        "activities": {
+          "heading": "Fixture activities",
+          "intro": "Sample copy for the activities row used in CI builds.",
+          "items": [
+            {
+              "title": "Fixture activity 1",
+              "text": "Sample copy for one activity card.",
+              "kind": "included",
+              "image": {
+                "file": "fixture-missing-photo.webp",
+                "alt": "Fixture photo 1"
+              }
+            },
+            {
+              "title": "Fixture activity 2",
+              "text": "Sample copy for one activity card.",
+              "kind": "apply"
+            },
+            {
+              "title": "Fixture activity 3",
+              "text": "Sample copy for one activity card.",
+              "kind": "included",
+              "image": {
+                "file": "fixture-missing-photo.webp",
+                "alt": "Fixture photo 3"
+              }
+            },
+            {
+              "title": "Fixture activity 4",
+              "text": "Sample copy for one activity card.",
+              "kind": "included"
+            },
+            {
+              "title": "Fixture activity 5",
+              "text": "Sample copy for one activity card.",
+              "kind": "apply",
+              "image": {
+                "file": "fixture-missing-photo.webp",
+                "alt": "Fixture photo 5"
+              }
+            },
+            {
+              "title": "Fixture activity 6",
+              "text": "Sample copy for one activity card.",
+              "kind": "included"
+            }
+          ]
+        },
+        "highlight": {
+          "layout": "cards",
+          "eyebrow": "Fixture highlight",
+          "heading": "Fixture cards heading",
+          "intro": "Sample copy for the highlight used in CI builds.",
+          "cards": [
+            {
+              "kicker": "Fixture",
+              "title": "Fixture card one",
+              "text": "Sample copy.",
+              "image": {
+                "file": "fixture-missing-photo.webp",
+                "alt": "Fixture photo 1"
+              }
+            },
+            {
+              "kicker": "Fixture",
+              "title": "Fixture card two",
+              "text": "Sample copy."
+            }
+          ]
+        },
+        "ticket": {
+          "heading": "Fixture tickets",
+          "intro": "Sample copy for the ticket section.",
+          "keys": ["student", "young-professional"],
+          "includesHeading": "Fixture list heading",
+          "includes": [
+            "Fixture line one",
+            "Fixture line two",
+            "Fixture line three"
+          ]
+        },
+        "faq": {
+          "heading": "Fixture questions",
+          "items": [
+            {
+              "question": "Fixture question one?",
+              "answer": "Sample answer used in CI builds."
+            },
+            {
+              "question": "Will ticket prices go up?",
+              "answer": "Fixture answer: the regular price is {regular:student} and {regular:young-professional}."
+            }
+          ]
+        }
+      },
+      {
+        "audience": "startups",
+        "crumb": "For Fixture Startups",
+        "metaDescription": "Fixture description of the startups page.",
+        "hero": {
+          "heading": "Fixture headline for startups.",
+          "intro": "Sample copy for the hero used in CI builds.",
+          "ctaLabel": "Fixture ticket button"
+        },
+        "stats": [
+          {
+            "value": "1500+",
+            "label": "Fixture participants"
+          },
+          {
+            "value": "30+",
+            "label": "Fixture figure two"
+          },
+          {
+            "value": "60+",
+            "label": "Fixture figure three"
+          },
+          {
+            "value": "80+",
+            "label": "Fixture figure four"
+          }
+        ],
+        "activities": {
+          "heading": "Fixture activities",
+          "intro": "Sample copy for the activities row used in CI builds.",
+          "items": [
+            {
+              "title": "Fixture activity 1",
+              "text": "Sample copy for one activity card.",
+              "kind": "included",
+              "image": {
+                "file": "fixture-missing-photo.webp",
+                "alt": "Fixture photo 1"
+              }
+            },
+            {
+              "title": "Fixture activity 2",
+              "text": "Sample copy for one activity card.",
+              "kind": "apply"
+            },
+            {
+              "title": "Fixture activity 3",
+              "text": "Sample copy for one activity card.",
+              "kind": "included",
+              "image": {
+                "file": "fixture-missing-photo.webp",
+                "alt": "Fixture photo 3"
+              }
+            },
+            {
+              "title": "Fixture activity 4",
+              "text": "Sample copy for one activity card.",
+              "kind": "included"
+            }
+          ]
+        },
+        "highlight": {
+          "layout": "winner",
+          "eyebrow": "Fixture highlight",
+          "heading": "Fixture winner heading",
+          "intro": "Sample copy for the highlight used in CI builds.",
+          "winnerLabel": "Fixture winner label",
+          "winnerName": "Fixture Startup",
+          "moments": [
+            {
+              "alt": "Fixture moment one"
+            },
+            {
+              "alt": "Fixture moment two",
+              "image": {
+                "file": "fixture-missing-photo.webp",
+                "alt": "Fixture photo 2"
+              }
+            },
+            {
+              "alt": "Fixture moment three"
+            }
+          ]
+        },
+        "ticket": {
+          "heading": "Fixture tickets",
+          "intro": "Sample copy.",
+          "keys": ["start-up"],
+          "side": [
+            {
+              "title": "Fixture side card",
+              "text": "Sample copy.",
+              "status": "Included"
+            },
+            {
+              "title": "Fixture side card two",
+              "text": "Sample copy.",
+              "status": "Fixture soon"
+            }
+          ]
+        },
+        "faq": {
+          "heading": "Fixture questions",
+          "items": [
+            {
+              "question": "Fixture question one?",
+              "answer": "Sample answer used in CI builds."
+            },
+            {
+              "question": "Will ticket prices go up?",
+              "answer": "Fixture answer: the regular price is {regular:start-up}."
+            }
+          ]
+        }
+      },
+      {
+        "audience": "corporates",
+        "crumb": "For Fixture Corporates",
+        "metaDescription": "Fixture description of the corporates page.",
+        "hero": {
+          "heading": "Fixture headline for corporates.",
+          "intro": "Sample copy for the hero used in CI builds.",
+          "ctaLabel": "Fixture ticket button"
+        },
+        "stats": [
+          {
+            "value": "1500+",
+            "label": "Fixture participants"
+          },
+          {
+            "value": "30+",
+            "label": "Fixture figure two"
+          },
+          {
+            "value": "60+",
+            "label": "Fixture figure three"
+          },
+          {
+            "value": "80+",
+            "label": "Fixture figure four"
+          }
+        ],
+        "activities": {
+          "heading": "Fixture activities",
+          "intro": "Sample copy for the activities row used in CI builds.",
+          "items": [
+            {
+              "title": "Fixture activity 1",
+              "text": "Sample copy for one activity card.",
+              "kind": "included",
+              "image": {
+                "file": "fixture-missing-photo.webp",
+                "alt": "Fixture photo 1"
+              }
+            },
+            {
+              "title": "Fixture activity 2",
+              "text": "Sample copy for one activity card.",
+              "kind": "apply"
+            },
+            {
+              "title": "Fixture activity 3",
+              "text": "Sample copy for one activity card.",
+              "kind": "included",
+              "image": {
+                "file": "fixture-missing-photo.webp",
+                "alt": "Fixture photo 3"
+              }
+            }
+          ]
+        },
+        "highlight": {
+          "layout": "logos",
+          "eyebrow": "Fixture highlight",
+          "heading": "Fixture logo heading",
+          "intro": "Sample copy for the highlight used in CI builds.",
+          "logos": [
+            {
+              "name": "Fixture Company One",
+              "href": "https://example.com"
+            },
+            {
+              "name": "Fixture Company Two"
+            },
+            {
+              "name": "Fixture Company Three",
+              "href": "https://example.com"
+            }
+          ]
+        },
+        "ticket": {
+          "heading": "Fixture tickets",
+          "intro": "Sample copy.",
+          "keys": ["corporate"],
+          "side": [
+            {
+              "title": "Fixture side card",
+              "text": "Sample copy.",
+              "status": "Included"
+            },
+            {
+              "title": "Fixture side card two",
+              "text": "Sample copy.",
+              "status": "Fixture soon"
+            }
+          ],
+          "partnerPanel": {
+            "eyebrow": "Fixture panel",
+            "heading": "Fixture panel heading",
+            "text": "Sample copy for the partner panel.",
+            "perks": [
+              "Fixture perk one",
+              "Fixture perk two",
+              "Fixture perk three"
+            ],
+            "linkLabel": "Fixture partner link",
+            "href": "/partner/"
+          }
+        },
+        "faq": {
+          "heading": "Fixture questions",
+          "items": [
+            {
+              "question": "Fixture question one?",
+              "answer": "Sample answer used in CI builds."
+            },
+            {
+              "question": "Will ticket prices go up?",
+              "answer": "Fixture answer: the regular price is {regular:corporate}."
+            }
+          ]
+        }
+      },
+      {
+        "audience": "investors",
+        "crumb": "For Fixture Investors",
+        "metaDescription": "Fixture description of the investors page.",
+        "hero": {
+          "heading": "Fixture headline for investors.",
+          "intro": "Sample copy for the hero used in CI builds.",
+          "ctaLabel": "Fixture ticket button"
+        },
+        "stats": [
+          {
+            "value": "1500+",
+            "label": "Fixture participants"
+          },
+          {
+            "value": "30+",
+            "label": "Fixture figure two"
+          },
+          {
+            "value": "60+",
+            "label": "Fixture figure three"
+          },
+          {
+            "value": "80+",
+            "label": "Fixture figure four"
+          }
+        ],
+        "activities": {
+          "heading": "Fixture activities",
+          "intro": "Sample copy for the activities row used in CI builds.",
+          "items": [
+            {
+              "title": "Fixture activity 1",
+              "text": "Sample copy for one activity card.",
+              "kind": "included",
+              "image": {
+                "file": "fixture-missing-photo.webp",
+                "alt": "Fixture photo 1"
+              }
+            },
+            {
+              "title": "Fixture activity 2",
+              "text": "Sample copy for one activity card.",
+              "kind": "apply"
+            },
+            {
+              "title": "Fixture activity 3",
+              "text": "Sample copy for one activity card.",
+              "kind": "included",
+              "image": {
+                "file": "fixture-missing-photo.webp",
+                "alt": "Fixture photo 3"
+              }
+            },
+            {
+              "title": "Fixture activity 4",
+              "text": "Sample copy for one activity card.",
+              "kind": "included"
+            },
+            {
+              "title": "Fixture activity 5",
+              "text": "Sample copy for one activity card.",
+              "kind": "apply",
+              "image": {
+                "file": "fixture-missing-photo.webp",
+                "alt": "Fixture photo 5"
+              }
+            }
+          ]
+        },
+        "highlight": {
+          "layout": "qube",
+          "eyebrow": "Fixture highlight",
+          "heading": "Fixture qube heading",
+          "intro": "Sample copy for the highlight used in CI builds.",
+          "image": {
+            "file": "fixture-missing-photo.webp",
+            "alt": "Fixture photo 3"
+          },
+          "logosEyebrow": "Fixture logos",
+          "logosHeading": "Fixture logos heading",
+          "logos": [
+            {
+              "name": "Fixture Company One",
+              "href": "https://example.com"
+            },
+            {
+              "name": "Fixture Company Two"
+            },
+            {
+              "name": "Fixture Company Three",
+              "href": "https://example.com"
+            }
+          ]
+        },
+        "ticket": {
+          "heading": "Fixture tickets",
+          "intro": "Sample copy.",
+          "keys": ["investor"],
+          "side": [
+            {
+              "title": "Fixture side card",
+              "text": "Sample copy.",
+              "status": "Included"
+            },
+            {
+              "title": "Fixture side card two",
+              "text": "Sample copy.",
+              "status": "Fixture soon"
+            }
+          ]
+        },
+        "faq": {
+          "heading": "Fixture questions",
+          "items": [
+            {
+              "question": "Fixture question one?",
+              "answer": "Sample answer used in CI builds."
+            },
+            {
+              "question": "Will ticket prices go up?",
+              "answer": "Fixture answer: the regular price is {regular:investor}."
+            }
+          ]
+        }
+      }
     ]
   },
   "program": {
@@ -957,23 +1441,193 @@
   "ourTeam": {
     "title": "Our Team",
     "metaDescription": "Get to know the current Q-Summit organizing team: the students behind Germany's largest student-organized startup conference.",
-    "heading": "Get to know our Team!"
+    "heading": "Get to know our Team!",
+    "tabLabel": "Current Team",
+    "divisionHeading": "{division} Division"
   },
   "pastTeams": {
     "title": "Past Teams",
     "metaDescription": "A thank you to the former Q-Summit teams whose dedication since 2016 laid the foundation for Germany's largest student-organized startup conference.",
     "heading": "Get to know our Team!",
-    "intro": "Our former teams have been an integral part of Q-Summit’s journey. We are deeply grateful for their commitment, passion, and shared belief in our vision. Since 2016, their dedication laid the foundation for what Q-Summit is today, and their collective efforts continue to inspire our growth and future success."
+    "intro": "Our former teams have been an integral part of Q-Summit’s journey. We are deeply grateful for their commitment, passion, and shared belief in our vision. Since 2016, their dedication laid the foundation for what Q-Summit is today, and their collective efforts continue to inspire our growth and future success.",
+    "tabLabel": "History",
+    "yearHeading": "Year {year}",
+    "photoAlt": "The Q-Summit team of {year}",
+    "story": {
+      "heroEyebrow": "Fixture story eyebrow",
+      "heroHeading": "Fixture story heading",
+      "heroLead": "Fixture lead paragraph for the history story.",
+      "cueLabel": "Fixture cue button",
+      "originEyebrow": "2017 · Fixture origin",
+      "originHeading": "Fixture origin heading",
+      "originSub": "Fixture origin subline",
+      "originText": "Fixture paragraph about how the conference began.",
+      "teamsEyebrow": "Fixture teams eyebrow",
+      "teamsHeading": "Fixture teams heading",
+      "teamsText": "Fixture paragraph about the teams over the years.",
+      "albumEyebrow": "Fixture album eyebrow",
+      "albumHeading": "Fixture album heading",
+      "albumHint": "Fixture hint: scroll or use the arrow keys",
+      "albumHintTouch": "Fixture hint: swipe to flip",
+      "backLabel": "Fixture back to start",
+      "closingEyebrow": "Fixture closing eyebrow",
+      "closingHeading": "Fixture closing heading",
+      "closingText": "Fixture closing paragraph for the history story.",
+      "closingButtonLabel": "Fixture meet the team"
+    }
   },
   "partner": {
     "title": "Partner",
     "metaDescription": "Get to know the numerous supporters and partners of Q-Summit.",
-    "heading": "Get to know our Partners of Q-Summit 2026!",
+    "projector": {
+      "eyebrow": "Fixture eyebrow",
+      "heading": "Fixture partner page heading",
+      "intro": "",
+      "hint": "Fixture hint for the tier tabs",
+      "tierSuffix": "Partner",
+      "websiteLabel": "Example website button"
+    },
+    "heading": "Fixture quotes heading",
+    "quotesHint": "Fixture hint: tap the quote mark on a photo.",
     "cta": {
-      "heading": "Join Us as a Partner",
-      "text": "Unlock new possibilities for collaboration.",
-      "buttonLabel": "Inquire",
-      "buttonHref": "mailto:lennart.fielhauer@q-summit.com"
+      "eyebrow": "Fixture eyebrow",
+      "heading": "Fixture Become a Partner heading",
+      "text": "Placeholder text for the Become a Partner section. Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "points": [
+        "Fixture point one",
+        "Fixture point two",
+        "Fixture point three"
+      ],
+      "buttonLabel": "Example inquiry button",
+      "buttonHref": "mailto:partners@example.com",
+      "contact": {
+        "name": "Example Contact",
+        "role": "Example Partner Relations",
+        "email": "partners@example.com",
+        "copyLabel": "Copy address",
+        "copiedLabel": "Copied",
+        "photoFilename": "fixture-missing-photo.webp"
+      }
+    },
+    "audiences": {
+      "startup": {
+        "label": "Startups",
+        "summary": "Placeholder summary for startup partners. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor.",
+        "linkLabel": "Partner as a startup",
+        "heading": "Partner with Q-Summit as a startup",
+        "intro": "Placeholder intro for the startup partner page. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore.",
+        "benefitsHeading": "What you get",
+        "benefits": [
+          {
+            "title": "Example benefit 1",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation."
+          },
+          {
+            "title": "Example benefit 2",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation."
+          },
+          {
+            "title": "Example benefit 3",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation."
+          },
+          {
+            "title": "Example benefit 4",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation."
+          }
+        ],
+        "contactsHeading": "Your contacts",
+        "contactLabel": "Write an email",
+        "contacts": [
+          {
+            "name": "Example Contact",
+            "role": "Example Startup Partnerships",
+            "email": "startup@example.com",
+            "photoFilename": "fixture-missing-photo.webp"
+          },
+          {
+            "name": "Sample Person",
+            "role": "Example Startup Partnerships",
+            "email": "startup.team@example.com"
+          }
+        ]
+      },
+      "corporate": {
+        "label": "Corporates",
+        "summary": "Placeholder summary for corporate partners. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor.",
+        "linkLabel": "Partner as a corporate",
+        "heading": "Partner with Q-Summit as a corporate",
+        "intro": "Placeholder intro for the corporate partner page. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore.",
+        "benefitsHeading": "What you get",
+        "benefits": [
+          {
+            "title": "Example benefit 1",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation."
+          },
+          {
+            "title": "Example benefit 2",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation."
+          },
+          {
+            "title": "Example benefit 3",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation."
+          },
+          {
+            "title": "Example benefit 4",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation."
+          }
+        ],
+        "contactsHeading": "Your contacts",
+        "contactLabel": "Write an email",
+        "contacts": [
+          {
+            "name": "Example Contact",
+            "role": "Example Corporate Partnerships",
+            "email": "corporate@example.com",
+            "photoFilename": "fixture-missing-photo.webp"
+          },
+          {
+            "name": "Sample Person",
+            "role": "Example Corporate Partnerships",
+            "email": "corporate.team@example.com"
+          }
+        ]
+      },
+      "investor": {
+        "label": "Investors",
+        "summary": "Placeholder summary for investor partners. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor.",
+        "linkLabel": "Partner as an investor",
+        "heading": "Partner with Q-Summit as an investor",
+        "intro": "Placeholder intro for the investor partner page. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore.",
+        "benefitsHeading": "What you get",
+        "benefits": [
+          {
+            "title": "Example benefit 1",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation."
+          },
+          {
+            "title": "Example benefit 2",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation."
+          },
+          {
+            "title": "Example benefit 3",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation."
+          },
+          {
+            "title": "Example benefit 4",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation."
+          }
+        ],
+        "contactsHeading": "Your contacts",
+        "contactLabel": "Write an email",
+        "contacts": [
+          {
+            "name": "Example Contact",
+            "role": "Example Investor Partnerships",
+            "email": "investor@example.com",
+            "photoFilename": "fixture-missing-photo.webp"
+          }
+        ]
+      }
     }
   },
   "speaker": {

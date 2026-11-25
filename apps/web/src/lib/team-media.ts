@@ -8,10 +8,56 @@ import { existsSync } from "node:fs";
 import { MEDIA_DIR, variant } from "./media-filename";
 
 /**
- * Group-photo LCP asset. Named `-p-1600` on purpose: R2 has no unsuffixed
- * original. Keep in sync with contact-legal/ReachOut.astro srcset.
+ * Group photo of the hero on both team pages (the LCP element there). The
+ * photo is set in the CMS (Our Team > heroImage); until it is, the hero
+ * shows the 2027 photo below. A photo uploaded in the three widths, each
+ * under its own name ending in -p-1280, -p-1920 and -p-2560 (pick the
+ * 2560 one in the CMS), is served as a srcset, so each screen loads only
+ * the size it needs; any other file is served as it is.
  */
-export const TEAM_HERO_PHOTO = "6a3aa1fe255b386868d8b214_Q2027-CT-p-1600.jpg";
+export const TEAM_HERO_WIDTHS = [1280, 1920, 2560] as const;
+
+export interface TeamHeroSources {
+  src: string;
+  srcset: string | undefined;
+  width: number;
+  height: number;
+}
+
+const BUILT_IN_HERO = {
+  file: "team-2027-hero-p-2560.webp",
+  width: 2560,
+  height: 1707,
+};
+
+export function teamHeroSources(photo?: {
+  file: string;
+  width?: number;
+  height?: number;
+}): TeamHeroSources {
+  const hero = photo?.file ? photo : BUILT_IN_HERO;
+  const width = hero.width ?? BUILT_IN_HERO.width;
+  const height = hero.height ?? BUILT_IN_HERO.height;
+  const sized = /^(.*)-p-(\d+)(\.[a-z0-9]+)$/i.exec(hero.file);
+  const largest = sized ? Number(sized[2]) : 0;
+  const widths = sized ? TEAM_HERO_WIDTHS.filter((w) => w <= largest) : [];
+  if (!sized || widths.at(-1) !== largest) {
+    return {
+      src: `/media/${encodeURIComponent(hero.file)}`,
+      srcset: undefined,
+      width,
+      height,
+    };
+  }
+  const at = (w: number) =>
+    `/media/${encodeURIComponent(`${sized[1]}-p-${w}${sized[3]}`)}`;
+  return {
+    src: at(widths.length > 1 ? widths[widths.length - 2] : largest),
+    srcset: widths.map((w) => `${at(w)} ${w}w`).join(", "),
+    width,
+    height,
+  };
+}
 
 export interface ResponsivePhoto {
   src: string;

@@ -21,7 +21,9 @@ export const EVENTS = {
   ticket_page_viewed: "ticket_page_viewed",
   /** Primary CTA in the homepage hero. Props: cta_label, cta_href. */
   hero_cta_clicked: "hero_cta_clicked",
-  /** "Join Us as a Partner" CTA on the partner page. Props: cta_label. */
+  /** Partner inquiry: the general inquiry button under Become a Partner on
+   * /partner/ and the contact email buttons on /partner/<audience>/.
+   * Props: cta_label (the button label, never a name or address). */
   partner_cta_clicked: "partner_cta_clicked",
   /** Hackathon contact CTA. Props: cta_href. */
   hackathon_contact_clicked: "hackathon_contact_clicked",
@@ -41,6 +43,10 @@ export const EVENTS = {
   kickoff_apply_clicked: "kickoff_apply_clicked",
   /** Hackathon apply CTA to the external event page (hero or closing band). Props: cta_placement, cta_href. */
   hackathon_apply_clicked: "hackathon_apply_clicked",
+  /** A Why Q audience page viewed (students, startups, corporates or investors); top of that audience's ticket funnel. Props: audience. */
+  whyq_audience_viewed: "whyq_audience_viewed",
+  /** Ticket CTA on a Why Q audience page (hero button or ticket card), on its way to the ticket page. Props: audience, placement, tier_name (ticket card only). */
+  whyq_ticket_clicked: "whyq_ticket_clicked",
 } as const;
 
 export type EventName = keyof typeof EVENTS;

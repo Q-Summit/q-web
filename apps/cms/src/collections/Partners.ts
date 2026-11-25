@@ -74,6 +74,34 @@ export const Partners: CollectionConfig = draftCollection({
       }),
     },
     {
+      // The partner page shows every logo in white and ice blue on its
+      // dark ground (apps/web DESIGN.md PARTNER-1), toned automatically
+      // from the regular logo. This file, when set, is shown as it is
+      // instead. The pop-up always shows the regular logo.
+      name: "logoOnDark",
+      type: "upload",
+      relationTo: "media",
+      label: "Logo for dark backgrounds",
+      admin: {
+        className: "qs-logo-field",
+        sortOptions: "-createdAt",
+        description:
+          "Optional. The partner's official white logo, as the company provides it for dark backgrounds. /partner/ shows every logo in white and light blue on dark blue, toned automatically from the regular logo; with this file the official white version is shown instead. Worth it when the automatic version looks wrong, for example a logo with a detailed picture inside.",
+      },
+      filterOptions: () => ({
+        mimeType: { in: ["image/svg+xml", "image/png", "image/webp"] },
+      }),
+    },
+    {
+      name: "description",
+      type: "textarea",
+      maxLength: 320,
+      admin: {
+        description:
+          "Optional. Two or three sentences: what the company does and what it offers at Q-Summit. Shown in the pop-up that opens when a visitor picks this partner on /partner/. Without it the pop-up shows the logo and the website button only.",
+      },
+    },
+    {
       name: "tier",
       type: "select",
       required: true,

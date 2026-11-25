@@ -26,9 +26,16 @@ export interface Partner {
   tier: PartnerTier;
   websiteUrl: string;
   logoFilename: string;
+  /** Two or three sentences for the pop-up on /partner/; optional. */
+  description?: string;
   /** Intrinsic logo size from the CMS Media doc; unset in JSON mode (the logo manifest covers those). */
   logoWidth?: number;
   logoHeight?: number;
+  /** The partner's own white logo for dark grounds (/partner/); unset puts
+   * the regular logo on a white plate there. Sizes as for the logo. */
+  logoOnDarkFilename?: string;
+  logoOnDarkWidth?: number;
+  logoOnDarkHeight?: number;
 }
 
 export interface PartnerTestimonial {
@@ -55,13 +62,33 @@ interface CmsPartnerDoc {
   name: string;
   tier: string;
   websiteUrl: string;
+  description?: string | null;
   logo: CmsMediaRef | number | string | null;
+  logoOnDark?: CmsMediaRef | number | string | null;
   order?: number | null;
 }
 
 async function cmsGetPartnerDocs(): Promise<CmsPartnerDoc[]> {
   const docs = await fetchPublishedDocs<CmsPartnerDoc>("partners");
   return docs.sort(stableOrderCompare);
+}
+
+async function cmsLogoOnDark(
+  doc: CmsPartnerDoc,
+): Promise<
+  Pick<Partner, "logoOnDarkFilename" | "logoOnDarkWidth" | "logoOnDarkHeight">
+> {
+  const filename = await resolveOptionalUploadFilename(
+    doc.logoOnDark,
+    `partner ${doc.name} logo for dark backgrounds`,
+  );
+  const dims = uploadDimensions(doc.logoOnDark ?? null);
+  if (!filename || !dims) return {};
+  return {
+    logoOnDarkFilename: filename,
+    logoOnDarkWidth: dims.width,
+    logoOnDarkHeight: dims.height,
+  };
 }
 
 async function cmsGetPartners(): Promise<Partner[]> {
@@ -86,7 +113,11 @@ async function cmsGetPartners(): Promise<Partner[]> {
         doc.logo,
         `partner ${doc.name}`,
       ),
+      ...(doc.description?.trim()
+        ? { description: doc.description.trim() }
+        : {}),
       ...(dims ? { logoWidth: dims.width, logoHeight: dims.height } : {}),
+      ...(await cmsLogoOnDark(doc)),
     });
   }
   return partners;

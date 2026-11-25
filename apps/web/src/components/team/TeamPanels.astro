@@ -19,9 +19,23 @@
 // tab is tabbable) plus Left/Right/Home/End moving focus AND activating,
 // since with only two cheap-to-swap panels there is no reason to make the
 // user press Enter separately (APG's "automatic activation" variant).
+//
+// Once the history story is published (`story`), the past panel is the story
+// (components/history/, DESIGN.md HISTORY-1) instead of the year grid. It is
+// full width, so it stands beside the team body rather than inside it: the
+// switch then sits above both and swaps two whole views (the team body with
+// its fade, and the story), so it stays in exactly the same place whichever
+// is shown, and the story's "Meet the team" button swaps back and jumps to
+// the top. The story starts
+// only the first time it is shown (HistoryStory.astro listens for the
+// "team:view" event this script sends).
 import { Picture } from "../../lib/astro-assets";
 import TeamToggle from "./TeamToggle.astro";
 import TeamGrid from "./TeamGrid.astro";
+import HistoryStory from "../history/HistoryStory.astro";
+import "../ui/navy-glass.css";
+import type { PastTeamsStory } from "../../lib/content";
+import type { HistoryTeam } from "../../lib/history-album";
 import type { DivisionGroup, PastYearEntry } from "../../lib/team";
 
 interface Props {
@@ -32,103 +46,215 @@ interface Props {
   /** Fully composed <title> text (siteTitle | page title) for each panel. */
   currentTitle: string;
   pastTitle: string;
+  /** The published history story and its album (lib/history-album.ts):
+   * the past panel is then the story instead of the year grid. */
+  story?: PastTeamsStory;
+  album?: HistoryTeam[];
+  /** Texts from the CMS (Our Team / Past Teams); each has a default. */
+  labels?: {
+    currentTab?: string;
+    pastTab?: string;
+    /** With {division} for the division's name. */
+    divisionHeading?: string;
+    /** With {year} for the year. */
+    yearHeading?: string;
+    /** With {year} for the year. */
+    photoAlt?: string;
+  };
 }
 
-const { active, divisions, pastYears, pastIntro, currentTitle, pastTitle } =
-  Astro.props;
+const {
+  active,
+  divisions,
+  pastYears,
+  pastIntro,
+  currentTitle,
+  pastTitle,
+  story,
+  album = [],
+  labels = {},
+} = Astro.props;
+
+const storyMode = Boolean(story) && album.length > 0;
+const currentTab = labels.currentTab ?? "Current Team";
+const pastTab = labels.pastTab ?? "History";
+
+const fill = (template: string, key: string, value: string | number) =>
+  template.replaceAll(`{${key}}`, String(value));
+const divisionHeading = labels.divisionHeading ?? "{division} Division";
+const yearHeading = labels.yearHeading ?? "Year {year}";
+const photoAlt = labels.photoAlt ?? "The Q-Summit team of {year}";
 ---
 
-<TeamToggle active={active} />
-
-<div
-  id="team-panel-current"
-  class="team-panel"
-  data-team-panel="current"
-  data-title={currentTitle}
-  role="tabpanel"
-  aria-labelledby="team-tab-current"
-  tabindex="0"
-  hidden={active !== "current"}
->
-  {
-    divisions.map((group, i) => (
-      <section class="division">
-        <h2 class="division__title">{group.division} Division</h2>
-        <TeamGrid
-          members={group.members}
-          eager={active === "current" && i === 0}
+{
+  storyMode && (
+    <div class="team-switch n-shell">
+      <div class="team-controls">
+        <TeamToggle
+          active={active}
+          currentLabel={currentTab}
+          pastLabel={pastTab}
         />
-      </section>
-    ))
-  }
+      </div>
+    </div>
+  )
+}
+<div
+  data-team-view="current"
+  hidden={storyMode ? active !== "current" : undefined}
+>
+  <div class="team-body n-shell">
+    {
+      !storyMode && (
+        <div class="team-controls">
+          <TeamToggle
+            active={active}
+            currentLabel={currentTab}
+            pastLabel={pastTab}
+          />
+        </div>
+      )
+    }
+
+    <div
+      id="team-panel-current"
+      class="team-panel"
+      data-team-panel="current"
+      data-title={currentTitle}
+      role="tabpanel"
+      aria-labelledby="team-tab-current"
+      tabindex="0"
+      hidden={active !== "current"}
+    >
+      {
+        divisions.map((group) => (
+          <section class="division">
+            <h2 class="division__title">
+              {fill(divisionHeading, "division", group.division)}
+            </h2>
+            <TeamGrid members={group.members} />
+          </section>
+        ))
+      }
+    </div>
+
+    {
+      !storyMode && (
+        <div
+          id="team-panel-past"
+          class="team-panel history"
+          data-team-panel="past"
+          data-title={pastTitle}
+          role="tabpanel"
+          aria-labelledby="team-tab-past"
+          tabindex="0"
+          hidden={active !== "past"}
+        >
+          <p class="history__intro">{pastIntro}</p>
+          {pastYears.map((entry, i) => (
+            <section class="history__year">
+              <h2 class="history__year-title">
+                {fill(yearHeading, "year", entry.year)}
+              </h2>
+              {entry.image ? (
+                <Picture
+                  class="history__photo"
+                  src={entry.image}
+                  alt={fill(photoAlt, "year", entry.year)}
+                  widths={[500, 850, 1200]}
+                  sizes="(max-width: 950px) 90vw, 850px"
+                  formats={["avif", "webp"]}
+                  fallbackFormat="jpg"
+                  quality={80}
+                  loading={active === "past" && i === 0 ? "eager" : "lazy"}
+                  decoding="async"
+                />
+              ) : (
+                <img
+                  class="history__photo"
+                  src={entry.photo.src}
+                  srcset={entry.photo.srcset}
+                  sizes="(max-width: 950px) 90vw, 850px"
+                  alt={fill(photoAlt, "year", entry.year)}
+                  width={entry.size.width}
+                  height={entry.size.height}
+                  loading={active === "past" && i === 0 ? "eager" : "lazy"}
+                  decoding="async"
+                />
+              )}
+            </section>
+          ))}
+        </div>
+      )
+    }
+  </div>
+  {storyMode && <div class="h-page-fade" aria-hidden="true" />}
 </div>
 
-<div
-  id="team-panel-past"
-  class="team-panel history"
-  data-team-panel="past"
-  data-title={pastTitle}
-  role="tabpanel"
-  aria-labelledby="team-tab-past"
-  tabindex="0"
-  hidden={active !== "past"}
->
-  <p class="history__intro">{pastIntro}</p>
-  {
-    pastYears.map((entry, i) => (
-      <section class="history__year">
-        <h2 class="history__year-title">Year {entry.year}</h2>
-        {entry.image ? (
-          <Picture
-            class="history__photo"
-            src={entry.image}
-            alt={`The Q-Summit team of ${entry.year}`}
-            widths={[500, 850, 1200]}
-            sizes="(max-width: 950px) 90vw, 850px"
-            formats={["avif", "webp"]}
-            fallbackFormat="jpg"
-            quality={80}
-            loading={active === "past" && i === 0 ? "eager" : "lazy"}
-            decoding="async"
-          />
-        ) : (
-          <img
-            class="history__photo"
-            src={entry.photo.src}
-            srcset={entry.photo.srcset}
-            sizes="(max-width: 950px) 90vw, 850px"
-            alt={`The Q-Summit team of ${entry.year}`}
-            width={entry.size.width}
-            height={entry.size.height}
-            loading={active === "past" && i === 0 ? "eager" : "lazy"}
-            decoding="async"
-          />
-        )}
-      </section>
-    ))
-  }
-</div>
+{
+  storyMode && story && (
+    <div
+      id="team-panel-past"
+      data-team-view="past"
+      data-team-panel="past"
+      data-title={pastTitle}
+      role="tabpanel"
+      aria-labelledby="team-tab-past"
+      hidden={active !== "past"}
+    >
+      <HistoryStory story={story} teams={album} />
+    </div>
+  )
+}
 
 <style>
+  /* DESIGN.md NAVY-1: the panels on the 2027 navy, in the page's own
+     shell (deviates from LAYOUT-1 and LAYOUT-3). */
+  /* The bottom padding is the room the fade into the footer
+     (.h-page-fade) starts in, as after the ticket page's last section.
+     With the story, the switch stands above both views (.team-switch)
+     and takes the body's top padding along. */
+  .team-body,
+  .team-switch {
+    padding-top: clamp(2.5rem, 5vw, 3.5rem);
+  }
+
+  .team-body {
+    padding-bottom: clamp(4rem, 9vw, 7rem);
+  }
+
+  .team-switch + [data-team-view] .team-body {
+    padding-top: 0;
+  }
+
+  .team-controls {
+    position: relative;
+    z-index: 5;
+    display: grid;
+    justify-items: center;
+  }
+
+  .team-panel:focus-visible {
+    outline: none;
+  }
+
   .division {
-    margin-top: 4rem;
+    padding-top: clamp(3.5rem, 7vw, 5.5rem);
   }
 
-  .division:first-child {
-    margin-top: 0;
-  }
-
+  /* Display type above the heading scale, like the homepage's section
+     titles (deviates from TYPE-1 as NAVY-1 allows). */
   .division__title {
-    margin-bottom: var(--space-lg);
-  }
-
-  @media (min-width: 768px) {
-    .division {
-      margin-top: 5rem;
-    }
+    margin-bottom: clamp(var(--space-md), 3vw, 2.25rem);
+    font-size: clamp(2rem, 4.4vw, 3.25rem);
+    font-weight: var(--heading-weight-home);
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    text-align: center;
   }
 
   .history {
+    padding-top: clamp(3.5rem, 7vw, 5.5rem);
     text-align: center;
   }
 
@@ -136,7 +262,7 @@ const { active, divisions, pastYears, pastIntro, currentTitle, pastTitle } =
   .history__intro {
     max-width: var(--container-small);
     margin: 0 auto;
-    color: var(--color-neutral-darker);
+    color: color-mix(in srgb, var(--color-white) 78%, transparent);
   }
 
   .history__year {
@@ -155,8 +281,10 @@ const { active, divisions, pastYears, pastIntro, currentTitle, pastTitle } =
   .history__photo {
     width: min(100%, 850px);
     margin-inline: auto;
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-lifted);
+    border-radius: var(--radius-ticket-card);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--color-white) 18%, transparent),
+      0 22px 40px -24px var(--color-black);
   }
 </style>
 
@@ -181,33 +309,62 @@ const { active, divisions, pastYears, pastIntro, currentTitle, pastTitle } =
     );
   }
 
+  type TeamKey = "current" | "past";
+  const isTeamKey = (value: string | undefined): value is TeamKey =>
+    value === "current" || value === "past";
+
   function setUpTeamToggle(toggle: HTMLElement) {
     const tabs = Array.from(
       toggle.querySelectorAll<HTMLAnchorElement>("[data-team-tab]"),
     );
     const thumb = toggle.querySelector<HTMLElement>(".team-toggle__thumb");
-    const panels: Record<"current" | "past", HTMLElement | null> = {
-      current: document.querySelector<HTMLElement>(
-        '[data-team-panel="current"]',
-      ),
-      past: document.querySelector<HTMLElement>('[data-team-panel="past"]'),
+
+    // Slide the drop of ice under the active tab, measured, since the two
+    // labels differ in width. The first placement does not animate.
+    function placeThumb() {
+      const tab = tabs.find((t) => t.classList.contains("is-active"));
+      if (!thumb || !tab) return;
+      thumb.style.width = `${tab.offsetWidth}px`;
+      thumb.style.transform = `translateX(${tab.offsetLeft}px)`;
+    }
+    if (thumb) {
+      thumb.style.transition = "none";
+      placeThumb();
+      thumb.classList.add("is-placed");
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          thumb.style.transition = "";
+        }),
+      );
+      new ResizeObserver(placeThumb).observe(toggle);
+      document.fonts?.ready.then(placeThumb);
+    }
+    const one = (selector: string) =>
+      document.querySelector<HTMLElement>(selector);
+    const panels: Record<TeamKey, HTMLElement | null> = {
+      current: one('[data-team-panel="current"]'),
+      past: one('[data-team-panel="past"]'),
     };
+    // With the story only: the whole team body and the whole story, both
+    // under the one switch.
+    const views: Record<TeamKey, HTMLElement | null> = {
+      current: one('[data-team-view="current"]'),
+      past: one('[data-team-view="past"]'),
+    };
+    const heroTitle = one("[data-team-title]");
     if (!panels.current || !panels.past || tabs.length === 0) return;
 
     // Roving tabindex (APG tabs): only the active tab is a Tab stop; the
     // other is reachable by arrow key, not by Tab. Set here rather than in
     // TeamToggle's markup so the no-JS document keeps both links as normal,
     // independently tabbable anchors.
-    function setRovingTabindex(key: "current" | "past") {
+    function setRovingTabindex(key: TeamKey) {
       tabs.forEach((tab) => {
         tab.tabIndex = tab.dataset.teamTab === key ? 0 : -1;
       });
     }
 
-    function activate(
-      key: "current" | "past",
-      options: { pushState?: boolean } = {},
-    ) {
+    function activate(key: TeamKey, options: { pushState?: boolean } = {}) {
       const { pushState = true } = options;
       tabs.forEach((tab) => {
         const isActive = tab.dataset.teamTab === key;
@@ -215,12 +372,21 @@ const { active, divisions, pastYears, pastIntro, currentTitle, pastTitle } =
         tab.setAttribute("aria-selected", isActive ? "true" : "false");
       });
       setRovingTabindex(key);
-      thumb?.setAttribute("data-position", key);
+      placeThumb();
       if (panels.current) panels.current.hidden = key !== "current";
       if (panels.past) panels.past.hidden = key !== "past";
+      if (views.past) {
+        if (views.current) views.current.hidden = key !== "current";
+        views.past.hidden = key !== "past";
+      }
 
       const title = panels[key]?.dataset.title;
       if (title) document.title = title;
+      const heading =
+        key === "current"
+          ? heroTitle?.dataset.titleCurrent
+          : heroTitle?.dataset.titlePast;
+      if (heroTitle && heading) heroTitle.textContent = heading;
 
       if (pushState) {
         const href = key === "current" ? CURRENT_HREF : PAST_HREF;
@@ -228,21 +394,40 @@ const { active, divisions, pastYears, pastIntro, currentTitle, pastTitle } =
           history.pushState({ teamTab: key }, "", href);
         }
       }
+      document.dispatchEvent(new CustomEvent("team:view", { detail: key }));
     }
+
+    // Same-page swap only: real navigation modifiers (new tab, etc.) still
+    // work as plain links.
+    const plainClick = (event: MouseEvent) =>
+      !event.defaultPrevented &&
+      event.button === 0 &&
+      !event.metaKey &&
+      !event.ctrlKey &&
+      !event.shiftKey &&
+      !event.altKey;
 
     tabs.forEach((tab) => {
       tab.addEventListener("click", (event) => {
         const key = tab.dataset.teamTab;
-        if (key !== "current" && key !== "past") return;
-        // Same-page swap only: real navigation modifiers (new tab, etc.)
-        // still work as plain links.
-        if (event.defaultPrevented || event.button !== 0) return;
-        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
-          return;
+        if (!isTeamKey(key) || !plainClick(event)) return;
         event.preventDefault();
         if (!tab.classList.contains("is-active")) activate(key);
       });
     });
+
+    // The story's "Meet the team" button: back to the team, at the top.
+    document
+      .querySelectorAll<HTMLAnchorElement>("[data-team-switch]")
+      .forEach((link) => {
+        link.addEventListener("click", (event) => {
+          const key = link.dataset.teamSwitch;
+          if (!isTeamKey(key) || !plainClick(event)) return;
+          event.preventDefault();
+          activate(key);
+          scrollTo({ top: 0, behavior: "instant" });
+        });
+      });
 
     // APG tabs keyboard: Left/Right (and Up/Down) move focus between tabs,
     // wrapping at the ends; Home/End jump to the first/last tab. Only two
@@ -277,10 +462,7 @@ const { active, divisions, pastYears, pastIntro, currentTitle, pastTitle } =
       const nextTab = tabs[nextIndex];
       nextTab.focus();
       const key = nextTab.dataset.teamTab;
-      if (
-        (key === "current" || key === "past") &&
-        !nextTab.classList.contains("is-active")
-      ) {
+      if (isTeamKey(key) && !nextTab.classList.contains("is-active")) {
         activate(key);
       }
     });
@@ -302,4 +484,21 @@ const { active, divisions, pastYears, pastIntro, currentTitle, pastTitle } =
   document
     .querySelectorAll<HTMLElement>(".team-toggle")
     .forEach(setUpTeamToggle);
+
+  // Touch screens have no hover: a tap on a member raises the contact bar,
+  // a second tap or a tap anywhere else lowers it. A tap on a contact link
+  // itself just follows the link.
+  if (window.matchMedia("(hover: none)").matches) {
+    document.addEventListener("click", (event) => {
+      const target = event.target as Element | null;
+      const member = target?.closest<HTMLElement>("[data-member]") ?? null;
+      if (member && target?.closest("a")) return;
+      document
+        .querySelectorAll<HTMLElement>("[data-member].is-open")
+        .forEach((open) => {
+          if (open !== member) open.classList.remove("is-open");
+        });
+      member?.classList.toggle("is-open");
+    });
+  }
 </script>

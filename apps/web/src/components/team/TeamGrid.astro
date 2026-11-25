@@ -1,221 +1,417 @@
 ---
-// Shared portrait grid: a centered, wrapping row of member cards
-// (rounded portrait, name, role), matching the live Webflow collection
-// lists. Used per division on /our-team; past-teams reuses the hero and
-// toggle but shows one group photo per year instead.
+// One division of the current team (DESIGN.md NAVY-1): people who share a
+// title stand together under one label, the title groups packed into full
+// rows (lib/team-layout.ts packDivision): 4 on laptops, 3 on tablets, 2 on
+// phones. The rows depend on the window's width, so all three layouts are
+// rendered and CSS shows the one that fits: no script, no layout shift.
+// The hidden copies are display:none, so they are neither read out nor
+// tabbable, and their portraits are lazy, so they are never fetched.
+//
+// Each portrait carries a contact bar (mail at the left, LinkedIn at the
+// right) that rises from its foot on hover or keyboard focus; on touch
+// screens a tap on the member raises it (TeamPanels' script).
 import { Picture } from "../../lib/astro-assets";
 import type { TeamMember } from "../../lib/content";
 import { photoSrc } from "../../lib/media-filename";
 import { resolveContentImage } from "../../lib/images";
+import { packDivision } from "../../lib/team-layout";
 import IconLinkedIn from "../icons/IconLinkedIn.astro";
 import IconMail from "../icons/IconMail.astro";
 
 interface Props {
   members: TeamMember[];
-  /** Eager-load portraits in the first grid so it paints fast. */
-  eager?: boolean;
 }
 
-const { members, eager = false } = Astro.props;
+const { members } = Astro.props;
 
-const memberImages = await Promise.all(
-  members.map((member) =>
-    resolveContentImage(
-      member.photoFilename,
-      `team member ${member.name ?? member.photoFilename}`,
+const images = new Map(
+  await Promise.all(
+    members.map(
+      async (member) =>
+        [
+          member,
+          await resolveContentImage(
+            member.photoFilename,
+            `team member ${member.name ?? member.photoFilename}`,
+          ),
+        ] as const,
     ),
   ),
 );
+
+const layouts = [4, 3, 2].map((cap) => ({
+  cap,
+  rows: packDivision(members, cap),
+}));
 ---
 
-<ul class="team-grid" role="list">
-  {
-    members.map((member, i) => (
-      <li class="team-grid__item">
-        <article class="member-card">
-          <div class="member-card__portrait">
-            {memberImages[i] ? (
-              <Picture
-                src={memberImages[i]!}
-                alt={member.name ?? "Q-Summit team member"}
-                widths={[300, 400]}
-                sizes="(max-width: 479px) 45vw, (max-width: 767px) 30vw, 20vw"
-                formats={["avif", "webp"]}
-                fallbackFormat="jpg"
-                quality={80}
-                loading={eager && i < 6 ? "eager" : "lazy"}
-                decoding="async"
-              />
-            ) : (
-              <img
-                src={photoSrc(member.photoFilename)}
-                alt={member.name ?? "Q-Summit team member"}
-                width="800"
-                height="1000"
-                loading={eager && i < 6 ? "eager" : "lazy"}
-                decoding="async"
-              />
-            )}
-          </div>
-          <p class="member-card__name">
-            {member.name}
-            {member.linkedin && (
-              <a
-                class="member-card__contact"
-                href={member.linkedin}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`${member.name} on LinkedIn`}
-              >
-                <IconLinkedIn />
-              </a>
-            )}
-            {member.email && (
-              <a
-                class="member-card__contact"
-                href={`mailto:${member.email}`}
-                aria-label={`Email ${member.name}`}
-              >
-                <IconMail />
-              </a>
-            )}
-          </p>
-          <p class="member-card__role">{member.role}</p>
-        </article>
-      </li>
-    ))
-  }
-</ul>
+{
+  layouts.map(({ cap, rows }) => (
+    <div class={`team-rows is-cap-${cap}`}>
+      {rows.map((row) => (
+        <div class="team-row">
+          {row.map((group) => (
+            <div class="team-cluster">
+              <p class="team-cluster__role">{group.role}</p>
+              <ul class="team-cluster__cards" role="list">
+                {group.members.map((member) => {
+                  const image = images.get(member);
+                  const name = member.name ?? "Q-Summit team member";
+                  return (
+                    <li class="member" data-member>
+                      <div class="member__portrait">
+                        {image ? (
+                          <Picture
+                            src={image}
+                            alt={name}
+                            widths={[300, 440]}
+                            sizes="(max-width: 680px) 45vw, 14rem"
+                            formats={["avif", "webp"]}
+                            fallbackFormat="jpg"
+                            quality={80}
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        ) : (
+                          <img
+                            src={photoSrc(member.photoFilename)}
+                            alt={name}
+                            width="800"
+                            height="1000"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        )}
+                        {(member.email || member.linkedin) && (
+                          <div class="member__contacts">
+                            {member.email && (
+                              <a
+                                class="member__contact is-mail"
+                                href={`mailto:${member.email}`}
+                                aria-label={`Email ${name}`}
+                              >
+                                <IconMail />
+                              </a>
+                            )}
+                            {member.linkedin && (
+                              <a
+                                class="member__contact is-linkedin"
+                                href={member.linkedin}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label={`${name} on LinkedIn`}
+                              >
+                                <IconLinkedIn />
+                              </a>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <h3 class="member__name">{member.name}</h3>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  ))
+}
 
 <style>
-  /* Live site: fixed 4-up rows on desktop, left-aligned leftovers
-     (not centered), 2-up on mobile. */
-  .team-grid {
+  /* DESIGN.md NAVY-1: the 2027 navy system; deviates from DEPTH-1 (the
+     portraits' glass edge and deep shadow) and TYPE-1 (heavier names). */
+  .team-rows {
+    --gap: clamp(var(--space-xs), 1.4vw, var(--space-sm));
+    --cluster-gap: clamp(var(--space-md), 4vw, 3.5rem);
+    --cw: clamp(10.5rem, 17vw, 13.5rem);
+
+    display: none;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(var(--space-lg), 4vw, var(--space-xl));
+  }
+
+  @media (min-width: 1001px) {
+    .team-rows.is-cap-4 {
+      display: grid;
+    }
+  }
+
+  @media (min-width: 681px) and (max-width: 1000px) {
+    .team-rows.is-cap-3 {
+      display: grid;
+    }
+  }
+
+  @media (max-width: 680px) {
+    .team-rows.is-cap-2 {
+      display: grid;
+    }
+
+    .team-rows {
+      --gap: var(--space-xs);
+      --cluster-gap: var(--space-xs);
+      --cw: calc((100vw - 2 * var(--n-gutter) - var(--space-xs)) / 2);
+    }
+  }
+
+  .team-row {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    gap: var(--cluster-gap);
+  }
+
+  /* Every group keeps its title above it, and the titles share one
+     baseline, so the photos line up even when a title wraps. */
+  .team-cluster {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-md);
-    /* measure limit inside .container, keeps cards near the live width */
-    max-width: var(--container-medium);
-    margin: 0 auto;
+    grid-template-rows: auto 1fr;
+    align-content: start;
+    justify-items: center;
+    gap: 0.85rem;
+  }
+
+  .team-cluster__role {
+    display: flex;
+    align-items: center;
+    align-self: end;
+    gap: 0.6rem;
+    width: 100%;
+    margin: 0;
+    font-size: clamp(0.625rem, 0.5rem + 0.2vw, 0.6875rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.14em;
+    text-align: center;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--color-ticket-ice);
+  }
+
+  .team-cluster__role::before,
+  .team-cluster__role::after {
+    content: "";
+    flex: 1;
+    min-width: var(--space-xs);
+    height: 1px;
+    background: color-mix(in srgb, var(--color-ticket-ice) 25%, transparent);
+  }
+
+  @media (max-width: 680px) {
+    .team-cluster__role {
+      justify-content: center;
+      align-items: flex-end;
+      min-height: 2.6em;
+      line-height: 1.3;
+      white-space: normal;
+      letter-spacing: 0.1em;
+    }
+
+    .team-cluster__role::before,
+    .team-cluster__role::after {
+      display: none;
+    }
+  }
+
+  .team-cluster__cards {
+    display: flex;
+    justify-content: center;
+    gap: var(--gap);
+    margin: 0;
     padding: 0;
     list-style: none;
   }
 
-  @media (min-width: 480px) {
-    .team-grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
+  .member {
+    position: relative;
+    flex: 0 0 var(--cw);
+    width: var(--cw);
   }
 
-  @media (min-width: 768px) {
-    .team-grid {
-      grid-template-columns: repeat(4, 1fr);
-      gap: var(--space-lg);
-    }
-  }
-
-  .member-card {
-    text-align: left;
-  }
-
-  /* DEPTH-1: the portrait rests at the lift step, which is what the ported
-     literal already was; the card floats above the page even unhovered. */
-  .member-card__portrait {
+  /* The photo: a glass edge (a fine white line and a specular rim lit at
+     the top left and bottom right) and a deep shadow on the navy. */
+  .member__portrait {
+    position: relative;
     overflow: hidden;
-    border-radius: var(--radius-card-large);
-    box-shadow: var(--shadow-lifted);
-  }
-
-  .member-card__portrait img,
-  .member-card__portrait picture {
-    width: 100%;
-  }
-
-  .member-card__portrait img {
     aspect-ratio: 4 / 5;
-    object-fit: cover;
-    transition: transform var(--duration-hover) var(--ease-snappy);
+    border-radius: var(--radius-ticket-card);
+    background: var(--color-ticket-deep);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--color-white) 18%, transparent),
+      0 22px 40px -24px var(--color-black);
+    /* Keeps the zoomed photo inside the rounded corners. No forced
+       compositing layer (the old translateZ(0)): Chromium left a lazily
+       loaded portrait in such a layer unpainted until a hover repainted
+       it. */
+    isolation: isolate;
+    transition:
+      transform var(--duration-reveal) var(--ease-snappy),
+      box-shadow var(--duration-open) var(--ease-snappy);
   }
 
-  @media (hover: hover) {
-    .member-card:hover .member-card__portrait img {
-      transform: scale(1.04);
-    }
+  .member__portrait::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    padding: 1px;
+    border-radius: inherit;
+    background: linear-gradient(
+      140deg,
+      color-mix(in srgb, var(--color-white) 70%, transparent),
+      transparent 35%,
+      transparent 65%,
+      color-mix(in srgb, var(--color-ticket-ice) 60%, transparent)
+    );
+    pointer-events: none;
+    -webkit-mask:
+      linear-gradient(var(--color-black) 0 0) content-box,
+      linear-gradient(var(--color-black) 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(var(--color-black) 0 0) content-box exclude,
+      linear-gradient(var(--color-black) 0 0);
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .member-card__portrait img {
-      transform: none;
-      transition: none;
-    }
-
-    @media (hover: hover) {
-      .member-card:hover .member-card__portrait img {
-        transform: none;
-      }
-    }
-  }
-
-  /* TYPE-4: a <p> carrying heading color and heading weight (the live site
-     styles the member name that way without making it a heading element). */
-  .member-card__name {
-    margin: var(--space-xs) 0 0;
-    font-size: var(--text-size-regular);
-    font-weight: var(--heading-weight);
-    color: var(--color-heading);
-  }
-
-  /* The contact icons (LinkedIn, mail) sit inline after the last word of the
-     name rather than in a flex row of their own: a two-line name then keeps
-     them beside its final line instead of centering them against the whole
-     block. The nudge values are optical sub-rem alignment, which SPACE-1
-     leaves raw on purpose. */
-  .member-card__contact {
-    display: inline-flex;
-    margin-left: 0.375rem;
-    vertical-align: -0.125em;
-    /* Navy is the brand color for icons (DESIGN.md COLOR-1 / COLOR-3 note
-       that icons are navy or neutral); --color-primary is its role token. */
-    color: var(--color-primary);
-    transition: opacity var(--duration-hover) var(--ease-snappy);
-  }
-
-  /* Paint-only hover feedback, which MOTION-3 allows; no second color token
-     is needed and the mark keeps its brand color throughout. */
-  .member-card__contact:focus-visible {
-    opacity: 0.7;
-  }
-
-  @media (hover: hover) {
-    .member-card__contact:hover {
-      opacity: 0.7;
-    }
-  }
-
-  /* :global because the svg comes from the icon components, so it carries
-     their scope id, not this one. Same idiom as the footer social icons
-     (Footer.astro). Without it the rule never matches and the icons render
-     with no intrinsic size. `em` ties the marks to the name's size so they
-     scale together at the 767px type breakpoint. */
-  .member-card__contact :global(svg) {
-    width: 1em;
-    height: 1em;
+  .member__portrait :global(picture),
+  .member__portrait img {
     display: block;
+    width: 100%;
+    height: 100%;
   }
 
-  /* MOTION-2 escape for the hover fade. It has to come after the rule above,
-     not in the reduced-motion block further up: the two selectors have equal
-     specificity, so a media block placed earlier in the file loses on source
-     order and the transition would survive. */
-  @media (prefers-reduced-motion: reduce) {
-    .member-card__contact {
-      transition: none;
+  .member__portrait img {
+    object-fit: cover;
+    transition: transform var(--duration-reveal) var(--ease-snappy);
+  }
+
+  /* The contact bar: 20% of the photo's height in the header's
+     translucent navy with its faint ice line, risen on hover, focus or a
+     tap; it eases in without overshoot, so no gap opens under it. */
+  .member__contacts {
+    position: absolute;
+    inset: auto 0 0 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    height: 20%;
+    padding-inline: 9%;
+    background-image: linear-gradient(
+      color-mix(in srgb, var(--color-ticket-midnight) 72%, transparent),
+      color-mix(in srgb, var(--color-ticket-midnight) 86%, transparent)
+    );
+    transform: translateY(101%);
+    transition: transform var(--duration-glass-unfold) var(--ease-snappy);
+  }
+
+  .member__contacts::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 6%,
+      color-mix(in srgb, var(--color-ticket-ice) 30%, transparent) 30%,
+      color-mix(in srgb, var(--color-ticket-ice) 55%, transparent) 50%,
+      color-mix(in srgb, var(--color-ticket-ice) 30%, transparent) 70%,
+      transparent 94%
+    );
+  }
+
+  /* The live site's flat glyphs in ice blue, no glow; LinkedIn keeps the
+     right edge even when there is no mail. */
+  .member__contact {
+    display: grid;
+    place-items: center;
+    padding: 0.35rem;
+    color: var(--color-ticket-ice);
+    text-decoration: none;
+    transition:
+      color var(--duration-hover) var(--ease-snappy),
+      transform var(--duration-hover) var(--ease-snappy);
+  }
+
+  .member__contact.is-linkedin {
+    margin-left: auto;
+  }
+
+  .member__contact :global(svg) {
+    display: block;
+    width: clamp(1.15rem, 1.6vw, 1.35rem);
+    height: clamp(1.15rem, 1.6vw, 1.35rem);
+  }
+
+  .member__contact:focus-visible {
+    outline: 2px solid var(--color-ticket-ice);
+    outline-offset: 1px;
+    border-radius: var(--radius-button);
+  }
+
+  @media (hover: hover) {
+    .member__contact:hover {
+      color: var(--color-white);
+      transform: translateY(-1px);
+    }
+
+    .member:hover .member__portrait {
+      transform: translateY(-6px);
+      box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--color-white) 25%, transparent),
+        0 34px 50px -26px var(--color-black);
+    }
+
+    .member:hover .member__portrait img {
+      transform: scale(1.06);
+    }
+
+    .member:hover .member__contacts {
+      transform: none;
     }
   }
 
-  .member-card__role {
-    margin: 0.125rem 0 0;
-    font-size: var(--text-size-small);
-    color: var(--color-neutral-dark);
+  .member:focus-within .member__contacts,
+  .member.is-open .member__contacts {
+    transform: none;
+  }
+
+  .member:focus-within .member__portrait,
+  .member.is-open .member__portrait {
+    transform: translateY(-4px);
+  }
+
+  @media (hover: none) {
+    .member {
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+  }
+
+  .member__name {
+    margin: 0;
+    padding: 0.95rem 0.25rem 0;
+    font-size: clamp(0.95rem, 1.4vw, 1.0625rem);
+    font-weight: var(--font-weight-extrabold);
+    line-height: 1.25;
+    text-align: center;
+    color: var(--color-white);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .member__portrait,
+    .member__portrait img,
+    .member__contacts,
+    .member__contact {
+      transition: none;
+    }
+
+    .member:is(:hover, :focus-within, .is-open) .member__portrait,
+    .member:is(:hover, :focus-within, .is-open) .member__portrait img {
+      transform: none;
+    }
   }
 </style>

@@ -182,6 +182,14 @@ export interface Partner {
    */
   logo: number | Media;
   /**
+   * Optional. The partner's official white logo, as the company provides it for dark backgrounds. /partner/ shows every logo in white and light blue on dark blue, toned automatically from the regular logo; with this file the official white version is shown instead. Worth it when the automatic version looks wrong, for example a logo with a detailed picture inside.
+   */
+  logoOnDark?: (number | null) | Media;
+  /**
+   * Optional. Two or three sentences: what the company does and what it offers at Q-Summit. Shown in the pop-up that opens when a visitor picks this partner on /partner/. Without it the pop-up shows the logo and the website button only.
+   */
+  description?: string | null;
+  /**
    * Sponsorship level. Platinum logos are the largest and sit at the top of /partner/; Media logos are the smallest and sit last.
    */
   tier:
@@ -624,6 +632,8 @@ export interface PartnersSelect<T extends boolean = true> {
   name?: T;
   websiteUrl?: T;
   logo?: T;
+  logoOnDark?: T;
+  description?: T;
   tier?: T;
   order?: T;
   lastEditedBy?: T;
@@ -1467,7 +1477,7 @@ export interface PageWhyq {
   heading: string;
   intro: string;
   /**
-   * One section per audience. Each shows on its own page under Why Q?: attendees on /whyq/students/, startups on /whyq/startups/, partners on /whyq/corporates/, investors on /whyq/investors/. A section with another anchor id (founders) is kept but not shown on the site.
+   * The earlier Why Q? sections, kept for the record. The pages under /whyq/ show the Audience pages section below.
    */
   audiences: {
     /**
@@ -1500,6 +1510,218 @@ export interface PageWhyq {
     imageLeft?: boolean | null;
     id?: string | null;
   }[];
+  /**
+   * The line on the pill under every hero, e.g. "April 1-2, 2027 · Mannheim · 10th edition".
+   */
+  eventLine?: string | null;
+  /**
+   * One entry per page under Why Q?: Students, Startups, Corporates and Investors. A page without an entry is not built.
+   */
+  pages?:
+    | {
+        /**
+         * Which page this is. Each page may appear only once.
+         */
+        audience: 'students' | 'startups' | 'corporates' | 'investors';
+        /**
+         * Name in the breadcrumb, e.g. "For Startups".
+         */
+        crumb: string;
+        /**
+         * One or two sentences for Google and for link previews of this page.
+         */
+        metaDescription: string;
+        hero: {
+          heading: string;
+          intro: string;
+          /**
+           * Ticket button, e.g. "Get your startup ticket".
+           */
+          ctaLabel: string;
+        };
+        /**
+         * Key figures under the hero, e.g. "1500+" and "Participants". Keep the same figure in the same place on every page.
+         */
+        stats?:
+          | {
+              value: string;
+              label: string;
+              id?: string | null;
+            }[]
+          | null;
+        activities: {
+          heading: string;
+          intro?: string | null;
+          /**
+           * The cards in the row that scrolls sideways. A card without a photo shows the blue wash of the ticket page.
+           */
+          items?:
+            | {
+                title: string;
+                text: string;
+                kind: 'included' | 'apply';
+                /**
+                 * Photo of the activity.
+                 */
+                image?: (number | null) | Media;
+                /**
+                 * What the photo shows, for screen readers. Needed when a photo is set.
+                 */
+                imageAlt?: string | null;
+                id?: string | null;
+              }[]
+            | null;
+        };
+        /**
+         * The section between the activities and the tickets. Its layout decides which of the fields below are shown.
+         */
+        highlight: {
+          layout: 'cards' | 'winner' | 'logos' | 'qube';
+          eyebrow: string;
+          heading: string;
+          intro?: string | null;
+          cards?:
+            | {
+                kicker: string;
+                title: string;
+                text: string;
+                /**
+                 * Photo of the card.
+                 */
+                image?: (number | null) | Media;
+                /**
+                 * What the photo shows, for screen readers. Needed when a photo is set.
+                 */
+                imageAlt?: string | null;
+                id?: string | null;
+              }[]
+            | null;
+          /**
+           * e.g. "Winner · Pitch Battle 2026".
+           */
+          winnerLabel?: string | null;
+          winnerName?: string | null;
+          /**
+           * One line on what the winner does and the prize money.
+           */
+          winnerLine?: string | null;
+          /**
+           * The large photo of the section.
+           */
+          image?: (number | null) | Media;
+          /**
+           * What the photo shows, for screen readers. Needed when a photo is set.
+           */
+          imageAlt?: string | null;
+          /**
+           * Up to three smaller photos under the winner's photo.
+           */
+          moments?:
+            | {
+                /**
+                 * Photo of the moment.
+                 */
+                image?: (number | null) | Media;
+                /**
+                 * What the photo shows, for screen readers. Needed when a photo is set.
+                 */
+                imageAlt?: string | null;
+                id?: string | null;
+              }[]
+            | null;
+          /**
+           * e.g. "In the Qube 2026".
+           */
+          logosEyebrow?: string | null;
+          logosHeading?: string | null;
+          /**
+           * Companies or investors, in this order. Where the Partners list already has the logo, pick that same file.
+           */
+          logos?:
+            | {
+                name: string;
+                /**
+                 * Optional link to the website.
+                 */
+                websiteUrl?: string | null;
+                /**
+                 * Prefer SVG, otherwise a PNG or WebP with a transparent background. Without a logo the name is shown.
+                 */
+                logo?: (number | null) | Media;
+                id?: string | null;
+              }[]
+            | null;
+        };
+        ticket: {
+          heading: string;
+          intro?: string | null;
+          /**
+           * The tickets this page sells, in this order. Prices and benefits come from Website pages → Tickets.
+           */
+          keys: ('student' | 'young-professional' | 'start-up' | 'investor' | 'corporate')[];
+          /**
+           * Cards beside a single ticket, each with a status pill.
+           */
+          side?:
+            | {
+                title: string;
+                text: string;
+                /**
+                 * e.g. "Included" or "Applications open soon".
+                 */
+                status: string;
+                id?: string | null;
+              }[]
+            | null;
+          /**
+           * Heading of the list beside two tickets, e.g. "Both tickets include".
+           */
+          includesHeading?: string | null;
+          /**
+           * The list beside two tickets.
+           */
+          includes?:
+            | {
+                text: string;
+                id?: string | null;
+              }[]
+            | null;
+          /**
+           * Optional panel under the tickets that leads to the partner page. Left out while its heading is empty.
+           */
+          partnerPanel?: {
+            eyebrow?: string | null;
+            heading?: string | null;
+            text?: string | null;
+            /**
+             * What a partner package brings.
+             */
+            perks?:
+              | {
+                  text: string;
+                  id?: string | null;
+                }[]
+              | null;
+            linkLabel?: string | null;
+            href?: string | null;
+          };
+        };
+        faq: {
+          heading: string;
+          /**
+           * For a price, write {price:student} (price on sale now) or {regular:student} (regular price) instead of a number, with the ticket's key: student, young-professional, start-up, investor or corporate. The site fills in the current price.
+           */
+          items?:
+            | {
+                question: string;
+                answer: string;
+                id?: string | null;
+              }[]
+            | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
   /**
    * Browser tab and social-share title for the whyq page (shown as "Q-Summit | …").
    */
@@ -1562,15 +1784,277 @@ export interface PageSpeaker {
  */
 export interface PagePartner {
   id: number;
+  projector?: {
+    /**
+     * Small label under the heading, e.g. "Our partners 2026".
+     */
+    eyebrow?: string | null;
+    /**
+     * Main heading of the page. Until it is filled, the page title stands in.
+     */
+    heading?: string | null;
+    intro?: string | null;
+    /**
+     * Optional small note above the partner logos, e.g. "Pick a logo to learn more".
+     */
+    hint?: string | null;
+    /**
+     * Word after the tier name in every tier heading, e.g. "Partners" turns Gold into "Gold Partners". Leave it empty to show the tier name alone.
+     */
+    tierSuffix?: string | null;
+    /**
+     * Button in the pop-up that opens the partner's website, e.g. "Visit website". Leave it empty to show the website's address instead.
+     */
+    websiteLabel?: string | null;
+  };
+  /**
+   * Heading of the section with the partner photos and their quotes.
+   */
   heading: string;
+  /**
+   * Short line under that heading telling visitors how to read a quote, e.g. "Tap the quote mark on a photo to read what they said." Leave it empty to show no line.
+   */
+  quotesHint?: string | null;
   cta: {
     heading: string;
     text: string;
+    /**
+     * Optional. Short lines on what a partner gets, shown as a list under the text. Keep the order you want on the page.
+     */
+    points?:
+      | {
+          title: string;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Main button, e.g. "Send inquiry".
+     */
     buttonLabel: string;
     /**
-     * http(s) URL or mailto: address.
+     * Where the main button leads: the partner form as an http(s) URL or a path on this site, or a mailto: address.
      */
     buttonHref: string;
+    /**
+     * The person companies talk to. The card shows only once name and email are filled.
+     */
+    contact?: {
+      name?: string | null;
+      /**
+       * Optional, e.g. "Board Member Partner Relations".
+       */
+      role?: string | null;
+      email?: string | null;
+      /**
+       * Hint of the small copy icon next to the address, e.g. "Copy address". Leave it empty to hide the icon.
+       */
+      copyLabel?: string | null;
+      /**
+       * What the copy hint says for a moment after copying, e.g. "Copied".
+       */
+      copiedLabel?: string | null;
+      /**
+       * Optional. Without a photo the card shows the person's initials.
+       */
+      photo?: (number | null) | Media;
+    };
+  };
+  audiences?: {
+    /**
+     * The "Startup" field on /partner/ and the page /partner/startup/ it leads to. Both stay hidden until the title is filled; from then on every text here is required.
+     */
+    startup?: {
+      /**
+       * Title of the expandable field, e.g. "Startups".
+       */
+      label?: string | null;
+      /**
+       * Short text shown when the field is opened.
+       */
+      summary?: string | null;
+      /**
+       * Button in the opened field that leads to the page.
+       */
+      linkLabel?: string | null;
+      /**
+       * Main heading of the page.
+       */
+      heading?: string | null;
+      /**
+       * Opening text under the heading. Also the search snippet and share preview of the page.
+       */
+      intro?: string | null;
+      /**
+       * Heading above the benefits, e.g. "What you get".
+       */
+      benefitsHeading?: string | null;
+      /**
+       * What this partnership offers. One card per benefit, in this order.
+       */
+      benefits?:
+        | {
+            title: string;
+            description: string;
+            id?: string | null;
+          }[]
+        | null;
+      /**
+       * Heading above the contact cards, e.g. "Your contacts".
+       */
+      contactsHeading?: string | null;
+      /**
+       * Email button on every contact card, e.g. "Write an email". Keep it free of names.
+       */
+      contactLabel?: string | null;
+      /**
+       * The people a visitor writes to. Keep the order you want on the page.
+       */
+      contacts?:
+        | {
+            name: string;
+            /**
+             * Optional, e.g. "Startup Partnerships".
+             */
+            role?: string | null;
+            email: string;
+            /**
+             * Optional. Without a photo the card shows the person's initials.
+             */
+            photo?: (number | null) | Media;
+            id?: string | null;
+          }[]
+        | null;
+    };
+    /**
+     * The "Corporate" field on /partner/ and the page /partner/corporate/ it leads to. Both stay hidden until the title is filled; from then on every text here is required.
+     */
+    corporate?: {
+      /**
+       * Title of the expandable field, e.g. "Corporates".
+       */
+      label?: string | null;
+      /**
+       * Short text shown when the field is opened.
+       */
+      summary?: string | null;
+      /**
+       * Button in the opened field that leads to the page.
+       */
+      linkLabel?: string | null;
+      /**
+       * Main heading of the page.
+       */
+      heading?: string | null;
+      /**
+       * Opening text under the heading. Also the search snippet and share preview of the page.
+       */
+      intro?: string | null;
+      /**
+       * Heading above the benefits, e.g. "What you get".
+       */
+      benefitsHeading?: string | null;
+      /**
+       * What this partnership offers. One card per benefit, in this order.
+       */
+      benefits?:
+        | {
+            title: string;
+            description: string;
+            id?: string | null;
+          }[]
+        | null;
+      /**
+       * Heading above the contact cards, e.g. "Your contacts".
+       */
+      contactsHeading?: string | null;
+      /**
+       * Email button on every contact card, e.g. "Write an email". Keep it free of names.
+       */
+      contactLabel?: string | null;
+      /**
+       * The people a visitor writes to. Keep the order you want on the page.
+       */
+      contacts?:
+        | {
+            name: string;
+            /**
+             * Optional, e.g. "Startup Partnerships".
+             */
+            role?: string | null;
+            email: string;
+            /**
+             * Optional. Without a photo the card shows the person's initials.
+             */
+            photo?: (number | null) | Media;
+            id?: string | null;
+          }[]
+        | null;
+    };
+    /**
+     * The "Investor" field on /partner/ and the page /partner/investor/ it leads to. Both stay hidden until the title is filled; from then on every text here is required.
+     */
+    investor?: {
+      /**
+       * Title of the expandable field, e.g. "Investors".
+       */
+      label?: string | null;
+      /**
+       * Short text shown when the field is opened.
+       */
+      summary?: string | null;
+      /**
+       * Button in the opened field that leads to the page.
+       */
+      linkLabel?: string | null;
+      /**
+       * Main heading of the page.
+       */
+      heading?: string | null;
+      /**
+       * Opening text under the heading. Also the search snippet and share preview of the page.
+       */
+      intro?: string | null;
+      /**
+       * Heading above the benefits, e.g. "What you get".
+       */
+      benefitsHeading?: string | null;
+      /**
+       * What this partnership offers. One card per benefit, in this order.
+       */
+      benefits?:
+        | {
+            title: string;
+            description: string;
+            id?: string | null;
+          }[]
+        | null;
+      /**
+       * Heading above the contact cards, e.g. "Your contacts".
+       */
+      contactsHeading?: string | null;
+      /**
+       * Email button on every contact card, e.g. "Write an email". Keep it free of names.
+       */
+      contactLabel?: string | null;
+      /**
+       * The people a visitor writes to. Keep the order you want on the page.
+       */
+      contacts?:
+        | {
+            name: string;
+            /**
+             * Optional, e.g. "Startup Partnerships".
+             */
+            role?: string | null;
+            email: string;
+            /**
+             * Optional. Without a photo the card shows the person's initials.
+             */
+            photo?: (number | null) | Media;
+            id?: string | null;
+          }[]
+        | null;
+    };
   };
   /**
    * Browser tab and social-share title for the partner page (shown as "Q-Summit | …").
@@ -1891,6 +2375,18 @@ export interface PageOurTeam {
   id: number;
   heading: string;
   /**
+   * The group photo behind the heading, on Our Team and on History. Upload it in three widths with the same name ending in -p-1280, -p-1920 and -p-2560 (for example team-2027-hero-p-2560.webp) and pick the 2560 one here: each screen then loads only the size it needs. A single photo works too, but every screen loads it in full.
+   */
+  heroImage?: (number | null) | Media;
+  /**
+   * The "Current Team" side of the switch above the team. Empty shows "Current Team".
+   */
+  tabLabel?: string | null;
+  /**
+   * The heading above each division, with {division} for its name. Empty shows "{division} Division".
+   */
+  divisionHeading?: string | null;
+  /**
    * Browser tab and social-share title for the our team page (shown as "Q-Summit | …").
    */
   title: string;
@@ -1990,7 +2486,7 @@ export interface PageTicket {
      */
     activeKey?: string | null;
     /**
-     * On: the current phase is on sale now. Off: it opens soon; it is shown as next up and the homepage says it is coming.
+     * On: the current phase is on sale now, at each ticket's Price. Off: it opens soon; it is shown as next up, the homepage says it is coming, and every ticket shows its regular price only, without a discount.
      */
     onSale?: boolean | null;
     /**
@@ -2048,11 +2544,11 @@ export interface PageTicket {
        */
       description: string;
       /**
-       * Regular price in euros, shown struck through. Whole euros, e.g. 79.
+       * Regular price in whole euros, e.g. 79. Struck through while a discount phase is on sale; the price tickets sell at while On sale is off.
        */
       regularPrice: number;
       /**
-       * Current (Early Bird) price in euros. The saving is worked out from both prices.
+       * Price of the phase on sale in euros. The saving is worked out from both prices. Only shown while On sale (Discount phases) is on; otherwise the regular price shows.
        */
       price: number;
       /**
@@ -2292,8 +2788,108 @@ export interface PageContact {
  */
 export interface PagePastTeam {
   id: number;
+  /**
+   * The title on the team photo at the top of the page.
+   */
   heading: string;
+  /**
+   * Shown under the title only while the Story below is not complete. Once every Story field is filled and published, the story replaces it.
+   */
   intro: string;
+  /**
+   * The "History" side of the switch above the team. Empty shows "History".
+   */
+  tabLabel?: string | null;
+  /**
+   * Shown only while the Story is not complete: the heading above each year's team photo, with {year} for the year. Empty shows "Year {year}".
+   */
+  yearHeading?: string | null;
+  /**
+   * What each team photo in the album shows, for screen readers, with {year} for the year. Empty uses "The Q-Summit team of {year}".
+   */
+  photoAlt?: string | null;
+  story?: {
+    /**
+     * The small line above the story's first heading.
+     */
+    heroEyebrow?: string | null;
+    /**
+     * The first heading of the story.
+     */
+    heroHeading?: string | null;
+    /**
+     * The paragraph under the first heading.
+     */
+    heroLead?: string | null;
+    /**
+     * The button under the first paragraph that glides through the first part of the story.
+     */
+    cueLabel?: string | null;
+    /**
+     * The small line above the heading about how Q-Summit began.
+     */
+    originEyebrow?: string | null;
+    /**
+     * The heading about how Q-Summit began.
+     */
+    originHeading?: string | null;
+    /**
+     * The short line under the heading about how Q-Summit began.
+     */
+    originSub?: string | null;
+    /**
+     * The paragraph about how Q-Summit began.
+     */
+    originText?: string | null;
+    /**
+     * The small line above the heading about the teams over the years.
+     */
+    teamsEyebrow?: string | null;
+    /**
+     * The heading about the teams over the years.
+     */
+    teamsHeading?: string | null;
+    /**
+     * The paragraph about the teams over the years.
+     */
+    teamsText?: string | null;
+    /**
+     * The small line above the heading of the photo album.
+     */
+    albumEyebrow?: string | null;
+    /**
+     * The heading of the photo album on the camera screen.
+     */
+    albumHeading?: string | null;
+    /**
+     * The hint under the camera on a computer, telling visitors how to flip through the photos.
+     */
+    albumHint?: string | null;
+    /**
+     * The same hint on a phone or tablet.
+     */
+    albumHintTouch?: string | null;
+    /**
+     * The button under the camera that scrolls back to the start of the story.
+     */
+    backLabel?: string | null;
+    /**
+     * The small line above the closing heading at the end of the page.
+     */
+    closingEyebrow?: string | null;
+    /**
+     * The closing heading at the end of the page.
+     */
+    closingHeading?: string | null;
+    /**
+     * The closing paragraph at the end of the page.
+     */
+    closingText?: string | null;
+    /**
+     * The button at the end of the page. It always leads to the Our Team page.
+     */
+    closingButtonLabel?: string | null;
+  };
   /**
    * Browser tab and social-share title for the past teams page (shown as "Q-Summit | …").
    */
@@ -2895,6 +3491,134 @@ export interface PageWhyqSelect<T extends boolean = true> {
         imageLeft?: T;
         id?: T;
       };
+  eventLine?: T;
+  pages?:
+    | T
+    | {
+        audience?: T;
+        crumb?: T;
+        metaDescription?: T;
+        hero?:
+          | T
+          | {
+              heading?: T;
+              intro?: T;
+              ctaLabel?: T;
+            };
+        stats?:
+          | T
+          | {
+              value?: T;
+              label?: T;
+              id?: T;
+            };
+        activities?:
+          | T
+          | {
+              heading?: T;
+              intro?: T;
+              items?:
+                | T
+                | {
+                    title?: T;
+                    text?: T;
+                    kind?: T;
+                    image?: T;
+                    imageAlt?: T;
+                    id?: T;
+                  };
+            };
+        highlight?:
+          | T
+          | {
+              layout?: T;
+              eyebrow?: T;
+              heading?: T;
+              intro?: T;
+              cards?:
+                | T
+                | {
+                    kicker?: T;
+                    title?: T;
+                    text?: T;
+                    image?: T;
+                    imageAlt?: T;
+                    id?: T;
+                  };
+              winnerLabel?: T;
+              winnerName?: T;
+              winnerLine?: T;
+              image?: T;
+              imageAlt?: T;
+              moments?:
+                | T
+                | {
+                    image?: T;
+                    imageAlt?: T;
+                    id?: T;
+                  };
+              logosEyebrow?: T;
+              logosHeading?: T;
+              logos?:
+                | T
+                | {
+                    name?: T;
+                    websiteUrl?: T;
+                    logo?: T;
+                    id?: T;
+                  };
+            };
+        ticket?:
+          | T
+          | {
+              heading?: T;
+              intro?: T;
+              keys?: T;
+              side?:
+                | T
+                | {
+                    title?: T;
+                    text?: T;
+                    status?: T;
+                    id?: T;
+                  };
+              includesHeading?: T;
+              includes?:
+                | T
+                | {
+                    text?: T;
+                    id?: T;
+                  };
+              partnerPanel?:
+                | T
+                | {
+                    eyebrow?: T;
+                    heading?: T;
+                    text?: T;
+                    perks?:
+                      | T
+                      | {
+                          text?: T;
+                          id?: T;
+                        };
+                    linkLabel?: T;
+                    href?: T;
+                  };
+            };
+        faq?:
+          | T
+          | {
+              heading?: T;
+              items?:
+                | T
+                | {
+                    question?: T;
+                    answer?: T;
+                    id?: T;
+                  };
+            };
+        id?: T;
+      };
   title?: T;
   metaDescription?: T;
   lastEditedBy?: T;
@@ -2937,14 +3661,129 @@ export interface PageSpeakerSelect<T extends boolean = true> {
  * via the `definition` "page-partner_select".
  */
 export interface PagePartnerSelect<T extends boolean = true> {
+  projector?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+        intro?: T;
+        hint?: T;
+        tierSuffix?: T;
+        websiteLabel?: T;
+      };
   heading?: T;
+  quotesHint?: T;
   cta?:
     | T
     | {
         heading?: T;
         text?: T;
+        points?:
+          | T
+          | {
+              title?: T;
+              id?: T;
+            };
         buttonLabel?: T;
         buttonHref?: T;
+        contact?:
+          | T
+          | {
+              name?: T;
+              role?: T;
+              email?: T;
+              copyLabel?: T;
+              copiedLabel?: T;
+              photo?: T;
+            };
+      };
+  audiences?:
+    | T
+    | {
+        startup?:
+          | T
+          | {
+              label?: T;
+              summary?: T;
+              linkLabel?: T;
+              heading?: T;
+              intro?: T;
+              benefitsHeading?: T;
+              benefits?:
+                | T
+                | {
+                    title?: T;
+                    description?: T;
+                    id?: T;
+                  };
+              contactsHeading?: T;
+              contactLabel?: T;
+              contacts?:
+                | T
+                | {
+                    name?: T;
+                    role?: T;
+                    email?: T;
+                    photo?: T;
+                    id?: T;
+                  };
+            };
+        corporate?:
+          | T
+          | {
+              label?: T;
+              summary?: T;
+              linkLabel?: T;
+              heading?: T;
+              intro?: T;
+              benefitsHeading?: T;
+              benefits?:
+                | T
+                | {
+                    title?: T;
+                    description?: T;
+                    id?: T;
+                  };
+              contactsHeading?: T;
+              contactLabel?: T;
+              contacts?:
+                | T
+                | {
+                    name?: T;
+                    role?: T;
+                    email?: T;
+                    photo?: T;
+                    id?: T;
+                  };
+            };
+        investor?:
+          | T
+          | {
+              label?: T;
+              summary?: T;
+              linkLabel?: T;
+              heading?: T;
+              intro?: T;
+              benefitsHeading?: T;
+              benefits?:
+                | T
+                | {
+                    title?: T;
+                    description?: T;
+                    id?: T;
+                  };
+              contactsHeading?: T;
+              contactLabel?: T;
+              contacts?:
+                | T
+                | {
+                    name?: T;
+                    role?: T;
+                    email?: T;
+                    photo?: T;
+                    id?: T;
+                  };
+            };
       };
   title?: T;
   metaDescription?: T;
@@ -3163,6 +4002,9 @@ export interface PageHackathonSelect<T extends boolean = true> {
  */
 export interface PageOurTeamSelect<T extends boolean = true> {
   heading?: T;
+  heroImage?: T;
+  tabLabel?: T;
+  divisionHeading?: T;
   title?: T;
   metaDescription?: T;
   lastEditedBy?: T;
@@ -3441,6 +4283,33 @@ export interface PageContactSelect<T extends boolean = true> {
 export interface PagePastTeamsSelect<T extends boolean = true> {
   heading?: T;
   intro?: T;
+  tabLabel?: T;
+  yearHeading?: T;
+  photoAlt?: T;
+  story?:
+    | T
+    | {
+        heroEyebrow?: T;
+        heroHeading?: T;
+        heroLead?: T;
+        cueLabel?: T;
+        originEyebrow?: T;
+        originHeading?: T;
+        originSub?: T;
+        originText?: T;
+        teamsEyebrow?: T;
+        teamsHeading?: T;
+        teamsText?: T;
+        albumEyebrow?: T;
+        albumHeading?: T;
+        albumHint?: T;
+        albumHintTouch?: T;
+        backLabel?: T;
+        closingEyebrow?: T;
+        closingHeading?: T;
+        closingText?: T;
+        closingButtonLabel?: T;
+      };
   title?: T;
   metaDescription?: T;
   lastEditedBy?: T;

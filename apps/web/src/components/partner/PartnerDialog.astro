@@ -1,0 +1,335 @@
+---
+// The pop-up a partner opens on the partner page (DESIGN.md PARTNER-1):
+// the tier, the logo on a plate of white glass, a short description and the
+// way to the partner's website. One native <dialog> for all logos;
+// partner-dialog.client.ts fills it from the tile that was picked and
+// opens it as a modal, so focus stays inside, Escape closes it and focus
+// returns to the tile. Without JavaScript it never opens: every tile is a
+// plain link to the partner's website.
+import IconArrowRight from "../icons/IconArrowRight.astro";
+import IconClose from "../icons/IconClose.astro";
+
+interface Props {
+  /** Website button label from the CMS. Empty: the script writes the
+   * website's host name (e.g. example.com) into the button instead. */
+  websiteLabel?: string;
+  /** Render it open and filled, for the visual tests only. */
+  preview?: { tier: string; name: string; description?: string };
+}
+
+const { websiteLabel = "", preview } = Astro.props;
+const label = websiteLabel.trim();
+---
+
+<dialog
+  class="partner-dialog"
+  aria-labelledby="partner-dialog-name"
+  data-partner-dialog
+  open={Boolean(preview)}
+>
+  <div class="dialog-panel" tabindex="-1" autofocus data-dialog-panel>
+    <div class="dialog-top">
+      <p class="dialog-tier" data-dialog-tier>{preview?.tier}</p>
+      <button
+        type="button"
+        class="dialog-close"
+        aria-label="Close"
+        data-dialog-close
+      >
+        <IconClose />
+      </button>
+    </div>
+    <div class="dialog-plate">
+      <img alt="" decoding="async" hidden data-dialog-logo />
+      <h2 class="dialog-name" id="partner-dialog-name" data-dialog-name>
+        {preview?.name}
+      </h2>
+    </div>
+    <p class="dialog-text" hidden={!preview?.description} data-dialog-text>
+      {preview?.description}
+    </p>
+    <a
+      class="button is-glass dialog-link"
+      href="#"
+      target="_blank"
+      rel="noopener noreferrer"
+      data-glass-press
+      data-dialog-link
+    >
+      <span class="glass-light" aria-hidden="true"></span>
+      <span
+        data-lp="projector.websiteLabel"
+        data-dialog-link-label={label ? undefined : "host"}>{label}</span
+      >
+      <span class="dialog-link-arrow" aria-hidden="true">
+        <IconArrowRight size={18} />
+      </span>
+      <span class="u-visually-hidden">(opens in a new tab)</span>
+    </a>
+  </div>
+</dialog>
+
+<style>
+  /* PARTNER-1: dark glass of the page's dark ground, lit along its rim, with the logo on
+     the white glass of the logo plates, so it keeps its own colors.
+     Depth is light, not elevation (DEPTH-1). */
+  .partner-dialog {
+    width: min(27rem, calc(100vw - 2 * var(--space-sm)));
+    max-height: calc(100dvh - 2 * var(--space-sm));
+    padding: 0;
+    overflow: visible;
+    color: var(--color-text-inverse);
+    background: none;
+    border: 0;
+  }
+
+  .partner-dialog::backdrop {
+    background-color: color-mix(
+      in srgb,
+      var(--color-ticket-midnight) 72%,
+      transparent
+    );
+    backdrop-filter: blur(10px);
+  }
+
+  /* The panel itself takes focus when the pop-up opens (autofocus), so no
+     button lights up a focus ring on its own; Tab moves on to the close
+     button and the link as usual. */
+  .dialog-panel:focus,
+  .dialog-panel:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+
+  .dialog-panel {
+    position: relative;
+    display: grid;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    overflow: hidden auto;
+    max-height: inherit;
+    background-color: var(--color-ticket-midnight);
+    background-image:
+      radial-gradient(
+        ellipse 90% 60% at 50% 110%,
+        color-mix(in srgb, var(--color-ticket-sky) 45%, transparent),
+        transparent 70%
+      ),
+      linear-gradient(
+        160deg,
+        color-mix(in srgb, var(--color-ticket-deep) 90%, var(--color-white)),
+        var(--color-ticket-deep) 30%,
+        var(--color-ticket-midnight)
+      );
+    border-radius: var(--radius-card-large);
+  }
+
+  /* The lit rim: a hairline that is brightest top left and bottom right. */
+  .dialog-panel::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background-image: linear-gradient(
+      150deg,
+      var(--color-ticket-ice),
+      color-mix(in srgb, var(--color-ticket-ice) 18%, transparent) 35%,
+      color-mix(in srgb, var(--color-ticket-sky) 30%, transparent) 65%,
+      color-mix(in srgb, var(--color-ticket-ice) 70%, transparent)
+    );
+    mask:
+      linear-gradient(var(--color-white) 0 0) content-box,
+      linear-gradient(var(--color-white) 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .dialog-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+  }
+
+  .dialog-tier {
+    margin: 0;
+    color: var(--color-ticket-ice);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  /* An icon control of the dark glass, not .button (COMP-1, as
+     PARTNER-1 allows). */
+  .dialog-close {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    color: var(--color-white);
+    background-color: color-mix(in srgb, var(--color-white) 8%, transparent);
+    border: 1px solid
+      color-mix(in srgb, var(--color-ticket-ice) 38%, transparent);
+    border-radius: var(--radius-circle);
+    cursor: pointer;
+    transition: background-color var(--duration-hover) var(--ease-snappy);
+  }
+
+  .dialog-close :global(svg) {
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+
+  .dialog-close:hover {
+    background-color: color-mix(
+      in srgb,
+      var(--color-ticket-ice) 24%,
+      transparent
+    );
+  }
+
+  /* The plate: the white glass of the logo plates, larger, so the
+     logo keeps its own colors and a logo file with a white ground of its
+     own melts into it. A fine ice line inside its lower edge and a soft
+     ice halo are the glass. The logo is contained, never stretched,
+     recolored or filtered. */
+  .dialog-plate {
+    display: grid;
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+    place-items: center;
+    height: 9rem;
+    padding: var(--space-md) var(--space-lg);
+    background-color: var(--color-white);
+    border-radius: var(--radius-ticket-panel);
+    box-shadow:
+      inset 0 -1px 0
+        color-mix(in srgb, var(--color-ticket-ice) 90%, transparent),
+      0 0 1.75rem -0.5rem
+        color-mix(in srgb, var(--color-ticket-ice) 50%, transparent);
+  }
+
+  .dialog-plate img {
+    grid-area: 1 / 1;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  .dialog-name {
+    grid-area: 1 / 1;
+    margin: 0;
+    color: var(--color-heading);
+    font-size: var(--heading-h5-size);
+    text-align: center;
+    text-wrap: balance;
+  }
+
+  .dialog-text {
+    max-width: 34ch;
+    margin: 0;
+    color: var(--color-white);
+    font-size: var(--text-size-regular);
+    line-height: 1.6;
+  }
+
+  .dialog-text[hidden] {
+    display: none;
+  }
+
+  /* A white button with a navy label, like the plate above it: the
+     shared glass button keeps its shape, type and press, but drops the
+     glass, the cyan glow, the halos and the light pulse (PARTNER-1). */
+  .button.is-glass.dialog-link {
+    justify-self: start;
+    color: var(--color-navy);
+    background: var(--color-white);
+    box-shadow: none;
+    text-shadow: none;
+  }
+
+  .button.is-glass.dialog-link::before,
+  .button.is-glass.dialog-link::after {
+    display: none;
+  }
+
+  .dialog-link .glass-light {
+    display: none;
+  }
+
+  @media (hover: hover) {
+    .button.is-glass.dialog-link:hover {
+      color: var(--color-navy);
+      background: color-mix(
+        in srgb,
+        var(--color-ticket-ice) 35%,
+        var(--color-white)
+      );
+    }
+  }
+
+  .dialog-link-arrow {
+    display: grid;
+    transform: rotate(-45deg);
+  }
+
+  /* It forms out of the tile that was picked (--from-x and --from-y, set by
+     the script, point from the dialog's middle to that tile) and folds
+     back faster (MOTION-3: transform and opacity only). */
+  @media (prefers-reduced-motion: no-preference) {
+    .partner-dialog[open] .dialog-panel {
+      animation: partner-dialog-in var(--duration-open) var(--ease-emphasized)
+        backwards;
+    }
+
+    .partner-dialog[open]::backdrop {
+      animation: partner-dialog-veil var(--duration-open) var(--ease-snappy)
+        backwards;
+    }
+
+    .partner-dialog.is-closing .dialog-panel {
+      animation: partner-dialog-out var(--duration-close) var(--ease-snappy)
+        forwards;
+    }
+
+    .partner-dialog.is-closing::backdrop {
+      animation: partner-dialog-veil var(--duration-close) var(--ease-snappy)
+        reverse forwards;
+    }
+  }
+
+  @keyframes partner-dialog-in {
+    from {
+      opacity: 0;
+      transform: translate(var(--from-x, 0), var(--from-y, 0)) scale(0.6);
+    }
+  }
+
+  @keyframes partner-dialog-out {
+    to {
+      opacity: 0;
+      transform: translate(
+          calc(var(--from-x, 0) * 0.4),
+          calc(var(--from-y, 0) * 0.4)
+        )
+        scale(0.85);
+    }
+  }
+
+  @keyframes partner-dialog-veil {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dialog-close {
+      transition: none;
+    }
+  }
+</style>

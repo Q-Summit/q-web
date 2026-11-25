@@ -24,6 +24,7 @@ import TicketStatus from "./TicketStatus.astro";
 import {
   euro,
   fillLabel,
+  isDiscounted,
   isPositive,
   savings,
   statusLabel,
@@ -64,6 +65,9 @@ const until =
 const saleNote = active
   ? `${active.label}${until ? ` until ${until}` : ""}`
   : undefined;
+// With no ticket below its regular price (between two phases), the list
+// has one price column and no struck prices.
+const anyDiscount = offer.tickets.some(isDiscounted);
 ---
 
 <section
@@ -87,11 +91,11 @@ const saleNote = active
     </div>
 
     <div class="t-pick">
-      <div class="t-choices">
+      <div class:list={["t-choices", { "is-single-price": !anyDiscount }]}>
         <div class="t-choice-cols" aria-hidden="true">
           <span>Ticket</span>
-          <span>Regular</span>
-          <span>{saleName}</span>
+          {anyDiscount && <span>Regular</span>}
+          <span>{anyDiscount ? saleName : "Price"}</span>
         </div>
         <div
           class="t-choice-list"
@@ -117,10 +121,16 @@ const saleNote = active
                   <span class="t-choice-name">{ticket.name}</span>
                   <span class="t-choice-desc">{ticket.description}</span>
                 </span>
-                <span class="t-choice-was">
-                  <span class="u-visually-hidden">Regular price </span>
-                  <s>{euro(ticket.regularPrice)}</s>
-                </span>
+                {anyDiscount && (
+                  <span class="t-choice-was">
+                    {isDiscounted(ticket) && (
+                      <>
+                        <span class="u-visually-hidden">Regular price </span>
+                        <s>{euro(ticket.regularPrice)}</s>
+                      </>
+                    )}
+                  </span>
+                )}
                 <span class="t-choice-now">
                   <span class="u-visually-hidden">{priceLabel} </span>
                   {euro(ticket.price)}
@@ -177,18 +187,20 @@ const saleNote = active
                         <span class="u-visually-hidden">{priceLabel} </span>
                         {euro(ticket.price)}
                       </p>
-                      <p class="t-detail-was">
-                        {saleNote && <span>{saleNote}</span>}
-                        <span>
-                          <span class="u-visually-hidden">Regular price </span>
-                          <s>{euro(ticket.regularPrice)}</s>
-                        </span>
-                        {saved > 0 && (
+                      {saved > 0 && (
+                        <p class="t-detail-was">
+                          {saleNote && <span>{saleNote}</span>}
+                          <span>
+                            <span class="u-visually-hidden">
+                              Regular price{" "}
+                            </span>
+                            <s>{euro(ticket.regularPrice)}</s>
+                          </span>
                           <span class="t-detail-save">
                             {offer.saveLabel} {euro(saved)}
                           </span>
-                        )}
-                      </p>
+                        </p>
+                      )}
                     </div>
                   </div>
                   <p
@@ -287,6 +299,12 @@ const saleNote = active
     column-gap: clamp(var(--space-xs), 1.8vw, var(--space-md));
     align-items: center;
     padding-inline: clamp(var(--space-sm), 1.6vw, var(--space-md));
+  }
+
+  /* One price column while nothing is discounted. */
+  .is-single-price .t-choice-cols,
+  .is-single-price .t-choice {
+    grid-template-columns: minmax(0, 1fr) minmax(5.5rem, auto) 1.25rem;
   }
 
   .t-choice-cols {
@@ -729,6 +747,11 @@ const saleNote = active
       grid-template-columns: minmax(0, 1fr) auto auto 1rem;
       column-gap: var(--space-xs);
       padding-inline: var(--space-xs);
+    }
+
+    .is-single-price .t-choice-cols,
+    .is-single-price .t-choice {
+      grid-template-columns: minmax(0, 1fr) auto 1rem;
     }
 
     .t-choice {

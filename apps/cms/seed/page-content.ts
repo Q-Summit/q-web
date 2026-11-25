@@ -292,6 +292,103 @@ async function run() {
         imageLeft: audience.imageLeft,
       });
     }
+    // The audience pages (/whyq/<audience>/). JSON carries a photo or logo
+    // as a /media filename; the CMS field is an upload, left unset when the
+    // file is not on disk (the fixture's sentinel names never are).
+    type SeedPhoto = { file: string; alt: string } | undefined;
+    const upload = async (photo: SeedPhoto, context: string) =>
+      photo
+        ? ((await ensureMedia(
+            payload,
+            `/media/${photo.file}`,
+            photo.alt,
+            context,
+          )) ?? undefined)
+        : undefined;
+    const photoData = async (photo: SeedPhoto, context: string) => ({
+      image: await upload(photo, context),
+      imageAlt: photo?.alt ?? null,
+    });
+    const pages = [];
+    for (const page of whyq.pages ?? []) {
+      const ctx = `whyq ${page.audience}`;
+      const hl = page.highlight;
+      pages.push({
+        audience: page.audience,
+        crumb: page.crumb,
+        metaDescription: page.metaDescription,
+        hero: page.hero,
+        stats: page.stats,
+        activities: {
+          heading: page.activities.heading,
+          intro: page.activities.intro ?? null,
+          items: await Promise.all(
+            page.activities.items.map(async (item: any) => ({
+              title: item.title,
+              text: item.text,
+              kind: item.kind,
+              ...(await photoData(item.image, ctx)),
+            })),
+          ),
+        },
+        highlight: {
+          layout: hl.layout,
+          eyebrow: hl.eyebrow,
+          heading: hl.heading,
+          intro: hl.intro ?? null,
+          cards: await Promise.all(
+            (hl.cards ?? []).map(async (card: any) => ({
+              kicker: card.kicker,
+              title: card.title,
+              text: card.text,
+              ...(await photoData(card.image, ctx)),
+            })),
+          ),
+          winnerLabel: hl.winnerLabel ?? null,
+          winnerName: hl.winnerName ?? null,
+          winnerLine: hl.winnerLine ?? null,
+          ...(await photoData(hl.image, ctx)),
+          moments: await Promise.all(
+            (hl.moments ?? []).map(async (moment: any) => ({
+              image: await upload(moment.image, ctx),
+              imageAlt: moment.alt,
+            })),
+          ),
+          logosEyebrow: hl.logosEyebrow ?? null,
+          logosHeading: hl.logosHeading ?? null,
+          logos: await Promise.all(
+            (hl.logos ?? []).map(async (logo: any) => ({
+              name: logo.name,
+              websiteUrl: logo.href ?? null,
+              logo: await upload(
+                logo.file ? { file: logo.file, alt: logo.name } : undefined,
+                ctx,
+              ),
+            })),
+          ),
+        },
+        ticket: {
+          heading: page.ticket.heading,
+          intro: page.ticket.intro ?? null,
+          keys: page.ticket.keys,
+          side: page.ticket.side ?? [],
+          includesHeading: page.ticket.includesHeading ?? null,
+          includes: (page.ticket.includes ?? []).map((text: string) => ({
+            text,
+          })),
+          partnerPanel: page.ticket.partnerPanel
+            ? {
+                ...page.ticket.partnerPanel,
+                perks: page.ticket.partnerPanel.perks.map((text: string) => ({
+                  text,
+                })),
+              }
+            : {},
+        },
+        faq: page.faq,
+      });
+    }
+
     await payload.updateGlobal({
       slug: "page-whyq",
       data: {
@@ -300,13 +397,15 @@ async function run() {
         heading: whyq.heading,
         intro: whyq.intro,
         audiences,
+        eventLine: whyq.eventLine ?? null,
+        pages,
         _status: "published",
       },
       user: seedUser,
       overrideAccess: true,
     });
     console.log(
-      `page-whyq: updated and published (${audiences.length} audiences` +
+      `page-whyq: updated and published (${audiences.length} audiences, ${pages.length} audience pages` +
         (missingImages > 0 ? `, ${missingImages} without local media` : "") +
         ")",
     );
@@ -587,12 +686,55 @@ async function run() {
     console.log("page-past-teams: updated and published");
   }
 
-  // page-partner
+  // page-partner: contact portraits travel as a filename in the JSON and
+  // as a Media upload in Payload. Look the file up like seed/testimonials.ts
+  // does and leave the portrait empty (the card shows initials) when the
+  // local media library does not have it, which is always the case for the
+  // fixture's fixture-missing-* sentinel.
   {
     const partner = content.partner;
+    const audiences: Record<string, any> = {};
+    for (const [key, audience] of Object.entries<any>(
+      partner.audiences ?? {},
+    )) {
+      const contacts = [];
+      for (const { photoFilename, ...contact } of audience.contacts ?? []) {
+        let photo: string | number | undefined;
+        if (photoFilename) {
+          const media = await payload.find({
+            collection: "media",
+            where: { filename: { contains: photoFilename } },
+            limit: 1,
+            overrideAccess: true,
+          });
+          photo = media.docs[0]?.id;
+        }
+        contacts.push({ ...contact, photo });
+      }
+      audiences[key] = { ...audience, contacts };
+    }
+    // The Become a Partner contact: same portrait lookup; its points are
+    // plain strings in the JSON and title rows in Payload.
+    const { photoFilename: ctaPhoto, ...ctaContact } =
+      partner.cta?.contact ?? {};
+    let ctaPhotoId: string | number | undefined;
+    if (ctaPhoto) {
+      const media = await payload.find({
+        collection: "media",
+        where: { filename: { contains: ctaPhoto } },
+        limit: 1,
+        overrideAccess: true,
+      });
+      ctaPhotoId = media.docs[0]?.id;
+    }
+    const cta = {
+      ...partner.cta,
+      points: (partner.cta?.points ?? []).map((title: string) => ({ title })),
+      contact: { ...ctaContact, photo: ctaPhotoId },
+    };
     await payload.updateGlobal({
       slug: "page-partner",
-      data: { ...partner, _status: "published" },
+      data: { ...partner, cta, audiences, _status: "published" },
       user: seedUser,
       overrideAccess: true,
     });

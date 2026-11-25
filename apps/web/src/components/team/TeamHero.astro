@@ -1,110 +1,110 @@
 ---
-// Full-height hero shared by /our-team and /past-teams: the current-team
-// group photo behind a dark overlay with a centered white H1, matching the
-// live header7/header65 section.
-import { Picture } from "../../lib/astro-assets";
-import { TEAM_HERO_PHOTO, widePhotoSrc } from "../../lib/team-media";
-import { resolveContentImage } from "../../lib/images";
+// Hero shared by /our-team and /past-teams: the current-team group photo
+// behind a dark overlay with a centered white H1 (the live header7/header65
+// section), framed like the team's history page mockup and melting softly
+// into the 2027 navy below (DESIGN.md NAVY-1).
+import type { TeamHeroPhoto } from "../../lib/content";
+import { teamHeroSources } from "../../lib/team-media";
 
 interface Props {
   title: string;
   /** Payload Live Preview path for the title, e.g. "heading". */
   lpTitle?: string;
+  /** The group photo from the CMS (Our Team); unset keeps the built-in one. */
+  photo?: TeamHeroPhoto;
+  /** Both pages' headings, for the team switch (TeamPanels.astro) to swap
+   * the title when it swaps the views in place. */
+  titles?: { current: string; past: string };
 }
 
-const { title, lpTitle } = Astro.props;
-
-// Group photo used as the hero background on both live team pages: this is
-// the LCP element on both routes, so it stays loading="eager"/fetchpriority
-// "high" through the pipeline.
-const backgroundImage = await resolveContentImage(
-  TEAM_HERO_PHOTO,
-  "team hero background",
-);
-const background = widePhotoSrc(TEAM_HERO_PHOTO);
+const { title, lpTitle, photo, titles } = Astro.props;
+const hero = teamHeroSources(photo);
 ---
 
 <header class="team-hero">
   {
-    backgroundImage ? (
-      <Picture
-        class="team-hero__image"
-        src={backgroundImage}
-        alt=""
-        widths={[800, 1200, 1600]}
-        sizes="100vw"
-        formats={["avif", "webp"]}
-        fallbackFormat="jpg"
-        quality={80}
-        loading="eager"
-        fetchpriority="high"
-        decoding="async"
-      />
-    ) : (
-      <img
-        class="team-hero__image"
-        src={background.src}
-        srcset={background.srcset}
-        sizes="100vw"
-        alt=""
-        width="1600"
-        height="1066"
-        loading="eager"
-        fetchpriority="high"
-        decoding="async"
-      />
-    )
+    /* The LCP element on both team routes: eager, high priority, and the
+      same srcset the pages preload (lib/team-media.ts). */
   }
+  <img
+    class="team-hero__image"
+    src={hero.src}
+    srcset={hero.srcset}
+    sizes="100vw"
+    alt=""
+    width={hero.width}
+    height={hero.height}
+    loading="eager"
+    fetchpriority="high"
+    decoding="async"
+  />
   <div class="team-hero__overlay" aria-hidden="true"></div>
+  <div class="team-hero__melt" aria-hidden="true"></div>
   <div class="container team-hero__content">
-    <h1 class="team-hero__title" data-lp={lpTitle}>{title}</h1>
+    <h1
+      class="team-hero__title"
+      data-lp={lpTitle}
+      data-team-title
+      data-title-current={titles?.current}
+      data-title-past={titles?.past}
+    >
+      {title}
+    </h1>
   </div>
 </header>
 
 <style>
+  /* DESIGN.md NAVY-1: the live team hero (the 50% scrim, the centered
+     white H1 at the site's H1 size) on the 2027 navy, framed like the
+     team's history page mockup: the photo spans the full width and shows
+     the band between --crop-top and --crop-bottom of its height (the
+     building above the heads and the road below the pavement are cut), so
+     the whole group stands in the frame with the title on the
+     sweatshirts. */
   .team-hero {
-    /* Fraction of the source photo trimmed off each end, consumed by
-       .team-hero__image below. The top is mostly empty building facade and
-       the bottom is pavement, so both are spent before the group is. */
-    --hero-crop-top: 0.28;
-    --hero-crop-bottom: 0.12;
+    --crop-top: 0.28;
+    --crop-bottom: 0.12;
+    --melt: 42%;
+    /* The site header's height (home-theme.css --h-header-height): the
+       photo runs on up behind the glass header, as on the mockup. */
+    --header: 4.5rem;
     position: relative;
-    min-height: min(100svh, 52rem);
+    height: min(100svh, 52rem);
+    margin-top: calc(-1 * var(--header));
     overflow: hidden;
+    /* No ground of its own: the hero fades out to transparent over its
+       lower --melt, so the photo dissolves into the page's own navy and
+       its pools of light (.n-ground) and never ends on an edge, whatever
+       color lies behind it. */
+    -webkit-mask: linear-gradient(var(--fade));
+    mask: linear-gradient(var(--fade));
+    --fade:
+      var(--color-black) calc(100% - var(--melt)),
+      color-mix(in srgb, var(--color-black) 96%, transparent)
+        calc(100% - var(--melt) * 0.9),
+      color-mix(in srgb, var(--color-black) 85%, transparent)
+        calc(100% - var(--melt) * 0.78),
+      color-mix(in srgb, var(--color-black) 66%, transparent)
+        calc(100% - var(--melt) * 0.65),
+      color-mix(in srgb, var(--color-black) 43%, transparent)
+        calc(100% - var(--melt) * 0.52),
+      color-mix(in srgb, var(--color-black) 22%, transparent)
+        calc(100% - var(--melt) * 0.4),
+      color-mix(in srgb, var(--color-black) 8%, transparent)
+        calc(100% - var(--melt) * 0.26),
+      color-mix(in srgb, var(--color-black) 2%, transparent)
+        calc(100% - var(--melt) * 0.12),
+      transparent 100%;
   }
 
-  /* Phones crop harder and sit in a shorter band. The trimmed photo is wider
-     than 2:1, so a tall viewport spends its height budget throwing away width
-     instead: shortening the band is what keeps the ends of the group in frame
-     while the deeper trim removes the dead facade and pavement. */
-  @media (max-width: 767px) {
-    .team-hero {
-      --hero-crop-top: 0.325;
-      --hero-crop-bottom: 0.075;
-      min-height: min(50svh, 25rem);
-    }
-  }
-
-  /* Show only the middle band of the photo, trimming facade off the top and
-     pavement off the bottom, so the hero reads as a portrait of the team
-     rather than of the building it stands in front of.
-
-     Done in CSS rather than by re-cutting the file: the same asset is in the
-     CMS media library and R2, and the two page sizes want different trims.
-
-     The element is scaled to 1/shown of the band and pulled up by the top
-     trim, so both offcuts overflow into .team-hero's overflow:hidden. At
-     these ratios `cover` scales by height, so the element holds the whole
-     photo and the clipped regions are exactly the fractions above. On a band
-     wider than about 2.4:1 `cover` turns width-driven and the trim deepens;
-     anchoring the bottom keeps that extra bite on the facade end. */
   .team-hero__image {
-    --hero-shown: calc(1 - var(--hero-crop-top) - var(--hero-crop-bottom));
+    --shown: calc(1 - var(--crop-top) - var(--crop-bottom));
     position: absolute;
     inset-inline: 0;
-    top: calc(-100% * var(--hero-crop-top) / var(--hero-shown));
+    top: calc(-100% * var(--crop-top) / var(--shown));
     width: 100%;
-    height: calc(100% / var(--hero-shown));
+    height: calc(100% / var(--shown));
+    max-width: none;
     object-fit: cover;
     object-position: center bottom;
   }
@@ -112,36 +112,82 @@ const background = widePhotoSrc(TEAM_HERO_PHOTO);
   .team-hero__overlay {
     position: absolute;
     inset: 0;
+    z-index: 1;
     /* The shared scrim token, same value the home hero uses (DESIGN.md COLOR-3). */
     background-color: var(--color-overlay);
   }
 
-  /* Centered, with the crop above doing the work of keeping it off the faces:
-     the top trim is set so the face row ends around 43% of the band, which
-     leaves the middle sitting on the sweatshirts. Nudging the title off center
-     instead was the earlier approach and read as misaligned.
+  /* The melt: over the same band the photo also goes soft, one blur
+     under an eased mask, so it blurs and fades at once instead of ending
+     on a line. */
+  .team-hero__melt {
+    --ease:
+      transparent, color-mix(in srgb, var(--color-black) 4%, transparent) 10%,
+      color-mix(in srgb, var(--color-black) 15%, transparent) 22%,
+      color-mix(in srgb, var(--color-black) 34%, transparent) 35%,
+      color-mix(in srgb, var(--color-black) 57%, transparent) 48%,
+      color-mix(in srgb, var(--color-black) 78%, transparent) 60%,
+      color-mix(in srgb, var(--color-black) 92%, transparent) 71%,
+      var(--color-black) 82%;
+    position: absolute;
+    inset: auto 0 0;
+    z-index: 2;
+    height: var(--melt);
+    pointer-events: none;
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    -webkit-mask: linear-gradient(var(--ease));
+    mask: linear-gradient(var(--ease));
+  }
 
-     Positioned rather than laid out with flex because percentage padding
-     resolves against width, not height, and the phone band below needs a
-     different anchor than dead center. */
   .team-hero__content {
     position: absolute;
+    z-index: 3;
     inset-inline: 0;
     top: 50%;
     transform: translateY(-50%);
     text-align: center;
   }
 
-  /* The deeper phone trim lifts the group in the frame, so the title follows
-     it up to stay on the trousers rather than drifting onto the pavement. */
+  /* The mockup's display title: larger than the H1 scale (NAVY-1 allows
+     display type above the heading scale). */
+  .team-hero__title {
+    color: var(--color-text-inverse);
+    font-size: clamp(2.2rem, 5vw, 4rem);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    text-wrap: balance;
+  }
+
+  /* Phones: trim the pavement, not the heads; the photo only goes soft
+     below the feet. */
   @media (max-width: 767px) {
+    .team-hero {
+      --header: 4rem;
+      --crop-top: 0.25;
+      --crop-bottom: 0.13;
+      height: min(62svh, 30rem);
+    }
+
     .team-hero__content {
-      top: 57%;
+      top: 60%;
+    }
+
+    .team-hero {
+      --melt: 17%;
     }
   }
 
-  .team-hero__title {
-    color: var(--color-text-inverse);
-    text-wrap: balance;
+  @media (prefers-reduced-motion: no-preference) {
+    .team-hero__image {
+      animation: team-hero-in var(--duration-glass-light) var(--ease-snappy)
+        both;
+    }
+  }
+
+  @keyframes team-hero-in {
+    from {
+      opacity: 0;
+    }
   }
 </style>

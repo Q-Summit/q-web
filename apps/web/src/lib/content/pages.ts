@@ -19,6 +19,10 @@ import {
   type PageLink,
 } from "./site-settings";
 import { CONTENT_SOURCE, readJson } from "./source";
+import {
+  PARTNER_AUDIENCE_KEYS,
+  type PartnerAudienceKey,
+} from "../partner-audiences";
 
 export interface PageStat {
   value: string;
@@ -288,6 +292,89 @@ export interface WhyqContent {
   heading: string;
   intro: string;
   audiences: WhyqAudience[];
+  /** The line on the pill under every audience hero. */
+  eventLine?: string;
+  /** The four pages under /whyq/ (pages/whyq/[audience].astro); a page
+   * without an entry is not built. */
+  pages?: WhyqAudiencePage[];
+}
+
+/** Slug of an audience page: it lives at /whyq/<slug>/. */
+export type WhyqAudienceSlug =
+  "students" | "startups" | "corporates" | "investors";
+
+/** A photo on an audience page: a /media filename and its alt text. */
+export interface WhyqPhoto {
+  file: string;
+  alt: string;
+  width?: number;
+  height?: number;
+}
+
+/** One logo of a highlight's logo wall; without a file the name shows. */
+export interface WhyqLogoEntry {
+  name: string;
+  href?: string;
+  file?: string;
+  width?: number;
+  height?: number;
+}
+
+export interface WhyqAudiencePage {
+  audience: WhyqAudienceSlug;
+  /** Breadcrumb label, e.g. "For Startups". */
+  crumb: string;
+  metaDescription: string;
+  hero: { heading: string; intro: string; ctaLabel: string };
+  stats: { value: string; label: string }[];
+  activities: {
+    heading: string;
+    intro?: string;
+    items: {
+      title: string;
+      text: string;
+      kind: "included" | "apply";
+      image?: WhyqPhoto;
+    }[];
+  };
+  highlight: {
+    layout: "cards" | "winner" | "logos" | "qube";
+    eyebrow: string;
+    heading: string;
+    intro?: string;
+    cards?: {
+      kicker: string;
+      title: string;
+      text: string;
+      image?: WhyqPhoto;
+    }[];
+    winnerLabel?: string;
+    winnerName?: string;
+    winnerLine?: string;
+    image?: WhyqPhoto;
+    moments?: { alt: string; image?: WhyqPhoto }[];
+    logosEyebrow?: string;
+    logosHeading?: string;
+    logos?: WhyqLogoEntry[];
+  };
+  ticket: {
+    heading: string;
+    intro?: string;
+    keys: TicketKey[];
+    side?: { title: string; text: string; status: string }[];
+    includesHeading?: string;
+    includes?: string[];
+    partnerPanel?: {
+      eyebrow: string;
+      heading: string;
+      text: string;
+      perks: string[];
+      linkLabel: string;
+      href: string;
+    };
+  };
+  /** Answers may hold `{price:<key>}` / `{regular:<key>}` tokens. */
+  faq: { heading: string; items: { question: string; answer: string }[] };
 }
 
 export interface ProgramContent {
@@ -529,10 +616,23 @@ export interface HackathonContent {
   };
 }
 
+/** The team hero photo from the CMS: its /media filename and size. */
+export interface TeamHeroPhoto {
+  file: string;
+  width?: number;
+  height?: number;
+}
+
 export interface OurTeamContent {
   title: string;
   metaDescription: string;
   heading: string;
+  /** Shared by /our-team and /past-teams; unset keeps the built-in photo. */
+  heroImage?: TeamHeroPhoto;
+  /** The "Current Team" side of the team switch. */
+  tabLabel?: string;
+  /** Heading above each division, with {division} for its name. */
+  divisionHeading?: string;
 }
 
 export interface PastTeamsContent {
@@ -540,18 +640,119 @@ export interface PastTeamsContent {
   metaDescription: string;
   heading: string;
   intro: string;
+  /** The "History" side of the team switch. */
+  tabLabel?: string;
+  /** Heading above each year's team photo, with {year}. */
+  yearHeading?: string;
+  /** Alt text of each year's team photo, with {year}. */
+  photoAlt?: string;
+  /**
+   * Copy of the scroll story. Set only when every field is filled; unset,
+   * the page falls back to `intro` plus one photo per year.
+   */
+  story?: PastTeamsStory;
+}
+
+/** The /past-teams/ scroll story copy (page-past-teams `story` group). */
+export interface PastTeamsStory {
+  heroEyebrow: string;
+  heroHeading: string;
+  heroLead: string;
+  /** The button that glides through the first part of the story. */
+  cueLabel: string;
+  originEyebrow: string;
+  originHeading: string;
+  originSub: string;
+  originText: string;
+  teamsEyebrow: string;
+  teamsHeading: string;
+  teamsText: string;
+  albumEyebrow: string;
+  albumHeading: string;
+  /** The hint under the camera on a computer. */
+  albumHint: string;
+  /** The same hint on a phone. */
+  albumHintTouch: string;
+  /** The button under the camera that scrolls back to the start. */
+  backLabel: string;
+  closingEyebrow: string;
+  closingHeading: string;
+  closingText: string;
+  /** Label of the button to /our-team/ (the link is fixed in code). */
+  closingButtonLabel: string;
+}
+
+export type { PartnerAudienceKey };
+
+export interface PartnerContact {
+  name: string;
+  role: string;
+  email: string;
+  /** Media filename; unset when the CMS has no portrait yet (initials show). */
+  photoFilename?: string;
+}
+
+/** The person behind Become a Partner; the card shows once name and email
+ * are filled. */
+export interface PartnerCtaContact {
+  name: string;
+  role: string;
+  email: string;
+  /** Hint of the copy-address icon; empty hides the icon. */
+  copyLabel: string;
+  copiedLabel: string;
+  /** Media filename; unset when the CMS has no portrait yet (initials show). */
+  photoFilename?: string;
+}
+
+export interface PartnerAudience {
+  /** Title of the expandable field on /partner/. */
+  label: string;
+  summary: string;
+  linkLabel: string;
+  heading: string;
+  intro: string;
+  benefitsHeading: string;
+  benefits: { title: string; description: string }[];
+  contactsHeading: string;
+  contactLabel: string;
+  contacts: PartnerContact[];
 }
 
 export interface PartnerPageContent {
   title: string;
   metaDescription: string;
+  projector: {
+    /** Small label above the heading and at the top of every slide. */
+    eyebrow: string;
+    heading: string;
+    intro: string;
+    hint: string;
+    /** Word after the tier name in each slide heading ("Partner" → "Gold
+     * Partner"); empty shows the tier name alone. Optional so a JSON
+     * snapshot from before the field still builds. */
+    tierSuffix?: string;
+    /** Label of the pop-up's website button; empty shows the site's host. */
+    websiteLabel?: string;
+  };
+  /** Heading of the partner photos and quotes section. */
   heading: string;
+  /** Line under that heading saying a quote opens from the quote mark;
+   * empty or missing shows none. */
+  quotesHint?: string;
+  /** The Become a Partner section: texts, the contact person and the main
+   * button to the partner form. points and contact are optional so a JSON
+   * snapshot from before these fields still builds. */
   cta: {
     heading: string;
     text: string;
+    /** What a partner gets, one short line each. */
+    points?: string[];
     buttonLabel: string;
     buttonHref: string;
+    contact?: PartnerCtaContact;
   };
+  audiences: Record<PartnerAudienceKey, PartnerAudience>;
 }
 
 export interface SpeakerPanel {
@@ -1012,12 +1213,213 @@ interface CmsWhyqAudienceDoc {
   imageLeft?: boolean | null;
 }
 
+type CmsUpload = CmsMediaRef | number | string | null | undefined;
+type CmsText = string | null | undefined;
+
+interface CmsWhyqPhotoDoc {
+  image?: CmsUpload;
+  imageAlt?: CmsText;
+}
+
+interface CmsWhyqPageDoc {
+  audience: WhyqAudienceSlug;
+  crumb: string;
+  metaDescription: string;
+  hero: { heading: string; intro: string; ctaLabel: string };
+  stats?: { value: string; label: string }[] | null;
+  activities: {
+    heading: string;
+    intro?: CmsText;
+    items?:
+      | ({
+          title: string;
+          text: string;
+          kind: "included" | "apply";
+        } & CmsWhyqPhotoDoc)[]
+      | null;
+  };
+  highlight: {
+    layout: WhyqAudiencePage["highlight"]["layout"];
+    eyebrow: string;
+    heading: string;
+    intro?: CmsText;
+    cards?:
+      | ({ kicker: string; title: string; text: string } & CmsWhyqPhotoDoc)[]
+      | null;
+    winnerLabel?: CmsText;
+    winnerName?: CmsText;
+    winnerLine?: CmsText;
+    image?: CmsUpload;
+    imageAlt?: CmsText;
+    moments?: CmsWhyqPhotoDoc[] | null;
+    logosEyebrow?: CmsText;
+    logosHeading?: CmsText;
+    logos?: { name: string; websiteUrl?: CmsText; logo?: CmsUpload }[] | null;
+  };
+  ticket: {
+    heading: string;
+    intro?: CmsText;
+    keys: TicketKey[];
+    side?: { title: string; text: string; status: string }[] | null;
+    includesHeading?: CmsText;
+    includes?: { text: string }[] | null;
+    partnerPanel?: {
+      eyebrow?: CmsText;
+      heading?: CmsText;
+      text?: CmsText;
+      perks?: { text: string }[] | null;
+      linkLabel?: CmsText;
+      href?: CmsText;
+    } | null;
+  };
+  faq: {
+    heading: string;
+    items?: { question: string; answer: string }[] | null;
+  };
+}
+
 interface CmsWhyqDoc {
   title: string;
   metaDescription?: string | null;
   heading: string;
   intro: string;
   audiences: CmsWhyqAudienceDoc[];
+  eventLine?: CmsText;
+  pages?: CmsWhyqPageDoc[] | null;
+}
+
+/** An optional photo: its /media filename, alt and size, when it is set. */
+async function cmsWhyqPhoto(
+  image: CmsUpload,
+  alt: CmsText,
+  label: string,
+): Promise<WhyqPhoto | undefined> {
+  const file = await resolveOptionalUploadFilename(image, label);
+  if (!file) return undefined;
+  return { file, alt: alt ?? "", ...uploadDimensions(image) };
+}
+
+async function cmsGetWhyqPage(page: CmsWhyqPageDoc): Promise<WhyqAudiencePage> {
+  const at = (part: string) => `whyq ${page.audience} ${part}`;
+  const { highlight: hl, ticket } = page;
+  const panel = ticket.partnerPanel;
+  return {
+    audience: page.audience,
+    crumb: page.crumb,
+    metaDescription: page.metaDescription,
+    hero: page.hero,
+    stats: (page.stats ?? []).map(({ value, label }) => ({ value, label })),
+    activities: {
+      heading: page.activities.heading,
+      ...(optionalText(page.activities.intro)
+        ? { intro: page.activities.intro! }
+        : {}),
+      items: await Promise.all(
+        (page.activities.items ?? []).map(async (item) => {
+          const image = await cmsWhyqPhoto(
+            item.image,
+            item.imageAlt,
+            at(`activity ${item.title}`),
+          );
+          return {
+            title: item.title,
+            text: item.text,
+            kind: item.kind,
+            ...(image ? { image } : {}),
+          };
+        }),
+      ),
+    },
+    highlight: {
+      layout: hl.layout,
+      eyebrow: hl.eyebrow,
+      heading: hl.heading,
+      ...(optionalText(hl.intro) ? { intro: hl.intro! } : {}),
+      cards: await Promise.all(
+        (hl.cards ?? []).map(async (card) => {
+          const image = await cmsWhyqPhoto(
+            card.image,
+            card.imageAlt,
+            at(`card ${card.title}`),
+          );
+          return {
+            kicker: card.kicker,
+            title: card.title,
+            text: card.text,
+            ...(image ? { image } : {}),
+          };
+        }),
+      ),
+      ...(optionalText(hl.winnerLabel) ? { winnerLabel: hl.winnerLabel! } : {}),
+      ...(optionalText(hl.winnerName) ? { winnerName: hl.winnerName! } : {}),
+      ...(optionalText(hl.winnerLine) ? { winnerLine: hl.winnerLine! } : {}),
+      image: await cmsWhyqPhoto(hl.image, hl.imageAlt, at("highlight photo")),
+      moments: await Promise.all(
+        (hl.moments ?? []).map(async (moment, i) => {
+          const image = await cmsWhyqPhoto(
+            moment.image,
+            moment.imageAlt,
+            at(`moment ${i + 1}`),
+          );
+          return { alt: moment.imageAlt ?? "", ...(image ? { image } : {}) };
+        }),
+      ),
+      ...(optionalText(hl.logosEyebrow)
+        ? { logosEyebrow: hl.logosEyebrow! }
+        : {}),
+      ...(optionalText(hl.logosHeading)
+        ? { logosHeading: hl.logosHeading! }
+        : {}),
+      logos: await Promise.all(
+        (hl.logos ?? []).map(async (logo) => {
+          const file = await resolveOptionalUploadFilename(
+            logo.logo,
+            at(`logo ${logo.name}`),
+          );
+          return {
+            name: logo.name,
+            ...(optionalText(logo.websiteUrl)
+              ? { href: logo.websiteUrl! }
+              : {}),
+            ...(file ? { file, ...uploadDimensions(logo.logo) } : {}),
+          };
+        }),
+      ),
+    },
+    ticket: {
+      heading: ticket.heading,
+      ...(optionalText(ticket.intro) ? { intro: ticket.intro! } : {}),
+      keys: ticket.keys ?? [],
+      side: (ticket.side ?? []).map(({ title, text, status }) => ({
+        title,
+        text,
+        status,
+      })),
+      ...(optionalText(ticket.includesHeading)
+        ? { includesHeading: ticket.includesHeading! }
+        : {}),
+      includes: (ticket.includes ?? []).map((row) => row.text),
+      ...(panel && optionalText(panel.heading)
+        ? {
+            partnerPanel: {
+              eyebrow: panel.eyebrow ?? "",
+              heading: panel.heading!,
+              text: panel.text ?? "",
+              perks: (panel.perks ?? []).map((row) => row.text),
+              linkLabel: panel.linkLabel ?? "",
+              href: panel.href ?? "",
+            },
+          }
+        : {}),
+    },
+    faq: {
+      heading: page.faq.heading,
+      items: (page.faq.items ?? []).map(({ question, answer }) => ({
+        question,
+        answer,
+      })),
+    },
+  };
 }
 
 async function cmsGetWhyq(): Promise<WhyqContent> {
@@ -1050,6 +1452,8 @@ async function cmsGetWhyq(): Promise<WhyqContent> {
     heading: doc.heading,
     intro: doc.intro,
     audiences,
+    ...(optionalText(doc.eventLine) ? { eventLine: doc.eventLine! } : {}),
+    pages: await Promise.all((doc.pages ?? []).map(cmsGetWhyqPage)),
   };
 }
 
@@ -1519,14 +1923,26 @@ interface CmsOurTeamDoc {
   title: string;
   metaDescription?: string | null;
   heading: string;
+  heroImage?: CmsMediaRef | number | string | null;
+  tabLabel?: string | null;
+  divisionHeading?: string | null;
 }
 
 async function cmsGetOurTeam(): Promise<OurTeamContent> {
   const doc = await fetchGlobal<CmsOurTeamDoc>("page-our-team");
+  const heroFile = await resolveOptionalUploadFilename(
+    doc.heroImage,
+    "page-our-team heroImage",
+  );
   return {
     title: doc.title,
     metaDescription: doc.metaDescription ?? "",
     heading: doc.heading,
+    ...(heroFile && {
+      heroImage: { file: heroFile, ...uploadDimensions(doc.heroImage) },
+    }),
+    ...(doc.tabLabel && { tabLabel: doc.tabLabel }),
+    ...(doc.divisionHeading && { divisionHeading: doc.divisionHeading }),
   };
 }
 
@@ -1535,37 +1951,211 @@ interface CmsPastTeamsDoc {
   metaDescription?: string | null;
   heading: string;
   intro: string;
+  tabLabel?: string | null;
+  yearHeading?: string | null;
+  photoAlt?: string | null;
+  story?: { [K in keyof PastTeamsStory]?: string | null } | null;
+}
+
+const PAST_TEAMS_STORY_KEYS = [
+  "heroEyebrow",
+  "heroHeading",
+  "heroLead",
+  "cueLabel",
+  "originEyebrow",
+  "originHeading",
+  "originSub",
+  "originText",
+  "teamsEyebrow",
+  "teamsHeading",
+  "teamsText",
+  "albumEyebrow",
+  "albumHeading",
+  "albumHint",
+  "albumHintTouch",
+  "backLabel",
+  "closingEyebrow",
+  "closingHeading",
+  "closingText",
+  "closingButtonLabel",
+] as const satisfies readonly (keyof PastTeamsStory)[];
+
+/**
+ * The story only renders when every field is filled, so a build that runs
+ * before the copy is published falls back to the old layout instead of
+ * showing half a story. A partly filled group warns once, naming the gaps.
+ */
+function toPastTeamsStory(
+  raw: CmsPastTeamsDoc["story"],
+): PastTeamsStory | undefined {
+  if (!raw) return undefined;
+  const missing = PAST_TEAMS_STORY_KEYS.filter((key) => !raw[key]?.trim());
+  if (missing.length === PAST_TEAMS_STORY_KEYS.length) return undefined;
+  if (missing.length > 0) {
+    console.warn(
+      `[content:cms] page-past-teams story is partly filled; showing the fallback layout. Missing: ${missing.join(", ")}`,
+    );
+    return undefined;
+  }
+  const story = {} as PastTeamsStory;
+  for (const key of PAST_TEAMS_STORY_KEYS) story[key] = raw[key] as string;
+  return story;
 }
 
 async function cmsGetPastTeams(): Promise<PastTeamsContent> {
   const doc = await fetchGlobal<CmsPastTeamsDoc>("page-past-teams");
+  const story = toPastTeamsStory(doc.story);
   return {
     title: doc.title,
     metaDescription: doc.metaDescription ?? "",
     heading: doc.heading,
     intro: doc.intro,
+    ...(doc.tabLabel && { tabLabel: doc.tabLabel }),
+    ...(doc.yearHeading && { yearHeading: doc.yearHeading }),
+    ...(doc.photoAlt && { photoAlt: doc.photoAlt }),
+    ...(story && { story }),
   };
+}
+
+interface CmsPartnerAudienceDoc {
+  label?: string | null;
+  summary?: string | null;
+  linkLabel?: string | null;
+  heading?: string | null;
+  intro?: string | null;
+  benefitsHeading?: string | null;
+  benefits?: { title: string; description: string }[] | null;
+  contactsHeading?: string | null;
+  contactLabel?: string | null;
+  contacts?:
+    | {
+        name: string;
+        role?: string | null;
+        email: string;
+        photo?: CmsMediaRef | number | string | null;
+      }[]
+    | null;
 }
 
 interface CmsPartnerPageDoc {
   title: string;
   metaDescription?: string | null;
+  projector?: {
+    eyebrow?: string | null;
+    heading?: string | null;
+    intro?: string | null;
+    hint?: string | null;
+    tierSuffix?: string | null;
+    websiteLabel?: string | null;
+  } | null;
   heading: string;
+  quotesHint?: string | null;
   cta: {
     heading: string;
     text: string;
+    points?: { title: string }[] | null;
     buttonLabel: string;
     buttonHref: string;
+    contact?: {
+      name?: string | null;
+      role?: string | null;
+      email?: string | null;
+      copyLabel?: string | null;
+      copiedLabel?: string | null;
+      photo?: CmsMediaRef | number | string | null;
+    } | null;
+  };
+  audiences?: Partial<
+    Record<PartnerAudienceKey, CmsPartnerAudienceDoc | null>
+  > | null;
+}
+
+// A doc saved before the projector and the audience pages existed has these
+// groups empty, and every field in them is optional in the CMS; map them to
+// empty strings and lists instead of crashing. partner.astro then shows the
+// page title as the heading and no hint, and partnerAudiencePages leaves out
+// (and logs) every audience without a label or heading.
+async function cmsGetPartnerAudience(
+  key: PartnerAudienceKey,
+  doc: CmsPartnerAudienceDoc | null | undefined,
+): Promise<PartnerAudience> {
+  const contacts: PartnerContact[] = [];
+  for (const contact of doc?.contacts ?? []) {
+    const photoFilename = await resolveOptionalUploadFilename(
+      contact.photo,
+      `partner ${key} contact ${contact.name}`,
+    );
+    contacts.push({
+      name: contact.name,
+      role: contact.role ?? "",
+      email: contact.email,
+      ...(photoFilename ? { photoFilename } : {}),
+    });
+  }
+  return {
+    label: doc?.label ?? "",
+    summary: doc?.summary ?? "",
+    linkLabel: doc?.linkLabel ?? "",
+    heading: doc?.heading ?? "",
+    intro: doc?.intro ?? "",
+    benefitsHeading: doc?.benefitsHeading ?? "",
+    benefits: (doc?.benefits ?? []).map(({ title, description }) => ({
+      title,
+      description,
+    })),
+    contactsHeading: doc?.contactsHeading ?? "",
+    contactLabel: doc?.contactLabel ?? "",
+    contacts,
+  };
+}
+
+async function cmsGetPartnerCta(
+  cta: CmsPartnerPageDoc["cta"],
+): Promise<PartnerPageContent["cta"]> {
+  const contact = cta.contact;
+  const photoFilename = await resolveOptionalUploadFilename(
+    contact?.photo,
+    "partner cta contact",
+  );
+  return {
+    heading: cta.heading,
+    text: cta.text,
+    points: (cta.points ?? []).map(({ title }) => title),
+    buttonLabel: cta.buttonLabel,
+    buttonHref: cta.buttonHref,
+    contact: {
+      name: contact?.name ?? "",
+      role: contact?.role ?? "",
+      email: contact?.email ?? "",
+      copyLabel: contact?.copyLabel ?? "",
+      copiedLabel: contact?.copiedLabel ?? "",
+      ...(photoFilename ? { photoFilename } : {}),
+    },
   };
 }
 
 async function cmsGetPartnerPage(): Promise<PartnerPageContent> {
   const doc = await fetchGlobal<CmsPartnerPageDoc>("page-partner");
+  const [startup, corporate, investor] = await Promise.all(
+    PARTNER_AUDIENCE_KEYS.map((key) =>
+      cmsGetPartnerAudience(key, doc.audiences?.[key]),
+    ),
+  );
   return {
     title: doc.title,
     metaDescription: doc.metaDescription ?? "",
+    projector: {
+      eyebrow: doc.projector?.eyebrow ?? "",
+      heading: doc.projector?.heading ?? "",
+      intro: doc.projector?.intro ?? "",
+      hint: doc.projector?.hint ?? "",
+      tierSuffix: doc.projector?.tierSuffix ?? "",
+      websiteLabel: doc.projector?.websiteLabel ?? "",
+    },
     heading: doc.heading,
-    cta: doc.cta,
+    quotesHint: doc.quotesHint ?? "",
+    cta: await cmsGetPartnerCta(doc.cta),
+    audiences: { startup, corporate, investor },
   };
 }
 
@@ -2181,6 +2771,30 @@ export function assertTicketPage(t: TicketCategoriesContent): void {
   }
 }
 
+/**
+ * Between two discount phases (phases.onSale off) nothing is on sale, so
+ * every ticket sells at its regular price, whatever sale price the content
+ * still holds. Editors can leave the last (or enter the next) phase's prices
+ * in place; the onSale switch alone decides whether they show. Every view,
+ * the Why Q pages and llms read the price from here, so none can show a
+ * discount the timeline says is not running.
+ */
+export function normalizeTicketPrices(
+  page: TicketCategoriesContent,
+): TicketCategoriesContent {
+  if (page.phases?.onSale !== false) return page;
+  return {
+    ...page,
+    offer: {
+      ...page.offer,
+      tickets: page.offer.tickets.map((ticket) => ({
+        ...ticket,
+        price: ticket.regularPrice,
+      })),
+    },
+  };
+}
+
 export async function getPageContent(): Promise<PageContent> {
   const content =
     CONTENT_SOURCE === "cms"
@@ -2190,6 +2804,7 @@ export async function getPageContent(): Promise<PageContent> {
   resolved.kickoff = normalizeKickoff(resolved.kickoff);
   resolved.hackathon = normalizeHackathon(resolved.hackathon);
   assertTicketPage(resolved.ticketCategories);
+  resolved.ticketCategories = normalizeTicketPrices(resolved.ticketCategories);
   assertEventDates(resolved.home?.event);
   return resolved;
 }

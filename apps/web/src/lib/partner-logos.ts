@@ -56,3 +56,32 @@ export function resolvePartnerLogoDisplay(
   }
   return null;
 }
+
+export interface PartnerLogoOnDarkInput {
+  logoOnDarkFilename?: string;
+  logoOnDarkWidth?: number | null;
+  logoOnDarkHeight?: number | null;
+}
+
+/**
+ * The partner's own white logo for the dark partner page, or null when the
+ * CMS has none (or no size for it): the page then tones the regular logo to
+ * white and ice blue itself (DESIGN.md PARTNER-1).
+ */
+export function resolvePartnerLogoOnDark(
+  partner: PartnerLogoOnDarkInput,
+): PartnerLogoMeta | null {
+  const { logoOnDarkFilename, logoOnDarkWidth, logoOnDarkHeight } = partner;
+  if (
+    !logoOnDarkFilename ||
+    isFixtureMediaSentinel(logoOnDarkFilename) ||
+    !logoOnDarkWidth ||
+    !logoOnDarkHeight
+  )
+    return null;
+  return {
+    src: `/media/${logoOnDarkFilename}`,
+    width: logoOnDarkWidth,
+    height: logoOnDarkHeight,
+  };
+}

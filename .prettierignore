@@ -21,6 +21,9 @@ LEGAL.md
 # Verbatim scrape / CMS seed snapshots: regenerate, never restyle.
 apps/web/content/**
 
+# three's Draco decoder, copied verbatim for /past-teams (ADR-0010).
+apps/web/public/past-teams/draco/**
+
 # GitHub issue-form YAML is whitespace-sensitive; leave it to GitHub.
 .github/ISSUE_TEMPLATE
 

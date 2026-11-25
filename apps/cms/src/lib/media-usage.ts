@@ -25,6 +25,12 @@ import type { Payload, PayloadRequest } from "payload";
 /** Collections with a top-level `upload` field pointing at media. */
 export const MEDIA_UPLOAD_FIELDS = [
   { slug: "partners", field: "logo", label: "Partners", titleField: "name" },
+  {
+    slug: "partners",
+    field: "logoOnDark",
+    label: "Partners",
+    titleField: "name",
+  },
   { slug: "jobs", field: "logo", label: "Jobs", titleField: "title" },
   { slug: "speakers", field: "photo", label: "Speakers", titleField: "name" },
   { slug: "team", field: "photo", label: "Team", titleField: "name" },
@@ -73,7 +79,23 @@ export const MEDIA_GLOBAL_FIELDS = [
     slug: "page-whyq",
     label: "Why Q?",
     path: "/whyq/",
-    refs: [{ fieldPath: "audiences[].imageFile", titleField: "heading" }],
+    refs: [
+      { fieldPath: "audiences[].imageFile", titleField: "heading" },
+      { fieldPath: "pages[].activities.items[].image", titleField: "title" },
+      { fieldPath: "pages[].highlight.cards[].image", titleField: "title" },
+      { fieldPath: "pages[].highlight.image", titleField: "crumb" },
+      {
+        fieldPath: "pages[].highlight.moments[].image",
+        titleField: "imageAlt",
+      },
+      { fieldPath: "pages[].highlight.logos[].logo", titleField: "name" },
+    ],
+  },
+  {
+    slug: "page-our-team",
+    label: "Our Team",
+    path: "/our-team/",
+    refs: [{ fieldPath: "heroImage", title: "Hero photo" }],
   },
   {
     slug: "page-hackathon",
@@ -91,6 +113,17 @@ export const MEDIA_GLOBAL_FIELDS = [
       { fieldPath: "kickoff.company.logo", title: "Company logo" },
       { fieldPath: "kickoff.speakers[].image", titleField: "name" },
       { fieldPath: "journey.moments[].image", titleField: "title" },
+    ],
+  },
+  {
+    slug: "page-partner",
+    label: "Partners",
+    path: "/partner/",
+    refs: [
+      { fieldPath: "cta.contact.photo", title: "Partner contact" },
+      { fieldPath: "audiences.startup.contacts[].photo", titleField: "name" },
+      { fieldPath: "audiences.corporate.contacts[].photo", titleField: "name" },
+      { fieldPath: "audiences.investor.contacts[].photo", titleField: "name" },
     ],
   },
 ] as const satisfies readonly {

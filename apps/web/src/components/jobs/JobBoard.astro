@@ -1,29 +1,37 @@
 ---
-// Job board: a live search field plus workload filter tabs (All /
-// Internship / Working Student / Full Time) over the list of job cards.
+// Job board on the 2027 navy (DESIGN.md NAVY-1): the page's opener (an
+// eyebrow with the number of open roles, the CMS heading and intro), a
+// search field and a workload filter (All / Internship / Working Student /
+// Full Time) of white liquid glass, and the list of job cards. A soft blur
+// at the bottom of the window lets the list melt away towards the edge.
 // The live Webflow page only has pagination, not search/filtering; this is
 // a requested enhancement over the live design.
 //
 // Progressive enhancement: the workload tabs are visually hidden radio
 // inputs with sibling-selector CSS, so they keep working with zero
-// JavaScript. The search field and the result count / empty-state message
-// are wired up by the small inline script below; without JavaScript the
-// search input is inert (all cards stay visible) and the count/empty-state
-// elements never leave their default `hidden` state.
+// JavaScript (the chosen one then carries the ice itself). The search
+// field, its clear button, the sliding drop under the chosen workload, the
+// result count, the empty-state message and the bottom blur are wired up
+// by the script below; without JavaScript the search input is inert (all
+// cards stay visible) and the count/empty-state elements never leave
+// their default `hidden` state.
 //
 // Jobs without a workload (the extraction only has workload for jobs
 // that appeared on page 1 of the old tabs) show under "All" only.
 import type { Job, JobWorkload } from "../../lib/content";
 import JobCard from "./JobCard.astro";
 import { workloadSlug } from "./logo";
-import Container from "../ui/Container.astro";
-import Section from "../ui/Section.astro";
+import "../ui/navy-glass.css";
 
 interface Props {
   jobs: Job[];
+  /** The page's H1 (CMS page-jobs heading). */
+  heading?: string;
+  /** The intro under the heading (CMS page-jobs intro). */
+  intro?: string;
 }
 
-const { jobs } = Astro.props;
+const { jobs, heading, intro } = Astro.props;
 
 // Zero jobs is a normal editorial state (between hiring rounds), and it is
 // NOT the same thing as "your search matched nothing". Showing a search box
@@ -52,16 +60,124 @@ const filters = [
   })),
 ];
 
+const eyebrow = `Partner network · ${jobs.length} ${
+  jobs.length === 1 ? "open role" : "open roles"
+}`;
+
+// The headline's last word in ice, as on the homepage's hero (HOME-1).
+const headingWords = (heading ?? "").trim().split(/\s+/);
+const headingLast = headingWords.pop() ?? "";
+const headingLead = headingWords.join(" ");
+
 // Combined haystack the client script matches the search query against.
 function searchText(job: Job): string {
   return [job.company, job.title, job.location ?? ""].join(" ").toLowerCase();
 }
 ---
 
-<Section small class="board" aria-label="Job listings">
-  <Container>
-    <slot />
+<section class="jobs-hero" aria-labelledby="jobs-heading">
+  <div class="n-shell jobs-shell">
+    <p class="jobs-eyebrow">{eyebrow}</p>
+    {
+      heading && (
+        <h1 id="jobs-heading" class="jobs-heading" data-lp="heading">
+          {headingLead}
+          {headingLead && " "}
+          <span class="jobs-accent">{headingLast}</span>
+        </h1>
+      )
+    }
+    {intro && <p class="jobs-intro">{intro}</p>}
 
+    {
+      hasJobs && (
+        <div class="tools">
+          <label class="search n-white">
+            <svg
+              class="search-icon"
+              aria-hidden="true"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <circle
+                cx="11"
+                cy="11"
+                r="7"
+                stroke="currentColor"
+                stroke-width="2.2"
+              />
+              <path
+                d="m20.5 20.5-3.6-3.6"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+              />
+            </svg>
+            <input
+              type="search"
+              id="job-search"
+              class="search-input"
+              placeholder="Search company, role or city"
+              aria-label="Search jobs by company, title, or location"
+              autocomplete="off"
+            />
+            <button
+              type="button"
+              class="search-clear"
+              aria-label="Clear search"
+              hidden
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M6 6l12 12M18 6L6 18"
+                  stroke="currentColor"
+                  stroke-width="2.6"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </button>
+          </label>
+
+          <div
+            class="filters n-white h-ice"
+            role="group"
+            aria-label="Filter jobs by workload"
+          >
+            <span class="filter-drop n-drop" aria-hidden="true" />
+            {filters.map((filter, index) => (
+              <input
+                type="radio"
+                name="workload-filter"
+                id={filter.id}
+                class="filter-radio"
+                data-slug={filter.slug}
+                checked={index === 0}
+              />
+            ))}
+            {filters.map((filter) => (
+              <label for={filter.id} data-slug={filter.slug}>
+                {filter.label}
+              </label>
+            ))}
+          </div>
+
+          <p id="job-count" class="job-count" aria-live="polite" hidden />
+        </div>
+      )
+    }
+  </div>
+</section>
+
+<section class="board" aria-label="Job listings">
+  <div class="n-shell jobs-shell">
     {
       !hasJobs && (
         <p class="job-empty is-static">
@@ -74,62 +190,6 @@ function searchText(job: Job): string {
     {
       hasJobs && (
         <Fragment>
-          <div class="search-field">
-            <svg
-              class="search-icon"
-              aria-hidden="true"
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <circle
-                cx="11"
-                cy="11"
-                r="7"
-                stroke="currentColor"
-                stroke-width="2"
-              />
-              <path
-                d="m20.5 20.5-3.6-3.6"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-              />
-            </svg>
-            <input
-              type="search"
-              id="job-search"
-              class="search-input"
-              placeholder="Search by company, title, or location"
-              aria-label="Search jobs by company, title, or location"
-              autocomplete="off"
-            />
-          </div>
-
-          <div
-            class="filters"
-            role="group"
-            aria-label="Filter jobs by workload"
-          >
-            {filters.map((filter, index) => (
-              <input
-                type="radio"
-                name="workload-filter"
-                id={filter.id}
-                class="filter-radio"
-                data-slug={filter.slug}
-                checked={index === 0}
-              />
-            ))}
-            {filters.map((filter) => (
-              <label for={filter.id}>{filter.label}</label>
-            ))}
-          </div>
-
-          <p id="job-count" class="job-count" aria-live="polite" hidden />
-
           <ul class="job-list" role="list">
             {jobs.map((job) => (
               <li
@@ -149,11 +209,26 @@ function searchText(job: Job): string {
         </Fragment>
       )
     }
-  </Container>
-</Section>
+  </div>
+</section>
+
+{
+  hasJobs && (
+    <div class="edge-blur" aria-hidden="true">
+      <div />
+      <div />
+      <div />
+      <div />
+    </div>
+  )
+}
 
 <script>
   const searchInput = document.querySelector<HTMLInputElement>("#job-search");
+  const clearButton =
+    document.querySelector<HTMLButtonElement>(".search-clear");
+  const filtersEl = document.querySelector<HTMLElement>(".filters");
+  const drop = document.querySelector<HTMLElement>(".filter-drop");
   const radios = document.querySelectorAll<HTMLInputElement>(".filter-radio");
   const items = document.querySelectorAll<HTMLLIElement>(".job-list > li");
   const countEl = document.querySelector<HTMLElement>("#job-count");
@@ -183,9 +258,13 @@ function searchText(job: Job): string {
 
     if (countEl) {
       countEl.hidden = false;
-      countEl.textContent = `Showing ${visible} of ${items.length} ${
-        items.length === 1 ? "job" : "jobs"
-      }`;
+      const strong = document.createElement("b");
+      strong.textContent = String(visible);
+      countEl.replaceChildren(
+        "Showing ",
+        strong,
+        ` of ${items.length} ${items.length === 1 ? "job" : "jobs"}`,
+      );
     }
 
     if (emptyEl) {
@@ -193,47 +272,241 @@ function searchText(job: Job): string {
     }
   }
 
-  searchInput?.addEventListener("input", applyFilters);
-  radios.forEach((radio) => radio.addEventListener("change", applyFilters));
+  // The small blue X clears the search; it shows only while there is text.
+  function syncClear(): void {
+    if (clearButton) clearButton.hidden = !searchInput?.value;
+  }
 
+  searchInput?.addEventListener("input", () => {
+    syncClear();
+    applyFilters();
+  });
+  clearButton?.addEventListener("click", () => {
+    if (!searchInput) return;
+    searchInput.value = "";
+    syncClear();
+    applyFilters();
+    searchInput.focus();
+  });
+
+  // A shorter placeholder on phones, so it is never cut off.
+  const narrow = window.matchMedia("(max-width: 560px)");
+  function syncPlaceholder(): void {
+    if (searchInput) {
+      searchInput.placeholder = narrow.matches
+        ? "Search jobs"
+        : "Search company, role or city";
+    }
+  }
+  narrow.addEventListener("change", syncPlaceholder);
+  syncPlaceholder();
+
+  // The drop of ice slides under the chosen workload, measured, since the
+  // labels differ in width. The first placement does not animate.
+  function placeDrop(): void {
+    const label = filtersEl?.querySelector<HTMLElement>(
+      `label[data-slug="${selectedWorkload()}"]`,
+    );
+    if (!drop || !label) return;
+    drop.style.width = `${label.offsetWidth}px`;
+    drop.style.transform = `translateX(${label.offsetLeft}px)`;
+  }
+  if (drop && filtersEl) {
+    drop.style.transition = "none";
+    placeDrop();
+    drop.classList.add("is-placed");
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        drop.style.transition = "";
+      }),
+    );
+    new ResizeObserver(placeDrop).observe(filtersEl);
+    document.fonts?.ready.then(placeDrop);
+  }
+
+  radios.forEach((radio) =>
+    radio.addEventListener("change", () => {
+      placeDrop();
+      applyFilters();
+    }),
+  );
+
+  syncClear();
   applyFilters();
+
+  // The blur at the bottom of the window belongs to the job list: off at
+  // the top of the page, it grows in (smoothstep) while the list's top
+  // travels about two blur heights up from the window's foot, and fades
+  // out again as the fade into the footer comes up. A short linear
+  // opacity transition smooths the steps between scroll events.
+  const edge = document.querySelector<HTMLElement>(".edge-blur");
+  const list = document.querySelector<HTMLElement>(".job-list");
+  const ends = [
+    document.querySelector<HTMLElement>(".h-page-fade"),
+    document.querySelector<HTMLElement>(".site-footer"),
+  ].filter((el): el is HTMLElement => el !== null);
+
+  if (edge && list) {
+    const clamp = (v: number) => Math.min(1, Math.max(0, v));
+    const smooth = (t: number) => t * t * (3 - 2 * t);
+    let queued = false;
+
+    const syncEdge = () => {
+      queued = false;
+      const vh = window.innerHeight;
+      const h = edge.offsetHeight;
+      const top = list.getBoundingClientRect().top;
+      const fadeIn = smooth(clamp((vh - h * 0.5 - top) / (h * 2)));
+      const endTop = ends.length
+        ? Math.min(...ends.map((el) => el.getBoundingClientRect().top))
+        : Infinity;
+      const fadeOut = smooth(clamp((vh * 0.95 - endTop) / (vh * 0.35)));
+      edge.style.opacity = (fadeIn * (1 - fadeOut)).toFixed(3);
+    };
+    const queue = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(syncEdge);
+    };
+
+    window.addEventListener("scroll", queue, { passive: true });
+    window.addEventListener("resize", queue);
+    // Filtering changes the list's length, and with it where the footer is.
+    searchInput?.addEventListener("input", queue);
+    radios.forEach((radio) => radio.addEventListener("change", queue));
+    syncEdge();
+  }
 </script>
 
 <style>
-  .search-field {
+  /* DESIGN.md NAVY-1: the 2027 navy system. Display type above the heading
+     scale (TYPE-1), white glass depth instead of the --shadow-* steps
+     (DEPTH-1), the page's own shell (LAYOUT-1, LAYOUT-3). */
+  .jobs-hero {
+    padding: clamp(var(--space-xl), 9vw, 6.5rem) 0
+      clamp(var(--space-lg), 4vw, var(--space-xl));
+    text-align: center;
+  }
+
+  .jobs-eyebrow {
+    margin: 0 0 1.25rem;
+    font-size: var(--text-size-tiny);
+    font-weight: var(--heading-weight);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-ticket-ice);
+  }
+
+  .jobs-heading {
+    max-width: 22ch;
+    margin: 0 auto;
+    font-size: clamp(2.4rem, 6.4vw, 4.5rem);
+    font-weight: var(--heading-weight-home);
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  .jobs-accent {
+    color: var(--color-ticket-ice);
+  }
+
+  .jobs-intro {
+    max-width: 34rem;
+    margin: 1.25rem auto 0;
+    font-size: clamp(1rem, 0.85rem + 0.5vw, 1.125rem);
+    color: color-mix(in srgb, var(--color-white) 78%, transparent);
+  }
+
+  .tools {
     position: relative;
-    width: 100%;
-    max-width: 26rem;
-    margin: 0 auto var(--space-md);
+    z-index: 2;
+    display: grid;
+    justify-items: center;
+    gap: 1.1rem;
+    margin-top: clamp(var(--space-lg), 4vw, 2.75rem);
+  }
+
+  /* Search: a pill of white glass; focus rings it in cyan, no glow. */
+  .search {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    width: min(100%, 40rem);
+    height: 4rem;
+    padding: 0 0.6rem 0 var(--space-md);
+    border-radius: var(--radius-ticket-pill);
+    cursor: text;
+  }
+
+  .search:focus-within {
+    box-shadow:
+      var(--n-white-shadow),
+      0 0 0 3px color-mix(in srgb, var(--color-ticket-cyan) 45%, transparent);
   }
 
   .search-icon {
-    position: absolute;
-    left: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--color-neutral-dark);
-    pointer-events: none;
+    flex: none;
+    color: var(--color-ticket-sky);
   }
 
   .search-input {
-    width: 100%;
-    padding: 0.65rem var(--space-sm) 0.65rem 2.75rem;
-    background-color: var(--color-white);
-    border: 1px solid var(--color-neutral-lighter);
-    border-radius: var(--radius-button);
-    font-family: inherit;
-    font-size: var(--text-size-small);
-    color: var(--color-text);
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    font: inherit;
+    font-size: clamp(1rem, 0.95rem + 0.15vw, 1.0625rem);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-navy);
+    caret-color: var(--color-ticket-sky);
   }
 
-  /* --color-neutral-light (#aaaaaa) is ~2.3:1 on the white input
-     background, below the 4.5:1 text minimum (WCAG 1.4.3);
-     --color-neutral (#666666) clears it at ~5.7:1. The field already has
-     an aria-label, so the placeholder stays decorative/redundant hint
-     text either way. */
+  /* The whole pill carries the focus ring (.search:focus-within). */
+  .search-input:focus-visible {
+    outline: 0;
+    box-shadow: none;
+  }
+
   .search-input::placeholder {
-    color: var(--color-neutral);
+    font-weight: var(--font-weight-medium);
+    color: var(--n-ink-soft);
+  }
+
+  .search-input::-webkit-search-cancel-button {
+    display: none;
+  }
+
+  .search-clear {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 0;
+    border-radius: var(--radius-circle);
+    background: none;
+    color: var(--color-ticket-sky);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color var(--duration-hover) var(--ease-snappy);
+  }
+
+  .search-clear[hidden] {
+    display: none;
+  }
+
+  .search-clear:focus-visible {
+    outline: 2px solid var(--color-ticket-sky);
+    outline-offset: 1px;
+  }
+
+  @media (hover: hover) {
+    .search-clear:hover {
+      background: color-mix(in srgb, var(--color-ticket-sky) 10%, transparent);
+    }
   }
 
   /* Visually hidden but still focusable for keyboard users. */
@@ -246,81 +519,117 @@ function searchText(job: Job): string {
     pointer-events: none;
   }
 
+  /* Workload filter: segmented white glass with the Tickets button's
+     icy drop under the chosen option. */
   .filters {
-    display: flex;
-    flex-wrap: wrap;
+    display: inline-flex;
+    flex-wrap: nowrap;
     justify-content: center;
-    gap: var(--space-xs);
-    margin-block: 0 var(--space-lg);
+    gap: 0.15rem;
+    padding: 0.4rem;
+    border-radius: var(--radius-ticket-pill);
+  }
+
+  .filter-drop {
+    top: 0.4rem;
+    bottom: 0.4rem;
   }
 
   .filters label {
-    padding: 0.55rem 1.4rem;
-    background-color: var(--color-white);
-    border: 1px solid var(--color-neutral-lighter);
-    border-radius: var(--radius-button);
+    position: relative;
+    z-index: 1;
+    padding: 0.65rem 1.2rem;
+    border-radius: var(--radius-ticket-pill);
+    font-size: clamp(0.6875rem, 0.5rem + 0.4vw, 0.8125rem);
     font-weight: var(--heading-weight);
-    font-size: var(--text-size-small);
-    color: var(--color-primary);
+    white-space: nowrap;
+    color: var(--n-ink-soft);
     cursor: pointer;
     user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: color var(--duration-open) var(--ease-snappy);
   }
 
-  .filters label:hover {
-    background-color: var(--color-primary);
-    border-color: var(--color-primary);
-    color: var(--color-text-inverse);
+  @media (hover: hover) {
+    .filters label:hover {
+      color: var(--color-navy);
+    }
   }
 
-  /* Radio and label are now siblings inside the same .filters group
-     (see markup above), so the highlight selector no longer needs to
-     reach out to a sibling .filters wrapper. */
+  /* Radio and label are siblings inside the same .filters group (see
+     markup above). Without the measured drop the chosen label carries the
+     ice itself. */
   #wl-all:checked ~ label[for="wl-all"],
   #wl-internship:checked ~ label[for="wl-internship"],
   #wl-working-student:checked ~ label[for="wl-working-student"],
   #wl-full-time:checked ~ label[for="wl-full-time"] {
-    background-color: var(--color-primary);
-    border-color: var(--color-primary);
-    color: var(--color-text-inverse);
+    color: var(--color-navy);
+    text-shadow: 0 1px 0 color-mix(in srgb, var(--color-white) 50%, transparent);
+  }
+
+  .filters:not(:has(.n-drop.is-placed))
+    :is(
+      #wl-all:checked ~ label[for="wl-all"],
+      #wl-internship:checked ~ label[for="wl-internship"],
+      #wl-working-student:checked ~ label[for="wl-working-student"],
+      #wl-full-time:checked ~ label[for="wl-full-time"]
+    ) {
+    background: var(--hg-fill);
+    box-shadow: var(--hg-shadow);
   }
 
   #wl-all:focus-visible ~ label[for="wl-all"],
   #wl-internship:focus-visible ~ label[for="wl-internship"],
   #wl-working-student:focus-visible ~ label[for="wl-working-student"],
   #wl-full-time:focus-visible ~ label[for="wl-full-time"] {
-    outline: 2px solid var(--color-focus);
-    outline-offset: 2px;
+    outline: 2px solid var(--color-ticket-cyan);
+    outline-offset: 3px;
   }
 
   .job-count {
-    margin: 0 0 1.25rem;
-    text-align: center;
-    font-size: var(--text-size-small);
-    color: var(--color-neutral-dark);
+    margin: 0.25rem 0 0;
+    font-size: clamp(var(--text-size-tiny), 0.6rem + 0.3vw, 0.8125rem);
+    font-weight: var(--font-weight-semibold);
+    color: color-mix(in srgb, var(--color-white) 62%, transparent);
+  }
+
+  .jobs-shell {
+    max-width: 72rem;
+  }
+
+  .job-count b {
+    color: var(--color-white);
+  }
+
+  .board {
+    padding-bottom: clamp(6rem, 14vh, 10rem);
   }
 
   .job-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-    margin: 0;
+    display: grid;
+    gap: 0.9rem;
+    margin: clamp(1.75rem, 3vw, 2.5rem) 0 0;
     padding: 0;
     list-style: none;
   }
 
-  /* The radios now live inside .filters instead of being direct siblings
-     of .job-list (see the a11y grouping fix above), so filtering reads
-     the group's checked state via :has() on .filters itself; .job-list
-     is still a later sibling of .filters so `~` still reaches it. Kept
-     CSS-only so this still works with JavaScript disabled. */
-  .filters:has(#wl-internship:checked)
-    ~ .job-list
+  .job-list > li[hidden] {
+    display: none;
+  }
+
+  /* The list filters on the group's checked state via :has(), so it keeps
+     working with JavaScript disabled. */
+  .jobs-hero:has(#wl-internship:checked)
+    ~ .board
+    .job-list
     li:not([data-workload="internship"]),
-  .filters:has(#wl-working-student:checked)
-    ~ .job-list
+  .jobs-hero:has(#wl-working-student:checked)
+    ~ .board
+    .job-list
     li:not([data-workload="working-student"]),
-  .filters:has(#wl-full-time:checked)
-    ~ .job-list
+  .jobs-hero:has(#wl-full-time:checked)
+    ~ .board
+    .job-list
     li:not([data-workload="full-time"]) {
     display: none;
   }
@@ -332,9 +641,131 @@ function searchText(job: Job): string {
   }
 
   .job-empty {
-    margin: 0;
-    padding: var(--space-lg) var(--space-sm) 0;
+    margin: var(--space-xl) 0 0;
     text-align: center;
-    color: var(--color-neutral-dark);
+    color: color-mix(in srgb, var(--color-white) 80%, transparent);
+  }
+
+  /* The blur at the bottom of the window: stacked backdrop blurs, each a
+     little stronger and masked to a lower band, under a little navy so
+     text never fights the blur. Opacity comes from the script. */
+  .edge-blur {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 40;
+    height: 9rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--duration-icon) linear;
+    will-change: opacity;
+  }
+
+  .edge-blur > div {
+    position: absolute;
+    inset: 0;
+  }
+
+  .edge-blur > div:nth-child(1) {
+    -webkit-backdrop-filter: blur(1px);
+    backdrop-filter: blur(1px);
+    -webkit-mask: linear-gradient(
+      to bottom,
+      transparent 0%,
+      var(--color-black) 25%,
+      var(--color-black) 50%,
+      transparent 75%
+    );
+    mask: linear-gradient(
+      to bottom,
+      transparent 0%,
+      var(--color-black) 25%,
+      var(--color-black) 50%,
+      transparent 75%
+    );
+  }
+
+  .edge-blur > div:nth-child(2) {
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+    -webkit-mask: linear-gradient(
+      to bottom,
+      transparent 25%,
+      var(--color-black) 50%,
+      var(--color-black) 75%,
+      transparent 100%
+    );
+    mask: linear-gradient(
+      to bottom,
+      transparent 25%,
+      var(--color-black) 50%,
+      var(--color-black) 75%,
+      transparent 100%
+    );
+  }
+
+  .edge-blur > div:nth-child(3) {
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    -webkit-mask: linear-gradient(
+      to bottom,
+      transparent 50%,
+      var(--color-black) 75%,
+      var(--color-black) 100%
+    );
+    mask: linear-gradient(
+      to bottom,
+      transparent 50%,
+      var(--color-black) 75%,
+      var(--color-black) 100%
+    );
+  }
+
+  .edge-blur > div:nth-child(4) {
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    -webkit-mask: linear-gradient(
+      to bottom,
+      transparent 75%,
+      var(--color-black) 100%
+    );
+    mask: linear-gradient(to bottom, transparent 75%, var(--color-black) 100%);
+  }
+
+  .edge-blur::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      color-mix(in srgb, var(--color-ticket-midnight) 60%, transparent) 100%
+    );
+  }
+
+  @media (max-width: 560px) {
+    .search {
+      height: 3.4rem;
+      padding-left: 1.1rem;
+    }
+
+    .filters {
+      width: 100%;
+      justify-content: space-between;
+      gap: 0;
+    }
+
+    .filters label {
+      flex: 1 1 auto;
+      padding: 0.6rem var(--space-2xs);
+      text-align: center;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .filters label,
+    .search-clear,
+    .edge-blur {
+      transition: none;
+    }
   }
 </style>

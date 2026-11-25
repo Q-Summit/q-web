@@ -46,12 +46,42 @@ const scrubEmails = (s) => s.replace(EMAIL, "info@example.com");
 // page-content because the home partner band references partners BY NAME, so
 // the verbatim copy below has to be remapped onto these names.
 const tiers = [...new Set(read("partners.json").map((p) => p.tier))];
-const fixturePartners = tiers.map((tier, i) => ({
-  name: `Fixture ${tier} Partner ${i + 1}`,
+// Every third partner has no description, so the partner pop-up without
+// one is exercised too.
+const fixturePartner = (tier, n) => ({
+  name: `Fixture ${tier} Partner ${n}`,
   tier,
   websiteUrl: "https://example.com",
   logoFilename: "fixture-missing-logo.webp",
-}));
+  ...(n % 3 === 0
+    ? {}
+    : {
+        description: `Fixture description for Fixture ${tier} Partner ${n}. Two or three sentences on what the company does and what it offers at Q-Summit.`,
+      }),
+});
+const basePartners = tiers.map((tier, i) => fixturePartner(tier, i + 1));
+// The partner page projects every tier as its own slide, so the fixture
+// needs tiers of very different sizes (a full slide, a near-empty one) to
+// exercise its layout. Extras are numbered on from the base list so the
+// base names, which the home band below references, never move.
+const EXTRA_PER_TIER = {
+  Platinum: 3,
+  Gold: 11,
+  Silver: 23,
+  Starter: 7,
+  Knowledge: 2,
+  Event: 5,
+  Mobility: 1,
+  "University and Network": 8,
+  Media: 4,
+};
+let extraNumber = basePartners.length;
+const extraPartners = tiers.flatMap((tier) =>
+  Array.from({ length: EXTRA_PER_TIER[tier] ?? 0 }, () =>
+    fixturePartner(tier, ++extraNumber),
+  ),
+);
+const fixturePartners = [...basePartners, ...extraPartners];
 write("partners.json", fixturePartners);
 
 // Verbatim files (see policy above). page-content/site-settings keep their
@@ -73,12 +103,29 @@ if (pageContent?.home?.partnerBand?.items) {
     (item) => ({
       ...item,
       logos: (item.logos ?? []).map(() => {
-        const partner = fixturePartners[cursor % fixturePartners.length];
+        const partner = basePartners[cursor % basePartners.length];
         cursor += 1;
         return partner.name;
       }),
     }),
   );
+}
+// The partner inquiry button is addressed to one person; the role
+// addresses elsewhere in page-content stay, a personal one does not.
+if (pageContent?.partner?.cta?.buttonHref) {
+  pageContent.partner.cta.buttonHref = "mailto:partners@example.com";
+}
+// The Become a Partner contact is one real person: the fixture keeps the
+// card, with obviously fake data, so the page still exercises it.
+if (pageContent?.partner?.cta?.contact) {
+  pageContent.partner.cta.contact = {
+    name: "Example Contact",
+    role: "Example Partner Relations",
+    email: "partners@example.com",
+    copyLabel: "Copy address",
+    copiedLabel: "Copied",
+    photoFilename: "fixture-missing-photo.webp",
+  };
 }
 write("page-content.json", pageContent);
 write("site-settings.json", read("site-settings.json"));
@@ -164,6 +211,19 @@ write("partner-testimonials.json", [
     quote: "A second placeholder quote so multi-item layouts render.",
     attribution: "Sam Sample, Sample GmbH",
     photoFilename: "fixture-missing-photo.webp",
+  },
+  // The partner page shows these as large photo cards in rows of four;
+  // two more fill a row, and one without a photo or company exercises
+  // the initials placeholder and the name-only caption.
+  {
+    quote:
+      "A longer placeholder quote, so the speech bubble has to wrap across several lines of text without breaking its layout or covering the next row of photos.",
+    attribution: "Robin Placeholder, Placeholder AG",
+    photoFilename: "fixture-missing-photo.webp",
+  },
+  {
+    quote: "Short placeholder quote.",
+    attribution: "Kim Demo",
   },
 ]);
 

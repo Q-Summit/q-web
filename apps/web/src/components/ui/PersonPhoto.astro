@@ -1,0 +1,152 @@
+---
+// Shared pattern component (COMP-3, PRIM-3): a person's portrait that fills
+// the box its caller sizes, with the person's initials on a quiet surface
+// underneath. The initials show whenever there is no photo: no filename in
+// the CMS, the fixture's fixture-missing-* sentinel, or a /media file that
+// does not exist locally (media never lives in git, so /media/* is a 404 on
+// a fresh clone). Used by the partner testimonials on /partner/ and the
+// contact cards on the partner audience pages.
+//
+// Like LogoGrid, this pattern owns its CSS: every element styled below is
+// rendered here (PRIM-2). The caller sets size, aspect ratio and radius on
+// its own wrapper; the portrait inherits the radius.
+import { Picture } from "../../lib/astro-assets";
+import { resolveContentImage } from "../../lib/images";
+import { isFixtureMediaSentinel } from "../../lib/media-filename";
+
+interface Props {
+  name: string;
+  /** Media filename from the CMS; empty or missing shows the initials. */
+  filename?: string;
+  /** Which part of a photo that does not fit the box stays in view:
+   * "top" keeps the head of a portrait shot in a square. Default center. */
+  focus?: "center" | "top";
+  /** Rendered widths for the srcset, smallest first. */
+  widths: number[];
+  sizes: string;
+  eager?: boolean;
+}
+
+const {
+  name,
+  filename,
+  widths,
+  sizes,
+  eager = false,
+  focus = "center",
+} = Astro.props;
+
+const initials = name
+  .split(/\s+/)
+  .filter(Boolean)
+  .map((part) => part[0]?.toUpperCase() ?? "")
+  .filter((_, i, all) => i === 0 || i === all.length - 1)
+  .join("");
+
+const hasFile = !!filename && !isFixtureMediaSentinel(filename);
+const image = hasFile
+  ? await resolveContentImage(filename, `portrait ${name}`)
+  : undefined;
+const loading = eager ? "eager" : "lazy";
+---
+
+<span
+  class="person-photo"
+  data-person-photo
+  data-focus={focus === "top" ? "top" : undefined}
+>
+  <span class="person-initials" aria-hidden="true">{initials}</span>
+  {
+    image ? (
+      <Picture
+        class="person-image"
+        src={image}
+        alt=""
+        widths={widths}
+        sizes={sizes}
+        formats={["avif", "webp"]}
+        fallbackFormat="jpg"
+        quality={80}
+        loading={loading}
+        decoding="async"
+      />
+    ) : (
+      hasFile && (
+        <img
+          class="person-image"
+          src={`/media/${filename}`}
+          alt=""
+          width={widths[widths.length - 1]}
+          height={widths[widths.length - 1]}
+          loading={loading}
+          decoding="async"
+        />
+      )
+    )
+  }
+</span>
+
+<script>
+  // A portrait whose file is missing (a 404 on a fresh clone, or a file
+  // removed from the media library) would leave an empty box over the
+  // initials; hide it so the initials show. The image may have failed
+  // before this module ran, so check settled images too.
+  function markMissing(img: HTMLImageElement) {
+    img.closest("[data-person-photo]")?.setAttribute("data-missing", "");
+  }
+  for (const img of document.querySelectorAll<HTMLImageElement>(
+    "[data-person-photo] img",
+  )) {
+    if (img.complete && img.naturalWidth === 0) markMissing(img);
+    else img.addEventListener("error", () => markMissing(img), { once: true });
+  }
+</script>
+
+<style>
+  .person-photo {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    /* Square when the caller's box has no height of its own. */
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: inherit;
+    /* A caller may give the empty box its own ground (a gradient on the
+       partner page); every other caller keeps the neutral one. */
+    background: var(--person-photo-ground, var(--color-background-alternate));
+    container-type: size;
+  }
+
+  /* Scales with the box (a 4rem contact avatar or a large testimonial
+     card); clamp() keeps it on the type scale's ends (TYPE-2). */
+  .person-initials {
+    color: var(--color-heading);
+    font-size: clamp(var(--text-size-regular), 32cqmin, var(--heading-h1-size));
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.04em;
+    line-height: 1;
+  }
+
+  .person-photo :global(picture),
+  .person-image {
+    position: absolute;
+    inset: 0;
+  }
+
+  .person-photo :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .person-photo[data-focus="top"] :global(img) {
+    object-position: 50% 12%;
+  }
+
+  .person-photo[data-missing] :global(picture),
+  .person-photo[data-missing] img {
+    display: none;
+  }
+</style>

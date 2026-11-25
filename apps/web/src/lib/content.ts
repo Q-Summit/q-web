@@ -57,6 +57,7 @@ export { getSiteSettings } from "./content/site-settings";
 
 export type {
   PageStat,
+  TeamHeroPhoto,
   AgendaItem,
   TicketKey,
   TicketOffer,
@@ -77,6 +78,10 @@ export type {
   WhyqAudienceItem,
   WhyqAudience,
   WhyqContent,
+  WhyqAudiencePage as WhyqAudiencePageContent,
+  WhyqAudienceSlug,
+  WhyqLogoEntry,
+  WhyqPhoto,
   ProgramContent,
   TicketCategoriesContent,
   ContactContent,
@@ -85,7 +90,12 @@ export type {
   HackathonContent,
   OurTeamContent,
   PastTeamsContent,
+  PastTeamsStory,
   PartnerPageContent,
+  PartnerAudience,
+  PartnerAudienceKey,
+  PartnerContact,
+  PartnerCtaContact,
   SpeakerPanel,
   SpeakerPageContent,
   JobsPageContent,
@@ -99,6 +109,10 @@ export type {
   PageContent,
 } from "./content/pages";
 export { getPageContent } from "./content/pages";
+export {
+  PARTNER_AUDIENCE_KEYS,
+  partnerAudiencePages,
+} from "./partner-audiences";
 
 export type { LegalSlug } from "./content/legal";
 export { getLegal } from "./content/legal";

@@ -20,6 +20,13 @@ export const euro = (amount: number): string =>
 export const savings = (ticket: TicketOffer): number =>
   Math.max(0, ticket.regularPrice - ticket.price);
 
+/**
+ * True while a ticket sells below its regular price. Without a saving the
+ * views show one price: no struck regular price, phase name or "Save".
+ */
+export const isDiscounted = (ticket: TicketOffer): boolean =>
+  savings(ticket) > 0;
+
 export type PhaseState = "past" | "current" | "upcoming";
 
 /**

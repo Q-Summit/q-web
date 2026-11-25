@@ -31,6 +31,8 @@ ignorePaths:
   - "apps/web/src/components/**/*.vrt.ts"
   # Tiny Python zip helper for the Playwright container.
   - scripts/check/vrt-unzip.py
+  # three's Draco decoder, copied verbatim for /past-teams (ADR-0010).
+  - apps/web/public/past-teams/draco/**
   # Symlink into .agents (checked via its real path).
   - .claude/skills
   # VS Code extension IDs are vendor handles, not project vocabulary.
@@ -49,18 +51,54 @@ ignorePaths:
 useGitignore: true
 words:
   - absarc
+  - Acryl
   - aftermovie
+  - Bild
+  - camlight
+  - Catmull
+  - Chrom
   - clearcoat
   - crossfade
+  - denoise
+  - eloxiert
   - ERSTI
   - Ersti
   - ersti
+  - fout
+  - gebuerstet
+  - gedreht
+  - glaenzend
+  - Glas
   - GLTF
+  - Gravur
+  - GTAO
+  - Gummi
+  - Innen
+  - kamera
+  - klar
+  - Kontakte
+  - Kunstleder
+  - Kunststoff
+  - Lamellen
+  - LBOX
   - lerp
+  - lineart
+  - Linse
+  - mattschwarz
   - metalness
+  - Objektiv
+  - Okular
   - PMREM
+  - poliert
   - Raycaster
+  - scanlines
+  - Schwarz
+  - Strahlteiler
+  - Streuscheibe
+  - Sucherfenster
+  - vergütet
   - Verlet
+  - violett
   - wifo
   - activedescendant
   - actuals
@@ -100,6 +138,7 @@ words:
   - cookieless
   - cooldown
   - corporates
+  - cqmin
   - creds
   - currentcolor
   - cutover
@@ -122,6 +161,7 @@ words:
   - esbuild
   - eslint
   - Ewma
+  - Extantia
   - extensionless
   - extractall
   - externalagent
@@ -142,6 +182,7 @@ words:
   - hackathon
   - hardlink
   - hardlinks
+  - haspopup
   - headshots
   - healthcheck
   - highp

@@ -20,6 +20,7 @@ import TicketStatus from "./TicketStatus.astro";
 import {
   clientData,
   euro,
+  isDiscounted,
   salePriceLabel,
   isPositive,
   statusLabel,
@@ -134,8 +135,10 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
                 <p class="t-cmp-price">
                   <span class="u-visually-hidden">{priceLabel} </span>
                   <span data-f="price">{euro(ticket.price)}</span>
-                  <span class="u-visually-hidden"> Regular price </span>
-                  <s data-f="regular">{euro(ticket.regularPrice)}</s>
+                  <span data-f="regular-wrap" hidden={!isDiscounted(ticket)}>
+                    <span class="u-visually-hidden"> Regular price </span>
+                    <s data-f="regular">{euro(ticket.regularPrice)}</s>
+                  </span>
                 </p>
                 <p class="t-cmp-desc" data-f="description">
                   {ticket.description}

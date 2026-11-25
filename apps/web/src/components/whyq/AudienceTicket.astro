@@ -1,0 +1,635 @@
+---
+// The ticket(s) an audience buys, on a /whyq/<audience>/ page (DESIGN.md
+// WHYQ-1). The card is the 2027 ticket page's card, one to one
+// (tickets/TicketIncluded.astro, TICKETS-1): printed light, its name and
+// who it is for, the price on sale now with the phase and the day it
+// ends, the regular price and what is saved, its requirement, the button
+// in icy liquid glass and every benefit with its status, all read from the
+// page-tickets content through ticket-model, so this page can never
+// disagree with /ticket-categories/. Its rules are restated below because
+// Astro scopes a component's styles to what it renders; keep them in step
+// with TicketIncluded.astro.
+//
+// The button leads to the ticket page onto this ticket (#included-<key>),
+// never straight to the shop. Beside the card: the audience's side cards
+// (what the ticket opens up, each with its status) on dark glass, or, for
+// a pair of tickets, the list both share.
+import "../home/home-theme.css";
+import "../tickets/ticket-theme.css";
+import "./whyq-theme.css";
+import type { TicketCategoriesContent, TicketOffer } from "../../lib/content";
+import { EVENTS } from "../../lib/analytics/events";
+import IconArrowRight from "../icons/IconArrowRight.astro";
+import IconCheck from "../icons/IconCheck.astro";
+import TicketStatus from "../tickets/TicketStatus.astro";
+import {
+  euro,
+  isPositive,
+  savings,
+  statusLabel,
+  statusOf,
+} from "../tickets/ticket-model";
+import {
+  brandHtml,
+  siteSpelling,
+  type WhyqPageCopy,
+} from "../../lib/whyq-pages";
+
+interface Props {
+  id: string;
+  eyebrow: string;
+  copy: WhyqPageCopy["ticket"];
+  tickets: TicketOffer[];
+  offer: TicketCategoriesContent["offer"];
+  included: TicketCategoriesContent["included"];
+  phases?: TicketCategoriesContent["phases"];
+  /** Screen-reader name of the sale price, from the active phase. */
+  priceLabel: string;
+  allTicketsLabel: string;
+  ticketsHref: string;
+  /** Audience slug, for the click event. */
+  audience: string;
+}
+
+const {
+  id,
+  eyebrow,
+  copy,
+  tickets,
+  offer,
+  included,
+  phases,
+  priceLabel,
+  allTicketsLabel,
+  ticketsHref,
+  audience,
+} = Astro.props;
+
+// The phase on sale and the day it ends, as the ticket page writes it
+// ("Early Bird until 22.11.", German time).
+const active = phases?.items.find((item) => item.key === phases.activeKey);
+const until =
+  active?.endsAt && !Number.isNaN(Date.parse(active.endsAt))
+    ? new Intl.DateTimeFormat("de-DE", {
+        day: "2-digit",
+        month: "2-digit",
+        timeZone: "Europe/Berlin",
+      }).format(new Date(active.endsAt))
+    : undefined;
+const saleNote = active
+  ? `${active.label}${until ? ` until ${until}` : ""}`
+  : undefined;
+const pair = tickets.length > 1;
+// The button reads as on the rest of the site ("Buy now"); the ticket page's
+// own label names the ticket, which the card already does above it.
+const buyLabel = "Buy now";
+---
+
+<section
+  id={id}
+  class="h-section wq-tk t-anchor"
+  aria-labelledby={`${id}-heading`}
+>
+  <div class="h-shell">
+    <div class="wq-head">
+      <div class="wq-head-copy" data-h-reveal>
+        <p class="h-eyebrow">{eyebrow}</p>
+        <h2 class="h-title" id={`${id}-heading`}>{copy.heading}</h2>
+        <p class="h-intro">{copy.intro}</p>
+      </div>
+      <a class="h-btn h-frost" href={ticketsHref} data-h-reveal>
+        {allTicketsLabel}
+        <IconArrowRight />
+      </a>
+    </div>
+
+    <div class:list={["wq-tk-grid", { "is-pair": pair }]}>
+      {
+        tickets.map((ticket, i) => {
+          const saved = savings(ticket);
+          return (
+            <article
+              class="t-detail t-light"
+              aria-labelledby={`${id}-${ticket.key}`}
+              data-h-reveal
+              style={`--h-i: ${i}`}
+            >
+              <div class="t-detail-top">
+                <div class="t-detail-id">
+                  <h3 class="t-detail-name" id={`${id}-${ticket.key}`}>
+                    {siteSpelling(ticket.name)}
+                  </h3>
+                  <p class="t-detail-desc">
+                    {siteSpelling(ticket.description)}
+                  </p>
+                </div>
+                <div class="t-detail-price">
+                  <p class="t-detail-now">
+                    <span class="u-visually-hidden">{priceLabel} </span>
+                    {euro(ticket.price)}
+                  </p>
+                  {saved > 0 && (
+                    <p class="t-detail-was">
+                      {saleNote && <span>{saleNote}</span>}
+                      <span>
+                        <span class="u-visually-hidden">Regular price </span>
+                        <s>{euro(ticket.regularPrice)}</s>
+                      </span>
+                      <span class="t-detail-save">
+                        {offer.saveLabel} {euro(saved)}
+                      </span>
+                    </p>
+                  )}
+                </div>
+              </div>
+              {ticket.note ? (
+                <p class="t-detail-note">{siteSpelling(ticket.note)}</p>
+              ) : (
+                pair && <span class="t-detail-note-slot" aria-hidden="true" />
+              )}
+              <a
+                class="t-btn h-ice is-block t-detail-buy"
+                href={`${ticketsHref}#included-${ticket.key}`}
+                data-ph-event={EVENTS.whyq_ticket_clicked}
+                data-ph-prop-audience={audience}
+                data-ph-prop-placement="ticket"
+                data-ph-prop-tier-name={ticket.name}
+              >
+                {buyLabel}
+                <span class="t-btn-arrow" aria-hidden="true">
+                  <IconArrowRight />
+                </span>
+              </a>
+
+              <div class="t-benefits">
+                {included.groups.map((group) => (
+                  <section class="t-group">
+                    <h4 class="t-group-title">{siteSpelling(group.heading)}</h4>
+                    <ul class="t-rows" role="list">
+                      {group.rows.map((row) => {
+                        const status = statusOf(group, row, ticket.key);
+                        return (
+                          <li class="t-row" data-tone={status}>
+                            <TicketStatus
+                              positive={isPositive(status)}
+                              label={statusLabel(status, included)}
+                            />
+                            <span class="t-row-label">
+                              {siteSpelling(row.label)}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </section>
+                ))}
+              </div>
+            </article>
+          );
+        })
+      }
+
+      {
+        copy.side && (
+          <ul class="wq-tk-side" role="list">
+            {copy.side.map((card, i) => (
+              <li
+                class="wq-tk-item h-glass"
+                data-h-reveal
+                style={`--h-i: ${i + 1}`}
+              >
+                <div>
+                  <h3>{card.title}</h3>
+                  <p>{card.text}</p>
+                </div>
+                <span
+                  class:list={[
+                    "wq-chip",
+                    { "is-included": /included/i.test(card.status) },
+                  ]}
+                >
+                  {card.status}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+
+      {
+        copy.includes && (
+          <div class="wq-tk-list h-glass" data-h-reveal>
+            <h3>{copy.includes.heading}</h3>
+            <ul role="list">
+              {copy.includes.items.map((line) => (
+                <li>
+                  <span class="wq-tick" aria-hidden="true">
+                    <IconCheck size={14} />
+                  </span>
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+      }
+    </div>
+
+    {
+      copy.more && (
+        <aside class="wq-tk-more h-glass" data-h-reveal>
+          <div class="wq-tk-more-copy">
+            <p class="h-eyebrow">{copy.more.eyebrow}</p>
+            <h3>{copy.more.heading}</h3>
+            <p set:html={brandHtml(copy.more.text)} />
+          </div>
+          <a class="h-btn h-ice wq-tk-more-btn" href={copy.more.href}>
+            {copy.more.linkLabel}
+            <IconArrowRight />
+          </a>
+          <ul class="wq-tk-perks" role="list">
+            {copy.more.perks.map((perk) => (
+              <li>
+                <span class="wq-tk-perk-check" aria-hidden="true">
+                  ✓
+                </span>
+                {perk}
+              </li>
+            ))}
+          </ul>
+        </aside>
+      )
+    }
+  </div>
+</section>
+
+<style>
+  /* DESIGN.md WHYQ-1: the ticket page's light card (TICKETS-1) on the
+     homepage's night with its dark glass (HOME-1). */
+  .wq-tk {
+    --t-white-edge: color-mix(
+      in srgb,
+      var(--color-neutral-lighter) 55%,
+      var(--color-ticket-ice)
+    );
+    --t-white-shadow:
+      inset 0 1.5px 1px var(--color-white),
+      inset 0 0 28px -8px var(--t-white-edge),
+      inset 0 -42px 52px -38px var(--t-white-edge),
+      inset 0 -1.5px 2px
+        color-mix(in srgb, var(--color-ticket-sky) 25%, transparent),
+      0 0 0 1px color-mix(in srgb, var(--color-white) 55%, transparent),
+      0 30px 60px -32px var(--color-ticket-midnight);
+  }
+
+  .wq-tk-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: clamp(var(--space-sm), 2.4vw, var(--space-lg));
+    align-items: start;
+  }
+
+  /* Two tickets side by side end on one line, however long each list. */
+  .wq-tk-grid.is-pair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+  }
+
+  /* Side by side, the cards share their rows (subgrid): name and price,
+     the note (an empty slot where a ticket has none), the buy button and
+     the benefits, so both buy buttons sit at the same height. */
+  .wq-tk-grid.is-pair .t-detail {
+    grid-row: span 4;
+    grid-template-rows: subgrid;
+    row-gap: var(--space-sm);
+    align-content: start;
+  }
+
+  .wq-tk-grid.is-pair .wq-tk-list {
+    grid-column: 1 / -1;
+  }
+
+  .wq-tk-grid.is-pair .t-benefits {
+    column-count: 1;
+  }
+
+  /* --- Side cards: what the ticket opens up, with a status --- */
+  .wq-tk-side {
+    display: grid;
+    gap: var(--space-sm);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* The status always sits under the text, at its left edge, on every
+     card and at every width, so the cards read as one column and none
+     changes its layout with the length of its line. */
+  .wq-tk-item {
+    display: grid;
+    justify-items: start;
+    align-content: start;
+    gap: var(--space-sm);
+    padding: var(--space-md) clamp(var(--space-md), 2.4vw, var(--space-lg));
+  }
+
+  .wq-tk-item > div {
+    min-width: 0;
+  }
+
+  .wq-tk-item h3,
+  .wq-tk-list h3 {
+    margin: 0;
+    font-size: clamp(1.25rem, 2vw, 1.6rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+  }
+
+  .wq-tk-item p {
+    margin: var(--space-2xs) 0 0;
+    color: var(--h-text-soft);
+    font-size: var(--text-size-small);
+    line-height: 1.55;
+  }
+
+  /* --- The list a pair of tickets shares --- */
+  .wq-tk-list {
+    padding: clamp(var(--space-md), 3vw, var(--space-xl));
+  }
+
+  .wq-tk-list ul {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+    gap: var(--space-xs) var(--space-lg);
+    margin: var(--space-md) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .wq-tk-list li {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--space-xs);
+    align-items: start;
+    color: var(--h-text-soft);
+    font-size: var(--text-size-small);
+    line-height: 1.45;
+  }
+
+  .wq-tick {
+    display: inline-grid;
+    place-items: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: var(--radius-circle);
+    background: var(--color-ticket-ice);
+    color: var(--color-navy);
+  }
+
+  /* The partner panel (Corporates): the copy at the left and the button
+     at the right on one line, the perks as one row of glass pills under
+     them, spanning the panel. Stacked on a narrow screen. */
+  .wq-tk-more {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-md) var(--space-lg);
+    margin-top: var(--space-lg);
+    padding: clamp(var(--space-md), 3vw, var(--space-lg));
+    border-radius: var(--radius-ticket-card);
+  }
+
+  .wq-tk-more-copy {
+    display: grid;
+    gap: var(--space-2xs);
+    max-width: 46rem;
+  }
+
+  .wq-tk-more h3 {
+    margin: 0;
+    font-size: clamp(1.4rem, 2.4vw, 2rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+  }
+
+  .wq-tk-more-copy p:last-child {
+    margin: 0;
+    color: var(--h-text-soft);
+    line-height: 1.6;
+  }
+
+  .wq-tk-perks {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .wq-tk-perks li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    min-height: 2.25rem;
+    padding: 0 var(--space-sm);
+    border-radius: var(--radius-ticket-pill);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-white) 14%, transparent),
+      color-mix(in srgb, var(--color-white) 5%, transparent)
+    );
+    box-shadow:
+      inset 0 1px 1px color-mix(in srgb, var(--color-white) 50%, transparent),
+      inset 0 0 0 1px color-mix(in srgb, var(--color-white) 12%, transparent);
+    font-size: var(--text-size-small);
+    font-weight: var(--font-weight-bold);
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .wq-tk-perk-check {
+    color: var(--color-ticket-ice);
+    font-weight: var(--font-weight-extrabold);
+  }
+
+  .wq-tk-more-btn {
+    flex: none;
+    min-height: 3.5rem;
+    padding-inline: var(--space-lg);
+  }
+
+  @media (max-width: 767px) {
+    .wq-tk-more {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .wq-tk-more-btn {
+      justify-self: start;
+      grid-row: 3;
+    }
+  }
+
+  /*
+   * --- The ticket card, as on /ticket-categories/ (TICKETS-1) ---
+   * Restated from tickets/TicketIncluded.astro; keep the two in step.
+   */
+  .t-detail {
+    display: grid;
+    gap: var(--space-sm);
+    padding: clamp(var(--space-md), 3vw, 2.5rem);
+    border-radius: var(--radius-ticket-card);
+  }
+
+  .t-detail-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-sm) var(--space-lg);
+  }
+
+  .t-detail-name {
+    margin: 0;
+    color: var(--color-navy);
+    font-size: clamp(1.9rem, 3.4vw, 2.75rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.04em;
+    line-height: 1.02;
+  }
+
+  .t-detail-desc {
+    min-height: calc(2 * 1.45em);
+    margin: var(--space-2xs) 0 0;
+    color: color-mix(in srgb, var(--color-navy) 74%, transparent);
+    font-size: var(--text-size-small);
+    line-height: 1.45;
+  }
+
+  .t-detail-price {
+    display: grid;
+    justify-items: end;
+    gap: 0.35rem;
+    text-align: right;
+  }
+
+  .t-detail-now {
+    margin: 0;
+    color: var(--color-navy);
+    font-size: clamp(2.75rem, 5vw, 3.75rem);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.05em;
+    line-height: 0.95;
+  }
+
+  .t-detail-was {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.25rem var(--space-xs);
+    margin: 0;
+    color: color-mix(in srgb, var(--color-navy) 72%, transparent);
+    font-size: var(--text-size-small);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .t-detail-was s {
+    font-weight: var(--font-weight-medium);
+  }
+
+  .t-detail-save {
+    padding: 0.1rem 0.55rem;
+    border-radius: var(--radius-ticket-pill);
+    background: var(--color-navy);
+    color: var(--color-ticket-ice);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.04em;
+  }
+
+  .t-detail-note {
+    margin: 0;
+    color: var(--color-ticket-q27);
+    font-size: var(--text-size-small);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .t-detail-buy {
+    margin-top: var(--space-2xs);
+  }
+
+  .t-benefits {
+    column-count: 2;
+    column-gap: clamp(var(--space-md), 3vw, var(--space-xl));
+    margin-top: var(--space-sm);
+    padding-top: var(--space-md);
+    border-top: 1px solid color-mix(in srgb, var(--color-navy) 12%, transparent);
+  }
+
+  .t-group {
+    break-inside: avoid;
+    padding-bottom: var(--space-md);
+  }
+
+  .t-group-title {
+    margin: 0 0 0.35rem;
+    color: var(--color-ticket-q27);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.12em;
+    line-height: 1.3;
+    text-transform: uppercase;
+  }
+
+  .t-rows {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .t-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-xs);
+    padding-block: 0.45rem;
+    border-top: 1px solid color-mix(in srgb, var(--color-navy) 8%, transparent);
+    color: var(--color-navy);
+    font-size: var(--text-size-small);
+    line-height: 1.4;
+  }
+
+  .t-row:first-child {
+    border-top: 0;
+  }
+
+  @media (max-width: 960px) {
+    .wq-tk-grid,
+    .wq-tk-grid.is-pair {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .t-benefits {
+      column-count: 1;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .t-detail-top {
+      align-items: flex-start;
+    }
+
+    .t-detail-price {
+      justify-items: start;
+      text-align: left;
+    }
+
+    .t-detail-was {
+      justify-content: flex-start;
+    }
+  }
+</style>

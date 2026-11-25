@@ -1,0 +1,836 @@
+---
+// The opening of the partner page (DESIGN.md PARTNER-1): the page title on
+// the navy ground of the home page, a bar of the tiers under the header,
+// then every tier under its own heading, as the divisions on the team page,
+// with its logos in rows. Every logo stands directly on the dark in white
+// and ice blue: one SVG color matrix below tones it until
+// logo-tone.client.ts has redrawn it without its box. A partner's own white
+// logo for dark grounds (CMS "Logo for dark backgrounds") is shown as it
+// is instead. Pointing at a logo lifts the real one in its own colors onto
+// a white glass card; picking it opens the partner's pop-up
+// (PartnerDialog).
+//
+// Works without JavaScript: every logo is a link to the partner's website
+// and the tier bar jumps to the tiers. tiers.client.ts turns a logo click
+// into the pop-up and marks the tier in view.
+import Container from "../ui/Container.astro";
+import PartnerDialog from "./PartnerDialog.astro";
+
+export interface TierLogo {
+  name: string;
+  href: string;
+  description?: string;
+  /** The logo file. Unset when there is none (fixture): the name stands in. */
+  src?: string;
+  width?: number;
+  height?: number;
+  /** True when src is the partner's own white logo: shown untouched. */
+  onDark?: boolean;
+  /** The regular logo for the card and the pop-up, when src is the white one. */
+  original?: { src: string; width: number; height: number };
+}
+
+export interface PartnerTier {
+  id: string;
+  /** Short name in the tier bar, e.g. "Gold". */
+  tab: string;
+  /** Tier heading over the logos, e.g. "Gold Partners". */
+  heading: string;
+  /** Platinum shows its logos largest, Gold a step smaller, the rest small. */
+  size: "xl" | "l" | "m";
+  logos: TierLogo[];
+}
+
+interface Props {
+  eyebrow: string;
+  heading: string;
+  intro: string;
+  hint: string;
+  websiteLabel?: string;
+  tiers: PartnerTier[];
+}
+
+const { eyebrow, heading, intro, hint, websiteLabel, tiers } = Astro.props;
+
+// Equal visual weight for wide and square marks: the CSS sizes every logo
+// by the square root of its aspect ratio, so all of them cover about the
+// same area.
+const ratio = (size: { width?: number; height?: number }) =>
+  size.width && size.height ? (size.width / size.height).toFixed(3) : "1";
+
+// The logos of the first two tiers (what the first screen shows) rise in
+// one after the other on load, counted across both tiers.
+const INTRO_TIERS = 2;
+const introStart = tiers.map((_, index) =>
+  tiers.slice(0, index).reduce((sum, tier) => sum + tier.logos.length, 0),
+);
+---
+
+<section
+  class="section is-dark partner-tiers"
+  aria-labelledby="partner-heading"
+  data-partner-tiers
+>
+  <!-- The tone of every logo on the dark. In sRGB, with S = R + G + B:
+       red 1.15 - 0.2 S, green 1.08 - 0.1 S, blue 1, alpha 2.5 - 0.83 S
+       (each clipped to 0..1), then multiplied by the file's own alpha.
+       Dark and saturated marks turn white, mid and light colors ice blue,
+       and near white turns transparent, so a white box falls away. -->
+  <svg class="pt-filters" aria-hidden="true" focusable="false">
+    <filter id="partner-logo-tone" color-interpolation-filters="sRGB">
+      <feColorMatrix
+        type="matrix"
+        values="-0.2 -0.2 -0.2 0 1.15
+                -0.1 -0.1 -0.1 0 1.08
+                 0    0    0   0 1
+                -0.8333 -0.8333 -0.8333 0 2.5"
+        result="tone"></feColorMatrix>
+      <feComposite in="tone" in2="SourceGraphic" operator="in"></feComposite>
+    </filter>
+  </svg>
+
+  <Container>
+    <header class="pt-head">
+      {
+        eyebrow && (
+          <p class="u-eyebrow pt-eyebrow" data-lp="projector.eyebrow">
+            {eyebrow}
+          </p>
+        )
+      }
+      <h1 id="partner-heading" data-lp="projector.heading">{heading}</h1>
+      {
+        intro && (
+          <p class="pt-intro" data-lp="projector.intro">
+            {intro}
+          </p>
+        )
+      }
+    </header>
+  </Container>
+
+  {
+    tiers.length > 0 && (
+      <div class="pt-body">
+        <nav class="pt-bar" aria-label="Partner tiers">
+          <ul>
+            {tiers.map((tier) => (
+              <li>
+                <a href={`#${tier.id}`} data-tier-link={tier.id}>
+                  {tier.tab}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <Container>
+          {hint && (
+            <p class="pt-hint" data-lp="projector.hint">
+              {hint}
+            </p>
+          )}
+
+          {tiers.map((tier, index) => (
+            <section
+              class="tier"
+              id={tier.id}
+              aria-labelledby={`${tier.id}-heading`}
+              data-size={tier.size}
+              data-intro={index < INTRO_TIERS ? "" : undefined}
+            >
+              <h2 id={`${tier.id}-heading`} class="tier-heading">
+                {tier.heading}
+              </h2>
+              <ul class="tier-logos">
+                {tier.logos.map((logo, i) => {
+                  const real = logo.original ?? logo;
+                  return (
+                    <li
+                      style={
+                        index < INTRO_TIERS
+                          ? `--i: ${(introStart[index] ?? 0) + i}`
+                          : undefined
+                      }
+                    >
+                      <a
+                        class="tier-logo"
+                        href={logo.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`${logo.name} (opens in a new tab)`}
+                        style={`--ar: ${ratio(logo)}`}
+                        data-tone={logo.src && !logo.onDark ? "" : undefined}
+                        data-partner={logo.name}
+                        data-partner-tier={tier.heading}
+                        data-partner-description={logo.description}
+                        data-partner-logo={logo.original?.src}
+                        data-partner-logo-width={logo.original?.width}
+                        data-partner-logo-height={logo.original?.height}
+                      >
+                        <span class="tier-card" aria-hidden="true" />
+                        {logo.src && (
+                          <img
+                            class="tier-mark"
+                            src={logo.src}
+                            alt=""
+                            width={logo.width}
+                            height={logo.height}
+                            loading={index < INTRO_TIERS ? "eager" : "lazy"}
+                            decoding="async"
+                          />
+                        )}
+                        {real.src && (
+                          <img
+                            class="tier-real"
+                            src={real.src}
+                            alt=""
+                            width={real.width}
+                            height={real.height}
+                            style={`--real-ar: ${ratio(real)}`}
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        )}
+                        <span class="tier-logo-name" aria-hidden="true">
+                          {logo.name}
+                        </span>
+                        <span class="tier-label" aria-hidden="true">
+                          {logo.name}
+                        </span>
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))}
+        </Container>
+      </div>
+    )
+  }
+
+  <PartnerDialog websiteLabel={websiteLabel} />
+  <div class="pt-fade" aria-hidden="true"></div>
+</section>
+
+<script>
+  import { initPartnerTiers } from "./tiers.client";
+  initPartnerTiers();
+</script>
+
+<style>
+  /* The dark opening (DESIGN.md PARTNER-1): a .section.is-dark shell in the
+     Q27 midnight instead of navy (COLOR-2), so its headings invert, with
+     the home page's soft pools of deep blue light, as the team mockup. It
+     pulls itself up under the site header, as the home hero does, so
+     the page opens dark from its first pixel (LAYOUT-3). The sections
+     below carry the same midnight on to the footer (partner-theme.css
+     .p-ground), so the page never turns lighter. */
+  .partner-tiers {
+    --fade-height: clamp(2rem, 6vw, 5rem);
+    --pt-bar-height: 2.75rem;
+    position: relative;
+    isolation: isolate;
+    margin-top: calc(var(--site-header-height) * -1);
+    padding-top: calc(var(--site-header-height) + var(--space-xl));
+    padding-bottom: 0;
+    background-color: var(--color-ticket-midnight);
+    background-image:
+      radial-gradient(
+        60vw 40rem at 90% 12rem,
+        color-mix(in srgb, var(--color-ticket-deep) 70%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        50vw 36rem at 0% 30%,
+        color-mix(in srgb, var(--color-ticket-sky) 16%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        60vw 40rem at 95% 50%,
+        color-mix(in srgb, var(--color-ticket-deep) 60%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        55vw 38rem at 5% 66%,
+        color-mix(in srgb, var(--color-ticket-deep) 55%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        60vw 40rem at 90% 82%,
+        color-mix(in srgb, var(--color-ticket-sky) 14%, transparent),
+        transparent 70%
+      );
+  }
+
+  .pt-filters {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+  }
+
+  /* ---- Title: centered on one line, large but in the semibold of the
+     header's links rather than the hero's heaviest weight (TYPE-1 restated
+     for PARTNER-1). ---- */
+
+  .pt-head {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-xs);
+    max-width: 60rem;
+    margin-inline: auto;
+    text-align: center;
+  }
+
+  .pt-head h1 {
+    margin: 0;
+    color: var(--color-white);
+    font-size: clamp(2.25rem, 5.2vw, 4rem);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+    text-wrap: balance;
+  }
+
+  .pt-eyebrow {
+    margin: 0;
+    color: var(--color-ticket-ice);
+    letter-spacing: 0.16em;
+  }
+
+  .pt-intro {
+    max-width: 34rem;
+    margin: var(--space-2xs) 0 0;
+    color: color-mix(in srgb, var(--color-ticket-ice) 82%, transparent);
+    font-size: var(--text-size-medium);
+    line-height: 1.55;
+  }
+
+  .pt-hint {
+    margin: var(--space-md) 0 0;
+    color: color-mix(in srgb, var(--color-ticket-ice) 60%, transparent);
+    font-size: var(--text-size-small);
+    text-align: center;
+  }
+
+  /* ---- Tier navigation: a pill of the site header's dark glass
+     (COMP-6, HomeHeader.astro .hh-bar) just under the header, as wide as
+     its tiers and centered: the same midnight fill and blur, the same
+     ice-lit edge, the same soft white names in semibold. The tier in
+     view turns ice, as the current page in the header, on a faint chip.
+     It is sticky inside the logos only: it rides in above the first tier
+     and leaves with the last. ---- */
+
+  .pt-bar {
+    position: sticky;
+    top: calc(var(--site-header-height) + var(--space-2xs));
+    z-index: 5;
+    width: fit-content;
+    max-width: min(calc(100% - 2 * var(--space-sm)), var(--container-large));
+    height: var(--pt-bar-height);
+    margin: var(--space-lg) auto 0;
+    border-radius: var(--radius-ticket-pill);
+    /* The header bar's own shade (HomeHeader.astro .hh-bar), part of its
+       glass rather than a --shadow-* step (DEPTH-1). */
+    box-shadow: 0 12px 30px -24px var(--color-ticket-midnight);
+  }
+
+  /* The header's dark glass: midnight at 90 to 80 percent, blurred, with
+     a hairline of ice that is brightest along the lower edge. A layer of
+     its own, and the bar itself never fades or animates: either would
+     make the bar a backdrop root, and the blur would see nothing of the
+     page behind it. */
+  .pt-bar::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-ticket-midnight) 90%, transparent),
+      color-mix(in srgb, var(--color-ticket-midnight) 80%, transparent)
+    );
+    box-shadow:
+      inset 0 0 0 1px
+        color-mix(in srgb, var(--color-ticket-ice) 10%, transparent),
+      inset 0 -1px 0
+        color-mix(in srgb, var(--color-ticket-ice) 18%, transparent);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    backdrop-filter: blur(16px) saturate(150%);
+  }
+
+  .pt-bar ul {
+    display: flex;
+    align-items: center;
+    justify-content: safe center;
+    gap: 0.25rem;
+    height: 100%;
+    margin: 0;
+    padding: 0 0.3rem;
+    overflow-x: auto;
+    list-style: none;
+    scrollbar-width: none;
+  }
+
+  .pt-bar ul::-webkit-scrollbar {
+    display: none;
+  }
+
+  .pt-bar li {
+    flex: none;
+  }
+
+  .pt-bar a {
+    display: inline-flex;
+    padding: 0.45rem var(--space-sm);
+    border-radius: var(--radius-ticket-pill);
+    color: color-mix(in srgb, var(--color-white) 82%, transparent);
+    font-size: var(--text-size-small);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.01em;
+    text-decoration: none;
+    white-space: nowrap;
+    transition:
+      color var(--duration-hover) var(--ease-snappy),
+      background-color var(--duration-hover) var(--ease-snappy);
+  }
+
+  .pt-bar a[aria-current] {
+    color: var(--color-ticket-ice);
+    background-color: color-mix(in srgb, var(--color-white) 10%, transparent);
+  }
+
+  .pt-bar a:focus-visible {
+    outline: 2px solid var(--color-ticket-ice);
+    outline-offset: -2px;
+  }
+
+  @media (hover: hover) {
+    .pt-bar a:not([aria-current]):hover {
+      color: var(--color-white);
+      background-color: color-mix(in srgb, var(--color-white) 8%, transparent);
+    }
+  }
+
+  /* A phone fits only a few tiers: the row scrolls sideways under soft
+     edges, and the script keeps the tier in view inside it. */
+  @media (max-width: 767px) {
+    .pt-bar ul {
+      -webkit-mask-image: linear-gradient(
+        90deg,
+        transparent 0,
+        var(--color-black) var(--space-sm),
+        var(--color-black) calc(100% - var(--space-sm)),
+        transparent 100%
+      );
+      mask-image: linear-gradient(
+        90deg,
+        transparent 0,
+        var(--color-black) var(--space-sm),
+        var(--color-black) calc(100% - var(--space-sm)),
+        transparent 100%
+      );
+    }
+  }
+
+  /* ---- Tiers: a heading as on the team page, then the logos in even
+     rows, every cell the same height so each row reads as one line. ---- */
+
+  /* --logo-size is the side of the square every logo covers in area;
+     --cols the cells per row. Rows are as tall as the largest mark, so
+     they sit close. */
+  .tier {
+    --logo-size: 3.75rem;
+    --cols: 3;
+    padding-top: clamp(var(--space-xl), 7vw, 5.5rem);
+    /* Jumps land under the sticky bar, not behind it. */
+    scroll-margin-top: calc(
+      var(--pt-bar-height) + var(--space-2xs) + var(--space-sm)
+    );
+  }
+
+  .pt-hint + .tier {
+    padding-top: clamp(var(--space-lg), 4vw, var(--space-xl));
+  }
+
+  .tier[data-size="xl"] {
+    --logo-size: 5.5rem;
+    --cols: 2;
+  }
+
+  .tier[data-size="l"] {
+    --logo-size: 4.25rem;
+    --cols: 3;
+  }
+
+  @media (min-width: 600px) {
+    .tier {
+      --logo-size: 4.5rem;
+      --cols: 4;
+    }
+
+    .tier[data-size="xl"] {
+      --logo-size: 6.5rem;
+      --cols: 3;
+    }
+
+    .tier[data-size="l"] {
+      --logo-size: 5.25rem;
+      --cols: 4;
+    }
+  }
+
+  @media (min-width: 992px) {
+    .tier {
+      --logo-size: 4.5rem;
+      --cols: 6;
+    }
+
+    .tier[data-size="xl"] {
+      --logo-size: 7.5rem;
+      --cols: 4;
+    }
+
+    .tier[data-size="l"] {
+      --logo-size: 5.75rem;
+      --cols: 5;
+    }
+  }
+
+  /* The tier's name as a quiet label between two hairlines: small, widely
+     spaced capitals in ice, the first tier in white. */
+  .tier-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: clamp(var(--space-sm), 3vw, var(--space-lg));
+    margin: 0 0 clamp(var(--space-lg), 4vw, var(--space-xl));
+    color: var(--color-ticket-ice);
+    font-size: var(--text-size-small);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.32em;
+    line-height: 1.4;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  .tier-heading::before,
+  .tier-heading::after {
+    content: "";
+    height: 1px;
+    background-image: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--color-ticket-ice) 28%, transparent)
+    );
+  }
+
+  .tier-heading::after {
+    transform: scaleX(-1);
+  }
+
+  .tier:first-of-type .tier-heading {
+    color: var(--color-white);
+  }
+
+  @media (max-width: 599px) {
+    .tier-heading {
+      letter-spacing: 0.2em;
+    }
+  }
+
+  /* Rows of --cols equal cells; a last row that is not full stays centered
+     under the others, so a wrapping flex row rather than a grid. */
+  .tier-logos {
+    --col-gap: clamp(var(--space-md), 3.5vw, var(--space-xl));
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: clamp(var(--space-lg), 4.5vw, 3.5rem) var(--col-gap);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .tier-logos li {
+    display: flex;
+    flex: 0 0 calc((100% - (var(--cols) - 1) * var(--col-gap)) / var(--cols));
+    min-width: 0;
+    height: calc(var(--logo-size) * 0.72);
+  }
+
+  /* One partner, straight on the dark; the link fills its cell, so the
+     card below covers the same area for every logo of a tier. */
+  .tier-logo {
+    position: relative;
+    display: grid;
+    flex: 1;
+    place-items: center;
+    min-width: 0;
+    color: var(--color-white);
+    text-decoration: none;
+    border-radius: var(--radius-ticket-panel);
+  }
+
+  .tier-logo > * {
+    grid-area: 1 / 1;
+  }
+
+  /* The marks and the name always paint over the card. The card is a
+     stacking context of its own while it fades and scales, and would
+     otherwise cover the real logo for those frames: it flickered. */
+  .tier-mark,
+  .tier-real,
+  .tier-logo-name {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Equal area for every mark: height shrinks with the square root of the
+     aspect ratio, so a wide wordmark and a square emblem weigh the same; a
+     square emblem a little less, as it reads heavier. Never wider than
+     four fifths of its cell, so even wide logos keep air between them,
+     never stretched (object-fit). */
+  .tier-mark,
+  .tier-real {
+    display: block;
+    width: auto;
+    height: min(var(--logo-size) / sqrt(var(--ar, 1)), var(--logo-size) * 0.72);
+    max-width: 80%;
+    object-fit: contain;
+    transition: opacity var(--duration-ticket-color) var(--ease-snappy);
+  }
+
+  /* White and light blue on the dark (the filter at the top), until
+     logo-tone.client.ts has redrawn the logo without its box. */
+  .tier-logo[data-tone]:not([data-toned]) .tier-mark {
+    filter: url("#partner-logo-tone");
+  }
+
+  /* The real logo, in its own colors and proportions, about as large as
+     the white one, with an edge of card left around it. */
+  .tier-real {
+    height: min(
+      var(--logo-size) / sqrt(var(--real-ar, 1)),
+      var(--logo-size) * 0.64
+    );
+    max-width: 84%;
+    opacity: 0;
+  }
+
+  /* ---- The card: pointing at a logo (or tabbing to it) lifts the real
+     one onto a white glass card, the team mockup's white glass with a lit
+     top and a soft ice foot. Light, not elevation, so the glass's own
+     shadow rather than a --shadow-* step (DEPTH-1). ---- */
+  .tier-card {
+    align-self: stretch;
+    justify-self: stretch;
+    margin: calc(var(--space-xs) * -1) calc(var(--space-2xs) * -1);
+    border-radius: var(--radius-ticket-panel);
+    background-image: linear-gradient(
+      180deg,
+      var(--color-white) 0%,
+      var(--color-white) 60%,
+      color-mix(in srgb, var(--color-white) 90%, var(--color-ticket-ice)) 100%
+    );
+    box-shadow:
+      inset 0 1.5px 1px var(--color-white),
+      inset 0 -1.5px 2px
+        color-mix(in srgb, var(--color-ticket-sky) 25%, transparent),
+      0 0 0 1px color-mix(in srgb, var(--color-white) 55%, transparent),
+      0 24px 48px -28px var(--color-black),
+      0 0 40px -16px
+        color-mix(in srgb, var(--color-ticket-sky) 80%, transparent);
+    opacity: 0;
+    transform: scale(0.97);
+    transition:
+      opacity var(--duration-ticket-color) var(--ease-snappy),
+      transform var(--duration-ticket-color) var(--ease-snappy);
+  }
+
+  /* The partner's name under the card, a small dark tag. */
+  .tier-label {
+    position: absolute;
+    top: calc(100% + var(--space-xs) + var(--space-2xs));
+    left: 50%;
+    z-index: 1;
+    /* Never wider than the card, so a long name wraps instead of pushing
+       past the window's edge. */
+    width: max-content;
+    max-width: calc(100% + var(--space-sm));
+    padding: 0.2rem 0.55rem;
+    border-radius: var(--radius-ticket-button);
+    color: var(--color-white);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.3;
+    text-align: center;
+    background-color: color-mix(
+      in srgb,
+      var(--color-ticket-midnight) 92%,
+      transparent
+    );
+    box-shadow: 0 0 0 1px
+      color-mix(in srgb, var(--color-ticket-ice) 20%, transparent);
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -0.25rem);
+    transition:
+      opacity var(--duration-ticket-color) var(--ease-snappy),
+      transform var(--duration-ticket-color) var(--ease-snappy);
+  }
+
+  .tier-logo:focus-visible,
+  .tier-logo:has(.tier-real):hover {
+    z-index: 2;
+  }
+
+  .tier-logo:focus-visible .tier-card,
+  .tier-logo:focus-visible .tier-label {
+    opacity: 1;
+    transform: none;
+  }
+
+  .tier-logo:focus-visible .tier-label {
+    transform: translate(-50%, 0);
+  }
+
+  .tier-logo:has(.tier-real):focus-visible .tier-mark {
+    opacity: 0;
+  }
+
+  .tier-logo:has(.tier-real):focus-visible .tier-real {
+    opacity: 1;
+  }
+
+  .tier-logo:focus-visible .tier-logo-name {
+    color: var(--color-navy);
+  }
+
+  @media (hover: hover) {
+    .tier-logo:hover .tier-card {
+      opacity: 1;
+      transform: none;
+    }
+
+    .tier-logo:hover .tier-label {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    .tier-logo:has(.tier-real):hover .tier-mark {
+      opacity: 0;
+    }
+
+    .tier-logo:has(.tier-real):hover .tier-real {
+      opacity: 1;
+    }
+
+    .tier-logo:hover .tier-logo-name {
+      color: var(--color-navy);
+    }
+  }
+
+  /* No file (fixture) or a file that fails to load: the name stands in. */
+  .tier-logo-name {
+    padding-inline: var(--space-2xs);
+    font-size: var(--text-size-regular);
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.25;
+    text-align: center;
+    overflow-wrap: anywhere;
+    transition: color var(--duration-ticket-color) var(--ease-snappy);
+  }
+
+  .tier-logo:has(.tier-mark):not([data-missing]) .tier-logo-name {
+    visibility: hidden;
+  }
+
+  .tier-logo[data-missing] img {
+    display: none;
+  }
+
+  /* The card is the focus ring's ground; the ring sits just outside it. */
+  .tier-logo:focus-visible {
+    outline: none;
+  }
+
+  .tier-logo:focus-visible .tier-card {
+    outline: 2px solid var(--color-white);
+    outline-offset: 3px;
+  }
+
+  /* ---- The intro, once per load: the title rises, the label and intro
+     follow, then the logos of the first two tiers rise in one after the
+     other. Reduced motion has none of it (MOTION-2). ---- */
+
+  @media (prefers-reduced-motion: no-preference) {
+    .pt-head h1 {
+      animation: pt-rise var(--duration-reveal) var(--ease-emphasized) both;
+    }
+
+    .pt-eyebrow,
+    .pt-intro {
+      animation: pt-rise var(--duration-reveal) var(--ease-emphasized)
+        calc(var(--duration-reveal) * 0.25) both;
+    }
+
+    .pt-hint,
+    .tier[data-intro] .tier-heading {
+      animation: pt-fade-in var(--duration-reveal) var(--ease-emphasized)
+        calc(var(--duration-reveal) * 0.5) both;
+    }
+
+    .tier[data-intro] .tier-logos li {
+      animation: pt-logo var(--duration-reveal) var(--ease-emphasized)
+        calc(
+          var(--duration-reveal) * 0.6 + var(--i, 0) *
+            var(--duration-partner-stagger)
+        )
+        both;
+    }
+  }
+
+  @keyframes pt-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes pt-rise {
+    from {
+      opacity: 0;
+      transform: translateY(1.5rem);
+    }
+  }
+
+  @keyframes pt-logo {
+    from {
+      opacity: 0;
+      transform: translateY(1rem) scale(0.94);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tier-card,
+    .tier-label,
+    .tier-mark,
+    .tier-real {
+      transition: none;
+    }
+
+    .tier-card {
+      transform: none;
+    }
+  }
+
+  /* The foot of the logos: a little room under the last tier on the
+     midnight the sections below carry on (partner-theme.css .p-ground),
+     about one tier's spacing together with the quotes section's top. */
+  .pt-fade {
+    height: var(--fade-height);
+  }
+</style>

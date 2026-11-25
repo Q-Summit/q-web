@@ -1,69 +1,502 @@
 ---
-// "Join Us as a Partner" closing CTA, ported from the Webflow
-// section_partner_cta (copy left, button right, stacked on mobile),
-// restyled as a navy brand card.
+// "Become a Partner": the closing section of /partner/. On the left what a
+// partnership offers (heading, text, a short list); on the right
+// the person companies talk to, on a pane of the page's glass, with
+// the main button to the partner form under the card. Below, the three
+// audiences (Startup, Corporate, Investor) as links to their pages under
+// /partner/. In the home page's voice (partner-theme.css, PARTNER-1): its
+// title, intro and glass buttons on its dark ground, on the .p-section shell instead of
+// .section (LAYOUT-1, LAYOUT-4). The main button keeps the
+// partner_cta_clicked measurement of the old "Join Us as a Partner" block.
+// Every word comes from the CMS (page-partner, cta).
 import Container from "../ui/Container.astro";
+import PersonPhoto from "../ui/PersonPhoto.astro";
+import IconArrowRight from "../icons/IconArrowRight.astro";
+import IconCheck from "../icons/IconCheck.astro";
+import IconCopy from "../icons/IconCopy.astro";
 import { EVENTS } from "../../lib/analytics/events";
+import type { PartnerCtaContact } from "../../lib/content";
+import "./partner-theme.css";
+
+export interface JoinAudience {
+  key: string;
+  href: string;
+  label: string;
+  summary: string;
+  linkLabel: string;
+}
 
 interface Props {
   heading: string;
   text: string;
+  points?: string[];
   buttonLabel: string;
   buttonHref: string;
+  contact?: PartnerCtaContact;
+  audiences: JoinAudience[];
 }
 
-const { heading, text, buttonLabel, buttonHref } = Astro.props;
+const {
+  heading,
+  text,
+  points = [],
+  buttonLabel,
+  buttonHref,
+  contact,
+  audiences,
+} = Astro.props;
+
+// The card needs someone to write to; until name and email are filled in
+// the CMS, only the button stands on the right.
+const person =
+  contact && contact.name.trim() && contact.email.trim() ? contact : undefined;
+
+// The address itself is the link that opens a new email; it may only
+// break before the @, never inside a word.
+const [mailbox, domain] = person ? person.email.split("@") : ["", ""];
 ---
 
-<section class="section is-small cta" aria-labelledby="partner-cta-heading">
+<section
+  id="become-a-partner"
+  class="p-section join"
+  aria-labelledby="partner-cta-heading"
+>
   <Container>
-    <div class="cta-card">
-      <div class="cta-copy">
-        <h2 id="partner-cta-heading">{heading}</h2>
-        <p>{text}</p>
+    <div class="join-grid" data-has-contact={person ? "" : undefined}>
+      <div class="join-copy">
+        <h2 id="partner-cta-heading" class="p-title" data-lp="cta.heading">
+          {heading}
+        </h2>
+        <p class="p-intro join-text" data-lp="cta.text">{text}</p>
+        {
+          points.length > 0 && (
+            <ul class="join-points">
+              {points.map((point, i) => (
+                <li data-lp={`cta.points.${i}.title`}>{point}</li>
+              ))}
+            </ul>
+          )
+        }
       </div>
-      <a
-        class="button"
-        href={buttonHref}
-        data-ph-event={EVENTS.partner_cta_clicked}
-        data-ph-prop-cta-label={buttonLabel}>{buttonLabel}</a
-      >
+
+      <div class="join-side">
+        {
+          person && (
+            <div class="join-card p-glass" data-join-contact>
+              <div class="join-photo">
+                <PersonPhoto
+                  name={person.name}
+                  filename={person.photoFilename}
+                  widths={[160, 320]}
+                  sizes="7rem"
+                  focus="top"
+                />
+              </div>
+              <div class="join-person">
+                <h3 data-lp="cta.contact.name">{person.name}</h3>
+                {person.role && (
+                  <p class="join-role" data-lp="cta.contact.role">
+                    {person.role}
+                  </p>
+                )}
+                <div class="join-actions">
+                  <a
+                    class="join-email"
+                    href={`mailto:${person.email}`}
+                    data-lp="cta.contact.email"
+                  >
+                    {mailbox}
+                    <wbr />
+                    {domain !== undefined && (
+                      <span class="join-email-domain">{`@${domain}`}</span>
+                    )}
+                  </a>
+                  {person.copyLabel && (
+                    <button
+                      type="button"
+                      class="join-copy-button"
+                      data-copy={person.email}
+                      data-copied-label={person.copiedLabel || undefined}
+                      hidden
+                    >
+                      <span class="join-copy-icon">
+                        <IconCopy />
+                      </span>
+                      <span class="join-copied-icon">
+                        <IconCheck size={18} />
+                      </span>
+                      <span
+                        class="join-copy-label"
+                        data-lp="cta.contact.copyLabel"
+                        data-copy-label
+                      >
+                        {person.copyLabel}
+                      </span>
+                    </button>
+                  )}
+                </div>
+                <span
+                  class="u-visually-hidden"
+                  aria-live="polite"
+                  data-copy-status
+                />
+              </div>
+            </div>
+          )
+        }
+
+        <a
+          class="button is-glass p-button p-ice join-button"
+          href={buttonHref}
+          data-ph-event={EVENTS.partner_cta_clicked}
+          data-ph-prop-cta-label={buttonLabel}
+          data-lp-href="cta.buttonHref"
+          data-glass-press
+        >
+          <span class="glass-light" aria-hidden="true"></span>
+          <span data-lp="cta.buttonLabel">{buttonLabel}</span>
+          <span class="button-arrow" aria-hidden="true">
+            <IconArrowRight />
+          </span>
+        </a>
+      </div>
     </div>
+
+    {
+      audiences.length > 0 && (
+        <ul class="join-audiences" aria-label="Partnerships">
+          {audiences.map(({ key, href, label, summary, linkLabel }) => (
+            <li>
+              <a class="join-audience p-glass" href={href}>
+                <span
+                  class="join-audience-label"
+                  data-lp={`audiences.${key}.label`}
+                >
+                  {label}
+                </span>
+                <span
+                  class="join-audience-summary"
+                  data-lp={`audiences.${key}.summary`}
+                >
+                  {summary}
+                </span>
+                <span class="join-audience-link">
+                  <span data-lp={`audiences.${key}.linkLabel`}>
+                    {linkLabel}
+                  </span>
+                  <IconArrowRight size={18} />
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
   </Container>
 </section>
 
+<script>
+  // Copy address: the icon stays hidden without JavaScript or without a
+  // clipboard; the email link next to it always works. After a copy the
+  // icon turns into a check and its label says "Copied" for a moment.
+  for (const button of document.querySelectorAll<HTMLButtonElement>(
+    ".join-copy-button[data-copy]",
+  )) {
+    if (!navigator.clipboard) continue;
+    button.hidden = false;
+    const label = button.querySelector<HTMLElement>("[data-copy-label]");
+    const status = button
+      .closest("[data-join-contact]")
+      ?.querySelector<HTMLElement>("[data-copy-status]");
+    const idle = label?.textContent ?? "";
+    const done = button.dataset.copiedLabel ?? "";
+    let timer = 0;
+    button.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(button.dataset.copy ?? "");
+      } catch {
+        return;
+      }
+      if (label && done) label.textContent = done;
+      if (status) status.textContent = done || idle;
+      button.dataset.copied = "";
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        if (label) label.textContent = idle;
+        if (status) status.textContent = "";
+        delete button.dataset.copied;
+      }, 2000);
+    });
+  }
+</script>
+
 <style>
-  /* Live site: plain white section, heading + text left, navy button
-     right. No card, no dark background (DESIGN.md COMP-2/COLOR-2). */
-  .cta-card {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-md);
+  /* Text left, the contact and the button right; one column on phones.
+     Left-aligned, unlike the centered .p-head, because the text and the
+     card read side by side (PARTNER-1). */
+  .join-grid {
+    display: grid;
+    gap: clamp(var(--space-lg), 4vw, var(--space-xl));
+    align-items: center;
   }
 
-  @media (min-width: 768px) {
-    .cta-card {
-      flex-direction: row;
-      justify-content: space-between;
-      align-items: center;
-      gap: var(--space-xl);
+  @media (min-width: 992px) {
+    .join-grid {
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+      gap: clamp(var(--space-xl), 6vw, 6rem);
     }
   }
 
-  /* h3-scale size matches the live page's CTA heading (DESIGN.md TYPE-1). */
-  .cta-copy h2 {
-    margin-bottom: var(--space-xs);
-    font-size: var(--heading-h3-size);
+  .join-copy .p-title {
+    text-align: left;
   }
 
-  .cta-copy p {
-    margin-bottom: 0;
-    color: var(--color-neutral-dark);
+  .join-text {
+    margin-inline: 0;
+  }
+
+  /* What a partner gets: short lines, each behind a small plain dot of
+     ice, centered on the first line. Flat: no glow. */
+  .join-points {
+    display: grid;
+    gap: var(--space-sm);
+    margin: var(--space-lg) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .join-points li {
+    position: relative;
+    padding-left: var(--space-lg);
+    color: var(--color-white);
     font-size: var(--text-size-medium);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.45;
   }
 
-  .cta .button {
-    flex-shrink: 0;
+  .join-points li::before {
+    content: "";
+    position: absolute;
+    top: 0.5em;
+    left: 0.15em;
+    width: 0.45em;
+    height: 0.45em;
+    background-color: var(--color-ticket-ice);
+    border-radius: var(--radius-circle);
+  }
+
+  .join-side {
+    display: grid;
+    gap: var(--space-md);
+    justify-items: stretch;
+  }
+
+  .join-grid:not([data-has-contact]) .join-side {
+    justify-items: start;
+  }
+
+  /* The person: portrait, name, role, the address and the copy button. */
+  .join-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: clamp(var(--space-sm), 3vw, var(--space-md));
+    align-items: center;
+    padding: clamp(var(--space-md), 3vw, var(--space-lg));
+  }
+
+  .join-photo {
+    width: clamp(5rem, 14vw, 7rem);
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: var(--radius-ticket-panel);
+  }
+
+  .join-person {
+    display: grid;
+    gap: 0.2rem;
+    justify-items: start;
+    min-width: 0;
+  }
+
+  .join-person h3 {
+    margin: 0;
+    color: var(--color-white);
+    font-size: var(--heading-h5-size);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+
+  .join-role {
+    margin: 0;
+    color: color-mix(in srgb, var(--color-ticket-ice) 82%, transparent);
+    font-size: var(--text-size-regular);
+  }
+
+  /* The address in ice blue, a link that opens a new email, and beside
+     it a small clear glass button with a copy icon and its label. */
+  .join-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs);
+    margin-top: var(--space-2xs);
+  }
+
+  .join-email {
+    color: var(--color-ticket-ice);
+    font-size: var(--text-size-medium);
+    font-weight: var(--font-weight-semibold);
+    text-decoration: underline;
+    text-decoration-color: color-mix(
+      in srgb,
+      var(--color-ticket-ice) 40%,
+      transparent
+    );
+    text-underline-offset: 0.2em;
+    transition:
+      color var(--duration-hover) var(--ease-snappy),
+      text-decoration-color var(--duration-hover) var(--ease-snappy);
+  }
+
+  .join-email-domain {
+    white-space: nowrap;
+  }
+
+  @media (hover: hover) {
+    .join-email:hover {
+      color: var(--color-white);
+      text-decoration-color: currentColor;
+    }
+  }
+
+  .join-copy-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 2.25rem;
+    padding: 0 0.85rem 0 0.7rem;
+    color: var(--color-ticket-ice);
+    font: inherit;
+    font-size: var(--text-size-small);
+    font-weight: var(--font-weight-semibold);
+    line-height: 1;
+    white-space: nowrap;
+    background-color: color-mix(in srgb, var(--color-white) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-white) 18%, transparent);
+    border-radius: var(--radius-ticket-button);
+    cursor: pointer;
+    transition:
+      background-color var(--duration-hover) var(--ease-snappy),
+      border-color var(--duration-hover) var(--ease-snappy);
+  }
+
+  .join-copy-button :global(svg) {
+    display: block;
+    width: 1rem;
+    height: 1rem;
+  }
+
+  @media (hover: hover) {
+    .join-copy-button:hover {
+      background-color: color-mix(in srgb, var(--color-white) 16%, transparent);
+      border-color: color-mix(in srgb, var(--color-white) 32%, transparent);
+    }
+  }
+
+  .join-copied-icon,
+  .join-copy-button[data-copied] .join-copy-icon {
+    display: none;
+  }
+
+  .join-copy-button[data-copied] .join-copied-icon {
+    display: block;
+    color: var(--color-ticket-cyan);
+  }
+
+  .join-copy-button:focus-visible,
+  .join-email:focus-visible,
+  .join-audience:focus-visible {
+    outline: 2px solid var(--color-white);
+    outline-offset: 3px;
+  }
+
+  .join-button {
+    justify-self: stretch;
+    justify-content: center;
+  }
+
+  .join-grid:not([data-has-contact]) .join-button {
+    justify-self: start;
+  }
+
+  /* The three audiences: one row of glass links. */
+  .join-audiences {
+    display: grid;
+    gap: var(--space-md);
+    margin: clamp(var(--space-xl), 6vw, 5rem) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (min-width: 768px) {
+    .join-audiences {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .join-audiences li {
+    display: flex;
+  }
+
+  .join-audience {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--space-2xs);
+    padding: var(--space-md);
+    color: var(--color-white);
+    text-decoration: none;
+    transition: transform var(--duration-hover) var(--ease-snappy);
+  }
+
+  .join-audience-label {
+    font-size: var(--heading-h5-size);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.02em;
+  }
+
+  .join-audience-summary {
+    color: color-mix(in srgb, var(--color-ticket-ice) 82%, transparent);
+    font-size: var(--text-size-regular);
+    line-height: 1.5;
+  }
+
+  .join-audience-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    margin-top: auto;
+    padding-top: var(--space-xs);
+    color: var(--color-ticket-ice);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  @media (hover: hover) {
+    .join-audience:hover {
+      transform: translateY(-2px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .join-email,
+    .join-copy-button,
+    .join-audience {
+      transition: none;
+    }
+
+    .join-audience:hover {
+      transform: none;
+    }
   }
 </style>

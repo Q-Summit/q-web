@@ -1,5 +1,6 @@
 // Builders for /llms.txt and /llms-full.txt. Route tables are hand-curated.
 import type { PageContent, SiteSettings } from "./content";
+import { partnerAudiencePages } from "./partner-audiences";
 import {
   WHYQ_AUDIENCE_PAGES,
   whyqAudienceNames,
@@ -54,13 +55,21 @@ export function buildRouteTable(
   settings?: SiteSettings,
 ): LlmsRouteTable {
   // "Why Q?" is the four audience pages under /whyq/ (there is no overview
-  // page; /whyq/ redirects to the homepage, astro.config.mjs). They share
-  // the page-whyq blurb; their names come from the nav.
-  const audiencePages: LlmsLink[] = WHYQ_AUDIENCE_PAGES.map(({ slug }) => ({
-    slug: whyqAudiencePath(slug),
-    label: whyqAudienceTitle(slug, settings),
-    description: content.whyq.metaDescription,
-  }));
+  // page; /whyq/ redirects to the homepage, astro.config.mjs). Each one is
+  // listed while page-whyq has its entry (a page without one is not built),
+  // with that entry's own description; their names come from the nav.
+  const audiencePages: LlmsLink[] = WHYQ_AUDIENCE_PAGES.flatMap(({ slug }) => {
+    const page = content.whyq.pages?.find((entry) => entry.audience === slug);
+    return page
+      ? [
+          {
+            slug: whyqAudiencePath(slug),
+            label: whyqAudienceTitle(slug, settings),
+            description: page.metaDescription,
+          },
+        ]
+      : [];
+  });
 
   const mainPages: LlmsLink[] = [
     { slug: "/", label: "Home", description: content.home.metaDescription },
@@ -75,6 +84,13 @@ export function buildRouteTable(
       label: "Partners",
       description: content.partner.metaDescription,
     },
+    // The Become a Partner audience pages; one that the CMS has not filled
+    // in is not built, so it is not listed either.
+    ...partnerAudiencePages(content.partner).map(({ key, audience }) => ({
+      slug: `/partner/${key}/`,
+      label: `Partners: ${audience.label}`,
+      description: audience.intro,
+    })),
     // /program is offline (astro.config.mjs redirects it to the homepage),
     // so it is listed neither here nor in the full-text corpus below.
     {
@@ -229,6 +245,7 @@ export function buildLlmsFullTxt(opts: {
     pastTeams,
     kickoff,
   } = pageContent;
+  const partnerAudiences = partnerAudiencePages(partner);
 
   const blocks: string[][] = [
     [
@@ -265,30 +282,48 @@ export function buildLlmsFullTxt(opts: {
       "---",
       "",
     ],
-    // One block per audience page, as the site shows them: the page-whyq
-    // intro and that audience's section. An audience an editor removed
-    // leaves its page without a section, and its block without one.
-    ...WHYQ_AUDIENCE_PAGES.map(({ slug, audienceId }) => {
-      const audience = whyq.audiences.find((entry) => entry.id === audienceId);
+    // One block per audience page, as the site shows them: its row of the
+    // page-whyq Audience pages (hero, activities, highlight, questions). A
+    // page without a row is not built, so it gets no block either. FAQ
+    // answers keep their price tokens out: prices change, the corpus is
+    // rebuilt only on deploy, and the ticket page carries the real ones.
+    ...WHYQ_AUDIENCE_PAGES.flatMap(({ slug }) => {
+      const page = whyq.pages?.find((entry) => entry.audience === slug);
+      if (!page) return [];
+      const noPrices = (text: string) => !/\{(?:price|regular):/.test(text);
       return [
-        ...pageHeader(
-          site,
-          whyqAudiencePath(slug),
-          whyqAudienceTitle(slug, siteSettings),
-          whyq.metaDescription,
-        ),
-        whyq.intro,
-        "",
-        ...(audience
-          ? section(audience.heading, [
-              audience.intro,
-              ...audience.items.map((item) =>
-                bullet(item.title, item.description),
-              ),
-            ])
-          : []),
-        "---",
-        "",
+        [
+          ...pageHeader(
+            site,
+            whyqAudiencePath(slug),
+            whyqAudienceTitle(slug, siteSettings),
+            page.metaDescription,
+          ),
+          page.hero.heading,
+          "",
+          page.hero.intro,
+          "",
+          ...section(page.activities.heading, [
+            page.activities.intro ?? "",
+            ...page.activities.items.map((item) =>
+              bullet(item.title, item.text),
+            ),
+          ]),
+          ...section(page.highlight.heading, [
+            page.highlight.intro ?? "",
+            ...(page.highlight.cards ?? []).map((card) =>
+              bullet(card.title, card.text),
+            ),
+          ]),
+          ...section(
+            page.faq.heading,
+            page.faq.items
+              .filter((item) => noPrices(item.answer))
+              .map((item) => bullet(item.question, item.answer)),
+          ),
+          "---",
+          "",
+        ],
       ];
     }),
     [
@@ -304,18 +339,57 @@ export function buildLlmsFullTxt(opts: {
       "---",
       "",
     ],
+    // The partner page in its order: the logo section's heading and intro
+    // (the page title stands in until the heading is filled, as on the
+    // site), the quotes section, then Become a Partner: its text and
+    // points, the contact person, and one line per audience.
+    // Each audience page that is built gets its own block after it.
     [
       ...pageHeader(site, "/partner", partner.title, partner.metaDescription),
-      partner.heading,
+      partner.projector.heading || partner.title,
       "",
+      ...(partner.projector.intro.trim() ? [partner.projector.intro, ""] : []),
+      ...section("Partner voices", [partner.heading]),
       ...section("Partner with us", [
         partner.cta.heading,
         partner.cta.text,
+        ...(partner.cta.points ?? []).map((point) => `- ${point}`),
+        ...(partner.cta.contact?.name.trim() && partner.cta.contact.email.trim()
+          ? [
+              bullet(
+                "Contact",
+                [
+                  partner.cta.contact.name,
+                  partner.cta.contact.role,
+                  partner.cta.contact.email,
+                ]
+                  .filter((part) => part.trim())
+                  .join(", "),
+              ),
+            ]
+          : []),
+        ...partnerAudiences.map(({ key, audience }) =>
+          bullet(
+            audience.label,
+            `${audience.summary} (${toAbsoluteUrl(site, `/partner/${key}/`)})`,
+          ),
+        ),
         bullet("CTA", `${partner.cta.buttonLabel} (${partner.cta.buttonHref})`),
       ]),
       "---",
       "",
     ],
+    ...partnerAudiences.map(({ key, audience }) => [
+      ...pageHeader(site, `/partner/${key}/`, audience.heading, audience.intro),
+      ...section(
+        audience.benefitsHeading,
+        audience.benefits.map((benefit) =>
+          bullet(benefit.title, benefit.description),
+        ),
+      ),
+      "---",
+      "",
+    ]),
     [
       ...pageHeader(
         site,
@@ -363,9 +437,13 @@ export function buildLlmsFullTxt(opts: {
         ticketCategories.hero.intro,
         ...ticketCategories.offer.tickets.map((ticket) => {
           const note = ticket.note ? ` (${ticket.note})` : "";
+          const regular =
+            ticket.price < ticket.regularPrice
+              ? ` (regular €${ticket.regularPrice})`
+              : "";
           return bullet(
             ticket.name,
-            `€${ticket.price} (regular €${ticket.regularPrice})${note}. ${ticket.description}. ${ticket.highlights.join("; ")}`,
+            `€${ticket.price}${regular}${note}. ${ticket.description}. ${ticket.highlights.join("; ")}`,
           );
         }),
         ticketCategories.offer.footnote,

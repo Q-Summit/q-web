@@ -46,6 +46,16 @@ mediaQuery.docs.forEach((doc: any) => {
 
 console.log(`Found ${mediaByFilename.size} media files`);
 
+// The optional white logo for the dark partner page. Like the main logo it
+// travels as a filename; a file the local media library lacks (always the
+// case for the fixture) leaves the field empty, and the page puts the
+// regular logo on a white plate instead.
+function logoOnDarkId(partner: { logoOnDarkFilename?: string }): number | null {
+  if (!partner.logoOnDarkFilename) return null;
+  const id = mediaByFilename.get(partner.logoOnDarkFilename);
+  return id === undefined ? null : (id as unknown as number);
+}
+
 const partnersList = partnersData as any[];
 for (let index = 0; index < partnersList.length; index++) {
   const partner = partnersList[index];
@@ -69,7 +79,12 @@ for (let index = 0; index < partnersList.length; index++) {
       await payload.update({
         collection: "partners",
         id: existing.docs[0]!.id,
-        data: { order: index * 10, websiteUrl: partner.websiteUrl || "" },
+        data: {
+          order: index * 10,
+          websiteUrl: partner.websiteUrl || "",
+          description: partner.description ?? null,
+          logoOnDark: logoOnDarkId(partner),
+        },
         user: { id: "seed-admin", roles: ["admin"] } as any,
       });
       console.log(`Updated (exists): ${partner.name}`);
@@ -114,7 +129,9 @@ for (let index = 0; index < partnersList.length; index++) {
           | "university-and-network"
           | "media",
         websiteUrl,
+        description: partner.description ?? null,
         logo: logoId as unknown as number,
+        logoOnDark: logoOnDarkId(partner),
         order: index * 10,
         _status: "published", // Ensure published
       },

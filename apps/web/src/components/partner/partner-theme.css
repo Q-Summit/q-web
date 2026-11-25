@@ -1,0 +1,227 @@
+/*
+ * The lower half of the partner page (DESIGN.md PARTNER-1), in the home
+ * page's voice: HOME-1's section rhythm, title, intro and glass are
+ * restated here, so /partner/ reads as the same site as the home page
+ * without importing home/ styles. Only the partner page and its
+ * components import this file. Deviates from LAYOUT-1, LAYOUT-3,
+ * LAYOUT-4, COMP-1, TYPE-1 and DEPTH-1 as PARTNER-1 allows: its
+ * sections use .p-section and .p-head instead of .section and
+ * .section-header.
+ */
+
+/* The page's ground after the logo section: the same midnight the logos
+   stand on (PartnerTiers.astro), with the same still pools of deep blue
+   light, so the whole page reads as one dark ground and never turns
+   lighter. The pools stay clear of its top edge, so no seam shows where
+   the logos end, and clear of its foot, so the fade below runs over the
+   plain ground as on the home page. Only at its very end does it melt
+   into the footer's white through the home page's long fade
+   (home-theme.css .h-page-fade, restated here), so the page never ends
+   on an edge (and the footer drops its hairline). */
+.p-ground {
+  --p-ground: var(--color-ticket-midnight);
+  --p-text: var(--color-white);
+  --p-text-soft: color-mix(in srgb, var(--color-ticket-ice) 82%, transparent);
+
+  position: relative;
+  isolation: isolate;
+  background-color: var(--p-ground);
+  background-image:
+    radial-gradient(
+      60vw 30rem at 92% 30rem,
+      color-mix(in srgb, var(--color-ticket-deep) 60%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      50vw 30rem at 4% 48rem,
+      color-mix(in srgb, var(--color-ticket-sky) 12%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      55vw 32rem at 8% 72rem,
+      color-mix(in srgb, var(--color-ticket-deep) 50%, transparent),
+      transparent 70%
+    );
+}
+
+/* The home page's fade into the footer (.h-page-fade): its lightness rises
+   along one smoothstep curve in OKLab, first the deep blue growing out of
+   the ground, then a mid blue and a pale sky into the footer's white. Its
+   length follows the window's height. */
+.p-ground::after {
+  --fade-blue: color-mix(
+    in oklab,
+    var(--color-ticket-sky) 50%,
+    var(--color-ticket-deep)
+  );
+  --fade-pale: color-mix(
+    in oklab,
+    var(--color-ticket-sky) 42%,
+    var(--color-ticket-ice)
+  );
+
+  content: "";
+  display: block;
+  height: clamp(22rem, 58vh, 46rem);
+  margin-top: calc(-1 * clamp(var(--space-lg), 6vw, 5rem));
+  background: linear-gradient(
+    in oklab 180deg,
+    transparent 0%,
+    color-mix(in oklab, var(--color-ticket-deep) 3%, transparent) 5%,
+    color-mix(in oklab, var(--color-ticket-deep) 13%, transparent) 10%,
+    color-mix(in oklab, var(--color-ticket-deep) 29%, transparent) 15%,
+    color-mix(in oklab, var(--color-ticket-deep) 49%, transparent) 20%,
+    color-mix(in oklab, var(--color-ticket-deep) 73%, transparent) 25%,
+    color-mix(in oklab, var(--fade-blue) 2%, var(--color-ticket-deep)) 30%,
+    color-mix(in oklab, var(--fade-blue) 46%, var(--color-ticket-deep)) 35%,
+    color-mix(in oklab, var(--fade-blue) 94%, var(--color-ticket-deep)) 40%,
+    color-mix(in oklab, var(--fade-pale) 18%, var(--fade-blue)) 45%,
+    color-mix(in oklab, var(--fade-pale) 38%, var(--fade-blue)) 50%,
+    color-mix(in oklab, var(--fade-pale) 59%, var(--fade-blue)) 55%,
+    color-mix(in oklab, var(--fade-pale) 79%, var(--fade-blue)) 60%,
+    color-mix(in oklab, var(--fade-pale) 98%, var(--fade-blue)) 65%,
+    color-mix(in oklab, var(--color-ticket-ice) 38%, var(--fade-pale)) 70%,
+    color-mix(in oklab, var(--color-ticket-ice) 76%, var(--fade-pale)) 75%,
+    color-mix(in oklab, var(--color-white) 12%, var(--color-ticket-ice)) 80%,
+    color-mix(in oklab, var(--color-white) 49%, var(--color-ticket-ice)) 85%,
+    color-mix(in oklab, var(--color-white) 76%, var(--color-ticket-ice)) 90%,
+    color-mix(in oklab, var(--color-white) 94%, var(--color-ticket-ice)) 95%,
+    var(--color-white) 100%
+  );
+  pointer-events: none;
+}
+
+/* The same seam as the home and ticket pages (home-theme.css,
+   ticket-theme.css): the ground fades into the footer's white, so the
+   footer drops its hairline on this page only. */
+body:has(.p-ground) .site-footer {
+  border-top-color: transparent;
+}
+
+/* Section rhythm of the home page. */
+.p-section {
+  position: relative;
+  padding-block: clamp(var(--space-xl), 9vw, 6.5rem);
+}
+
+/* The first section after the logos follows them at about the spacing
+   between two tiers, not a full section break (the logo section ends in
+   its own foot, PartnerTiers .pt-fade). */
+.partner-tiers + .p-ground > .p-section:first-child {
+  padding-top: clamp(var(--space-sm), 2vw, var(--space-md));
+}
+
+/* Section header: title and optional intro, centered. */
+.p-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: clamp(var(--space-md), 4vw, var(--space-xl));
+  text-align: center;
+}
+
+.p-title {
+  margin: 0;
+  color: var(--color-white);
+  font-size: clamp(2rem, 4.6vw, 3.25rem);
+  font-weight: var(--font-weight-extrabold);
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+.p-intro {
+  max-width: 36rem;
+  margin: var(--space-xs) auto 0;
+  color: color-mix(in srgb, var(--color-ticket-ice) 82%, transparent);
+  font-size: var(--text-size-medium);
+  line-height: 1.55;
+}
+
+/*
+ * Glass on the dark ground, in the home page's clear finish: a whisper of
+ * white over the blue, a light blur, one hairline rim of white, a lit top
+ * edge, a fine cyan line inside the lower edge and a soft drop into the
+ * midnight. Text on it is white and ice.
+ */
+.p-glass {
+  position: relative;
+  border-radius: var(--radius-ticket-card);
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--color-white) 12%, transparent) 0%,
+    color-mix(in srgb, var(--color-white) 6%, transparent) 55%,
+    color-mix(in srgb, var(--color-ticket-ice) 8%, transparent) 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--color-white) 14%, transparent),
+    inset 0 1px 1px color-mix(in srgb, var(--color-white) 45%, transparent),
+    inset 0 -10px 16px -16px var(--color-ticket-cyan),
+    0 18px 36px -24px var(--color-ticket-midnight);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  backdrop-filter: blur(10px) saturate(140%);
+}
+
+/*
+ * The call to action on the dark ground: the shared liquid glass button
+ * (.button.is-glass, COMP-1) as it is, clear over the blue, as on the
+ * home page; on the dark its focus ring is white.
+ */
+.button.is-glass.p-button:focus-visible {
+  outline-color: var(--color-white);
+}
+
+/*
+ * The main call to action (Send inquiry) in the home page's icy glass
+ * (home-theme.css .h-btn.h-ice, the ticket buttons, restated here): a
+ * bright, slightly translucent ice body lit along the top edge, a sky
+ * caustic inside the lower edge, a white specular rim and a navy label.
+ * Hover and press lighten the glass a step; no cyan halo.
+ */
+.button.is-glass.p-ice {
+  min-height: 3.5rem;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-ticket-ice) 86%, var(--color-white)) 0%,
+    color-mix(in srgb, var(--color-ticket-ice) 88%, transparent) 52%,
+    color-mix(in srgb, var(--color-ticket-cyan) 74%, transparent) 100%
+  );
+  box-shadow:
+    inset 0 1px 1px var(--color-white),
+    inset 0 -1px 2px
+      color-mix(in srgb, var(--color-ticket-sky) 45%, transparent),
+    inset 0 -12px 18px -14px
+      color-mix(in srgb, var(--color-ticket-sky) 70%, transparent),
+    0 14px 28px -16px var(--color-ticket-midnight);
+  color: var(--color-navy);
+  text-shadow: 0 1px 0 color-mix(in srgb, var(--color-white) 45%, transparent);
+  -webkit-backdrop-filter: blur(12px) saturate(170%);
+  backdrop-filter: blur(12px) saturate(170%);
+}
+
+.button.is-glass.p-ice::after {
+  background: linear-gradient(
+    140deg,
+    var(--color-white) 0%,
+    color-mix(in srgb, var(--color-white) 55%, transparent) 30%,
+    color-mix(in srgb, var(--color-ticket-cyan) 40%, transparent) 60%,
+    color-mix(in srgb, var(--color-white) 85%, transparent) 100%
+  );
+}
+
+.button.is-glass.p-ice::before {
+  background: color-mix(in srgb, var(--color-white) 34%, transparent);
+  box-shadow: none;
+}
+
+@media (hover: hover) {
+  .button.is-glass.p-ice:hover {
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-ticket-ice) 86%, var(--color-white)) 0%,
+      color-mix(in srgb, var(--color-ticket-ice) 88%, transparent) 52%,
+      color-mix(in srgb, var(--color-ticket-cyan) 74%, transparent) 100%
+    );
+    color: var(--color-navy);
+  }
+}

@@ -4,6 +4,7 @@
 // pair and every buy link works.
 import {
   euro,
+  isDiscounted,
   isPositive,
   statusLabel,
   statusOf,
@@ -450,6 +451,9 @@ function initCompare(section: HTMLElement): void {
     };
     set("price", euro(ticket.price));
     set("regular", euro(ticket.regularPrice));
+    // No struck regular price while the ticket is not discounted.
+    const regular = box?.querySelector<HTMLElement>('[data-f="regular-wrap"]');
+    if (regular) regular.hidden = !isDiscounted(ticket);
     // Like prices, names and every status cell, the description changes
     // at once.
     set("description", ticket.description);

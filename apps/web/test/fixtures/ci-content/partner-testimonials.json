@@ -8,5 +8,14 @@
     "quote": "A second placeholder quote so multi-item layouts render.",
     "attribution": "Sam Sample, Sample GmbH",
     "photoFilename": "fixture-missing-photo.webp"
+  },
+  {
+    "quote": "A longer placeholder quote, so the speech bubble has to wrap across several lines of text without breaking its layout or covering the next row of photos.",
+    "attribution": "Robin Placeholder, Placeholder AG",
+    "photoFilename": "fixture-missing-photo.webp"
+  },
+  {
+    "quote": "Short placeholder quote.",
+    "attribution": "Kim Demo"
   }
 ]

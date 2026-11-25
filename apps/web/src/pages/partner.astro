@@ -1,29 +1,44 @@
 ---
-// Partner page, ported from the Webflow /partner page: hero, testimonial
-// quotes, logo walls grouped by tier in the live order (Platinum first),
-// and the "Join Us as a Partner" CTA. Partners and testimonials load at
-// build time via src/lib/content.ts. Logo dimensions come from the
-// hand-curated logo-manifest.json for the mirrored site assets (which also
-// remaps their src paths); logos uploaded later through the CMS carry their
-// own dimensions on the partner record and are served at /media/<filename>.
+// Partner page in three parts: the partner logos (the title on the dark,
+// a bar of the tiers, then every tier under its heading with its logos in a
+// grid, in the live order; DESIGN.md PARTNER-1), "What partners say" (large
+// photos whose quotes open as speech bubbles), and "Become a Partner" (the
+// partner contact, the button to the partner form, and links to
+// /partner/startup/, /partner/corporate/ and /partner/investor/).
+// Partners and testimonials load at build time via src/lib/content.ts.
+// Logo dimensions come from the hand-curated logo-manifest.json for the
+// mirrored site assets (which also remaps their src paths); logos uploaded
+// later through the CMS carry their own dimensions on the partner record
+// and are served at /media/<filename>. On the dark every logo is toned to
+// white and ice blue (PartnerTiers); a partner's own white logo for dark
+// grounds (CMS "Logo for dark backgrounds") is shown as it is instead.
+// The dark sections below the logos use partner-theme.css's .p-section
+// and .p-head instead of .section and .section-header (LAYOUT-1, LAYOUT-4,
+// as PARTNER-1 allows).
 import Base from "../layouts/Base.astro";
 import JoinCta from "../components/partner/JoinCta.astro";
-import LogoWall from "../components/partner/LogoWall.astro";
-import type { WallLogo } from "../components/partner/LogoWall.astro";
+import PartnerTiers from "../components/partner/PartnerTiers.astro";
+import type {
+  TierLogo,
+  PartnerTier as TierEntry,
+} from "../components/partner/PartnerTiers.astro";
 import TestimonialQuotes from "../components/partner/TestimonialQuotes.astro";
 import logoManifest from "../components/partner/logo-manifest.json";
 import {
   getPageContent,
   getPartners,
   getPartnerTestimonials,
+  partnerAudiencePages,
 } from "../lib/content";
 import type { Partner, PartnerTier } from "../lib/content";
+import { isFixtureMediaSentinel } from "../lib/media-filename";
 import {
   resolvePartnerLogoDisplay,
+  resolvePartnerLogoOnDark,
   type PartnerLogoMeta,
 } from "../lib/partner-logos";
-import Section from "../components/ui/Section.astro";
 import Container from "../components/ui/Container.astro";
+import "../components/partner/partner-theme.css";
 
 const [{ partner: page }, partners, testimonials] = await Promise.all([
   getPageContent(),
@@ -33,37 +48,63 @@ const [{ partner: page }, partners, testimonials] = await Promise.all([
 
 const logoMeta = logoManifest as Record<string, PartnerLogoMeta>;
 
-// Tier order and headings exactly as on the live page.
-const tiers: { tier: PartnerTier; heading: string }[] = [
-  { tier: "Platinum", heading: "Platinum Partnerships" },
-  { tier: "Gold", heading: "Gold Partnerships" },
-  { tier: "Silver", heading: "Silver Partnerships" },
-  { tier: "Starter", heading: "Starter Partnerships" },
-  { tier: "Knowledge", heading: "Knowledge Partnership" },
-  { tier: "Event", heading: "Event Partnerships" },
-  { tier: "Mobility", heading: "Mobility Partnerships" },
-  {
-    tier: "University and Network",
-    heading: "University and Network Partnerships",
-  },
-  { tier: "Media", heading: "Media Partnerships" },
+// Tier order as on the live page; every tier gets its own grid,
+// headed by the tier's name plus the CMS's tierSuffix ("Gold Partners").
+const tiers: PartnerTier[] = [
+  "Platinum",
+  "Gold",
+  "Silver",
+  "Starter",
+  "Knowledge",
+  "Event",
+  "Mobility",
+  "University and Network",
+  "Media",
 ];
+const tierSuffix = page.projector.tierSuffix?.trim() ?? "";
+const tierHeading = (tier: PartnerTier) =>
+  tierSuffix ? `${tier} ${tierSuffix}` : tier;
+const tierSize = (tier: PartnerTier): TierEntry["size"] =>
+  tier === "Platinum" ? "xl" : tier === "Gold" ? "l" : "m";
 
 // Manifest first (mirrored assets, remapped src paths), then CMS dimensions;
-// neither → skip (warn via resolvePartnerLogoDisplay, quiet for fixture).
-function toWallLogo(partner: Partner): WallLogo[] {
+// neither → skip (warn via resolvePartnerLogoDisplay). The committed fixture
+// has no logo files at all (fixture-missing-* sentinels), so there the
+// partner's name stands in, and local tiers are never empty. With the
+// partner's own white logo, that one shows on the dark and the regular one
+// waits for the pop-up's white plate.
+function toLogo(partner: Partner): TierLogo[] {
   const logo = resolvePartnerLogoDisplay(partner, logoMeta, "[partner]");
-  return logo ? [logo] : [];
+  const description = partner.description;
+  const base = { name: partner.name, href: partner.websiteUrl, description };
+  if (!logo) {
+    return isFixtureMediaSentinel(partner.logoFilename) ? [base] : [];
+  }
+  const regular = { src: logo.src, width: logo.width, height: logo.height };
+  const onDark = resolvePartnerLogoOnDark(partner);
+  return onDark
+    ? [{ ...base, ...onDark, onDark: true, original: regular }]
+    : [{ ...base, ...regular }];
 }
 
 // partners.json preserves the live per-tier order; keep it.
-const walls = tiers
-  .map(({ tier, heading }) => ({
-    tier,
-    heading,
-    logos: partners.filter((p) => p.tier === tier).flatMap(toWallLogo),
+const tierEntries: TierEntry[] = tiers
+  .map((tier) => ({
+    id: `partner-tier-${tier.toLowerCase().replaceAll(" ", "-")}`,
+    tab: tier,
+    heading: tierHeading(tier),
+    size: tierSize(tier),
+    logos: partners.filter((p) => p.tier === tier).flatMap(toLogo),
   }))
-  .filter((wall) => wall.logos.length > 0);
+  .filter((tier) => tier.logos.length > 0);
+
+const audiences = partnerAudiencePages(page).map(({ key, audience }) => ({
+  key,
+  href: `/partner/${key}/`,
+  label: audience.label,
+  summary: audience.summary,
+  linkLabel: audience.linkLabel,
+}));
 ---
 
 <Base
@@ -71,44 +112,42 @@ const walls = tiers
   description={page.metaDescription}
   livePreviewGlobal="page-partner"
 >
-  <Section small>
-    <Container>
-      <header class="partner-header">
-        <h1 data-lp="heading">{page.heading}</h1>
-      </header>
-      <TestimonialQuotes testimonials={testimonials} />
-    </Container>
-  </Section>
-
-  <Section small>
-    <Container>
-      {
-        walls.map(({ tier, heading, logos }) => (
-          <LogoWall
-            id={tier.toLowerCase().replaceAll(" ", "-")}
-            heading={heading}
-            logos={logos}
-            featured={tier === "Platinum"}
-          />
-        ))
-      }
-    </Container>
-  </Section>
-
-  <JoinCta
-    heading={page.cta.heading}
-    text={page.cta.text}
-    buttonLabel={page.cta.buttonLabel}
-    buttonHref={page.cta.buttonHref}
+  <PartnerTiers
+    eyebrow={page.projector.eyebrow}
+    heading={page.projector.heading || page.title}
+    intro={page.projector.intro}
+    hint={page.projector.hint}
+    websiteLabel={page.projector.websiteLabel}
+    tiers={tierEntries}
   />
-</Base>
 
-<style>
-  .partner-header h1 {
-    max-width: var(--container-small);
-    margin-inline: auto;
-    text-align: center;
-    /* The live page renders its h1 at h2 scale (heading-style-h2-2). */
-    font-size: var(--heading-h2-size);
-  }
-</style>
+  <div class="p-ground">
+    <section class="p-section" aria-labelledby="partner-voices-heading">
+      <Container>
+        <header class="p-head">
+          <h2 id="partner-voices-heading" class="p-title" data-lp="heading">
+            {page.heading}
+          </h2>
+          {
+            page.quotesHint?.trim() && (
+              <p class="p-intro" data-lp="quotesHint">
+                {page.quotesHint}
+              </p>
+            )
+          }
+        </header>
+        <TestimonialQuotes testimonials={testimonials} />
+      </Container>
+    </section>
+
+    <JoinCta
+      heading={page.cta.heading}
+      text={page.cta.text}
+      points={page.cta.points}
+      buttonLabel={page.cta.buttonLabel}
+      buttonHref={page.cta.buttonHref}
+      contact={page.cta.contact}
+      audiences={audiences}
+    />
+  </div>
+</Base>

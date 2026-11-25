@@ -1,0 +1,248 @@
+---
+// /past-teams: the history story (DESIGN.md HISTORY-1, ADR-0010). Every text
+// comes from the CMS (Past Teams > Story), every photo from the Past Teams
+// list plus the current team's hero photo. The HTML is the base layer: without
+// JavaScript, with reduced motion or without WebGL the texts stand one after
+// another and the photos form a grid. The script (history-story.ts, with
+// Three.js) is loaded after the page is there and turns the same markup into
+// the pinned scroll story.
+//
+// Both team routes render it (TeamPanels.astro): on /our-team it waits hidden
+// until the Current Team / History switch shows it, and its script starts the
+// story only then, never while hidden. The switch itself stands above the
+// story, in the same place as above the team, so it never moves.
+import type { PastTeamsStory } from "../../lib/content";
+import type { HistoryTeam } from "../../lib/history-album";
+import "./history-theme.css";
+
+interface Props {
+  story: PastTeamsStory;
+  teams: HistoryTeam[];
+}
+
+const { story, teams } = Astro.props;
+const first = teams[0];
+const albumLabel =
+  teams.length > 1
+    ? `${story.albumHeading} ${teams[0].year} to ${teams[teams.length - 1].year}`
+    : story.albumHeading;
+---
+
+<div
+  class="history"
+  data-history
+  data-teams={JSON.stringify(
+    teams.map(({ label, year, src, alt }) => ({ label, year, src, alt })),
+  )}
+  data-hint={story.albumHint}
+  data-hint-touch={story.albumHintTouch}
+>
+  <section class="history-story" data-story aria-label={story.heroHeading}>
+    <div class="history-stage" data-stage>
+      <div class="history-view" data-view>
+        <div class="history-glow" data-glow aria-hidden="true"></div>
+        <canvas class="history-canvas" data-canvas aria-hidden="true"></canvas>
+        <div class="history-sketch" data-sketch aria-hidden="true"></div>
+
+        <div
+          class="history-frame"
+          data-frame
+          tabindex="0"
+          role="group"
+          aria-roledescription="photo album"
+          aria-label={albumLabel}
+        >
+          <div class="history-screen">
+            <img
+              class="history-shot is-on"
+              data-shot
+              src={first?.src}
+              alt={first?.alt ?? ""}
+              draggable="false"
+              loading="lazy"
+              decoding="async"
+            />
+            <img
+              class="history-shot"
+              data-shot
+              alt=""
+              draggable="false"
+              decoding="async"
+            />
+            <div class="history-osd">
+              <div class="history-osd__shade" aria-hidden="true"></div>
+              <p class="history-osd__label" aria-hidden="true">
+                <i class="history-osd__play"></i><span data-osd-label
+                  >{first?.label}</span
+                >
+              </p>
+              <p class="history-osd__year" data-osd-year aria-live="polite">
+                {first?.year}
+              </p>
+            </div>
+            <div class="history-sheen" aria-hidden="true"></div>
+          </div>
+          <ol class="history-years" data-years aria-label="Jump to a year"></ol>
+          <button
+            class="history-nav history-nav--prev"
+            type="button"
+            data-prev
+            aria-label="Previous team"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true"
+              ><path d="M15 5l-7 7 7 7"></path></svg
+            >
+          </button>
+          <button
+            class="history-nav history-nav--next"
+            type="button"
+            data-next
+            aria-label="Next team"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true"
+              ><path d="M9 5l7 7-7 7"></path></svg
+            >
+          </button>
+        </div>
+        <div class="history-hw" data-hw></div>
+        <p class="history-hint" data-hint>{story.albumHint}</p>
+      </div>
+
+      <div class="history-panels">
+        <article class="history-panel history-panel--side" data-panel="hero">
+          <p class="history-eyebrow" data-lp="story.heroEyebrow">
+            {story.heroEyebrow}
+          </p>
+          <h2 class="history-title" data-lp="story.heroHeading">
+            {story.heroHeading}
+          </h2>
+          <p class="history-text" data-lp="story.heroLead">{story.heroLead}</p>
+          <a class="history-cue" href="#history-album" data-skip-link>
+            <span class="history-cue__mouse" aria-hidden="true"><i></i></span>
+            <span data-lp="story.cueLabel">{story.cueLabel}</span>
+          </a>
+        </article>
+
+        <article class="history-panel history-panel--side" data-panel="origin">
+          <p class="history-eyebrow" data-lp="story.originEyebrow">
+            {story.originEyebrow}
+          </p>
+          <h2 data-lp="story.originHeading">{story.originHeading}</h2>
+          <p class="history-sub" data-lp="story.originSub">{story.originSub}</p>
+          <p class="history-text" data-lp="story.originText">
+            {story.originText}
+          </p>
+        </article>
+
+        <article class="history-panel history-panel--side" data-panel="teams">
+          <p class="history-eyebrow" data-lp="story.teamsEyebrow">
+            {story.teamsEyebrow}
+          </p>
+          <h2 data-lp="story.teamsHeading">{story.teamsHeading}</h2>
+          <p class="history-text" data-lp="story.teamsText">
+            {story.teamsText}
+          </p>
+        </article>
+
+        <article
+          class="history-panel history-panel--top"
+          data-panel="album"
+          id="history-album"
+        >
+          <p class="history-eyebrow" data-lp="story.albumEyebrow">
+            {story.albumEyebrow}
+          </p>
+          <h2 data-lp="story.albumHeading">{story.albumHeading}</h2>
+        </article>
+      </div>
+
+      <div class="history-actions">
+        <button class="h-btn h-frost" type="button" data-replay hidden>
+          <span data-lp="story.backLabel">{story.backLabel}</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  {
+    /* The album as plain photos: what the page shows without the script.
+       Hidden once the story runs, where the camera's screen shows them. */
+  }
+  <ul class="history-grid" aria-label={albumLabel}>
+    {
+      teams.map((team) => (
+        <li class="history-grid__item">
+          <img
+            src={team.src}
+            srcset={team.srcset}
+            sizes="(max-width: 950px) 90vw, 850px"
+            alt={team.alt}
+            width={team.width}
+            height={team.height}
+            loading="lazy"
+            decoding="async"
+          />
+          <p class="history-grid__label">
+            {team.label} · {team.year}
+          </p>
+        </li>
+      ))
+    }
+  </ul>
+
+  <section class="history-closing">
+    <div class="history-closing__pool" aria-hidden="true"></div>
+    <div class="history-closing__inner n-shell">
+      <p class="history-eyebrow" data-lp="story.closingEyebrow">
+        {story.closingEyebrow}
+      </p>
+      <h2 data-lp="story.closingHeading">{story.closingHeading}</h2>
+      <p class="history-text" data-lp="story.closingText">
+        {story.closingText}
+      </p>
+      <a class="h-btn h-frost" href="/our-team/" data-team-switch="current">
+        <span data-lp="story.closingButtonLabel"
+          >{story.closingButtonLabel}</span
+        >
+      </a>
+    </div>
+  </section>
+  <div class="history-fade" aria-hidden="true"></div>
+</div>
+
+<script>
+  // The story runs only where it can be watched: never with reduced motion
+  // (DESIGN.md MOTION-2), and only after the page is there, so the 3D code
+  // never competes with the hero photo (ADR-0010). On /our-team the story
+  // waits hidden: it starts the first time the team switch shows it
+  // ("team:view", TeamPanels.astro), since a hidden stage has no size to
+  // measure.
+  const root = document.querySelector<HTMLElement>("[data-history]");
+  const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (root && !calm) {
+    let started = false;
+    const start = () => {
+      if (started || root.closest("[hidden]")) return;
+      started = true;
+      import("./history-story")
+        .then((m) => m.startHistory(root))
+        .catch((err: unknown) => console.error(err));
+    };
+    const ready = () => {
+      start();
+      document.addEventListener("team:view", start);
+      // While it waits hidden, fetch the code as soon as a visitor heads
+      // for the History tab, so the switch does not wait for the download.
+      if (started) return;
+      const warm = () => void import("./history-story").catch(() => {});
+      document
+        .querySelectorAll<HTMLElement>('[data-team-tab="past"]')
+        .forEach((tab) => {
+          for (const type of ["pointerenter", "focus", "touchstart"])
+            tab.addEventListener(type, warm, { once: true, passive: true });
+        });
+    };
+    if (document.readyState === "complete") ready();
+    else window.addEventListener("load", ready, { once: true });
+  }
+</script>

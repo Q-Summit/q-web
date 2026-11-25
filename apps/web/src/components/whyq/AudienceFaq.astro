@@ -1,0 +1,127 @@
+---
+// Short FAQ of a /whyq/<audience>/ page (DESIGN.md WHYQ-1), in the
+// homepage's material (HOME-1), laid out as the team's template: the
+// opener, then the questions as stacked dark glass rows of native
+// <details> (COMP-4), so the open and close animation is the site's own;
+// under them one line that leads on to the contact page. FAQPage JSON-LD is built from the visible questions.
+import "../home/home-theme.css";
+import "./whyq-theme.css";
+import type { Faq } from "../../lib/content";
+import { buildFaqPageJsonLd } from "../../lib/faq-json-ld";
+import JsonLd from "../seo/JsonLd.astro";
+import IconChevron from "../icons/IconChevron.astro";
+
+interface Props {
+  id: string;
+  eyebrow: string;
+  heading: string;
+  faqs: Faq[];
+  more: { text: string; linkLabel: string; href: string };
+}
+
+const { id, eyebrow, heading, faqs, more } = Astro.props;
+---
+
+{faqs.length > 0 && <JsonLd data={buildFaqPageJsonLd(faqs)} />}
+<section id={id} class="h-section wq-faq" aria-labelledby={`${id}-heading`}>
+  <div class="h-shell">
+    <div class="wq-head-copy" data-h-reveal>
+      <p class="h-eyebrow">{eyebrow}</p>
+      <h2 class="h-title wq-faq-title" id={`${id}-heading`}>{heading}</h2>
+    </div>
+    <div class="wq-faq-list">
+      {
+        faqs.map((faq, i) => (
+          <details
+            class="wq-faq-item h-glass"
+            data-h-reveal
+            style={`--h-i: ${i}`}
+          >
+            <summary class="u-accordion-summary">
+              <span class="wq-question">{faq.question}</span>
+              <span class="wq-chevron" aria-hidden="true">
+                <IconChevron />
+              </span>
+            </summary>
+            <div class="wq-answer" set:html={faq.answerHtml} />
+          </details>
+        ))
+      }
+    </div>
+    <p class="wq-faq-more" data-h-reveal>
+      {more.text}{" "}<a href={more.href}>{more.linkLabel}</a>.
+    </p>
+  </div>
+</section>
+
+<style>
+  /* DESIGN.md WHYQ-1: dark glass rows on the night (HOME-1); COMP-4. */
+  .wq-faq-title {
+    font-size: clamp(2.2rem, 4.4vw, 3.75rem);
+  }
+
+  .wq-faq-list {
+    display: grid;
+    gap: var(--space-xs);
+    margin-top: clamp(var(--space-lg), 4vw, var(--space-xl));
+  }
+
+  /* Each question a dark glass row (HOME-1 .h-glass). */
+  .wq-faq-item {
+    padding-inline: clamp(var(--space-sm), 2.4vw, var(--space-lg));
+    border-radius: var(--radius-ticket-panel);
+  }
+
+  /* Box, marker reset and padding come from .u-accordion-summary
+     (global.css, COMP-3); only the label type and the chevron are local. */
+  .wq-question {
+    color: var(--color-white);
+    font-size: clamp(1.0625rem, 1.5vw, 1.25rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.01em;
+    line-height: 1.35;
+  }
+
+  .wq-chevron {
+    display: flex;
+    flex-shrink: 0;
+    align-self: flex-start;
+    width: 2rem;
+    color: var(--color-ticket-ice);
+    transition: transform var(--duration-icon) var(--ease-snappy);
+  }
+
+  .wq-faq-item[open] .wq-chevron {
+    transform: rotate(180deg);
+  }
+
+  .wq-answer {
+    max-width: 44rem;
+    padding-bottom: var(--space-md);
+    color: var(--h-text-soft);
+    line-height: 1.65;
+  }
+
+  .wq-answer :global(p) {
+    margin: 0;
+  }
+
+  .wq-faq-more {
+    margin: var(--space-md) 0 0;
+    color: var(--h-text-soft);
+  }
+
+  .wq-faq-more a {
+    white-space: nowrap;
+    color: var(--color-ticket-ice);
+    font-weight: var(--font-weight-bold);
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .wq-chevron {
+      transition: none;
+    }
+  }
+</style>

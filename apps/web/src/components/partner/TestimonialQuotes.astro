@@ -1,15 +1,22 @@
 ---
-// Partner testimonials, ported from the Webflow "partner_logos-list"
-// slider. The old autoplaying slider becomes a static card grid: no
-// client JS, one column on mobile, two from tablet up. Each testimonial
-// carries an optional small round portrait, like the live slider's
-// client image next to the name/company.
-// Rendered inside the partner page's hero .section/.container: this
-// component only adds the grid and its own small top gap, not a section
-// shell (DESIGN.md LAYOUT-1/LAYOUT-3).
-import { Picture } from "../../lib/astro-assets";
+// "Get to Know Our Previous Partners": large partner photos, each one a
+// real button that opens that partner's quote as a white speech bubble
+// rising above the photo (DESIGN.md PARTNER-1). Only one bubble is open at
+// a time; Escape, a click elsewhere or the same photo again closes it.
+//
+// Progressive enhancement: the markup is a plain grid of photos with every
+// quote standing under its photo. testimonials.client.ts reveals the photo
+// buttons and turns the quotes into bubbles. A missing photo shows the
+// person's initials (ui/PersonPhoto).
+//
+// Rendered inside the page's own section and container: this component
+// adds only the grid, not a section shell (DESIGN.md LAYOUT-1/LAYOUT-3).
+// Each person is a pane of the page's glass (partner-theme.css, in
+// the home page's finish); the quote mark is the home page's round clear
+// glass (as the speaker arrows), the bubble white with navy type.
+import PersonPhoto from "../ui/PersonPhoto.astro";
+import "./partner-theme.css";
 import type { PartnerTestimonial } from "../../lib/content";
-import { resolveContentImage } from "../../lib/images";
 
 interface Props {
   testimonials: PartnerTestimonial[];
@@ -18,155 +25,281 @@ interface Props {
 const { testimonials } = Astro.props;
 
 // Attribution comes as "Name, Company"; keep any extra commas in the company.
-const items = await Promise.all(
-  testimonials.map(async ({ quote, attribution, photoFilename }) => {
-    const [name, ...companyParts] = attribution.split(", ");
-    const image = photoFilename
-      ? await resolveContentImage(photoFilename, `testimonial ${attribution}`)
-      : undefined;
-    return {
-      quote,
-      name,
-      company: companyParts.join(", "),
-      photoFilename,
-      image,
-    };
-  }),
-);
+const items = testimonials.map(({ quote, attribution, photoFilename }, i) => {
+  const [name = "", ...companyParts] = attribution.split(", ");
+  return {
+    id: `partner-quote-${i + 1}`,
+    quote,
+    name,
+    company: companyParts.join(", "),
+    photoFilename,
+  };
+});
 ---
 
-<section class="testimonials" aria-label="What partners say about Q-Summit">
-  <ul class="quote-grid">
-    {
-      items.map(({ quote, name, company, photoFilename, image }) => (
-        <li class="quote-card">
-          <blockquote>
-            <p class="quote-text">&ldquo;{quote}&rdquo;</p>
-            <footer class="quote-footer">
-              {image ? (
-                <Picture
-                  class="quote-photo"
-                  src={image}
-                  alt=""
-                  widths={[44, 88]}
-                  sizes="44px"
-                  formats={["avif", "webp"]}
-                  fallbackFormat="jpg"
-                  quality={80}
-                  loading="lazy"
-                  decoding="async"
-                />
-              ) : (
-                photoFilename && (
-                  <img
-                    class="quote-photo"
-                    src={`/media/${photoFilename}`}
-                    alt=""
-                    width="44"
-                    height="44"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                )
-              )}
-              <div class="quote-identity">
-                <span class="quote-name">{name}</span>
-                {company && <span class="quote-company">{company}</span>}
-              </div>
-            </footer>
-          </blockquote>
+{
+  items.length > 0 && (
+    <ul class="voices" data-voices>
+      {items.map(({ id, quote, name, company, photoFilename }) => (
+        <li class="voice p-glass" data-voice>
+          <div class="voice-photo">
+            <PersonPhoto
+              name={name}
+              filename={photoFilename}
+              widths={[320, 480, 640]}
+              sizes="(min-width: 1100px) 18rem, (min-width: 768px) 30vw, 45vw"
+            />
+            <button
+              type="button"
+              class="voice-trigger"
+              aria-expanded="false"
+              aria-controls={id}
+              data-voice-trigger
+              hidden
+            >
+              <span class="u-visually-hidden">Quote from {name}</span>
+              <span class="voice-badge" aria-hidden="true">
+                &ldquo;
+              </span>
+            </button>
+          </div>
+          <div class="voice-caption">
+            <p class="voice-name">{name}</p>
+            {company && <p class="voice-company">{company}</p>}
+          </div>
+          <div class="voice-quote" id={id} data-voice-quote>
+            <blockquote>
+              <p>&ldquo;{quote}&rdquo;</p>
+            </blockquote>
+          </div>
         </li>
-      ))
-    }
-  </ul>
-</section>
+      ))}
+    </ul>
+  )
+}
+
+<script>
+  import { initVoices } from "./testimonials.client";
+  initVoices();
+</script>
 
 <style>
-  /* Small local gap below the h1, not a section shell: the surrounding
-     .section on the page already provides the section's vertical rhythm. */
-  .testimonials {
-    margin-top: 2.5rem;
-  }
-
-  .quote-grid {
+  /* PARTNER-1: the lower half of the partner page speaks in the home
+     page's voice (partner-theme.css); depth is glass light, not a
+     --shadow-* step (DEPTH-1). */
+  .voices {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 1.25rem;
-    max-width: var(--container-medium);
-    margin: 0 auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-md) var(--space-sm);
+    margin: 0;
     padding: 0;
     list-style: none;
   }
 
   @media (min-width: 768px) {
-    .quote-grid {
-      grid-template-columns: 1fr 1fr;
-      gap: var(--space-md);
+    .voices {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-lg) var(--space-md);
     }
   }
 
-  .quote-card {
-    display: flex;
-    padding: 1.75rem 1.75rem var(--space-md);
-    background-color: var(--color-background-alternate);
-    border-radius: var(--radius-card);
+  @media (min-width: 1100px) {
+    .voices {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
   }
 
-  .quote-card blockquote {
+  .voice {
     display: flex;
     flex-direction: column;
-    flex-grow: 1;
+    padding: var(--space-2xs);
+  }
+
+  /* A person without a photo (or a file that is missing locally) shows
+     initials on a field of ice light instead of a grey box. */
+  .voice-photo {
+    --person-photo-ground: linear-gradient(
+      170deg,
+      color-mix(in srgb, var(--color-ticket-ice) 55%, var(--color-white)),
+      color-mix(in srgb, var(--color-ticket-sky) 42%, var(--color-ticket-ice))
+    );
+    position: relative;
+    aspect-ratio: 4 / 5;
+    border-radius: var(--radius-ticket-panel);
+  }
+
+  /* The whole photo is the click target; the badge in its corner says it
+     holds a quote. */
+  .voice-trigger {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    padding: var(--space-sm);
+    background: none;
+    border: 0;
+    border-radius: inherit;
+    cursor: pointer;
+  }
+
+  /* The white ring of the glass on the dark ground (PARTNER-1). */
+  .voice-trigger:focus-visible {
+    outline: 2px solid var(--color-white);
+    outline-offset: 3px;
+  }
+
+  /* The home page's round clear glass (the speaker arrows' .h-glass-btn,
+     restated here as PARTNER-1 asks): see-through, a bright rim, a soft
+     blur of the photo behind it, no glow. */
+  .voice-badge {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding-top: 0.4rem;
+    color: var(--color-white);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-white) 18%, transparent),
+      color-mix(in srgb, var(--color-white) 6%, transparent)
+    );
+    border-radius: var(--radius-circle);
+    box-shadow:
+      inset 0 1px 1px color-mix(in srgb, var(--color-white) 75%, transparent),
+      inset 0 -1px 1px color-mix(in srgb, var(--color-white) 20%, transparent),
+      inset 0 0 0 1px color-mix(in srgb, var(--color-white) 35%, transparent);
+    -webkit-backdrop-filter: blur(10px) saturate(150%) brightness(0.8);
+    backdrop-filter: blur(10px) saturate(150%) brightness(0.8);
+    text-shadow: 0 1px 2px
+      color-mix(in srgb, var(--color-black) 45%, transparent);
+    font-size: var(--heading-h5-size);
+    font-weight: var(--font-weight-extrabold);
+    line-height: 1;
+    transition: transform var(--duration-hover) var(--ease-snappy);
+  }
+
+  @media (hover: hover) {
+    .voice-trigger:hover .voice-badge {
+      transform: scale(1.08);
+    }
+  }
+
+  .voice-trigger[aria-expanded="true"] .voice-badge {
+    transform: scale(1.08);
+  }
+
+  .voice-caption {
+    padding: var(--space-sm) var(--space-xs) var(--space-xs);
+  }
+
+  .voice-name {
+    margin: 0;
+    color: var(--color-white);
+    font-size: var(--text-size-medium);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+  }
+
+  .voice-company {
+    margin: 0.2rem 0 0;
+    color: color-mix(in srgb, var(--color-ticket-ice) 82%, transparent);
+    font-size: var(--text-size-small);
+  }
+
+  .voice-quote {
+    padding: 0 var(--space-xs) var(--space-xs);
+  }
+
+  .voice-quote blockquote {
     margin: 0;
   }
 
-  .quote-card blockquote::before {
-    content: "\201C";
-    display: block;
-    /* Orange is reserved for .text-highlight only (DESIGN.md COLOR-1);
-       this decorative mark stays navy. The mark is not a heading, but it is
-       drawn at the h1 step, so it takes that token rather than a raw 3.5rem
-       (DESIGN.md TYPE-2) and shrinks with the scale on small screens. */
-    color: var(--color-heading);
-    font-size: var(--heading-h1-size);
-    font-weight: var(--heading-weight-home);
-    line-height: 0.6;
-    margin-bottom: var(--space-xs);
-  }
-
-  .quote-text {
-    flex-grow: 1;
-    margin-bottom: 1.25rem;
-    color: var(--color-heading);
-    font-size: var(--text-size-large);
+  .voice-quote p {
+    margin: 0;
+    color: var(--color-white);
+    font-size: var(--text-size-medium);
     font-weight: var(--font-weight-semibold);
-    line-height: var(--heading-line-height-loose);
+    line-height: 1.45;
   }
 
-  .quote-footer {
-    display: flex;
-    align-items: center;
-    gap: var(--space-xs);
+  /* ---- Enhanced: the quote is a white speech bubble with navy type.
+     It rises above the person's card, its tail pointing down at the
+     photo; the script scrolls the page so it is in view. ---- */
+
+  .voices[data-enhanced] .voice-quote {
+    --bubble-lift: translateY(0.25rem) scale(0.96);
+    position: absolute;
+    bottom: calc(100% + var(--space-xs));
+    left: 0;
+    z-index: 2;
+    width: min(22rem, calc(100vw - 2 * var(--space-md)));
+    margin: 0;
+    padding: var(--space-md);
+    color: var(--color-navy);
+    background-color: var(--color-white);
+    border-radius: var(--radius-ticket-panel);
+    box-shadow: 0 22px 44px -24px
+      color-mix(in srgb, var(--color-black) 55%, transparent);
+    transform-origin: 2.25rem bottom;
+    transition:
+      opacity var(--duration-open) var(--ease-snappy),
+      transform var(--duration-open) var(--ease-snappy),
+      display var(--duration-open) allow-discrete;
   }
 
-  .quote-photo {
-    flex-shrink: 0;
-    width: 2.75rem;
-    height: 2.75rem;
-    border-radius: var(--radius-circle);
-    object-fit: cover;
+  .voices[data-enhanced] .voice-quote[data-edge="end"] {
+    right: 0;
+    left: auto;
+    transform-origin: calc(100% - 2.25rem) bottom;
   }
 
-  .quote-identity {
-    display: flex;
-    flex-direction: column;
+  .voices[data-enhanced] .voice-quote::before {
+    content: "";
+    position: absolute;
+    bottom: calc(-1 * var(--space-2xs));
+    left: 1.75rem;
+    width: 1rem;
+    height: 1rem;
+    background-color: var(--color-white);
+    border-radius: var(--radius-button);
+    transform: rotate(45deg);
   }
 
-  .quote-name {
-    font-weight: var(--font-weight-semibold);
+  .voices[data-enhanced] .voice-quote[data-edge="end"]::before {
+    right: 1.75rem;
+    left: auto;
   }
 
-  .quote-company {
-    color: var(--color-neutral-dark);
-    font-size: var(--text-size-small);
+  .voices[data-enhanced] .voice-quote p {
+    color: inherit;
+  }
+
+  .voices[data-enhanced] .voice-quote[hidden] {
+    display: none;
+    opacity: 0;
+    transform: var(--bubble-lift);
+    transition-duration: var(--duration-close);
+  }
+
+  @starting-style {
+    .voices[data-enhanced] .voice-quote:not([hidden]) {
+      opacity: 0;
+      transform: var(--bubble-lift);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .voice-badge,
+    .voices[data-enhanced] .voice-quote {
+      transition: none;
+    }
+
+    .voice-trigger:hover .voice-badge,
+    .voice-trigger[aria-expanded="true"] .voice-badge {
+      transform: none;
+    }
   }
 </style>

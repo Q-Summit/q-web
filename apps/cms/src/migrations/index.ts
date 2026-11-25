@@ -14,6 +14,10 @@ import * as migration_20261116_221744_home_aftermovie from './20261116_221744_ho
 import * as migration_20261117_140507_ticket_phase_ends from './20261117_140507_ticket_phase_ends';
 import * as migration_20261121_003544_qhack_2027 from './20261121_003544_qhack_2027';
 import * as migration_20261124_075209_ticket_phase_on_sale from './20261124_075209_ticket_phase_on_sale';
+import * as migration_20261124_193538_whyq_audience_pages from './20261124_193538_whyq_audience_pages';
+import * as migration_20261125_103005_team_page_cms_fields from './20261125_103005_team_page_cms_fields';
+import * as migration_20261125_115945_past_teams_story from './20261125_115945_past_teams_story';
+import * as migration_20261125_165046_partner_page from './20261125_165046_partner_page';
 
 export const migrations = [
   {
@@ -94,6 +98,26 @@ export const migrations = [
   {
     up: migration_20261124_075209_ticket_phase_on_sale.up,
     down: migration_20261124_075209_ticket_phase_on_sale.down,
-    name: '20261124_075209_ticket_phase_on_sale'
+    name: '20261124_075209_ticket_phase_on_sale',
+  },
+  {
+    up: migration_20261124_193538_whyq_audience_pages.up,
+    down: migration_20261124_193538_whyq_audience_pages.down,
+    name: '20261124_193538_whyq_audience_pages',
+  },
+  {
+    up: migration_20261125_103005_team_page_cms_fields.up,
+    down: migration_20261125_103005_team_page_cms_fields.down,
+    name: '20261125_103005_team_page_cms_fields',
+  },
+  {
+    up: migration_20261125_115945_past_teams_story.up,
+    down: migration_20261125_115945_past_teams_story.down,
+    name: '20261125_115945_past_teams_story',
+  },
+  {
+    up: migration_20261125_165046_partner_page.up,
+    down: migration_20261125_165046_partner_page.down,
+    name: '20261125_165046_partner_page'
   },
 ];

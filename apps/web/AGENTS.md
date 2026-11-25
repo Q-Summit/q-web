@@ -71,12 +71,27 @@ WebGL. Copy comes from `page-hackathon` and the FAQs; only the terminal's own
 chrome (prompts, window titles) is written in the components. Apply buttons
 follow `application.isOpen`, with `hero.cta` as the link.
 
+`/past-teams` is the team history story (DESIGN.md HISTORY-1,
+[ADR-0010](../../docs/decisions/0010-three-history-page.md)): a drawn scroll
+story whose Three.js camera becomes the album of every team. Its rules live in
+`components/history/history-theme.css` under the `.history` wrapper; Three.js
+enters only through the dynamic import in `HistoryStory.astro`, after load and
+never with reduced motion. Copy comes from `page-past-teams` (`story`), photos
+from the Past Teams list plus the Our Team hero; until every story field is
+published the page keeps the old intro and year grid. Both team routes render
+both views (`components/team/TeamPanels.astro`), so the Current Team / History
+switch and the story's "Meet the team" button swap them in place without a page
+load; the story starts only once it is shown (the `team:view` event). The album
+is built by `lib/history-album.ts`. The model is
+`public/past-teams/kamera.glb` (Draco), decoded by three's own decoder copied
+verbatim to `public/past-teams/draco/` (excluded from lint, format and spell).
+
 ### UI primitives (`components/ui/`)
 
 Two kinds live here. **Shells** (`Section`, `Container`, `SectionHeader`,
 `Button`) are thin typed Astro wrappers over the `global.css` classes DESIGN.md
 defines: they carry no styles of their own and exist so the markup is written
-once. **Patterns** (`Timeline`, `LogoGrid`, `SaleCards`) are whole components shared by two
+once. **Patterns** (`Timeline`, `LogoGrid`, `SaleCards`, `PersonPhoto`) are whole components shared by two
 or more pages; they own their scoped CSS, which is allowed because they render
 every element that CSS selects, so PRIM-2's boundary is never crossed. A
 pattern keeps page-specific behavior behind an opt-in prop. These rules are
@@ -89,6 +104,7 @@ than in DESIGN.md, but they are cited the same way.
 | `LogoGrid` | `logos`, `variant="tier"\|"hack"`, `featured`, `eager`, `flip` |
 | `SaleCards` | `phases`, `href`, `actionLabel` |
 | `SaleIntro` | `phases`, `href`, `level="h1"\|"h2"`, `headingId`, `reveal` |
+| `PersonPhoto` | `name`, `filename`, `widths`, `sizes`, `eager`, `focus="top"` (keeps the head of a portrait shot); fills the caller's box (square if it has no height), initials when there is no photo or the file is missing |
 
 `Timeline`'s `reveal` emits `[data-reveal]`, which gates every scroll-driven
 rule; the `IntersectionObserver` fallback for browsers without

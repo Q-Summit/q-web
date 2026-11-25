@@ -25,9 +25,13 @@ import {
   speakersForEdition,
 } from "../src/lib/content";
 import type { PageContent, SiteSettings } from "../src/lib/content";
-import { assertTicketPage } from "../src/lib/content/pages";
+import {
+  assertTicketPage,
+  normalizeTicketPrices,
+} from "../src/lib/content/pages";
 import { toNavLink } from "../src/lib/content/site-settings";
 import { buildLlmsFullTxt, buildRouteTable } from "../src/lib/llms";
+import { partnerAudiencePages } from "../src/lib/partner-audiences";
 import {
   WHYQ_AUDIENCE_PAGES,
   whyqAudienceNames,
@@ -301,6 +305,37 @@ describe("assertTicketPage", () => {
   });
 });
 
+// Between two discount phases (onSale off) nothing is on sale: every ticket
+// sells at its regular price even while the content still holds the last
+// phase's sale prices.
+describe("normalizeTicketPrices", () => {
+  const fixture = () =>
+    JSON.parse(
+      readFileSync(
+        new URL("./fixtures/ci-content/page-content.json", import.meta.url),
+        "utf-8",
+      ),
+    ).ticketCategories;
+  type Ticket = { price: number; regularPrice: number };
+
+  it("sells at the regular price while onSale is off", () => {
+    const page = fixture();
+    page.phases = { ...page.phases, onSale: false };
+    const out = normalizeTicketPrices(page);
+    expect(
+      out.offer.tickets.every((t: Ticket) => t.price === t.regularPrice),
+    ).toBe(true);
+    expect(
+      page.offer.tickets.some((t: Ticket) => t.price < t.regularPrice),
+    ).toBe(true);
+  });
+
+  it("keeps the sale prices while a phase is on sale", () => {
+    const page = fixture();
+    expect(normalizeTicketPrices(page)).toBe(page);
+  });
+});
+
 // The Q-Hack 2027 groups on page-hackathon and the FAQ topic are optional in
 // the CMS and absent from any snapshot taken before they existed. Both
 // sources must still hand the page one complete shape, so the loaders fill
@@ -541,14 +576,14 @@ describe("whyq audience pages", () => {
     });
   });
 
-  it("every page in the registry has a submenu entry and an audience in the fixture", () => {
+  it("every page in the registry has a submenu entry and a page row in the fixture", () => {
     const children = settings.nav.flatMap((item) => item.children ?? []);
-    const audienceIds = content.whyq.audiences.map((audience) => audience.id);
-    for (const { slug, audienceId } of WHYQ_AUDIENCE_PAGES) {
+    const rows = (content.whyq.pages ?? []).map((page) => page.audience);
+    for (const { slug } of WHYQ_AUDIENCE_PAGES) {
       expect(children.map((child) => child.href)).toContain(
         whyqAudiencePath(slug),
       );
-      expect(audienceIds).toContain(audienceId);
+      expect(rows).toContain(slug);
     }
   });
 
@@ -569,15 +604,30 @@ describe("whyq audience pages", () => {
       siteSettings: settings,
       pageContent: content,
     });
-    for (const { slug, audienceId } of WHYQ_AUDIENCE_PAGES) {
+    for (const { slug } of WHYQ_AUDIENCE_PAGES) {
       expect(full).toContain(
         `Source: https://q-summit.com${whyqAudiencePath(slug)}`,
       );
-      const audience = content.whyq.audiences.find(
-        (entry) => entry.id === audienceId,
-      );
-      expect(full).toContain(audience!.heading);
+      const page = content.whyq.pages?.find((entry) => entry.audience === slug);
+      expect(full).toContain(page!.hero.heading);
     }
+    // A price token never reaches the corpus (prices change between builds).
+    expect(full).not.toMatch(/\{(?:price|regular):/);
+  });
+
+  it("gives every built partner audience page its own block in the full text", () => {
+    const full = buildLlmsFullTxt({
+      site: "https://q-summit.com",
+      siteSettings: settings,
+      pageContent: content,
+    });
+    const audiences = partnerAudiencePages(content.partner);
+    expect(audiences.length).toBeGreaterThan(0);
+    for (const { key, audience } of audiences) {
+      expect(full).toContain(`Source: https://q-summit.com/partner/${key}/`);
+      expect(full).toContain(`# ${audience.heading}`);
+    }
+    expect(full).toContain(content.partner.projector.heading);
   });
 });
 

@@ -666,7 +666,7 @@ function buildSimplePages() {
         heading: "Join Us as a Partner",
         text: "Unlock new possibilities for collaboration.",
         buttonLabel: "Inquire",
-        buttonHref: "mailto:lennart.fielhauer@q-summit.com",
+        buttonHref: "mailto:partners@example.com",
       },
     },
     speaker: {

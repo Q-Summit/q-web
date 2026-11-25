@@ -1,10 +1,13 @@
 ---
-// One job listing card, ported from the Webflow ".job-card" row: white
-// logo box, role, location with a pin icon, and a workload badge. The
-// whole card links to the static detail page under /job-listings/[slug].
+// One job listing card on the 2027 navy (DESIGN.md NAVY-1): a pane of
+// white liquid glass with the company's logo on a white tile, the company
+// in sky, the role in navy, location and workload, and the Tickets
+// button's icy glass as a round arrow. The whole card links to the static
+// detail page under /job-listings/[slug].
 import type { Job } from "../../lib/content";
 import { logoSrc } from "./logo";
 import IconMapPin from "../icons/IconMapPin.astro";
+import "../ui/navy-glass.css";
 
 interface Props {
   job: Job;
@@ -23,7 +26,7 @@ const accessibleName = [job.company, job.title, job.location, job.workload]
 ---
 
 <a
-  class="job-card"
+  class="job-card n-white h-ice"
   href={`/job-listings/${job.slug}/`}
   aria-label={accessibleName}
 >
@@ -49,140 +52,251 @@ const accessibleName = [job.company, job.title, job.location, job.workload]
         </span>
       )
     }
-    {job.workload && <span class="job-workload">{job.workload}</span>}
+    {
+      job.workload && (
+        <span class="job-tag" data-workload={job.workload}>
+          {job.workload}
+        </span>
+      )
+    }
+  </span>
+  <span class="job-go" aria-hidden="true">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M5 12h14M13 6l6 6-6 6"
+        stroke="currentColor"
+        stroke-width="2.4"
+        stroke-linecap="round"
+        stroke-linejoin="round"></path>
+    </svg>
   </span>
 </a>
 
 <style>
+  /* DESIGN.md NAVY-1: white glass depth instead of the --shadow-* steps
+     (DEPTH-1). Hover only nudges the card and its arrow: no lift off the
+     page, no glow, no spring. */
   .job-card {
-    display: flex;
+    display: grid;
+    grid-template-columns: 7.5rem 1fr auto auto;
     align-items: center;
     gap: var(--space-md);
-    width: 100%;
-    padding: var(--space-sm) var(--space-md);
-    background-color: var(--color-white);
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-card);
+    padding: var(--space-sm) 1.25rem var(--space-sm) var(--space-sm);
+    border-radius: var(--radius-ticket-card);
     text-decoration: none;
-    transition:
-      box-shadow var(--duration-hover) var(--ease-snappy),
-      transform var(--duration-hover) var(--ease-snappy);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: transform var(--duration-hover) var(--ease-snappy);
   }
 
-  @media (hover: hover) {
-    .job-card:hover {
-      box-shadow: var(--shadow-card-hover);
-      transform: translateY(-2px);
-    }
+  .job-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: linear-gradient(
+      180deg,
+      transparent 40%,
+      color-mix(in srgb, var(--color-ticket-ice) 35%, transparent)
+    );
+    opacity: 0;
+    transition: opacity var(--duration-hover) var(--ease-snappy);
+  }
+
+  .job-card:focus-visible {
+    outline: 2px solid var(--color-ticket-cyan);
+    outline-offset: 3px;
   }
 
   .logo-box {
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
-    width: 8.75rem;
-    height: 4.375rem;
-    padding: 0.25rem var(--space-2xs);
-    background-color: var(--color-white);
-    border: 1px solid var(--color-neutral-lighter);
-    border-radius: var(--radius-button);
+    width: 7.5rem;
+    height: 4rem;
+    padding: 0.55rem 0.8rem;
+    overflow: hidden;
+    border-radius: var(--radius-ticket-panel);
+    background: var(--color-white);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--color-navy) 8%, transparent),
+      inset 0 -10px 16px -12px var(--n-white-edge),
+      0 6px 14px -10px color-mix(in srgb, var(--color-navy) 45%, transparent);
   }
 
   .logo-box img {
-    width: 100%;
-    height: 100%;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
     object-fit: contain;
   }
 
   .job-main {
-    display: flex;
-    flex-direction: column;
-    gap: 0.125rem;
-    flex: 1;
     min-width: 0;
-    padding-left: var(--space-md);
-    border-left: 2px solid var(--color-primary);
   }
 
   .job-company {
-    font-size: var(--text-size-small);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-neutral-dark);
+    display: block;
+    font-size: var(--text-size-tiny);
+    font-weight: var(--heading-weight);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-ticket-sky);
   }
 
   .job-title {
+    display: block;
+    margin-top: 0.2rem;
     font-size: var(--text-size-medium);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-heading);
+    font-weight: var(--heading-weight);
     line-height: var(--heading-line-height-normal);
+    color: var(--color-navy);
   }
 
   .job-meta {
     display: flex;
     align-items: center;
-    gap: 1.25rem;
-    flex-shrink: 0;
+    gap: var(--space-xs);
   }
 
   .job-location {
     display: inline-flex;
     align-items: center;
-    gap: 0.375rem;
-    font-size: var(--text-size-small);
-    color: var(--color-neutral-dark);
+    gap: 0.35rem;
+    font-size: clamp(var(--text-size-tiny), 0.6rem + 0.3vw, 0.8125rem);
+    font-weight: var(--font-weight-medium);
+    white-space: nowrap;
+    color: var(--n-ink-soft);
   }
 
   /* :global, because the svg is rendered by IconMapPin and so carries that
      component's scope, not this one's (DESIGN.md COMP-3). */
   .job-location :global(svg) {
     flex-shrink: 0;
-    color: var(--color-neutral-dark);
+    width: 14px;
+    height: 14px;
   }
 
-  .job-workload {
-    padding: 0.3rem 0.9rem;
-    background-color: var(--color-primary);
-    color: var(--color-text-inverse);
-    border-radius: var(--radius-pill);
-    font-size: var(--text-size-small);
-    font-weight: var(--font-weight-semibold);
+  .job-tag {
+    padding: 0.35rem 0.85rem;
+    border-radius: var(--radius-ticket-pill);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--heading-weight);
     white-space: nowrap;
+    color: var(--color-navy);
+    background: color-mix(in srgb, var(--color-navy) 5%, transparent);
+    box-shadow: inset 0 0 0 1px
+      color-mix(in srgb, var(--color-navy) 16%, transparent);
   }
 
-  @media (max-width: 767px) {
-    .job-card {
-      flex-direction: column;
-      gap: 0.875rem;
-      padding: var(--space-md) 1.25rem;
-      text-align: center;
+  .job-tag[data-workload="Internship"] {
+    color: var(--color-ticket-sky);
+    background: color-mix(in srgb, var(--color-ticket-ice) 30%, transparent);
+    box-shadow: inset 0 0 0 1px
+      color-mix(in srgb, var(--color-ticket-sky) 40%, transparent);
+  }
+
+  .job-tag[data-workload="Full Time"] {
+    background: var(--hg-fill);
+    box-shadow:
+      inset 0 1px 1px var(--color-white),
+      0 0 0 1px color-mix(in srgb, var(--color-ticket-sky) 35%, transparent);
+  }
+
+  /* The arrow: the Tickets button's icy glass, nothing more. */
+  .job-go {
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--radius-circle);
+    background: var(--hg-fill);
+    box-shadow: var(--hg-shadow);
+    color: var(--color-navy);
+    transition: transform var(--duration-hover) var(--ease-snappy);
+  }
+
+  @media (hover: hover) {
+    .job-card:hover {
+      transform: translateY(-1px);
     }
 
-    .job-main {
-      align-items: center;
-      padding-left: 0;
-      padding-top: 0.875rem;
-      border-left: none;
-      border-top: 2px solid var(--color-primary);
-      width: 100%;
-      max-width: 16rem;
+    .job-card:hover::before {
+      opacity: 1;
+    }
+
+    .job-card:hover .job-go {
+      transform: translateX(2px);
+    }
+  }
+
+  @media (max-width: 900px) {
+    .job-card {
+      grid-template-columns: 6rem 1fr auto;
+      gap: var(--space-sm);
+    }
+
+    .logo-box {
+      width: 6rem;
+      height: 3.5rem;
     }
 
     .job-meta {
-      flex-direction: column;
-      gap: var(--space-xs);
+      grid-column: 2 / 3;
+      grid-row: 2;
+      flex-wrap: wrap;
+    }
+
+    .job-go {
+      grid-column: 3;
+      grid-row: 1 / 3;
     }
   }
 
-  /* Reduced motion means no transition at all, and no lift left behind
+  @media (max-width: 560px) {
+    .job-card {
+      grid-template-columns: 4.5rem 1fr;
+      align-items: start;
+      gap: 0.35rem var(--space-sm);
+      padding: 0.9rem;
+    }
+
+    .logo-box {
+      grid-row: 1 / 3;
+      width: 4.5rem;
+      height: 4.5rem;
+      padding: 0.45rem;
+    }
+
+    .job-title {
+      font-size: var(--text-size-regular);
+    }
+
+    .job-meta {
+      grid-column: 2;
+      gap: var(--space-2xs);
+      margin-top: 0.35rem;
+    }
+
+    .job-go {
+      display: none;
+    }
+  }
+
+  /* Reduced motion means no transition at all, and no nudge left behind
      (DESIGN.md MOTION-2). */
   @media (prefers-reduced-motion: reduce) {
-    .job-card {
+    .job-card,
+    .job-card::before,
+    .job-go {
       transition: none;
     }
 
     @media (hover: hover) {
-      .job-card:hover {
+      .job-card:hover,
+      .job-card:hover .job-go {
         transform: none;
       }
     }
