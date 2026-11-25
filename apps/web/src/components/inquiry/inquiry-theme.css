@@ -1,0 +1,1039 @@
+/*
+ * Partner inquiry page (DESIGN.md INQUIRY-1): the 2027 night ground with one
+ * white card that holds the form, in the look of the homepage's white cards.
+ * Only components under inquiry/ import this file. Deviates from LAYOUT-1,
+ * LAYOUT-3, COLOR-2, COMP-1, TYPE-1 and DEPTH-1 as INQUIRY-1 allows: the page
+ * is its own form system.
+ *
+ * Static by design: no entrance animation, no scroll reveal, no looping
+ * light. The only motion is small state feedback (hover, focus, choice,
+ * press) on transform, opacity and paint-only properties, with the reduced
+ * motion escape at the end (MOTION-2, MOTION-3), plus the example text of
+ * the fields typing itself out once (inquiry.client.ts, a text change on the
+ * real placeholder; the rule below only hides it until that script starts).
+ */
+
+.inq-page {
+  --inq-gutter: clamp(1rem, 5vw, 2.5rem);
+  /* Text on the dark ground (the left column). */
+  --inq-ink-muted: color-mix(in srgb, var(--color-white) 82%, transparent);
+  /* The homepage's night (home-theme.css --q-night, restated: this file does
+     not import the home classes): the Q27 midnight taken a third of the way
+     to black, never pure black. A step lighter on a phone, as there. */
+  --inq-night: color-mix(
+    in srgb,
+    var(--color-ticket-midnight) 64%,
+    var(--color-black)
+  );
+
+  position: relative;
+  isolation: isolate;
+  /* The ground runs up under the site header (COMP-6), the way the home hero
+     does: pull up by the header's height, pad down by the same. */
+  margin-top: calc(-1 * var(--site-header-height, 0px));
+  padding-block: calc(var(--site-header-height, 0px) + var(--space-lg))
+    calc(var(--section-padding) + clamp(7rem, 16vh, 12rem));
+  overflow-x: clip;
+  /* The ground of the 2027 pages: the very deep navy of the homepage with one
+     wide, soft pool of the Q27 deep blue behind the card (a long eased tail,
+     no rim), so the page has depth without anything drawn on it. Still,
+     never animated. */
+  background:
+    radial-gradient(
+      80% 62% at 74% 34%,
+      color-mix(in srgb, var(--color-ticket-deep) 58%, transparent) 0%,
+      color-mix(in srgb, var(--color-ticket-deep) 34%, transparent) 36%,
+      color-mix(in srgb, var(--color-ticket-deep) 12%, transparent) 62%,
+      transparent 100%
+    ),
+    var(--inq-night);
+  color: var(--color-white);
+}
+
+@media (max-width: 767px) {
+  .inq-page {
+    --inq-night: color-mix(
+      in srgb,
+      var(--color-ticket-midnight) 92%,
+      var(--color-black)
+    );
+  }
+}
+
+/* The page behind the page keeps the same night, so overscroll never flashes
+   white (as on the homepage). */
+body:has(.inq-page) {
+  background: var(--color-ticket-midnight);
+}
+
+/* The page melts into the white site footer through a long fade, as the
+   homepage does: the deep blue grows out of clear, then a mid blue and a pale
+   sky lead into the white, with no band and no line between them. */
+.inq-page::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  z-index: -1;
+  height: clamp(20rem, 60vh, 44rem);
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in oklab, var(--color-ticket-deep) 70%, transparent) 30%,
+    color-mix(in oklab, var(--color-ticket-sky) 70%, var(--color-ticket-deep))
+      58%,
+    color-mix(in oklab, var(--color-ticket-ice) 80%, var(--color-ticket-sky))
+      80%,
+    color-mix(in oklab, var(--color-white) 90%, var(--color-ticket-ice)) 96%,
+    var(--color-white) 100%
+  );
+  pointer-events: none;
+}
+
+.inq-shell {
+  width: min(100% - 2 * var(--inq-gutter), var(--container-large));
+  margin-inline: auto;
+}
+
+.inq-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-xl);
+  align-items: start;
+}
+
+/* Left column ---------------------------------------------------------- */
+
+.inq-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  color: var(--color-ticket-ice);
+  font-variant-numeric: tabular-nums;
+}
+
+.inq-headline {
+  margin: var(--space-sm) 0 0;
+  color: var(--color-white);
+  font-size: clamp(2.65rem, 4.9vw, 4.4rem);
+  font-weight: var(--heading-weight-home);
+  letter-spacing: -0.035em;
+  line-height: 1.04;
+  text-wrap: balance;
+}
+
+/* The second sentence takes the baby blue, as on the homepage ("shape
+   tomorrow"): the headline is white, its second line is ice. */
+.inq-headline-muted {
+  display: block;
+  color: var(--color-ticket-ice);
+}
+
+/* Each sentence stays on its own single row from tablet width up. */
+@media (min-width: 768px) {
+  .inq-headline {
+    white-space: nowrap;
+  }
+}
+
+/* The intro sits above the wide card. */
+.inq-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0 var(--space-xl);
+}
+
+/* The card ------------------------------------------------------------- */
+
+/* One white card, the homepage's (WhyPicker .wp-card): white, navy type, the
+   same soft shadow. Everything on it is flat: hairlines, a pale blue body for
+   the fields and tiles, and navy for whatever is chosen or acted on, the way
+   the homepage's "Learn more" button is navy. */
+.inq-card {
+  /* Ink: navy for type, a lighter blue for captions (the Q27 sky taken a step
+     toward navy, so small text keeps at least 4.5:1 on white). */
+  --inq-ink: var(--color-navy);
+  --inq-caption: color-mix(
+    in srgb,
+    var(--color-ticket-sky) 80%,
+    var(--color-navy)
+  );
+  --inq-line: color-mix(in srgb, var(--color-navy) 16%, transparent);
+  --inq-line-strong: color-mix(in srgb, var(--color-navy) 42%, transparent);
+  --inq-pale: var(--color-ticket-ground);
+  /* The homepage's navy glass body ("Learn more": the deep blue falling to
+     navy), restated because conference pages do not import the home classes. */
+  --inq-navy-fill: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-ticket-deep) 80%, var(--color-navy)),
+    var(--color-navy)
+  );
+
+  position: relative;
+  isolation: isolate;
+  padding: clamp(1.25rem, 3.4vw, 2.5rem);
+  border-radius: var(--radius-ticket-card);
+  background: var(--color-white);
+  box-shadow: 0 30px 60px -36px
+    color-mix(in srgb, var(--color-ticket-midnight) 95%, transparent);
+  color: var(--inq-ink);
+  scroll-margin-top: calc(var(--site-header-height, 0px) + var(--space-md));
+}
+
+.inq-group {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.inq-group + .inq-group,
+.inq-group + .inq-consent {
+  margin-top: var(--space-lg);
+}
+
+.inq-legend {
+  float: left;
+  width: 100%;
+  margin: 0 0 var(--space-sm);
+  padding: 0;
+  color: var(--inq-ink);
+  font-size: var(--text-size-large);
+  font-weight: var(--heading-weight);
+  line-height: 1.3;
+}
+
+/* A float legend followed by block siblings: clear it so they sit below. */
+.inq-legend + * {
+  clear: both;
+}
+
+.inq-hint {
+  margin: calc(-1 * var(--space-xs)) 0 var(--space-sm);
+  color: var(--inq-caption);
+  font-size: var(--text-size-small);
+}
+
+/* Type tiles (radio group) -------------------------------------------- */
+
+.inq-tiles {
+  display: grid;
+  /* Four tiles in two rows of two, as in the design draft; one column on a
+     phone (below). */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-xs);
+}
+
+@media (min-width: 1100px) {
+  .inq-tiles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .inq-tiles {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.inq-tile,
+.inq-chip {
+  position: relative;
+  display: block;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.inq-chip[hidden] {
+  display: none;
+}
+
+.inq-tile-body,
+.inq-chip-body,
+.inq-input,
+.inq-check-box {
+  border: 1px solid var(--inq-line);
+  background: var(--inq-pale);
+}
+
+.inq-tile-body {
+  position: relative;
+  display: grid;
+  gap: var(--space-2xs);
+  align-content: start;
+  height: 100%;
+  min-height: 5.5rem;
+  padding: var(--space-md);
+  padding-right: 2.75rem;
+  border-radius: var(--radius-ticket-card);
+  isolation: isolate;
+  transition: border-color var(--duration-hover) var(--ease-snappy);
+}
+
+/* The chosen fill sits on its own layer and fades in by opacity (a
+   composited cross fade); a gradient itself cannot be transitioned. */
+.inq-tile-body::before,
+.inq-chip-body::before,
+.inq-check-box::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--inq-navy-fill);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-hover) var(--ease-snappy);
+}
+
+.inq-tile-title {
+  color: var(--inq-ink);
+  font-size: var(--text-size-medium);
+  font-weight: var(--heading-weight);
+  line-height: 1.25;
+}
+
+.inq-tile-copy {
+  color: var(--inq-caption);
+  font-size: var(--text-size-small);
+  line-height: 1.45;
+}
+
+/* The check is in the markup for every tile and only shown on the chosen
+   one, so the choice reads without color too. */
+.inq-tile-check {
+  position: absolute;
+  top: var(--space-md);
+  right: var(--space-md);
+  display: grid;
+  place-items: center;
+  color: var(--color-white);
+  opacity: 0;
+  transition: opacity var(--duration-hover) var(--ease-snappy);
+}
+
+@media (hover: hover) {
+  .inq-tile:hover .inq-tile-body {
+    border-color: var(--inq-line-strong);
+  }
+}
+
+/* Chosen: navy, like the homepage's "Learn more" button, with white type
+   and a white check. */
+.inq-tile input:checked + .inq-tile-body::before {
+  opacity: 1;
+}
+
+.inq-tile input:checked + .inq-tile-body {
+  border-color: var(--color-navy);
+}
+
+.inq-tile input:checked + .inq-tile-body .inq-tile-title {
+  color: var(--color-white);
+}
+
+.inq-tile input:checked + .inq-tile-body .inq-tile-copy {
+  color: color-mix(in srgb, var(--color-white) 86%, transparent);
+}
+
+.inq-tile input:checked + .inq-tile-body .inq-tile-check {
+  opacity: 1;
+}
+
+/* Topic chips (checkbox group) ---------------------------------------- */
+
+.inq-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.inq-chip-body {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  min-height: 2.75rem;
+  padding: calc(0.55rem + 1px) calc(1.1rem + 1px);
+  /* The outline is an inset ring, not a border: a real 1px border snaps to
+     whole pixels while the chip grows, which can drop its top edge, and it
+     leaves a seam between the border and the navy fill. The ring sits under
+     the fill, which now reaches the very edge. */
+  border: 0;
+  border-radius: var(--radius-ticket-pill);
+  /* The second, clear shadow reaches 3px past the box: Safari cuts the layer
+     it builds for the grow at whole pixels, and a chip sitting on a half
+     pixel would lose its top edge. No will-change here, so no layer (and no
+     cut) while the chip rests. */
+  box-shadow:
+    inset 0 0 0 1px var(--inq-line),
+    0 0 0 3px transparent;
+  background: var(--color-white);
+  color: var(--inq-ink);
+  font-size: var(--text-size-small);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.2;
+  isolation: isolate;
+  transition:
+    box-shadow var(--duration-hover) var(--ease-snappy),
+    color var(--duration-hover) var(--ease-snappy),
+    transform var(--duration-hover) var(--ease-snappy);
+}
+
+.inq-chip-check {
+  display: none;
+  place-items: center;
+}
+
+@media (hover: hover) {
+  .inq-chip:hover .inq-chip-body {
+    box-shadow:
+      inset 0 0 0 1px var(--inq-line-strong),
+      0 0 0 3px transparent;
+  }
+}
+
+/* The chip grows a little under the pointer. Transform only, and not at all
+   for reduced motion (MOTION-2, MOTION-3). */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .inq-chip:hover .inq-chip-body {
+    transform: scale(1.06);
+  }
+}
+
+.inq-chip:active .inq-chip-body {
+  transform: scale(0.97);
+}
+
+/* Chosen: navy with white type and a check in front of the label. */
+.inq-chip input:checked + .inq-chip-body::before {
+  opacity: 1;
+}
+
+.inq-chip input:checked + .inq-chip-body {
+  box-shadow:
+    inset 0 0 0 1px var(--color-navy),
+    0 0 0 3px transparent;
+  color: var(--color-white);
+}
+
+.inq-chip input:checked + .inq-chip-body .inq-chip-check {
+  display: inline-grid;
+}
+
+/* Fields ---------------------------------------------------------------- */
+
+.inq-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-md) var(--space-sm);
+}
+
+.inq-field {
+  min-width: 0;
+}
+
+.inq-field.is-wide {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 767px) {
+  .inq-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.inq-label {
+  display: block;
+  margin-bottom: var(--space-2xs);
+  color: var(--inq-ink);
+  font-size: var(--text-size-small);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.3;
+}
+
+.inq-optional {
+  color: var(--inq-caption);
+  font-weight: var(--font-weight-regular);
+}
+
+.inq-input {
+  display: block;
+  width: 100%;
+  min-height: 3rem;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-ticket-panel);
+  caret-color: var(--color-ticket-sky);
+  color: var(--inq-ink);
+  /* 1rem keeps iOS from zooming the page when a field takes focus. */
+  font: inherit;
+  font-size: var(--text-size-regular);
+  line-height: 1.4;
+  transition: border-color var(--duration-hover) var(--ease-snappy);
+}
+
+.inq-textarea {
+  min-height: 7.5rem;
+  resize: vertical;
+}
+
+/* The example text: the lighter blue of the captions, so it reads as a
+   suggestion next to the navy of what is typed. */
+.inq-input::placeholder {
+  color: var(--inq-caption);
+  opacity: 1;
+}
+
+/* Example text typing: until inquiry.client.ts takes over, the example texts
+   stay invisible, so they do not flash in full and then restart from empty.
+   Only where scripts run: without JavaScript they simply show. */
+@media (scripting: enabled) {
+  [data-typing-pending] .inq-input::placeholder {
+    color: transparent;
+  }
+}
+
+@media (hover: hover) {
+  .inq-input:hover {
+    border-color: var(--inq-line-strong);
+  }
+}
+
+.inq-input:focus {
+  border-color: var(--color-navy);
+}
+
+/* Focus: the site's blue ring (global.css), also on the visually hidden
+   native inputs' visible bodies. */
+.inq-input:focus-visible,
+.inq-tile input:focus-visible + .inq-tile-body,
+.inq-chip input:focus-visible + .inq-chip-body,
+.inq-check input:focus-visible + .inq-check-box {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* Consent ---------------------------------------------------------------- */
+
+.inq-check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-xs);
+  min-height: 2.75rem;
+  color: var(--inq-ink);
+  font-size: var(--text-size-small);
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.inq-check a {
+  color: var(--inq-ink);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.inq-check-box {
+  position: relative;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-top: 0.1rem;
+  border-color: var(--inq-line-strong);
+  border-radius: var(--radius-button-small);
+  background: var(--color-white);
+  isolation: isolate;
+  color: var(--color-white);
+  transition: border-color var(--duration-hover) var(--ease-snappy);
+}
+
+/* The tick is always there and only shown on a chosen box. */
+.inq-check-box svg {
+  opacity: 0;
+  transition: opacity var(--duration-hover) var(--ease-snappy);
+}
+
+.inq-check input:checked + .inq-check-box {
+  border-color: var(--color-navy);
+}
+
+.inq-check input:checked + .inq-check-box::before,
+.inq-check input:checked + .inq-check-box svg {
+  opacity: 1;
+}
+
+/* Choosing the box (INQUIRY-1): about a third of a second, in three beats.
+   The navy fill swells up from the middle like a drop, a few tiny bubbles
+   wobble up through it, and the tick pops in as they fade. Pure CSS on the
+   :checked state, transform and opacity only, so there is no script and it
+   replays each time the box is chosen. Clearing the box is plain and instant.
+   Reduced motion gets none of it (see the end of this file). */
+.inq-bubbles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* Each bubble: a light drop with a sky rim, so it reads on the navy fill and
+   on the white box alike. Size, spot and sideways drift are set per bubble;
+   the stagger is the shared glass stagger token. */
+.inq-bubbles i {
+  position: absolute;
+  width: var(--b-size, 0.3rem);
+  aspect-ratio: 1;
+  left: var(--b-x, 40%);
+  top: var(--b-y, 50%);
+  border: 1px solid color-mix(in srgb, var(--color-ticket-sky) 85%, transparent);
+  border-radius: var(--radius-circle);
+  background: color-mix(in srgb, var(--color-ticket-ice) 90%, transparent);
+  opacity: 0;
+}
+
+.inq-bubbles i:nth-child(1) {
+  --b-size: 0.34rem;
+  --b-x: 22%;
+  --b-y: 54%;
+  --b-drift: -0.06rem;
+}
+
+.inq-bubbles i:nth-child(2) {
+  --b-size: 0.26rem;
+  --b-x: 58%;
+  --b-y: 60%;
+  --b-drift: 0.08rem;
+}
+
+.inq-bubbles i:nth-child(3) {
+  --b-size: 0.3rem;
+  --b-x: 40%;
+  --b-y: 36%;
+  --b-drift: -0.04rem;
+}
+
+.inq-bubbles i:nth-child(4) {
+  --b-size: 0.2rem;
+  --b-x: 68%;
+  --b-y: 30%;
+  --b-drift: 0.05rem;
+}
+
+.inq-check input:checked + .inq-check-box::before {
+  animation: inq-fill var(--duration-open) var(--ease-glass-spring) both;
+}
+
+.inq-check input:checked + .inq-check-box .inq-bubbles i {
+  animation: inq-bubble var(--duration-open) var(--ease-snappy) both;
+}
+
+.inq-check input:checked + .inq-check-box .inq-bubbles i:nth-child(2) {
+  animation-delay: var(--duration-glass-stagger);
+}
+
+.inq-check input:checked + .inq-check-box .inq-bubbles i:nth-child(3) {
+  animation-delay: calc(var(--duration-glass-stagger) * 2);
+}
+
+.inq-check input:checked + .inq-check-box .inq-bubbles i:nth-child(4) {
+  animation-delay: calc(var(--duration-glass-stagger) * 3);
+}
+
+/* The tick sits above the bubbles and arrives after the first of them. */
+.inq-check-box svg {
+  position: relative;
+  z-index: 1;
+}
+
+.inq-check input:checked + .inq-check-box svg {
+  animation: inq-tick var(--duration-ticket-swap) var(--ease-glass-spring) both;
+  animation-delay: calc(var(--duration-open) * 0.45);
+}
+
+@keyframes inq-fill {
+  from {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes inq-bubble {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0.3rem) scale(0.2);
+  }
+
+  45% {
+    opacity: 1;
+    transform: translate(var(--b-drift, 0), -0.04rem) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(calc(var(--b-drift, 0) * -1), -0.4rem) scale(0.6);
+  }
+}
+
+@keyframes inq-tick {
+  from {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Thank you screen ------------------------------------------------------- */
+
+/* After a complete send the form leaves and this takes the card's place. The
+   card keeps the form's height up to a cap, and the message sits in the
+   middle of it: a round navy badge with a tick, the headline in navy and a
+   line of copy in the caption blue. It arrives with one short fade and rise,
+   and the badge pops in a beat later; reduced motion gets neither. */
+.inq-card.is-sent {
+  display: grid;
+  place-items: center;
+  /* As tall as the form was, but never a tall empty card: a calm screen. */
+  min-height: min(var(--inq-sent-height, 0px), 34rem);
+}
+
+.inq-thanks {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-md);
+  max-width: 28rem;
+  padding-block: var(--space-xl);
+  text-align: center;
+}
+
+.inq-thanks[hidden] {
+  display: none;
+}
+
+.inq-thanks-mark {
+  display: grid;
+  place-items: center;
+  width: 4.5rem;
+  aspect-ratio: 1;
+  border-radius: var(--radius-circle);
+  background: var(--inq-navy-fill);
+  box-shadow: 0 14px 28px -16px var(--color-ticket-midnight);
+  color: var(--color-white);
+}
+
+.inq-thanks-title {
+  margin: 0;
+  color: var(--inq-ink);
+  font-size: clamp(1.6rem, 3vw, 2.25rem);
+  font-weight: var(--heading-weight);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+/* The heading takes focus when the screen appears, so a screen reader reads
+   it; a ring around a plain headline would only look like a mistake. */
+.inq-thanks-title:focus {
+  outline: none;
+}
+
+.inq-thanks-copy {
+  margin: 0;
+  color: var(--inq-caption);
+  font-size: var(--text-size-medium);
+  line-height: 1.55;
+}
+
+.inq-card.is-sent .inq-thanks {
+  animation: inq-thanks-in var(--duration-open) var(--ease-snappy) both;
+}
+
+.inq-card.is-sent .inq-thanks-mark {
+  animation: inq-tick var(--duration-ticket-swap) var(--ease-glass-spring) both;
+  animation-delay: calc(var(--duration-open) * 0.5);
+}
+
+/* "View your inquiry": a navy button under the message, like the homepage's
+   "Learn more", that opens a read-only copy of what the visitor sent. */
+.inq-thanks-link {
+  position: relative;
+  isolation: isolate;
+  min-height: 2.75rem;
+  padding: 0.55rem 1.25rem;
+  border: 0;
+  border-radius: var(--radius-ticket-pill);
+  background: var(--inq-navy-fill);
+  box-shadow:
+    inset 0 1px 1px color-mix(in srgb, var(--color-white) 55%, transparent),
+    0 12px 26px -16px var(--color-ticket-midnight);
+  color: var(--color-white);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--text-size-small);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.2;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-hover) var(--ease-snappy);
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .inq-thanks-link:hover {
+    transform: scale(1.06);
+  }
+}
+
+.inq-thanks-link:active {
+  transform: scale(0.97);
+}
+
+.inq-thanks-link:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
+.inq-summary {
+  box-sizing: border-box;
+  width: 100%;
+  padding: var(--space-md);
+  border: 1px solid var(--inq-line);
+  border-radius: var(--radius-ticket-card);
+  background: var(--inq-pale);
+  text-align: left;
+}
+
+.inq-summary[hidden] {
+  display: none;
+}
+
+.inq-summary-list {
+  display: grid;
+  grid-template-columns: minmax(6.5rem, 9rem) minmax(0, 1fr);
+  gap: var(--space-xs) var(--space-sm);
+  margin: 0;
+}
+
+.inq-summary-list dt {
+  color: var(--inq-caption);
+  font-size: var(--text-size-small);
+  line-height: 1.45;
+}
+
+.inq-summary-list dd {
+  margin: 0;
+  color: var(--inq-ink);
+  font-size: var(--text-size-small);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 479px) {
+  .inq-summary-list {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .inq-summary-list dd {
+    margin-bottom: var(--space-sm);
+  }
+}
+
+@keyframes inq-thanks-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Actions ---------------------------------------------------------------- */
+
+.inq-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+}
+
+.inq-submit {
+  min-width: 13rem;
+}
+
+/* The send button is the homepage's "Learn more" button: the navy glass body
+   (the deep blue falling to navy), a lit top edge, the specular rim of the
+   shared glass button, a soft drop shadow and a white label. It restyles the
+   shared .button.is-glass (COMP-1) on this button only, so every other glass
+   button keeps the shared look. On hover a soft white spot follows the
+   pointer inside the box (the spot, not the whole face, lightens) and the box
+   grows a little. */
+.inq-submit.button.is-glass,
+.inq-submit.button.is-glass:hover {
+  border: 0;
+  background: var(--inq-navy-fill);
+  box-shadow:
+    inset 0 1px 1px color-mix(in srgb, var(--color-white) 55%, transparent),
+    0 12px 26px -16px var(--color-ticket-midnight);
+  color: var(--color-white);
+  text-shadow: none;
+}
+
+.inq-submit.button.is-glass:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
+/* No light spot under the pointer: the global glass shimmer is switched off. */
+.inq-submit.button.is-glass::before {
+  background: none;
+  box-shadow: none;
+}
+
+/* Grow on hover only. A press (:active or the shared .is-pressed class)
+   keeps its own compression from global.css (MOTION-6), and the spring back
+   on release is the shared one. */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .inq-submit.button.is-glass:hover:not(:active):not(.is-pressed):not(
+      :disabled
+    ) {
+    transform: scale(1.045);
+    transition-duration: var(--duration-open);
+    transition-timing-function: var(--ease-snappy);
+  }
+}
+
+.inq-alt {
+  margin: 0;
+  color: var(--inq-caption);
+  font-size: var(--text-size-small);
+}
+
+.inq-alt a {
+  color: var(--inq-ink);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.inq-noscript {
+  margin: var(--space-md) 0 0;
+  color: var(--inq-caption);
+  font-size: var(--text-size-small);
+}
+
+@media (max-width: 767px) {
+  .inq-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .inq-submit {
+    width: 100%;
+  }
+}
+
+/* Errors ----------------------------------------------------------------- */
+
+/* Each message is text with a mark in front, set right under its field and
+   tied to the field as its ARIA description: never a color alone. The error
+   token is the deep red for ink and its light tint for the field behind. */
+.inq-error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2xs);
+  margin: var(--space-2xs) 0 0;
+  color: var(--color-error);
+  font-size: var(--text-size-small);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.4;
+}
+
+.inq-error[hidden] {
+  display: none;
+}
+
+.inq-error-icon {
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-top: 0.1rem;
+  border: 1px solid currentcolor;
+  border-radius: var(--radius-circle);
+  font-size: var(--text-size-tiny);
+  font-weight: var(--heading-weight);
+  line-height: 1;
+}
+
+.inq-field.has-error .inq-input {
+  border-color: var(--color-error);
+  background: var(--color-error-light);
+}
+
+.inq-group.has-error .inq-tile-body {
+  border-color: var(--color-error);
+}
+
+/* The privacy box, left not-ticked on a send, is marked in the red of the
+   fields above: a red rim and the light red tint inside. */
+.inq-consent.has-error .inq-check-box {
+  border-color: var(--color-error);
+  background: var(--color-error-light);
+}
+
+/* Reduced motion: no transition at all, no press scale (MOTION-2). The
+   states still change, they just change at once. */
+@media (prefers-reduced-motion: reduce) {
+  .inq-tile-body,
+  .inq-tile-body::before,
+  .inq-tile-check,
+  .inq-chip-body,
+  .inq-chip-body::before,
+  .inq-input,
+  .inq-check-box,
+  .inq-check-box::before,
+  .inq-check-box svg {
+    transition: none;
+  }
+
+  .inq-chip:active .inq-chip-body {
+    transform: none;
+  }
+
+  /* The choosing animation of the consent box: none. The box fills and the
+     tick shows at once. */
+  .inq-check input:checked + .inq-check-box::before,
+  .inq-check input:checked + .inq-check-box svg,
+  .inq-check input:checked + .inq-check-box .inq-bubbles i {
+    animation: none;
+  }
+
+  .inq-thanks-link,
+  .inq-thanks-link::after {
+    transition: none;
+  }
+
+  .inq-thanks-link:active {
+    transform: none;
+  }
+
+  /* The thank-you screen simply appears. */
+  .inq-card.is-sent .inq-thanks,
+  .inq-card.is-sent .inq-thanks-mark {
+    animation: none;
+  }
+}
