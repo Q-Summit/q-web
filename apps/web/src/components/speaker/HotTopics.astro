@@ -247,18 +247,20 @@ const arrow = (dir: "prev" | "next") =>
     }
   }
 
+  /* The label keeps its small step to the heading; the line under the
+     heading sits close to it, so heading and line read as one block. */
   .ht-head {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--space-2xs);
+    gap: 0;
     max-width: 44rem;
     margin: 0 auto;
     text-align: center;
   }
 
   .ht-label {
-    margin: 0;
+    margin: 0 0 var(--space-2xs);
     color: var(--color-ticket-ice);
     font-size: var(--text-size-small);
     font-weight: var(--font-weight-extrabold);
@@ -272,12 +274,12 @@ const arrow = (dir: "prev" | "next") =>
     font-size: clamp(1.75rem, 4vw, 2.75rem);
     font-weight: var(--font-weight-extrabold);
     letter-spacing: -0.02em;
-    line-height: 1.1;
+    line-height: 1.05;
     text-wrap: balance;
   }
 
   .ht-sub {
-    margin: 0;
+    margin: 0.25rem 0 0;
     color: color-mix(in srgb, var(--color-white) 75%, transparent);
   }
 
