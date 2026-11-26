@@ -106,9 +106,63 @@ const copy = speakerPageCopy(page);
   .sp-page {
     margin-top: calc(var(--site-header-height) * -1);
     padding-top: var(--site-header-height);
-    padding-bottom: clamp(var(--space-xl), 8vw, 6rem);
     background: var(--color-speaker-night);
     color: var(--color-white);
+  }
+
+  /* The page melts into the footer's white through the long fade of the
+     other 2027 pages (home-theme.css .h-page-fade, partner-theme.css
+     .p-ground::after, restated here): its lightness rises along one
+     smoothstep curve in OKLab, first the deep blue growing out of the
+     night, then a mid blue and a pale sky into the white. Its length
+     follows the window's height, so the page never ends on an edge. */
+  .sp-page::after {
+    --fade-blue: color-mix(
+      in oklab,
+      var(--color-ticket-sky) 50%,
+      var(--color-ticket-deep)
+    );
+    --fade-pale: color-mix(
+      in oklab,
+      var(--color-ticket-sky) 42%,
+      var(--color-ticket-ice)
+    );
+
+    content: "";
+    display: block;
+    height: clamp(22rem, 58vh, 46rem);
+    margin-top: clamp(var(--space-md), 4vw, var(--space-xl));
+    background: linear-gradient(
+      in oklab 180deg,
+      transparent 0%,
+      color-mix(in oklab, var(--color-ticket-deep) 3%, transparent) 5%,
+      color-mix(in oklab, var(--color-ticket-deep) 13%, transparent) 10%,
+      color-mix(in oklab, var(--color-ticket-deep) 29%, transparent) 15%,
+      color-mix(in oklab, var(--color-ticket-deep) 49%, transparent) 20%,
+      color-mix(in oklab, var(--color-ticket-deep) 73%, transparent) 25%,
+      color-mix(in oklab, var(--fade-blue) 2%, var(--color-ticket-deep)) 30%,
+      color-mix(in oklab, var(--fade-blue) 46%, var(--color-ticket-deep)) 35%,
+      color-mix(in oklab, var(--fade-blue) 94%, var(--color-ticket-deep)) 40%,
+      color-mix(in oklab, var(--fade-pale) 18%, var(--fade-blue)) 45%,
+      color-mix(in oklab, var(--fade-pale) 38%, var(--fade-blue)) 50%,
+      color-mix(in oklab, var(--fade-pale) 59%, var(--fade-blue)) 55%,
+      color-mix(in oklab, var(--fade-pale) 79%, var(--fade-blue)) 60%,
+      color-mix(in oklab, var(--fade-pale) 98%, var(--fade-blue)) 65%,
+      color-mix(in oklab, var(--color-ticket-ice) 38%, var(--fade-pale)) 70%,
+      color-mix(in oklab, var(--color-ticket-ice) 76%, var(--fade-pale)) 75%,
+      color-mix(in oklab, var(--color-white) 12%, var(--color-ticket-ice)) 80%,
+      color-mix(in oklab, var(--color-white) 49%, var(--color-ticket-ice)) 85%,
+      color-mix(in oklab, var(--color-white) 76%, var(--color-ticket-ice)) 90%,
+      color-mix(in oklab, var(--color-white) 94%, var(--color-ticket-ice)) 95%,
+      var(--color-white) 100%
+    );
+    pointer-events: none;
+  }
+
+  /* The fade reaches the footer's white, so the footer drops its hairline
+     on this page only, as on the home, ticket and partner pages. */
+  :global(body:has(.sp-page) .site-footer) {
+    border-top-color: transparent;
   }
 
   :global(body:has(.sp-page)) {
